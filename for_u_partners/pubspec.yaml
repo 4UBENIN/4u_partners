@@ -7,8 +7,12 @@ environment:
   sdk: '>=3.0.3 <4.0.0'
 
 dependencies:
+  bounce: ^1.0.2
+  cached_network_image: ^3.4.1
   flutter:
     sdk: flutter
+  flutter_svg: ^2.2.0
+  google_fonts: ^6.2.1
   stacked: ^3.4.0
   stacked_services: ^1.1.0
 
