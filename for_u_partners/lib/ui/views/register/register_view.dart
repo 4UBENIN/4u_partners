@@ -11,7 +11,10 @@ import 'package:for_u_partners/ui/common/app_button_component.dart';
 
 @FormView(fields: [
   FormTextField(name: 'phoneNumberInput'),
-  FormTextField(name: 'passwordInput'),
+  FormTextField(
+    name: 'passwordInput',
+    validator: PasswordValidators.validatePassword,
+  ),
 ])
 class RegisterView extends StackedView<RegisterViewModel> with $RegisterView {
   const RegisterView({Key? key}) : super(key: key);
@@ -71,6 +74,7 @@ class RegisterView extends StackedView<RegisterViewModel> with $RegisterView {
                                 : Icons.visibility_rounded,
                           ),
                         ),
+                        // errorText: viewModel.passwordInputValidationMessage,
                       ),
                       const SizedBox(height: 30),
 
@@ -81,8 +85,7 @@ class RegisterView extends StackedView<RegisterViewModel> with $RegisterView {
                         value: viewModel.selectedProfile,
                         onChanged: (value) {
                           if (value != null) {
-                            viewModel
-                                .setSelectedProfile(value);
+                            viewModel.setSelectedProfile(value);
                           }
                         },
                       ),
@@ -104,16 +107,16 @@ class RegisterView extends StackedView<RegisterViewModel> with $RegisterView {
                         children: [
                           const TextComponent(
                             "Vous avez déjà un compte ?",
-                            fontsize: 15,
+                            fontsize: 14,
                           ),
                           TextButton(
                             onPressed: () {
                               viewModel.login();
                             },
                             child: const Text(
-                              "Connectez - vous !",
+                              "Connectez-vous !",
                               style:
-                                  TextStyle(color: primaryColor, fontSize: 15),
+                                  TextStyle(color: primaryColor, fontSize: 14),
                             ),
                           )
                         ],

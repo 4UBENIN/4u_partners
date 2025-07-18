@@ -18,3 +18,19 @@ class LoginViewModel extends FormViewModel {
     rebuildUi();
   }
 }
+
+class PasswordValidators {
+  static String? validatePassword(String? value) {
+    if (value == null || value.isEmpty) {
+      return 'Le mot de passe ne peut pas être vide';
+    }
+
+    final passwordRegex = RegExp(r'^(?=.*[a-z])(?=.*[A-Z])(?=.*\d).{8,}$');
+
+    if (!passwordRegex.hasMatch(value)) {
+      return 'Le mot de passe doit contenir au moins une majuscule, une minuscule, un chiffre, et avoir 8 caractères minimum.';
+    }
+
+    return null;
+  }
+}

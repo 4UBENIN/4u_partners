@@ -10,7 +10,10 @@ import 'package:for_u_partners/ui/common/app_button_component.dart';
 
 @FormView(fields: [
   FormTextField(name: 'phoneNumberInput'),
-  FormTextField(name: 'passwordInput'),
+  FormTextField(
+    name: 'passwordInput',
+    validator: PasswordValidators.validatePassword,
+  ),
 ])
 class LoginView extends StackedView<LoginViewModel> with $LoginView {
   const LoginView({Key? key}) : super(key: key);
@@ -22,77 +25,100 @@ class LoginView extends StackedView<LoginViewModel> with $LoginView {
     Widget? child,
   ) {
     return Scaffold(
-        backgroundColor: Theme.of(context).colorScheme.background,
-        body: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 20),
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              //* Logo
-              Center(child: Image.asset("assets/logo.png")),
+      backgroundColor: Theme.of(context).colorScheme.background,
+      body: LayoutBuilder(
+        builder: (context, constraints) {
+          return SingleChildScrollView(
+            child: ConstrainedBox(
+              constraints: BoxConstraints(minHeight: constraints.maxHeight),
+              child: IntrinsicHeight(
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 20),
+                  child: Column(
+                    mainAxisAlignment:
+                        MainAxisAlignment.center, // Centrage vertical
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const SizedBox(
+                          height: 60), // Pour laisser un peu d'air en haut
 
-              const SizedBox(height: 40),
-              const TextComponent(
-                "Connectez - vous !",
-                fontsize: 24,
-              ),
-              const SizedBox(height: 20),
-              //* Phone
-              CountryPhoneSelector(
-                controller: phoneNumberInputController,
-              ),
-              const SizedBox(height: 20),
+                      //* Logo
+                      Center(child: Image.asset("assets/logo.png")),
 
-              //* Password
-              TextInputField(
-                  controller: passwordInputController,
-                  bigLabel: "Mot de passe",
-                  obscureText: viewModel.obscurePassword,
-                  hintText: "**********",
-                  suffixIcon: IconButton(
-                      onPressed: () {
-                        viewModel.viewPassword();
-                      },
-                      icon: Icon(
-                        viewModel.obscurePassword
-                            ? Icons.visibility_off_rounded
-                            : Icons.visibility_rounded,
-                      ))),
-              TextButton(
-                  onPressed: () {},
-                  child: const TextComponent(
-                    "Mot de passe oublié ?",
-                    textcolor: primaryColor,
-                  )),
+                      const SizedBox(height: 40),
+                      const TextComponent(
+                        "Connectez - vous !",
+                        fontsize: 24,
+                      ),
+                      const SizedBox(height: 20),
 
-              //* Connection Button
-              Padding(
-                padding: const EdgeInsets.only(top: 30),
-                child: PrimaryButton(text: "Se connecter", onPressed: () {}),
-              ),
+                      //* Phone
+                      CountryPhoneSelector(
+                        controller: phoneNumberInputController,
+                      ),
+                      const SizedBox(height: 20),
 
-              //* Register Button
-              Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  const TextComponent(
-                    "Vous n'avez pas de compte ?",
-                    fontsize: 15,
+                      //* Password
+                      TextInputField(
+                        controller: passwordInputController,
+                        bigLabel: "Mot de passe",
+                        obscureText: viewModel.obscurePassword,
+                        hintText: "**********",
+                        suffixIcon: IconButton(
+                            onPressed: () {
+                              viewModel.viewPassword();
+                            },
+                            icon: Icon(
+                              viewModel.obscurePassword
+                                  ? Icons.visibility_off_rounded
+                                  : Icons.visibility_rounded,
+                            )),
+                        // errorText: viewModel.passwordInputValidationMessage,
+                      ),
+
+                      TextButton(
+                          onPressed: () {},
+                          child: const TextComponent(
+                            "Mot de passe oublié ?",
+                            textcolor: primaryColor,
+                          )),
+
+                      //* Connection Button
+                      Padding(
+                        padding: const EdgeInsets.only(top: 30),
+                        child: PrimaryButton(
+                            text: "Se connecter", onPressed: () {}),
+                      ),
+
+                      //* Register Button
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          const TextComponent(
+                            "Vous n'avez pas de compte ?",
+                            fontsize: 14,
+                          ),
+                          TextButton(
+                              onPressed: () {
+                                LoginViewModel().register();
+                              },
+                              child: const Text(
+                                "Inscrivez-vous !",
+                                style: TextStyle(
+                                    color: primaryColor, fontSize: 14),
+                              ))
+                        ],
+                      ),
+                      const SizedBox(height: 30), // Espace en bas
+                    ],
                   ),
-                  TextButton(
-                      onPressed: () {
-                        LoginViewModel().register();
-                      },
-                      child: const Text(
-                        "Inscrivez-vous !",
-                        style: TextStyle(color: primaryColor, fontSize: 15),
-                      ))
-                ],
+                ),
               ),
-            ],
-          ),
-        ));
+            ),
+          );
+        },
+      ),
+    );
   }
 
   @override

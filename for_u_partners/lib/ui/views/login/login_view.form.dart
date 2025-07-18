@@ -7,6 +7,7 @@
 // ignore_for_file: public_member_api_docs, constant_identifier_names, non_constant_identifier_names,unnecessary_this
 
 import 'package:flutter/material.dart';
+import 'package:for_u_partners/ui/views/login/login_viewmodel.dart';
 import 'package:stacked/stacked.dart';
 
 const bool _autoTextFieldValidation = true;
@@ -20,7 +21,7 @@ final Map<String, FocusNode> _LoginViewFocusNodes = {};
 
 final Map<String, String? Function(String?)?> _LoginViewTextValidations = {
   PhoneNumberInputValueKey: null,
-  PasswordInputValueKey: null,
+  PasswordInputValueKey: PasswordValidators.validatePassword,
 };
 
 mixin $LoginView {

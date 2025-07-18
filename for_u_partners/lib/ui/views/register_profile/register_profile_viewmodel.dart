@@ -1,7 +1,27 @@
+import 'dart:io';
 import 'package:stacked/stacked.dart';
+import 'package:flutter/material.dart';
+import 'package:file_picker/file_picker.dart';
+import 'package:for_u_partners/ui/common/app_colors.dart';
+import 'package:for_u_partners/ui/common/app_text_component.dart';
 
-class RegisterProfileViewModel extends BaseViewModel {
+class RegisterProfileViewModel extends FormViewModel {
   bool? hasVehicle;
+  //* Deliver
+  PlatformFile? deliverCarteGrise;
+  PlatformFile? deliverAssurance;
+  //* Car
+  PlatformFile? driverIdentity;
+  PlatformFile? driverCarCarteGrise;
+  PlatformFile? driverCarAssurance;
+  PlatformFile? driverCarPermis;
+  PlatformFile? driverNoCarPermis;
+  //* Moto
+  PlatformFile? driverMotoCarteGrise;
+  PlatformFile? driverMotoAssurance;
+  //* Cleaning
+  PlatformFile? cleaningIdenty;
+
   final vehicles = [
     "Moto",
     "Voiture",
@@ -35,5 +55,67 @@ class RegisterProfileViewModel extends BaseViewModel {
   void setHasVehicle(bool value) {
     hasVehicle = value;
     rebuildUi();
+  }
+
+  Future uploadFileFromMobile(PlatformFile? pickedFile) async {
+    final file = await FilePicker.platform.pickFiles();
+
+    if (file == null) return;
+
+    pickedFile = file.files.first;
+    rebuildUi();
+  }
+
+  Widget uploadFileComponent(
+    String label,
+    PlatformFile? pickedFile,
+    void Function(PlatformFile file) onFilePicked,
+  ) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        TextComponent(label, fontsize: 16),
+        const SizedBox(height: 10),
+        GestureDetector(
+          onTap: () async {
+            final file = await FilePicker.platform.pickFiles();
+            if (file != null) {
+              onFilePicked(file.files.first);
+              rebuildUi();
+            }
+          },
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Container(
+                width: double.infinity,
+                height: pickedFile != null ? 200 : 45,
+                decoration: BoxDecoration(
+                  borderRadius: const BorderRadius.all(Radius.circular(15)),
+                  border: Border.all(color: greybutton),
+                ),
+                child: pickedFile != null
+                    ? ClipRRect(
+                        borderRadius: const BorderRadius.all(Radius.circular(15)),
+                        child: Image.file(
+                          File(pickedFile.path!),
+                          width: double.infinity,
+                          fit: BoxFit.cover,
+                        ),
+                      )
+                    : Center(
+                        child: TextComponent(
+                          "Choisissez un fichier",
+                          textcolor: textinputcolor.withOpacity(0.5),
+                        ),
+                      ),
+              ),
+              pickedFile != null ? const SizedBox(height: 10) : const SizedBox(height: 0),
+              pickedFile != null ? const TextComponent("Cliquez sur l'image pour la remplacer, si besoin", textcolor: primaryColor,) : const TextComponent("")
+            ],
+          ),
+        ),
+      ],
+    );
   }
 }

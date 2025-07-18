@@ -21,6 +21,7 @@ class TextInputField extends StatefulWidget {
   final Function(String?)? onSaved;
   final Function(String?)? onChanged;
   final String? hintText;
+  final String? errorText;
   final Widget? suffixIcon;
   final Widget? prefixIcon;
   final String? suffixText;
@@ -67,6 +68,7 @@ class TextInputField extends StatefulWidget {
     this.contentVert = 16.0,
     this.contentHoriz = 12.0,
     this.hintSize = 12.0,
+    this.errorText,
   });
 
   @override
@@ -125,6 +127,7 @@ class _TextInputFieldState extends State<TextInputField> {
           inputFormatters: widget.inputFormatters,
           textAlign: widget.height == 75 ? TextAlign.center : TextAlign.start,
           decoration: InputDecoration(
+            errorText: widget.errorText,
             border: inputBorder,
             focusedBorder: focusedBorder,
             enabledBorder: inputBorder,
