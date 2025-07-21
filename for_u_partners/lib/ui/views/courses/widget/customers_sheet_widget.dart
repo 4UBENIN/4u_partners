@@ -765,6 +765,4 @@ class InProgressRideBottomSheet extends StatelessWidget {
       },
     );
   }
-
-  
 }

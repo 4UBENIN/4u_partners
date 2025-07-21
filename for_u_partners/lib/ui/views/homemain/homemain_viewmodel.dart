@@ -5,6 +5,7 @@ import 'package:for_u_partners/ui/views/home/home_view.dart';
 import 'package:for_u_partners/ui/views/profil/profil_view.dart';
 import 'package:for_u_partners/ui/views/courses/courses_view.dart';
 import 'package:for_u_partners/ui/views/activity/activity_view.dart';
+import 'package:for_u_partners/ui/views/notifications/notifications_view.dart';
 
 class HomemainViewModel extends IndexTrackingViewModel {
   getViewFromIndex(int index) {
@@ -16,6 +17,8 @@ class HomemainViewModel extends IndexTrackingViewModel {
       case 2:
         return const CoursesView();
       case 3:
+        return const NotificationsView();
+      case 4:
         return const ProfilView();
       default:
         return const HomeView();

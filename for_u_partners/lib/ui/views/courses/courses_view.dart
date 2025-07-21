@@ -12,9 +12,6 @@ import 'package:for_u_partners/ui/views/courses/recap_view.dart';
 import 'package:for_u_partners/ui/views/courses/widget/dialog_widget.dart';
 import 'package:for_u_partners/ui/views/courses/widget/customers_sheet_widget.dart';
 
-
-
-
 class CoursesView extends StackedView<CoursesViewModel> {
   const CoursesView({Key? key}) : super(key: key);
 
@@ -147,8 +144,8 @@ class CoursesView extends StackedView<CoursesViewModel> {
                   coutParMinute: 1.0,
                   coutDistance: 220.0,
                   onSoumettre: () {
-                  final navigationService = locator<NavigationService>();
-                  navigationService.navigateToHomemainView();
+                    final navigationService = locator<NavigationService>();
+                    navigationService.navigateToHomemainView();
                   },
                 ),
               ),

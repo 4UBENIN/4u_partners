@@ -1,6 +1,1 @@
-enum BottomSheetAppType {
-  clients,
-  pickup,
-  inprogress,
-  none
-}
+enum BottomSheetAppType { clients, pickup, inprogress, none }

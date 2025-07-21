@@ -3,11 +3,9 @@ import 'package:flutter/material.dart';
 import 'activitydetails_viewmodel.dart';
 import 'package:for_u_partners/ui/views/activity/models/activity_model.dart';
 
-
-
 class ActivitydetailsView extends StackedView<ActivitydetailsViewModel> {
   final ActivityModel? activity;
-  
+
   const ActivitydetailsView({
     Key? key,
     this.activity,
@@ -20,7 +18,7 @@ class ActivitydetailsView extends StackedView<ActivitydetailsViewModel> {
     Widget? child,
   ) {
     return Scaffold(
-     // backgroundColor: Colors.whi,
+      // backgroundColor: Colors.whi,
       body: Container(
         decoration: const BoxDecoration(
           color: Colors.white,

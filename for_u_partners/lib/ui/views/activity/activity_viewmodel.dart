@@ -6,7 +6,7 @@ import 'package:for_u_partners/ui/views/activity/models/activity_model.dart';
 class ActivityViewModel extends BaseViewModel {
   List<ActivityModel> _activities = [];
   List<ActivityModel> get activities => _activities;
-  final navigationService = locator<NavigationService>();  
+  final navigationService = locator<NavigationService>();
   ActivityViewModel() {
     _initializeActivities();
   }
@@ -15,65 +15,59 @@ class ActivityViewModel extends BaseViewModel {
     // Données d'exemple basées sur le HTML
     _activities = [
       ActivityModel(
-        type: 'Course standard',
-        route: 'Cotonou → Porto-Novo',
-        status: ActivityStatus.inprogress,
-        timeAgo: 'Il y a 2h',
-        distance: '28 km',
-        earning: '4,500 CFA',
-        totalTime: '2h',
-        tarifkm: '161'
-      ),
+          type: 'Course standard',
+          route: 'Cotonou → Porto-Novo',
+          status: ActivityStatus.inprogress,
+          timeAgo: 'Il y a 2h',
+          distance: '28 km',
+          earning: '4,500 CFA',
+          totalTime: '2h',
+          tarifkm: '161'),
       ActivityModel(
-        type: 'Course express',
-        route: 'Akpakpa → Ganhi',
-        status: ActivityStatus.completed,
-        timeAgo: 'Il y a 3h',
-        distance: '12 km',
-        earning: '2,200 CFA',
-        totalTime: '2h',
-        tarifkm: '161'
-      ),
+          type: 'Course express',
+          route: 'Akpakpa → Ganhi',
+          status: ActivityStatus.completed,
+          timeAgo: 'Il y a 3h',
+          distance: '12 km',
+          earning: '2,200 CFA',
+          totalTime: '2h',
+          tarifkm: '161'),
       ActivityModel(
-        type: 'Course longue',
-        route: 'Cotonou → Abomey-Calavi',
-        status: ActivityStatus.completed,
-        timeAgo: 'Il y a 5h',
-        distance: '18 km',
-        earning: '3,800 CFA',
-        totalTime: '2h',
-        tarifkm: '161'
-      ),
+          type: 'Course longue',
+          route: 'Cotonou → Abomey-Calavi',
+          status: ActivityStatus.completed,
+          timeAgo: 'Il y a 5h',
+          distance: '18 km',
+          earning: '3,800 CFA',
+          totalTime: '2h',
+          tarifkm: '161'),
       ActivityModel(
-        type: 'Course standard',
-        route: 'Godomey → Calavi',
-        status: ActivityStatus.cancelled,
-        timeAgo: 'Il y a 6h',
-        distance: '8 km',
-        earning: '0 CFA',
-        totalTime: '2h',
-        tarifkm: '161'
-      ),
+          type: 'Course standard',
+          route: 'Godomey → Calavi',
+          status: ActivityStatus.cancelled,
+          timeAgo: 'Il y a 6h',
+          distance: '8 km',
+          earning: '0 CFA',
+          totalTime: '2h',
+          tarifkm: '161'),
       ActivityModel(
-        type: 'Course premium',
-        route: 'Fidjrossè → Aéroport',
-        status: ActivityStatus.completed,
-        timeAgo: 'Hier',
-        distance: '15 km',
-        earning: '6,200 CFA',
-        totalTime: '2h',
-        tarifkm: '161'
-      ),
+          type: 'Course premium',
+          route: 'Fidjrossè → Aéroport',
+          status: ActivityStatus.completed,
+          timeAgo: 'Hier',
+          distance: '15 km',
+          earning: '6,200 CFA',
+          totalTime: '2h',
+          tarifkm: '161'),
       ActivityModel(
-        type: 'Course standard',
-        route: 'Godomey → Calavi',
-        status: ActivityStatus.inprogress,
-        timeAgo: 'Il y a 6h',
-        distance: '8 km',
-        earning: '0 CFA',
-        totalTime: '2h',
-        tarifkm: '161'
-      ),
+          type: 'Course standard',
+          route: 'Godomey → Calavi',
+          status: ActivityStatus.inprogress,
+          timeAgo: 'Il y a 6h',
+          distance: '8 km',
+          earning: '0 CFA',
+          totalTime: '2h',
+          tarifkm: '161'),
     ];
     notifyListeners();
   }

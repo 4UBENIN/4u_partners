@@ -65,7 +65,7 @@ class RecapitulatifCoursePage extends StatelessWidget {
                     ),
                   ),
                   const SizedBox(height: 30),
-                  
+
                   // Section trajet
                   Column(
                     children: [
@@ -112,9 +112,9 @@ class RecapitulatifCoursePage extends StatelessWidget {
                       ),
                     ],
                   ),
-                  
+
                   const SizedBox(height: 30),
-                  
+
                   // Section client
                   Row(
                     children: [
@@ -147,9 +147,9 @@ class RecapitulatifCoursePage extends StatelessWidget {
                       ),
                     ],
                   ),
-                  
+
                   const SizedBox(height: 30),
-                  
+
                   // Section distance et prix
                   Row(
                     children: [
@@ -219,9 +219,9 @@ class RecapitulatifCoursePage extends StatelessWidget {
                       ),
                     ],
                   ),
-                  
+
                   const SizedBox(height: 30),
-                  
+
                   // Section moyen de paiement
                   const Text(
                     'Moyen de paiement',
@@ -266,9 +266,9 @@ class RecapitulatifCoursePage extends StatelessWidget {
                       ),
                     ],
                   ),
-                  
+
                   const SizedBox(height: 30),
-                  
+
                   // Section détail du récapitulatif
                   const Text(
                     'Détail du récapitulatif',
@@ -279,7 +279,7 @@ class RecapitulatifCoursePage extends StatelessWidget {
                     ),
                   ),
                   const SizedBox(height: 20),
-                  
+
                   // Détails des coûts
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -326,7 +326,7 @@ class RecapitulatifCoursePage extends StatelessWidget {
               ),
             ),
           ),
-          
+
           // Bouton Soumettre
           Container(
             width: double.infinity,

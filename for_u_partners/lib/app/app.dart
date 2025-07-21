@@ -10,6 +10,9 @@ import 'package:for_u_partners/ui/views/notifications/notifications_view.dart';
 import 'package:for_u_partners/ui/views/profil/profil_view.dart';
 import 'package:for_u_partners/ui/views/homemain/homemain_view.dart';
 import 'package:for_u_partners/ui/views/activitydetails/activitydetails_view.dart';
+import 'package:for_u_partners/ui/views/login/login_view.dart';
+import 'package:for_u_partners/ui/views/register/register_view.dart';
+import 'package:for_u_partners/ui/views/register_profile/register_profile_view.dart';
 // @stacked-import
 
 @StackedApp(
@@ -22,6 +25,9 @@ import 'package:for_u_partners/ui/views/activitydetails/activitydetails_view.dar
     MaterialRoute(page: ProfilView),
     MaterialRoute(page: HomemainView),
     MaterialRoute(page: ActivitydetailsView),
+    MaterialRoute(page: LoginView),
+    MaterialRoute(page: RegisterView),
+    MaterialRoute(page: RegisterProfileView),
 // @stacked-route
   ],
   dependencies: [

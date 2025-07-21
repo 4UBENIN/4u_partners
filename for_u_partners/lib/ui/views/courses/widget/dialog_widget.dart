@@ -38,7 +38,7 @@ class ClientPickupDialog extends StatelessWidget {
               ),
             ),
             const SizedBox(height: 20),
-            
+
             // Image du client avec valise
             Image.asset(
               'assets/delivery.png', // Remplacez par le chemin de votre image
@@ -47,7 +47,7 @@ class ClientPickupDialog extends StatelessWidget {
               fit: BoxFit.cover,
             ),
             const SizedBox(height: 24),
-            
+
             // Texte principal
             Text(
               'Souhaitez-vous prendre $clientName ?',
@@ -59,7 +59,7 @@ class ClientPickupDialog extends StatelessWidget {
               ),
             ),
             const SizedBox(height: 32),
-            
+
             // Bouton "Oui"
             SizedBox(
               width: double.infinity,
@@ -87,7 +87,7 @@ class ClientPickupDialog extends StatelessWidget {
               ),
             ),
             const SizedBox(height: 12),
-            
+
             // Bouton "Non"
             SizedBox(
               width: double.infinity,

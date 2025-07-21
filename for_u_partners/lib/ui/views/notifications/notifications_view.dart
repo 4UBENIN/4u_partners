@@ -1,6 +1,9 @@
 import 'package:stacked/stacked.dart';
 import 'notifications_viewmodel.dart';
 import 'package:flutter/material.dart';
+import 'package:for_u_partners/ui/common/app_colors.dart';
+import 'package:for_u_partners/ui/common/text_component.dart';
+import 'package:for_u_partners/ui/views/notifications/widget/notification_widget.dart';
 
 class NotificationsView extends StackedView<NotificationsViewModel> {
   const NotificationsView({Key? key}) : super(key: key);
@@ -12,12 +15,25 @@ class NotificationsView extends StackedView<NotificationsViewModel> {
     Widget? child,
   ) {
     return Scaffold(
-      backgroundColor: Theme.of(context).colorScheme.surface,
-      body: Container(
-        padding: const EdgeInsets.only(left: 25.0, right: 25.0),
-        child: const Center(child: Text("NotificationsView")),
-      ),
-    );
+        backgroundColor: Colors.white,
+        appBar: AppBar(
+            backgroundColor: Colors.white,
+            title: const TextComponent("Notifications")),
+        body: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 20),
+          child: Column(
+            children: [
+              notificationsCard(
+                "Aujourd'hui - 14:20",
+                "Simplifiez vos déplacements 👍🏾, utilisez notre service de transport ! 🚙",
+              ),
+              notificationsCard(
+                "Aujourd'hui - 18:20",
+                "Votre maison ou tout autre espace a besoin d'entretien 🧐 ? Pas de soucis, nous sommes la ! 🪣",
+              )
+            ],
+          ),
+        ));
   }
 
   @override

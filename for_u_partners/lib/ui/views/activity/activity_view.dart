@@ -7,10 +7,6 @@ import 'package:stacked_services/stacked_services.dart';
 import 'package:for_u_partners/ui/views/activity/models/activity_model.dart';
 import 'package:for_u_partners/ui/views/activitydetails/activitydetails_view.dart';
 
-
-
-
-
 class ActivityView extends StackedView<ActivityViewModel> {
   const ActivityView({Key? key}) : super(key: key);
 

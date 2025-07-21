@@ -37,11 +37,11 @@ class HomemainView extends StackedView<HomemainViewModel> {
               label: "Courses",
             ),
             BottomNavigationBarItem(
-              icon: viewModel.buildNavItem("assets/Bell.png", 2, viewModel),
+              icon: viewModel.buildNavItem("assets/Bell.png", 3, viewModel),
               label: "Notifications",
             ),
             BottomNavigationBarItem(
-              icon: viewModel.buildNavItem("assets/user.png", 3, viewModel),
+              icon: viewModel.buildNavItem("assets/user.png", 4, viewModel),
               label: "Compte",
             ),
           ],
