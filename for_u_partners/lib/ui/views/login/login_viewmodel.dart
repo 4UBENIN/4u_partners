@@ -7,7 +7,9 @@ class LoginViewModel extends FormViewModel {
   final _navigationService = locator<NavigationService>();
   bool obscurePassword = true;
 
-  void login() {}
+  void login() {
+    _navigationService.replaceWithHomemainView();
+  }
 
   void register() {
     _navigationService.replaceWithRegisterView();
