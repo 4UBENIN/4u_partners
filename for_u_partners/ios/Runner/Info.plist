@@ -28,6 +28,13 @@
 	<string>LaunchScreen</string>
 	<key>UIMainStoryboardFile</key>
 	<string>Main</string>
+	
+	<!-- Permissions de localisation -->
+	<key>NSLocationWhenInUseUsageDescription</key>
+	<string>For U Partners a besoin d'accéder à votre position pour afficher les courses disponibles près de vous sur la carte.</string>
+	<key>NSLocationAlwaysAndWhenInUseUsageDescription</key>
+	<string>For U Partners a besoin d'accéder à votre position pour vous proposer les meilleures courses dans votre zone.</string>
+	
 	<key>UISupportedInterfaceOrientations</key>
 	<array>
 		<string>UIInterfaceOrientationPortrait</string>

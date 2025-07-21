@@ -1,65 +1,120 @@
-import 'package:flutter/material.dart';
-import 'package:stacked/stacked.dart';
-import 'package:for_u_partners/ui/common/app_colors.dart';
-import 'package:for_u_partners/ui/common/ui_helpers.dart';
-
 import 'home_viewmodel.dart';
+import 'widgets/wallet_widget.dart';
+import 'widgets/summary_widget.dart';
+import 'package:stacked/stacked.dart';
+import 'widgets/activity_widget.dart';
+import 'package:flutter/material.dart';
+import 'widgets/current_ride_widget.dart';
+import 'package:for_u_partners/ui/common/app_colors.dart';
 
 class HomeView extends StackedView<HomeViewModel> {
   const HomeView({Key? key}) : super(key: key);
 
   @override
-  Widget builder(BuildContext context, HomeViewModel viewModel, Widget? child) {
+  Widget builder(
+    BuildContext context,
+    HomeViewModel viewModel,
+    Widget? child,
+  ) {
     return Scaffold(
-      body: SafeArea(
+      backgroundColor: kcWhiteColors,
+      appBar: _buildCustomAppBar(),
+      body: const SingleChildScrollView(
         child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 25.0),
-          child: Center(
-            child: Column(
-              mainAxisSize: MainAxisSize.max,
+          padding: EdgeInsets.all(25.0),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              WalletWidget(balance: '67,500 FCFA'),
+              SizedBox(height: 24),
+              SummaryWidget(
+                todayCourses: 8,
+                todayEarnings: '32,500 FCFA',
+              ),
+              SizedBox(height: 24),
+              CurrentRideWidget(),
+              SizedBox(height: 30),
+              Text(
+                'Activité récente',
+                style: TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.w600,
+                  color: Color(0xFF333333),
+                ),
+              ),
+              SizedBox(height: 15),
+              ActivityWidget(),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  PreferredSizeWidget _buildCustomAppBar() {
+    return PreferredSize(
+      preferredSize: const Size.fromHeight(100),
+      child: Container(
+        decoration: const BoxDecoration(
+          border: Border(
+              bottom: BorderSide(
+            color: Color(0xFFe5e7eb),
+          )),
+          color: Colors.white,
+        ),
+        child: SafeArea(
+          child: Padding(
+            padding:
+                const EdgeInsets.symmetric(horizontal: 24.0, vertical: 12.0),
+            child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                verticalSpaceLarge,
-                Column(
+                Row(
                   children: [
-                    const Text(
-                      'Hello, STACKED!',
-                      style: TextStyle(
-                        fontSize: 35,
-                        fontWeight: FontWeight.w900,
+                    Container(
+                      width: 44,
+                      height: 44,
+                      decoration: const BoxDecoration(
+                        color: Color(0xFF184E9C),
+                        shape: BoxShape.circle,
+                      ),
+                      child: const Center(
+                        child: Text(
+                          'O',
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontSize: 18,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
                       ),
                     ),
-                    verticalSpaceMedium,
-                    MaterialButton(
-                      color: Colors.black,
-                      onPressed: viewModel.incrementCounter,
-                      child: Text(
-                        viewModel.counterLabel,
-                        style: const TextStyle(color: Colors.white),
+                    const SizedBox(width: 12),
+                    const Text(
+                      'Olivier ',
+                      style: TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.w600,
+                        color: Color(0xFF1a1a1a),
                       ),
                     ),
                   ],
                 ),
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    MaterialButton(
-                      color: kcDarkGreyColor,
-                      onPressed: viewModel.showDialog,
-                      child: const Text(
-                        'Show Dialog',
-                        style: TextStyle(color: Colors.white),
-                      ),
+                Container(
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFF10B981),
+                    borderRadius: BorderRadius.circular(20),
+                  ),
+                  child: const Text(
+                    'EN LIGNE',
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontSize: 12,
+                      fontWeight: FontWeight.w500,
                     ),
-                    MaterialButton(
-                      color: kcDarkGreyColor,
-                      onPressed: viewModel.showBottomSheet,
-                      child: const Text(
-                        'Show Bottom Sheet',
-                        style: TextStyle(color: Colors.white),
-                      ),
-                    ),
-                  ],
+                  ),
                 ),
               ],
             ),

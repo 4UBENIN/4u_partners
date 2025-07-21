@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:for_u_partners/app/app.router.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:for_u_partners/app/app.dialogs.dart';
 import 'package:for_u_partners/app/app.locator.dart';
 import 'package:stacked_services/stacked_services.dart';
@@ -8,8 +9,10 @@ import 'package:for_u_partners/app/app.bottomsheets.dart';
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await setupLocator();
+
   setupDialogUi();
   setupBottomSheetUi();
+    await dotenv.load(fileName: ".env");
   runApp(const MainApp());
 }
 
