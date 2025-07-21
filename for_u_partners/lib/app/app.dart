@@ -13,6 +13,7 @@ import 'package:for_u_partners/ui/views/activitydetails/activitydetails_view.dar
 import 'package:for_u_partners/ui/views/login/login_view.dart';
 import 'package:for_u_partners/ui/views/register/register_view.dart';
 import 'package:for_u_partners/ui/views/register_profile/register_profile_view.dart';
+import 'package:for_u_partners/services/sharedpreferences_service.dart';
 // @stacked-import
 
 @StackedApp(
@@ -34,7 +35,8 @@ import 'package:for_u_partners/ui/views/register_profile/register_profile_view.d
     LazySingleton(classType: BottomSheetService),
     LazySingleton(classType: DialogService),
     LazySingleton(classType: NavigationService),
-    // @stacked-service
+    LazySingleton(classType: SharedpreferencesService),
+// @stacked-service
   ],
   bottomsheets: [
     StackedBottomsheet(classType: NoticeSheet),

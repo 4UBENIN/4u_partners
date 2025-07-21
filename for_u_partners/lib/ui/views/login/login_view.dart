@@ -87,7 +87,7 @@ class LoginView extends StackedView<LoginViewModel> with $LoginView {
                       Padding(
                         padding: const EdgeInsets.only(top: 30),
                         child: PrimaryButton(
-                            text: "Se connecter", onPressed: () {}),
+                            text: "Se connecter", onPressed: viewModel.login),
                       ),
 
                       //* Register Button
@@ -100,7 +100,7 @@ class LoginView extends StackedView<LoginViewModel> with $LoginView {
                           ),
                           TextButton(
                               onPressed: () {
-                                LoginViewModel().register();
+                                viewModel.register();
                               },
                               child: const Text(
                                 "Inscrivez-vous !",

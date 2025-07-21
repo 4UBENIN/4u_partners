@@ -2,6 +2,9 @@ import 'dart:io';
 import 'package:stacked/stacked.dart';
 import 'package:flutter/material.dart';
 import 'package:file_picker/file_picker.dart';
+import 'package:for_u_partners/app/app.router.dart';
+import 'package:for_u_partners/app/app.locator.dart';
+import 'package:stacked_services/stacked_services.dart';
 import 'package:for_u_partners/ui/common/app_colors.dart';
 import 'package:for_u_partners/ui/common/text_component.dart';
 
@@ -40,6 +43,8 @@ class RegisterProfileViewModel extends FormViewModel {
   String _wantedVehicle = "Moto";
   String get wantedVehicle => _wantedVehicle;
 
+  final _navigationService = locator<NavigationService>();
+
   //* Functions
 
   void setSelectedVehicle(String value) {
@@ -55,6 +60,10 @@ class RegisterProfileViewModel extends FormViewModel {
   void setHasVehicle(bool value) {
     hasVehicle = value;
     rebuildUi();
+  }
+
+  void registerEnding() {
+    _navigationService.replaceWithHomemainView();
   }
 
   Future uploadFileFromMobile(PlatformFile? pickedFile) async {
