@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:for_u_partners/ui/common/app_colors.dart';
-import 'package:for_u_partners/ui/views/courses/model/client_model.dart';
-import 'package:for_u_partners/ui/views/courses/widget/dialog_widget.dart';
+import 'package:for_u_partners/ui/views/drivers/courses/model/client_model.dart';
+import 'package:for_u_partners/ui/views/drivers/courses/widget/dialog_widget.dart';
 
 class ClientsBottomSheet extends StatelessWidget {
   final List<ClientData> getClientsList;

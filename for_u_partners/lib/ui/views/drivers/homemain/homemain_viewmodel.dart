@@ -1,11 +1,11 @@
 import 'package:stacked/stacked.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:for_u_partners/ui/common/app_colors.dart';
-import 'package:for_u_partners/ui/views/home/home_view.dart';
-import 'package:for_u_partners/ui/views/profil/profil_view.dart';
-import 'package:for_u_partners/ui/views/courses/courses_view.dart';
-import 'package:for_u_partners/ui/views/activity/activity_view.dart';
-import 'package:for_u_partners/ui/views/notifications/notifications_view.dart';
+import 'package:for_u_partners/ui/views/drivers/home/home_view.dart';
+import 'package:for_u_partners/ui/views/drivers/profil/profil_view.dart';
+import 'package:for_u_partners/ui/views/drivers/courses/courses_view.dart';
+import 'package:for_u_partners/ui/views/drivers/activity/activity_view.dart';
+import 'package:for_u_partners/ui/views/drivers/notifications/notifications_view.dart';
 
 class HomemainViewModel extends IndexTrackingViewModel {
   getViewFromIndex(int index) {

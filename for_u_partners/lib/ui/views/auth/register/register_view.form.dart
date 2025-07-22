@@ -7,7 +7,7 @@
 // ignore_for_file: public_member_api_docs, constant_identifier_names, non_constant_identifier_names,unnecessary_this
 
 import 'package:flutter/material.dart';
-import 'package:for_u_partners/ui/views/login/login_viewmodel.dart';
+import 'package:for_u_partners/ui/views/auth/register/register_viewmodel.dart';
 import 'package:stacked/stacked.dart';
 
 const bool _autoTextFieldValidation = true;
@@ -15,16 +15,17 @@ const bool _autoTextFieldValidation = true;
 const String PhoneNumberInputValueKey = 'phoneNumberInput';
 const String PasswordInputValueKey = 'passwordInput';
 
-final Map<String, TextEditingController> _LoginViewTextEditingControllers = {};
+final Map<String, TextEditingController> _RegisterViewTextEditingControllers =
+    {};
 
-final Map<String, FocusNode> _LoginViewFocusNodes = {};
+final Map<String, FocusNode> _RegisterViewFocusNodes = {};
 
-final Map<String, String? Function(String?)?> _LoginViewTextValidations = {
+final Map<String, String? Function(String?)?> _RegisterViewTextValidations = {
   PhoneNumberInputValueKey: null,
   PasswordInputValueKey: PasswordValidators.validatePassword,
 };
 
-mixin $LoginView {
+mixin $RegisterView {
   TextEditingController get phoneNumberInputController =>
       _getFormTextEditingController(PhoneNumberInputValueKey);
   TextEditingController get passwordInputController =>
@@ -39,21 +40,21 @@ mixin $LoginView {
     String key, {
     String? initialValue,
   }) {
-    if (_LoginViewTextEditingControllers.containsKey(key)) {
-      return _LoginViewTextEditingControllers[key]!;
+    if (_RegisterViewTextEditingControllers.containsKey(key)) {
+      return _RegisterViewTextEditingControllers[key]!;
     }
 
-    _LoginViewTextEditingControllers[key] =
+    _RegisterViewTextEditingControllers[key] =
         TextEditingController(text: initialValue);
-    return _LoginViewTextEditingControllers[key]!;
+    return _RegisterViewTextEditingControllers[key]!;
   }
 
   FocusNode _getFormFocusNode(String key) {
-    if (_LoginViewFocusNodes.containsKey(key)) {
-      return _LoginViewFocusNodes[key]!;
+    if (_RegisterViewFocusNodes.containsKey(key)) {
+      return _RegisterViewFocusNodes[key]!;
     }
-    _LoginViewFocusNodes[key] = FocusNode();
-    return _LoginViewFocusNodes[key]!;
+    _RegisterViewFocusNodes[key] = FocusNode();
+    return _RegisterViewFocusNodes[key]!;
   }
 
   /// Registers a listener on every generated controller that calls [model.setData()]
@@ -102,15 +103,15 @@ mixin $LoginView {
   void disposeForm() {
     // The dispose function for a TextEditingController sets all listeners to null
 
-    for (var controller in _LoginViewTextEditingControllers.values) {
+    for (var controller in _RegisterViewTextEditingControllers.values) {
       controller.dispose();
     }
-    for (var focusNode in _LoginViewFocusNodes.values) {
+    for (var focusNode in _RegisterViewFocusNodes.values) {
       focusNode.dispose();
     }
 
-    _LoginViewTextEditingControllers.clear();
-    _LoginViewFocusNodes.clear();
+    _RegisterViewTextEditingControllers.clear();
+    _RegisterViewFocusNodes.clear();
   }
 }
 
@@ -136,9 +137,9 @@ extension ValueProperties on FormStateHelper {
       this.formValueMap..addAll({PhoneNumberInputValueKey: value}),
     );
 
-    if (_LoginViewTextEditingControllers.containsKey(
+    if (_RegisterViewTextEditingControllers.containsKey(
         PhoneNumberInputValueKey)) {
-      _LoginViewTextEditingControllers[PhoneNumberInputValueKey]?.text =
+      _RegisterViewTextEditingControllers[PhoneNumberInputValueKey]?.text =
           value ?? '';
     }
   }
@@ -148,8 +149,9 @@ extension ValueProperties on FormStateHelper {
       this.formValueMap..addAll({PasswordInputValueKey: value}),
     );
 
-    if (_LoginViewTextEditingControllers.containsKey(PasswordInputValueKey)) {
-      _LoginViewTextEditingControllers[PasswordInputValueKey]?.text =
+    if (_RegisterViewTextEditingControllers.containsKey(
+        PasswordInputValueKey)) {
+      _RegisterViewTextEditingControllers[PasswordInputValueKey]?.text =
           value ?? '';
     }
   }
@@ -197,11 +199,11 @@ extension Methods on FormStateHelper {
 
 /// Returns the validation message for the given key
 String? getValidationMessage(String key) {
-  final validatorForKey = _LoginViewTextValidations[key];
+  final validatorForKey = _RegisterViewTextValidations[key];
   if (validatorForKey == null) return null;
 
   String? validationMessageForKey = validatorForKey(
-    _LoginViewTextEditingControllers[key]!.text,
+    _RegisterViewTextEditingControllers[key]!.text,
   );
 
   return validationMessageForKey;

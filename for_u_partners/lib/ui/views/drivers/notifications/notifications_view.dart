@@ -3,7 +3,7 @@ import 'notifications_viewmodel.dart';
 import 'package:flutter/material.dart';
 import 'package:for_u_partners/ui/common/app_colors.dart';
 import 'package:for_u_partners/ui/common/text_component.dart';
-import 'package:for_u_partners/ui/views/notifications/widget/notification_widget.dart';
+import 'package:for_u_partners/ui/views/drivers/notifications/widget/notification_widget.dart';
 
 class NotificationsView extends StackedView<NotificationsViewModel> {
   const NotificationsView({Key? key}) : super(key: key);

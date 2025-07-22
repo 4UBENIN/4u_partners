@@ -1,7 +1,7 @@
 import 'package:stacked/stacked.dart';
 import 'package:for_u_partners/app/app.locator.dart';
 import 'package:stacked_services/stacked_services.dart';
-import 'package:for_u_partners/ui/views/activity/models/activity_model.dart';
+import 'package:for_u_partners/ui/views/drivers/activity/models/activity_model.dart';
 
 class ActivityViewModel extends BaseViewModel {
   List<ActivityModel> _activities = [];

@@ -1,7 +1,7 @@
 import 'package:stacked/stacked.dart';
 import 'package:flutter/material.dart';
 import 'activitydetails_viewmodel.dart';
-import 'package:for_u_partners/ui/views/activity/models/activity_model.dart';
+import 'package:for_u_partners/ui/views/drivers/activity/models/activity_model.dart';
 
 class ActivitydetailsView extends StackedView<ActivitydetailsViewModel> {
   final ActivityModel? activity;

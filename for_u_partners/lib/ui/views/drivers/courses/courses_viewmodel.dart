@@ -5,7 +5,7 @@ import 'package:geolocator/geolocator.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:for_u_partners/app/app.bottomsheets.dart';
 import 'package:for_u_partners/ui/common/enum/bottom_enum.dart';
-import 'package:for_u_partners/ui/views/courses/model/client_model.dart';
+import 'package:for_u_partners/ui/views/drivers/courses/model/client_model.dart';
 
 class CoursesViewModel extends BaseViewModel {
   // Contrôleur de carte

@@ -17,94 +17,91 @@ class ProfilView extends StackedView<ProfilViewModel> {
       body: SafeArea(
         child: SingleChildScrollView(
           child: Column(
-              children: [
-                
-                const SizedBox(height: 50),
-                // Avatar
-                Container(
-                  margin: const EdgeInsets.only(bottom: 40),
-                  child: Container(
-                    width: 120,
-                    height: 120,
-                    decoration: BoxDecoration(
-                      borderRadius: BorderRadius.circular(60),
-                      gradient: const LinearGradient(
-                        begin: Alignment.topLeft,
-                        end: Alignment.bottomRight,
-                        colors: [Color(0xFF184E9C), Color(0xFF2A5BB8)],
-                      ),
+            children: [
+              const SizedBox(height: 50),
+              // Avatar
+              Container(
+                margin: const EdgeInsets.only(bottom: 40),
+                child: Container(
+                  width: 120,
+                  height: 120,
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(60),
+                    gradient: const LinearGradient(
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
+                      colors: [Color(0xFF184E9C), Color(0xFF2A5BB8)],
                     ),
-                    child: const Center(
-                      child: Text(
-                        'JD',
-                        style: TextStyle(
-                          fontSize: 48,
-                          fontWeight: FontWeight.bold,
-                          color: Colors.white,
-                        ),
+                  ),
+                  child: const Center(
+                    child: Text(
+                      'JD',
+                      style: TextStyle(
+                        fontSize: 48,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.white,
                       ),
                     ),
                   ),
                 ),
-                
-                // Stats Section
-                Container(
-                  padding: const EdgeInsets.fromLTRB(25, 0, 25, 30),
-                  child: Row(
-                    children: [
-                      Expanded(
-                        child: _buildStatCard('127', 'Courses'),
-                      ),
-                      const SizedBox(width: 15),
-                      Expanded(
-                        child: _buildStatCard('4.8', 'Note'),
-                      ),
-                      const SizedBox(width: 15),
-                      Expanded(
-                        child: _buildStatCard('8.5k', 'Revenus'),
-                      ),
-                    ],
-                  ),
+              ),
+
+              // Stats Section
+              Container(
+                padding: const EdgeInsets.fromLTRB(25, 0, 25, 30),
+                child: Row(
+                  children: [
+                    Expanded(
+                      child: _buildStatCard('127', 'Courses'),
+                    ),
+                    const SizedBox(width: 15),
+                    Expanded(
+                      child: _buildStatCard('4.8', 'Note'),
+                    ),
+                    const SizedBox(width: 15),
+                    Expanded(
+                      child: _buildStatCard('8.5k', 'Revenus'),
+                    ),
+                  ],
                 ),
-                
-                // Menu Section
-                Container(
-                  padding: const EdgeInsets.fromLTRB(25, 0, 25, 0),
-                  child: Column(
-                    children: [
-                      _buildMenuItem(
-                        icon: _buildUserIcon(),
-                        text: 'Mon compte',
-                        onTap: () {},
-                      ),
-                      _buildMenuItem(
-                        icon: _buildStatsIcon(),
-                        text: 'Statistiques',
-                        onTap: () {},
-                      ),
-                      _buildMenuItem(
-                        icon: _buildWalletIcon(),
-                        text: 'Portefeuille',
-                        onTap: () {},
-                      ),
-                    
-                      _buildMenuItem(
-                        icon: _buildHistoryIcon(),
-                        text: 'Historique',
-                        onTap: () {},
-                      ),
-                    
-                      _buildMenuItem(
-                        icon: _buildLogoutIcon(),
-                        text: 'Log Out',
-                        isLogout: true,
-                        onTap: () {},
-                      ),
-                    ],
-                  ),
+              ),
+
+              // Menu Section
+              Container(
+                padding: const EdgeInsets.fromLTRB(25, 0, 25, 0),
+                child: Column(
+                  children: [
+                    _buildMenuItem(
+                      icon: _buildUserIcon(),
+                      text: 'Mon compte',
+                      onTap: () {},
+                    ),
+                    _buildMenuItem(
+                      icon: _buildStatsIcon(),
+                      text: 'Statistiques',
+                      onTap: () {},
+                    ),
+                    _buildMenuItem(
+                      icon: _buildWalletIcon(),
+                      text: 'Portefeuille',
+                      onTap: () {},
+                    ),
+                    _buildMenuItem(
+                      icon: _buildHistoryIcon(),
+                      text: 'Historique',
+                      onTap: () {},
+                    ),
+                    _buildMenuItem(
+                      icon: _buildLogoutIcon(),
+                      text: 'Log Out',
+                      isLogout: true,
+                      onTap: () {},
+                    ),
+                  ],
                 ),
-              ],
-            ),
+              ),
+            ],
+          ),
         ),
       ),
     );
@@ -171,7 +168,9 @@ class ProfilView extends StackedView<ProfilViewModel> {
                   text,
                   style: TextStyle(
                     fontSize: 15,
-                    color: isLogout ? const Color(0xFFDC3545) : const Color(0xFF333333),
+                    color: isLogout
+                        ? const Color(0xFFDC3545)
+                        : const Color(0xFF333333),
                     fontWeight: FontWeight.w500,
                   ),
                 ),
@@ -180,7 +179,9 @@ class ProfilView extends StackedView<ProfilViewModel> {
                 '›',
                 style: TextStyle(
                   fontSize: 18,
-                  color: isLogout ? const Color(0xFFDC3545) : const Color(0xFF999999),
+                  color: isLogout
+                      ? const Color(0xFFDC3545)
+                      : const Color(0xFF999999),
                 ),
               ),
             ],
@@ -255,8 +256,8 @@ class UserIconPainter extends CustomPainter {
       ..color = const Color(0xFF184E9C)
       ..strokeWidth = 2.0
       ..style = PaintingStyle.stroke
-      ..colorFilter = const ColorFilter.mode(Color(0xFF184E9C), BlendMode.srcIn);
-    
+      ..colorFilter =
+          const ColorFilter.mode(Color(0xFF184E9C), BlendMode.srcIn);
 
     // Head circle
     canvas.drawCircle(
@@ -270,14 +271,20 @@ class UserIconPainter extends CustomPainter {
     path.moveTo(size.width * 0.17, size.height * 0.875);
     path.lineTo(size.width * 0.17, size.height * 0.792);
     path.cubicTo(
-      size.width * 0.17, size.height * 0.625,
-      size.width * 0.306, size.height * 0.5,
-      size.width * 0.5, size.height * 0.5,
+      size.width * 0.17,
+      size.height * 0.625,
+      size.width * 0.306,
+      size.height * 0.5,
+      size.width * 0.5,
+      size.height * 0.5,
     );
     path.cubicTo(
-      size.width * 0.694, size.height * 0.5,
-      size.width * 0.833, size.height * 0.625,
-      size.width * 0.833, size.height * 0.792,
+      size.width * 0.694,
+      size.height * 0.5,
+      size.width * 0.833,
+      size.height * 0.625,
+      size.width * 0.833,
+      size.height * 0.792,
     );
     path.lineTo(size.width * 0.833, size.height * 0.875);
 
@@ -295,8 +302,8 @@ class StatsIconPainter extends CustomPainter {
       ..color = const Color(0xFF184E9C)
       ..strokeWidth = 2.0
       ..style = PaintingStyle.stroke
-      ..colorFilter = const ColorFilter.mode(Color(0xFF184E9C), BlendMode.srcIn);
-
+      ..colorFilter =
+          const ColorFilter.mode(Color(0xFF184E9C), BlendMode.srcIn);
 
     // Three vertical lines for bar chart
     canvas.drawLine(
@@ -334,14 +341,20 @@ class WalletIconPainter extends CustomPainter {
     path1.lineTo(size.width * 0.875, size.height * 0.292);
     path1.lineTo(size.width * 0.208, size.height * 0.292);
     path1.cubicTo(
-      size.width * 0.125, size.height * 0.292,
-      size.width * 0.083, size.height * 0.25,
-      size.width * 0.083, size.height * 0.208,
+      size.width * 0.125,
+      size.height * 0.292,
+      size.width * 0.083,
+      size.height * 0.25,
+      size.width * 0.083,
+      size.height * 0.208,
     );
     path1.cubicTo(
-      size.width * 0.083, size.height * 0.125,
-      size.width * 0.125, size.height * 0.083,
-      size.width * 0.208, size.height * 0.083,
+      size.width * 0.083,
+      size.height * 0.125,
+      size.width * 0.125,
+      size.height * 0.083,
+      size.width * 0.208,
+      size.height * 0.083,
     );
     path1.lineTo(size.width * 0.792, size.height * 0.083);
     path1.lineTo(size.width * 0.792, size.height * 0.25);
@@ -352,9 +365,12 @@ class WalletIconPainter extends CustomPainter {
     path2.moveTo(size.width * 0.125, size.height * 0.208);
     path2.lineTo(size.width * 0.125, size.height * 0.792);
     path2.cubicTo(
-      size.width * 0.125, size.height * 0.875,
-      size.width * 0.167, size.height * 0.917,
-      size.width * 0.208, size.height * 0.917,
+      size.width * 0.125,
+      size.height * 0.875,
+      size.width * 0.167,
+      size.height * 0.917,
+      size.width * 0.208,
+      size.height * 0.917,
     );
     path2.lineTo(size.width * 0.875, size.height * 0.917);
     path2.lineTo(size.width * 0.875, size.height * 0.708);
@@ -364,14 +380,20 @@ class WalletIconPainter extends CustomPainter {
     final path3 = Path();
     path3.moveTo(size.width * 0.75, size.height * 0.5);
     path3.cubicTo(
-      size.width * 0.694, size.height * 0.5,
-      size.width * 0.667, size.height * 0.528,
-      size.width * 0.667, size.height * 0.583,
+      size.width * 0.694,
+      size.height * 0.5,
+      size.width * 0.667,
+      size.height * 0.528,
+      size.width * 0.667,
+      size.height * 0.583,
     );
     path3.cubicTo(
-      size.width * 0.667, size.height * 0.639,
-      size.width * 0.694, size.height * 0.667,
-      size.width * 0.75, size.height * 0.667,
+      size.width * 0.667,
+      size.height * 0.639,
+      size.width * 0.694,
+      size.height * 0.667,
+      size.width * 0.75,
+      size.height * 0.667,
     );
     path3.lineTo(size.width * 0.917, size.height * 0.667);
     path3.lineTo(size.width * 0.917, size.height * 0.5);
@@ -396,27 +418,39 @@ class CarIconPainter extends CustomPainter {
     final path = Path();
     path.moveTo(size.width * 0.208, size.height * 0.25);
     path.cubicTo(
-      size.width * 0.208, size.height * 0.167,
-      size.width * 0.292, size.height * 0.125,
-      size.width * 0.333, size.height * 0.125,
+      size.width * 0.208,
+      size.height * 0.167,
+      size.width * 0.292,
+      size.height * 0.125,
+      size.width * 0.333,
+      size.height * 0.125,
     );
     path.lineTo(size.width * 0.667, size.height * 0.125);
     path.cubicTo(
-      size.width * 0.708, size.height * 0.125,
-      size.width * 0.792, size.height * 0.167,
-      size.width * 0.792, size.height * 0.25,
+      size.width * 0.708,
+      size.height * 0.125,
+      size.width * 0.792,
+      size.height * 0.167,
+      size.width * 0.792,
+      size.height * 0.25,
     );
     path.lineTo(size.width * 0.792, size.height * 0.333);
     path.cubicTo(
-      size.width * 0.792, size.height * 0.375,
-      size.width * 0.75, size.height * 0.375,
-      size.width * 0.75, size.height * 0.375,
+      size.width * 0.792,
+      size.height * 0.375,
+      size.width * 0.75,
+      size.height * 0.375,
+      size.width * 0.75,
+      size.height * 0.375,
     );
     path.lineTo(size.width * 0.25, size.height * 0.375);
     path.cubicTo(
-      size.width * 0.208, size.height * 0.375,
-      size.width * 0.208, size.height * 0.375,
-      size.width * 0.208, size.height * 0.333,
+      size.width * 0.208,
+      size.height * 0.375,
+      size.width * 0.208,
+      size.height * 0.375,
+      size.width * 0.208,
+      size.height * 0.333,
     );
     path.close();
 
@@ -426,15 +460,21 @@ class CarIconPainter extends CustomPainter {
     bodyPath.moveTo(size.width * 0.208, size.height * 0.375);
     bodyPath.lineTo(size.width * 0.208, size.height * 0.625);
     bodyPath.cubicTo(
-      size.width * 0.208, size.height * 0.667,
-      size.width * 0.25, size.height * 0.708,
-      size.width * 0.25, size.height * 0.708,
+      size.width * 0.208,
+      size.height * 0.667,
+      size.width * 0.25,
+      size.height * 0.708,
+      size.width * 0.25,
+      size.height * 0.708,
     );
     path.lineTo(size.width * 0.75, size.height * 0.708);
     path.cubicTo(
-      size.width * 0.792, size.height * 0.708,
-      size.width * 0.792, size.height * 0.667,
-      size.width * 0.792, size.height * 0.625,
+      size.width * 0.792,
+      size.height * 0.708,
+      size.width * 0.792,
+      size.height * 0.667,
+      size.width * 0.792,
+      size.height * 0.625,
     );
     bodyPath.lineTo(size.width * 0.792, size.height * 0.375);
 
@@ -508,14 +548,20 @@ class HelpIconPainter extends CustomPainter {
     final path = Path();
     path.moveTo(size.width * 0.375, size.height * 0.375);
     path.cubicTo(
-      size.width * 0.375, size.height * 0.25,
-      size.width * 0.5, size.height * 0.25,
-      size.width * 0.625, size.height * 0.375,
+      size.width * 0.375,
+      size.height * 0.25,
+      size.width * 0.5,
+      size.height * 0.25,
+      size.width * 0.625,
+      size.height * 0.375,
     );
     path.cubicTo(
-      size.width * 0.625, size.height * 0.5,
-      size.width * 0.5, size.height * 0.5,
-      size.width * 0.5, size.height * 0.625,
+      size.width * 0.625,
+      size.height * 0.5,
+      size.width * 0.5,
+      size.height * 0.5,
+      size.width * 0.5,
+      size.height * 0.625,
     );
 
     canvas.drawPath(path, paint);
@@ -549,15 +595,21 @@ class LogoutIconPainter extends CustomPainter {
     path.moveTo(size.width * 0.375, size.height * 0.875);
     path.lineTo(size.width * 0.208, size.height * 0.875);
     path.cubicTo(
-      size.width * 0.125, size.height * 0.875,
-      size.width * 0.083, size.height * 0.833,
-      size.width * 0.083, size.height * 0.792,
+      size.width * 0.125,
+      size.height * 0.875,
+      size.width * 0.083,
+      size.height * 0.833,
+      size.width * 0.083,
+      size.height * 0.792,
     );
     path.lineTo(size.width * 0.083, size.height * 0.208);
     path.cubicTo(
-      size.width * 0.083, size.height * 0.125,
-      size.width * 0.125, size.height * 0.083,
-      size.width * 0.208, size.height * 0.083,
+      size.width * 0.083,
+      size.height * 0.125,
+      size.width * 0.125,
+      size.height * 0.083,
+      size.width * 0.208,
+      size.height * 0.083,
     );
     path.lineTo(size.width * 0.375, size.height * 0.083);
 
