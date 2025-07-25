@@ -8,7 +8,8 @@ class LoginViewModel extends FormViewModel {
   bool obscurePassword = true;
 
   void login() {
-    _navigationService.replaceWithHomemainView();
+    _navigationService.replaceWithNavBarPressingView();
+    // _navigationService.replaceWithHomemainView();
   }
 
   void register() {

@@ -23,3 +23,4 @@ const Color textinputcolor = Color(0xFF1E1E1E);
 const Color backButton = Color(0xFFd1d5db);
 const Color textinsidebutton = Color(0xFFF5F5F5);
 const Color insideBackButton = Color(0xFF4f5866);
+const Color backgroundService = Color(0xFFf8f9fa);

@@ -1,7 +1,8 @@
-import 'package:flutter/material.dart';
 import 'package:stacked/stacked.dart';
-
+import 'package:flutter/material.dart';
 import 'nav_bar_pressing_viewmodel.dart';
+import 'package:for_u_partners/ui/common/app_colors.dart';
+
 
 class NavBarPressingView extends StackedView<NavBarPressingViewModel> {
   const NavBarPressingView({Key? key}) : super(key: key);
@@ -13,10 +14,35 @@ class NavBarPressingView extends StackedView<NavBarPressingViewModel> {
     Widget? child,
   ) {
     return Scaffold(
-      backgroundColor: Theme.of(context).colorScheme.background,
-      body: Container(
-        padding: const EdgeInsets.only(left: 25.0, right: 25.0),
-        child: const Center(child: Text("NavBarPressingView")),
+      body: viewModel.getViewFromIndex(viewModel.selectedIndex),
+      bottomNavigationBar: BottomNavigationBar(
+        backgroundColor: kcWhiteColors,
+        type: BottomNavigationBarType.fixed,
+        selectedItemColor: kcPrimaryColor,
+        unselectedItemColor: kcLightGrey,
+        selectedFontSize: 13,
+        unselectedFontSize: 11,
+        selectedLabelStyle: const TextStyle(),
+        currentIndex: viewModel.selectedIndex,
+        items: [
+          BottomNavigationBarItem(
+              icon: viewModel.buildNavItem("assets/Home.png", 0, viewModel),
+              label: "Acceuil",
+            ),
+            BottomNavigationBarItem(
+              icon: viewModel.buildNavItem("assets/refresh.png", 1, viewModel),
+              label: "Activités",
+            ),
+            BottomNavigationBarItem(
+              icon: viewModel.buildNavItem("assets/Bell.png", 3, viewModel),
+              label: "Notifications",
+            ),
+            BottomNavigationBarItem(
+              icon: viewModel.buildNavItem("assets/user.png", 4, viewModel),
+              label: "Compte",
+            ),
+        ],
+        onTap: viewModel.setIndex,
       ),
     );
   }
