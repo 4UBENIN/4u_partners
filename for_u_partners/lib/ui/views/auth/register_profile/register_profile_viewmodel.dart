@@ -62,8 +62,14 @@ class RegisterProfileViewModel extends FormViewModel {
     rebuildUi();
   }
 
-  void registerEnding() {
-    _navigationService.replaceWithHomemainView();
+  void registerEnding(String selectedProfile) {
+    if (selectedProfile == "Pressing") {
+      _navigationService.replaceWithNavBarPressingView();
+    } else if (selectedProfile == "Conducteur") {
+      _navigationService.replaceWithHomemainView();
+    } else if (selectedProfile == "Livreur/Coursier") {
+    } else if (selectedProfile == "Garagiste") {
+    } else if (selectedProfile == "Agent d'entretien") {}
   }
 
   Future uploadFileFromMobile(PlatformFile? pickedFile) async {

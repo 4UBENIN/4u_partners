@@ -34,11 +34,11 @@ class NavBarPressingView extends StackedView<NavBarPressingViewModel> {
               label: "Activités",
             ),
             BottomNavigationBarItem(
-              icon: viewModel.buildNavItem("assets/Bell.png", 3, viewModel),
+              icon: viewModel.buildNavItem("assets/Bell.png", 2, viewModel),
               label: "Notifications",
             ),
             BottomNavigationBarItem(
-              icon: viewModel.buildNavItem("assets/user.png", 4, viewModel),
+              icon: viewModel.buildNavItem("assets/user.png", 3, viewModel),
               label: "Compte",
             ),
         ],

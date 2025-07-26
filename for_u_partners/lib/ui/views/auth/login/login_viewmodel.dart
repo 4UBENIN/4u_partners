@@ -6,10 +6,31 @@ import 'package:stacked_services/stacked_services.dart';
 class LoginViewModel extends FormViewModel {
   final _navigationService = locator<NavigationService>();
   bool obscurePassword = true;
+  final profiles = [
+    "Pressing",
+    "Livreur/Coursier",
+    "Conducteur",
+    "Agent d'entretien",
+    "Garagiste"
+  ];
+  String _selectedProfile = "Pressing";
+  String get selectedProfile => _selectedProfile;
 
-  void login() {
-    _navigationService.replaceWithNavBarPressingView();
-    // _navigationService.replaceWithHomemainView();
+  //* METHODS
+
+  void setSelectedProfile(String value) {
+    _selectedProfile = value;
+    rebuildUi();
+  }
+
+  void login(String selectedProfile) {
+    if (selectedProfile == "Pressing") {
+      _navigationService.replaceWithNavBarPressingView();
+    } else if (selectedProfile == "Conducteur") {
+      _navigationService.replaceWithHomemainView();
+    } else if (selectedProfile == "Livreur/Coursier") {
+    } else if (selectedProfile == "Garagiste") {
+    } else if (selectedProfile == "Agent d'entretien") {}
   }
 
   void register() {

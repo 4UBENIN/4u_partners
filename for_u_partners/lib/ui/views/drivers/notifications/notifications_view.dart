@@ -17,8 +17,14 @@ class NotificationsView extends StackedView<NotificationsViewModel> {
     return Scaffold(
         backgroundColor: Colors.white,
         appBar: AppBar(
+            automaticallyImplyLeading: false,
             backgroundColor: Colors.white,
-            title: const TextComponent("Notifications")),
+            title: const TextComponent(
+              "Notifications",
+              fontsize: 18,
+              textcolor: primaryColor,
+              fontweight: FontWeight.bold,
+            )),
         body: Padding(
           padding: const EdgeInsets.symmetric(horizontal: 20),
           child: Column(

@@ -105,7 +105,7 @@ class RegisterProfileView extends StackedView<RegisterProfileViewModel>
           height: 70,
           child: PrimaryButton(
             text: "Finaliser l'inscription",
-            onPressed: viewModel.registerEnding,
+            onPressed: () => viewModel.registerEnding(selectedProfile),
           ),
         ),
       ),

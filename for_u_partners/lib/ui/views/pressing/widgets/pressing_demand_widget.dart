@@ -53,8 +53,8 @@ class _PressingDemandWidgetState extends State<PressingDemandWidget> {
               ),
               const SizedBox(height: 10),
               TextComponent(
-                "Prévu pour le ${widget.date} à 15h 30",
-                fontsize: 16,
+                "Prévu pour le ${widget.date}\nà 15h 30",
+                fontsize: 15,
                 maxLines: 2,
                 textcolor: kcLightGrey
               ),
@@ -67,7 +67,7 @@ class _PressingDemandWidgetState extends State<PressingDemandWidget> {
                     widget.place,
                     fontweight: FontWeight.bold,
                     textcolor: primaryColor,
-                    fontsize: 16,
+                    fontsize: 15,
                   ),
                 ],
               ),

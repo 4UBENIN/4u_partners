@@ -4,6 +4,7 @@ import 'package:stacked/stacked.dart';
 import 'package:flutter/material.dart';
 import 'package:stacked/stacked_annotations.dart';
 import 'package:for_u_partners/ui/common/app_colors.dart';
+import 'package:for_u_partners/ui/common/app_dropdown.dart';
 import 'package:for_u_partners/ui/common/app_textInput.dart';
 import 'package:for_u_partners/ui/common/text_component.dart';
 import 'package:for_u_partners/ui/common/app_button_component.dart';
@@ -58,6 +59,19 @@ class LoginView extends StackedView<LoginViewModel> with $LoginView {
                       ),
                       const SizedBox(height: 20),
 
+                      //* Profile
+                      CustomDropdown(
+                        title: "Profil",
+                        items: viewModel.profiles,
+                        value: viewModel.selectedProfile,
+                        onChanged: (value) {
+                          if (value != null) {
+                            viewModel.setSelectedProfile(value);
+                          }
+                        },
+                      ),
+                      const SizedBox(height: 25),
+
                       //* Password
                       TextInputField(
                         controller: passwordInputController,
@@ -87,7 +101,9 @@ class LoginView extends StackedView<LoginViewModel> with $LoginView {
                       Padding(
                         padding: const EdgeInsets.only(top: 30),
                         child: PrimaryButton(
-                            text: "Se connecter", onPressed: viewModel.login),
+                            text: "Se connecter",
+                            onPressed: () =>
+                                viewModel.login(viewModel.selectedProfile)),
                       ),
 
                       //* Register Button

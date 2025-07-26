@@ -154,7 +154,7 @@ class _TabBarContent extends StatelessWidget {
               const TextComponent(
                 "Demandes récentes",
                 fontweight: FontWeight.bold,
-                fontsize: 22,
+                fontsize: 19,
               ),
               PressingDemandWidget(
                 name: "Teddy TOUSSOU",
@@ -184,7 +184,7 @@ class _TabBarContent extends StatelessWidget {
               const TextComponent(
                 "Demandes de dépôt",
                 fontweight: FontWeight.bold,
-                fontsize: 22,
+                fontsize: 19,
               ),
               _DepotDemandWidget(
                 name: "Teddy TOSSOU",

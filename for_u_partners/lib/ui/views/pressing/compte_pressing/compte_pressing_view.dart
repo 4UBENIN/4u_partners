@@ -2,7 +2,6 @@ import 'package:stacked/stacked.dart';
 import 'package:flutter/material.dart';
 import 'compte_pressing_viewmodel.dart';
 
-
 class ComptePressingView extends StackedView<ComptePressingViewModel> {
   const ComptePressingView({Key? key}) : super(key: key);
 
@@ -35,7 +34,7 @@ class ComptePressingView extends StackedView<ComptePressingViewModel> {
                   ),
                   child: const Center(
                     child: Text(
-                      'JD',
+                      'P',
                       style: TextStyle(
                         fontSize: 48,
                         fontWeight: FontWeight.bold,
@@ -95,7 +94,9 @@ class ComptePressingView extends StackedView<ComptePressingViewModel> {
                       icon: _buildLogoutIcon(),
                       text: 'Log Out',
                       isLogout: true,
-                      onTap: () {},
+                      onTap: () {
+                        viewModel.logOut();
+                      },
                     ),
                   ],
                 ),
@@ -107,7 +108,7 @@ class ComptePressingView extends StackedView<ComptePressingViewModel> {
     );
   }
 
-    Widget _buildStatCard(String number, String label) {
+  Widget _buildStatCard(String number, String label) {
     return Container(
       padding: const EdgeInsets.fromLTRB(10, 20, 10, 20),
       decoration: BoxDecoration(
@@ -138,7 +139,7 @@ class ComptePressingView extends StackedView<ComptePressingViewModel> {
     );
   }
 
-   Widget _buildMenuItem({
+  Widget _buildMenuItem({
     required Widget icon,
     required String text,
     required VoidCallback onTap,
@@ -191,7 +192,7 @@ class ComptePressingView extends StackedView<ComptePressingViewModel> {
     );
   }
 
-   // Custom SVG Icons with stroke
+  // Custom SVG Icons with stroke
   Widget _buildUserIcon() {
     return CustomPaint(
       size: const Size(24, 24),

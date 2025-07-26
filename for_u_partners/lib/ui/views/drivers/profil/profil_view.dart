@@ -95,7 +95,9 @@ class ProfilView extends StackedView<ProfilViewModel> {
                       icon: _buildLogoutIcon(),
                       text: 'Log Out',
                       isLogout: true,
-                      onTap: () {},
+                      onTap: () {
+                        viewModel.logOut();
+                      },
                     ),
                   ],
                 ),
