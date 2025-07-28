@@ -147,6 +147,7 @@ class _TabBarContent extends StatelessWidget {
       height: 400,
       child: TabBarView(
         children: [
+          //* Tab Ramassage
           Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
@@ -159,24 +160,44 @@ class _TabBarContent extends StatelessWidget {
               PressingDemandWidget(
                 name: "Teddy TOUSSOU",
                 isValid: true,
+                status: viewModel.ramassageStatus,
                 onClick: () async {
-                  final result = await Navigator.push<bool>(
-                    context,
-                    MaterialPageRoute(
-                      builder: (_) =>
-                          PressingDetailView(isA: viewModel.isAccepted),
-                    ),
-                  );
+                  if (viewModel.ramassageStatus == "En attente") {
+                    // Premier clic - aller à la page de détail pour accepter
+                    final result = await Navigator.push<bool>(
+                      context,
+                      MaterialPageRoute(
+                        builder: (_) =>
+                            PressingDetailView(isA: viewModel.isAccepted),
+                      ),
+                    );
 
-                  if (result == true) {
-                    viewModel.setAccepted(true);
+                    if (result == true) {
+                      viewModel.setAccepted(true);
+                    }
+                  } else if (viewModel.ramassageStatus ==
+                      "En attente de facturation") {
+                    // Deuxième clic - aller à la page avec bouton "Finaliser"
+                    final result = await Navigator.push<bool>(
+                      context,
+                      MaterialPageRoute(
+                        builder: (_) => FacturationView(),
+                      ),
+                    );
+
+                    if (result == true) {
+                      viewModel.finalizeRamassage();
+                    }
                   }
+                  // Si "Terminé", on peut aller vers une page de détail ou ne rien faire
                 },
                 date: "Mardi 12 Décembre 2025",
                 place: "EREVAN, Cadjehoun Aeroport",
               ),
             ],
           ),
+          
+          //* Tab Dépôt de vêtements
           Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [

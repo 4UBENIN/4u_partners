@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:for_u_partners/ui/common/app_textInput.dart';
 import 'package:for_u_partners/ui/common/app_button_component.dart';
 
@@ -119,6 +120,10 @@ class _FacturationViewState extends State<FacturationView> {
                           border: Border.all(color: const Color(0xFFe5e7eb)),
                         ),
                         child: TextInputField(
+                          inputFormatters: [
+                            FilteringTextInputFormatter.digitsOnly,
+                          ],
+                          keyboardType: TextInputType.number,
                           hintText: "Poids (kg)",
                           bigLabel: "Poids",
                         )),
@@ -206,7 +211,11 @@ class _FacturationViewState extends State<FacturationView> {
             ),
 
             const SizedBox(height: 20),
-            PrimaryButton(text: "Enregistrer", onPressed: () {}),
+            PrimaryButton(
+                text: "Enregistrer",
+                onPressed: () {
+                  Navigator.pop(context, true);
+                }),
           ],
         ),
       ),

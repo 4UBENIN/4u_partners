@@ -2,7 +2,7 @@ import 'package:stacked/stacked.dart';
 import 'package:flutter/material.dart';
 import 'activites_pressing_viewmodel.dart';
 import 'package:for_u_partners/ui/common/app_colors.dart';
-import 'package:for_u_partners/ui/views/pressing/activites_pressing/widgets/activity_detail_view.dart';
+import 'package:for_u_partners/ui/views/pressing/activites_pressing/activity_detail_view.dart';
 import 'package:for_u_partners/ui/views/pressing/activites_pressing/models/pressing_activities_models.dart';
 
 class ActivitesPressingView extends StackedView<ActivitesPressingViewModel> {

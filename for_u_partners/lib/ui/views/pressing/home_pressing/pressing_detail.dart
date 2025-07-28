@@ -69,7 +69,38 @@ class _PressingDetailContentState extends State<_PressingDetailContent> {
                 fontsize: 18,
                 fontweight: FontWeight.bold,
                 textcolor: primaryColor),
+
+            //* VETEMENTS LAVES
             const SizedBox(height: 20),
+            const TextComponent("Vêtements lavés",
+                fontsize: 17, textcolor: kcLightGrey),
+            const SizedBox(height: 10),
+            Container(
+              padding: const EdgeInsets.all(20),
+              width: double.infinity,
+              decoration: BoxDecoration(
+                color: backgroundService,
+                borderRadius: BorderRadius.circular(10),
+              ),
+              child: const Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  TextComponent(
+                    "Tshirt x5",
+                    fontsize: 16,
+                    textcolor: mediumGrey,
+                  ),
+                  SizedBox(height: 5),
+                  TextComponent("Jupe x2", fontsize: 16, textcolor: mediumGrey),
+                  SizedBox(height: 5),
+                  TextComponent("Pantalon x2",
+                      fontsize: 16, textcolor: mediumGrey),
+                ],
+              ),
+            ),
+            const SizedBox(height: 20),
+
+            //* SERVICES ADDITIONNELS
             const TextComponent("Services additionnels",
                 fontsize: 17, textcolor: kcLightGrey),
             const SizedBox(height: 10),
@@ -83,11 +114,7 @@ class _PressingDetailContentState extends State<_PressingDetailContent> {
               child: const Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  TextComponent("Lavage Xpress 24h",
-                      fontsize: 16,
-                      textcolor: primaryColor,
-                      fontweight: FontWeight.bold),
-                  SizedBox(height: 5),
+
                   TextComponent("Repassage",
                       fontsize: 16,
                       textcolor: primaryColor,
@@ -100,12 +127,12 @@ class _PressingDetailContentState extends State<_PressingDetailContent> {
                 ],
               ),
             ),
-            const SizedBox(height: 20),
-            const TextComponent("Moyen de Paiement",
-                fontsize: 17, textcolor: kcLightGrey),
-            const SizedBox(height: 10),
-            _buildRadioOption("Portefeuille"),
-            _buildRadioOption("Espèces"),
+            // const SizedBox(height: 20),
+            // const TextComponent("Moyen de Paiement",
+            //     fontsize: 17, textcolor: kcLightGrey),
+            // const SizedBox(height: 10),
+            // _buildRadioOption("Portefeuille"),
+            // _buildRadioOption("Espèces"),
             const SizedBox(height: 20),
             if (widget.isAccepted)
               PrimaryButton(
