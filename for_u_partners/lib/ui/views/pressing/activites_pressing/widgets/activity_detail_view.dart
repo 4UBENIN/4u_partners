@@ -4,7 +4,8 @@ import 'package:for_u_partners/ui/views/pressing/activites_pressing/models/press
 class ActivityDetailView extends StatelessWidget {
   final PressingActivityModel activity;
 
-  const ActivityDetailView({Key? key, required this.activity}) : super(key: key);
+  const ActivityDetailView({Key? key, required this.activity})
+      : super(key: key);
 
   @override
   Widget build(BuildContext context) {
@@ -43,7 +44,7 @@ class ActivityDetailView extends StatelessWidget {
                 gradient: LinearGradient(
                   begin: Alignment.topLeft,
                   end: Alignment.bottomRight,
-                  colors: activity.type == 'pickup' 
+                  colors: activity.type == 'pickup'
                       ? [const Color(0xFF10b981), const Color(0xFF059669)]
                       : [const Color(0xFF184E9C), const Color(0xFF2563eb)],
                 ),
@@ -52,7 +53,7 @@ class ActivityDetailView extends StatelessWidget {
               child: Column(
                 children: [
                   Icon(
-                    activity.type == 'pickup' 
+                    activity.type == 'pickup'
                         ? Icons.local_shipping
                         : Icons.local_laundry_service,
                     color: Colors.white,
@@ -69,7 +70,8 @@ class ActivityDetailView extends StatelessWidget {
                   ),
                   const SizedBox(height: 4),
                   Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                     decoration: BoxDecoration(
                       color: Colors.white.withOpacity(0.2),
                       borderRadius: BorderRadius.circular(20),
@@ -91,7 +93,8 @@ class ActivityDetailView extends StatelessWidget {
 
             // Informations générales
             _DetailSection(
-              label: "Date de ${activity.type == 'pickup' ? 'ramassage' : 'dépôt'}",
+              label:
+                  "Date de ${activity.type == 'pickup' ? 'ramassage' : 'dépôt'}",
               value: activity.getFormattedDate(),
             ),
 
@@ -179,7 +182,7 @@ class ActivityDetailView extends StatelessWidget {
                       }),
                     ],
                     if (activity.specialClothes.isNotEmpty) ...[
-                      if (activity.standardClothes.isNotEmpty) 
+                      if (activity.standardClothes.isNotEmpty)
                         const SizedBox(height: 16),
                       const Text(
                         "Vêtements spéciaux",

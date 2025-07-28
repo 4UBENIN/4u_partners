@@ -68,6 +68,7 @@ class RegisterProfileViewModel extends FormViewModel {
     } else if (selectedProfile == "Conducteur") {
       _navigationService.replaceWithHomemainView();
     } else if (selectedProfile == "Livreur/Coursier") {
+      _navigationService.replaceWithDeliveryNavBarView();
     } else if (selectedProfile == "Garagiste") {
     } else if (selectedProfile == "Agent d'entretien") {}
   }

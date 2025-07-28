@@ -27,7 +27,7 @@ class PressingActivityModel {
   String getFormattedDate() {
     final now = DateTime.now();
     final difference = now.difference(date);
-    
+
     if (difference.inHours < 24) {
       return 'Aujourd\'hui ${date.hour.toString().padLeft(2, '0')}h${date.minute.toString().padLeft(2, '0')}';
     } else if (difference.inDays == 1) {
@@ -39,7 +39,9 @@ class PressingActivityModel {
 
   bool isToday() {
     final now = DateTime.now();
-    return date.year == now.year && date.month == now.month && date.day == now.day;
+    return date.year == now.year &&
+        date.month == now.month &&
+        date.day == now.day;
   }
 
   bool isThisWeek() {

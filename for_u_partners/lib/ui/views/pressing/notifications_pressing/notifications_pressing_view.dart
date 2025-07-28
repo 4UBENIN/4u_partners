@@ -4,7 +4,6 @@ import 'notifications_pressing_viewmodel.dart';
 import 'package:for_u_partners/ui/common/text_component.dart';
 import 'package:for_u_partners/ui/views/drivers/notifications/widget/notification_widget.dart';
 
-
 class NotificationsPressingView
     extends StackedView<NotificationsPressingViewModel> {
   const NotificationsPressingView({Key? key}) : super(key: key);
@@ -18,7 +17,7 @@ class NotificationsPressingView
     return Scaffold(
         backgroundColor: Colors.white,
         appBar: AppBar(
-          automaticallyImplyLeading: false,
+            automaticallyImplyLeading: false,
             backgroundColor: Colors.white,
             title: const TextComponent("Notifications")),
         body: Padding(

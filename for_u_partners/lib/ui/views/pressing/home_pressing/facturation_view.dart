@@ -109,20 +109,22 @@ class _FacturationViewState extends State<FacturationView> {
                       ),
                     ),
                     const SizedBox(height: 16),
-                    
+
                     // Section poids
                     Container(
-                      padding: const EdgeInsets.all(16),
-                      decoration: BoxDecoration(
-                        color: Colors.white,
-                        borderRadius: BorderRadius.circular(12),
-                        border: Border.all(color: const Color(0xFFe5e7eb)),
-                      ),
-                      child: TextInputField(hintText: "Poids (kg)", bigLabel: "Poids",)
-                    ),
-                    
+                        padding: const EdgeInsets.all(16),
+                        decoration: BoxDecoration(
+                          color: Colors.white,
+                          borderRadius: BorderRadius.circular(12),
+                          border: Border.all(color: const Color(0xFFe5e7eb)),
+                        ),
+                        child: TextInputField(
+                          hintText: "Poids (kg)",
+                          bigLabel: "Poids",
+                        )),
+
                     const SizedBox(height: 16),
-                    
+
                     // Vêtements spéciaux
                     Container(
                       padding: const EdgeInsets.only(top: 16),

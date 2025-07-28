@@ -154,7 +154,9 @@ class _DepotDetailViewState extends State<DepotDetailView> {
                 const SizedBox(height: 16),
                 Center(
                   child: TextButton(
-                    onPressed: () { Navigator.pop(context, false);},
+                    onPressed: () {
+                      Navigator.pop(context, false);
+                    },
                     child: const TextComponent("Rejeter",
                         textcolor: red, fontsize: 15),
                   ),

@@ -43,10 +43,7 @@ class ActivitesPressingView extends StackedView<ActivitesPressingViewModel> {
       title: const Text(
         'Activités',
         style: TextStyle(
-          fontSize: 18,
-          fontWeight: FontWeight.bold,
-          color: primaryColor
-        ),
+            fontSize: 18, fontWeight: FontWeight.bold, color: primaryColor),
       ),
       centerTitle: false,
     );
@@ -167,9 +164,10 @@ class ActivitesPressingView extends StackedView<ActivitesPressingViewModel> {
     );
   }
 
-  Widget _buildActivitiesList(BuildContext context, ActivitesPressingViewModel viewModel) {
+  Widget _buildActivitiesList(
+      BuildContext context, ActivitesPressingViewModel viewModel) {
     final filteredActivities = viewModel.getFilteredActivities();
-    
+
     if (filteredActivities.isEmpty) {
       return _buildEmptyState();
     }
@@ -275,16 +273,16 @@ class _ActivityCard extends StatelessWidget {
                           width: 40,
                           height: 40,
                           decoration: BoxDecoration(
-                            color: activity.type == 'pickup' 
+                            color: activity.type == 'pickup'
                                 ? const Color(0xFF10b981).withOpacity(0.1)
                                 : const Color(0xFF184E9C).withOpacity(0.1),
                             borderRadius: BorderRadius.circular(12),
                           ),
                           child: Icon(
-                            activity.type == 'pickup' 
+                            activity.type == 'pickup'
                                 ? Icons.local_shipping_outlined
                                 : Icons.local_laundry_service_outlined,
-                            color: activity.type == 'pickup' 
+                            color: activity.type == 'pickup'
                                 ? const Color(0xFF10b981)
                                 : const Color(0xFF184E9C),
                             size: 20,
@@ -361,7 +359,8 @@ class _ActivityCard extends StatelessWidget {
                     spacing: 8,
                     children: activity.services.take(2).map((service) {
                       return Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 8, vertical: 4),
                         decoration: BoxDecoration(
                           color: const Color(0xFFf1f3f4),
                           borderRadius: BorderRadius.circular(12),

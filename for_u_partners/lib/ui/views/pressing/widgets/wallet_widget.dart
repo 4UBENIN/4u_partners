@@ -54,7 +54,7 @@ class WalletPressingWidget extends StatelessWidget {
                   ),
                 ],
               ),
-      
+
               // Section actions (droite)
               Row(
                 children: [

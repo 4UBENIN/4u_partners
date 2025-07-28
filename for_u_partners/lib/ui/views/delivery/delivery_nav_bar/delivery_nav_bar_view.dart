@@ -1,15 +1,15 @@
 import 'package:stacked/stacked.dart';
 import 'package:flutter/material.dart';
-import 'nav_bar_pressing_viewmodel.dart';
+import 'delivery_nav_bar_viewmodel.dart';
 import 'package:for_u_partners/ui/common/app_colors.dart';
 
-class NavBarPressingView extends StackedView<NavBarPressingViewModel> {
-  const NavBarPressingView({Key? key}) : super(key: key);
+class DeliveryNavBarView extends StackedView<DeliveryNavBarViewModel> {
+  const DeliveryNavBarView({Key? key}) : super(key: key);
 
   @override
   Widget builder(
     BuildContext context,
-    NavBarPressingViewModel viewModel,
+    DeliveryNavBarViewModel viewModel,
     Widget? child,
   ) {
     return Scaffold(
@@ -32,12 +32,16 @@ class NavBarPressingView extends StackedView<NavBarPressingViewModel> {
             icon: viewModel.buildNavItem("assets/refresh.png", 1, viewModel),
             label: "Activités",
           ),
+          const BottomNavigationBarItem(
+            icon: Icon(Icons.map_outlined),
+            label: "Courses",
+          ),
           BottomNavigationBarItem(
-            icon: viewModel.buildNavItem("assets/Bell.png", 2, viewModel),
+            icon: viewModel.buildNavItem("assets/Bell.png", 3, viewModel),
             label: "Notifications",
           ),
           BottomNavigationBarItem(
-            icon: viewModel.buildNavItem("assets/user.png", 3, viewModel),
+            icon: viewModel.buildNavItem("assets/user.png", 4, viewModel),
             label: "Compte",
           ),
         ],
@@ -47,8 +51,8 @@ class NavBarPressingView extends StackedView<NavBarPressingViewModel> {
   }
 
   @override
-  NavBarPressingViewModel viewModelBuilder(
+  DeliveryNavBarViewModel viewModelBuilder(
     BuildContext context,
   ) =>
-      NavBarPressingViewModel();
+      DeliveryNavBarViewModel();
 }

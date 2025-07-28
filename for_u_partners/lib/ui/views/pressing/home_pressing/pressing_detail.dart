@@ -133,8 +133,8 @@ class _PressingDetailContentState extends State<_PressingDetailContent> {
             Center(
               child: TextButton(
                 onPressed: () {},
-                child:
-                    const TextComponent("Rejeter", textcolor: red, fontsize: 15),
+                child: const TextComponent("Rejeter",
+                    textcolor: red, fontsize: 15),
               ),
             ),
           ],
