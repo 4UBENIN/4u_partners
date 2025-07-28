@@ -44,99 +44,101 @@ class _PressingDetailContentState extends State<_PressingDetailContent> {
   Widget build(BuildContext context) {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 20),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          const TextComponent("Destination",
-              fontsize: 17, textcolor: kcLightGrey),
-          const SizedBox(height: 10),
-          const TextComponent("EREVAN, Cadjehoun Aeroport",
-              fontsize: 18, fontweight: FontWeight.bold),
-          const SizedBox(height: 20),
-          const TextComponent("Date de ramassage",
-              fontsize: 17, textcolor: kcLightGrey),
-          const SizedBox(height: 10),
-          const TextComponent("Mardi 12 Décembre à 15h 30",
-              fontsize: 18,
-              fontweight: FontWeight.bold,
-              textcolor: primaryColor),
-          const SizedBox(height: 20),
-          const TextComponent("Adresse de ramassage",
-              fontsize: 17, textcolor: kcLightGrey),
-          const SizedBox(height: 10),
-          const TextComponent("Cadjehoun, Place centrale, 123-B403",
-              fontsize: 18,
-              fontweight: FontWeight.bold,
-              textcolor: primaryColor),
-          const SizedBox(height: 20),
-          const TextComponent("Services additionnels",
-              fontsize: 17, textcolor: kcLightGrey),
-          const SizedBox(height: 10),
-          Container(
-            padding: const EdgeInsets.all(20),
-            width: double.infinity,
-            decoration: BoxDecoration(
-              color: backgroundService,
-              borderRadius: BorderRadius.circular(10),
+      child: SingleChildScrollView(
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const TextComponent("Destination",
+                fontsize: 17, textcolor: kcLightGrey),
+            const SizedBox(height: 10),
+            const TextComponent("EREVAN, Cadjehoun Aeroport",
+                fontsize: 18, fontweight: FontWeight.bold),
+            const SizedBox(height: 20),
+            const TextComponent("Date de ramassage",
+                fontsize: 17, textcolor: kcLightGrey),
+            const SizedBox(height: 10),
+            const TextComponent("Mardi 12 Décembre à 15h 30",
+                fontsize: 18,
+                fontweight: FontWeight.bold,
+                textcolor: primaryColor),
+            const SizedBox(height: 20),
+            const TextComponent("Adresse de ramassage",
+                fontsize: 17, textcolor: kcLightGrey),
+            const SizedBox(height: 10),
+            const TextComponent("Cadjehoun, Place centrale, 123-B403",
+                fontsize: 18,
+                fontweight: FontWeight.bold,
+                textcolor: primaryColor),
+            const SizedBox(height: 20),
+            const TextComponent("Services additionnels",
+                fontsize: 17, textcolor: kcLightGrey),
+            const SizedBox(height: 10),
+            Container(
+              padding: const EdgeInsets.all(20),
+              width: double.infinity,
+              decoration: BoxDecoration(
+                color: backgroundService,
+                borderRadius: BorderRadius.circular(10),
+              ),
+              child: const Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  TextComponent("Lavage Xpress 24h",
+                      fontsize: 16,
+                      textcolor: primaryColor,
+                      fontweight: FontWeight.bold),
+                  SizedBox(height: 5),
+                  TextComponent("Repassage",
+                      fontsize: 16,
+                      textcolor: primaryColor,
+                      fontweight: FontWeight.bold),
+                  SizedBox(height: 5),
+                  TextComponent("Traitement de taches",
+                      fontsize: 16,
+                      textcolor: primaryColor,
+                      fontweight: FontWeight.bold),
+                ],
+              ),
             ),
-            child: const Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                TextComponent("Lavage Xpress 24h",
-                    fontsize: 16,
-                    textcolor: primaryColor,
-                    fontweight: FontWeight.bold),
-                SizedBox(height: 5),
-                TextComponent("Repassage",
-                    fontsize: 16,
-                    textcolor: primaryColor,
-                    fontweight: FontWeight.bold),
-                SizedBox(height: 5),
-                TextComponent("Traitement de taches",
-                    fontsize: 16,
-                    textcolor: primaryColor,
-                    fontweight: FontWeight.bold),
-              ],
+            const SizedBox(height: 20),
+            const TextComponent("Moyen de Paiement",
+                fontsize: 17, textcolor: kcLightGrey),
+            const SizedBox(height: 10),
+            _buildRadioOption("Portefeuille"),
+            _buildRadioOption("Espèces"),
+            const SizedBox(height: 20),
+            if (widget.isAccepted)
+              PrimaryButton(
+                text: "Finaliser la demande",
+                onPressed: () {
+                  showDemandCompletedDialog(
+                    context: context,
+                    clientName: "Teddy TOSSOU",
+                    onAccept: () {
+                      Navigator.pop(context, true); // retourne vrai
+                    },
+                    onDecline: () {
+                      Navigator.pop(context);
+                    },
+                  );
+                },
+              )
+            else
+              PrimaryButton(
+                text: "Accepter la demande",
+                onPressed: () {
+                  Navigator.pop(context, true); // retourne vrai
+                },
+              ),
+            Center(
+              child: TextButton(
+                onPressed: () {},
+                child:
+                    const TextComponent("Rejeter", textcolor: red, fontsize: 15),
+              ),
             ),
-          ),
-          const SizedBox(height: 20),
-          const TextComponent("Moyen de Paiement",
-              fontsize: 17, textcolor: kcLightGrey),
-          const SizedBox(height: 10),
-          _buildRadioOption("Portefeuille"),
-          _buildRadioOption("Espèces"),
-          const SizedBox(height: 20),
-          if (widget.isAccepted)
-            PrimaryButton(
-              text: "Finaliser la demande",
-              onPressed: () {
-                showDemandCompletedDialog(
-                  context: context,
-                  clientName: "Teddy TOSSOU",
-                  onAccept: () {
-                    Navigator.pop(context, true); // retourne vrai
-                  },
-                  onDecline: () {
-                    Navigator.pop(context);
-                  },
-                );
-              },
-            )
-          else
-            PrimaryButton(
-              text: "Accepter la demande",
-              onPressed: () {
-                Navigator.pop(context, true); // retourne vrai
-              },
-            ),
-          Center(
-            child: TextButton(
-              onPressed: () {},
-              child:
-                  const TextComponent("Rejeter", textcolor: red, fontsize: 15),
-            ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }
