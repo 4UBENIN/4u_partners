@@ -40,21 +40,24 @@ class CoursesDeliveryViewModel extends BaseViewModel {
     return [
       DeliveryClientData(
         name: 'Teddy TOSSOU',
-        timeInfo: 'A 3 minute de vous',
-        destination: 'Se rend à Erevan Fidjrosse Cotonou',
-        initials: 'T',
+        timeInfo: 'A 5 minute de vous',
+        position: "Place de l'amazone",
+        destination: 'Erevan Cotonou',
+        initials: 'T', type: 'Livraison',
       ),
       DeliveryClientData(
-        name: 'Teddy TOSSOU',
+        name: 'Montana BOSSA',
         timeInfo: 'A 3 minute de vous',
-        destination: 'Se rend à Erevan Fidjrosse Cotonou',
-        initials: 'T',
+        position: 'Carefour ITA',
+        destination: 'Pressing 4U',
+        initials: 'M', type: 'Ramassage',
       ),
       DeliveryClientData(
-        name: 'Teddy TOSSOU',
-        timeInfo: 'A 3 minute de vous',
-        destination: 'Se rend à Erevan Fidjrosse Cotonou',
-        initials: 'T',
+        name: 'Fifa DOVONOU',
+        timeInfo: 'A 7 minute de vous',
+        position: 'Etoile Rouge',
+        destination: 'Erevan Cotonou',
+        initials: 'F', type: 'Livraison',
       ),
     ];
   }

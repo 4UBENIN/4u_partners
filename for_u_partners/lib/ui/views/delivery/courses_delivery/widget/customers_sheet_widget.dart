@@ -1,13 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:for_u_partners/ui/common/app_colors.dart';
-import 'package:for_u_partners/ui/views/drivers/courses/widget/dialog_widget.dart';
 import 'package:for_u_partners/ui/views/delivery/courses_delivery/model/client_model.dart';
+import 'package:for_u_partners/ui/views/delivery/courses_delivery/widget/dialog_widget.dart';
 
-class ClientsBottomSheet extends StatelessWidget {
+class DeliveryClientsBottomSheet extends StatelessWidget {
   final List<DeliveryClientData> getClientsList;
   final Function() onAccept;
   final Function() onDecline;
-  const ClientsBottomSheet(
+  const DeliveryClientsBottomSheet(
       {Key? key,
       required this.getClientsList,
       required this.onAccept,
@@ -52,7 +52,7 @@ class ClientsBottomSheet extends StatelessWidget {
               const Padding(
                 padding: EdgeInsets.symmetric(horizontal: 20, vertical: 10),
                 child: Text(
-                  'Clients disponibles',
+                  'Courses disponibles',
                   style: TextStyle(
                     fontSize: 18,
                     fontWeight: FontWeight.bold,
@@ -72,13 +72,14 @@ class ClientsBottomSheet extends StatelessWidget {
                         client: client,
                         onAccept: () {
                           print("ff");
-                          showClientPickupDialog(
+                          showDeliveryClientPickupDialog(
                             context: context,
                             clientName: client.name,
                             onAccept: onAccept,
                             onDecline: () {
                               Navigator.pop(context);
                             },
+                            demandType: client.type,
                           );
                         },
                         onDecline: onDecline);
@@ -142,9 +143,9 @@ class ClientCard extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  client.name,
+                  "${client.type} pour ${client.name}",
                   style: const TextStyle(
-                    fontSize: 16,
+                    fontSize: 15,
                     fontWeight: FontWeight.bold,
                     color: Colors.black87,
                   ),
@@ -159,7 +160,7 @@ class ClientCard extends StatelessWidget {
                 ),
                 const SizedBox(height: 4),
                 Text(
-                  client.destination,
+                  "${client.position}  -->  ${client.destination}",
                   style: TextStyle(
                     fontSize: 13,
                     color: Colors.grey[700],
@@ -275,10 +276,10 @@ class AcceptedClientBottomSheet extends StatelessWidget {
                   ),
 
                   // Titre
-                  const Center(
+                  Center(
                     child: Text(
-                      'Clients disponibles',
-                      style: TextStyle(
+                      '${client.type} en cours',
+                      style: const TextStyle(
                         fontSize: 18,
                         fontWeight: FontWeight.bold,
                         color: Colors.black87,
@@ -364,6 +365,41 @@ class AcceptedClientBottomSheet extends StatelessWidget {
 
                   const SizedBox(height: 25),
 
+                  // position
+                  Container(
+                    width: double.infinity,
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 12, vertical: 12),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFF7F8FD),
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          'Position',
+                          style: TextStyle(
+                            fontSize: 14,
+                            color: Colors.grey[600],
+                            fontWeight: FontWeight.w500,
+                          ),
+                        ),
+                        const SizedBox(height: 8),
+                        Text(
+                          client.position,
+                          style: const TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.black87,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+
+                  const SizedBox(height: 25),
+
                   // Destination
                   Container(
                     width: double.infinity,
@@ -402,7 +438,7 @@ class AcceptedClientBottomSheet extends StatelessWidget {
                   // Question
                   const Center(
                     child: Text(
-                      'Vous avez déjà récupérer le client ?',
+                      'Vous avez déjà récupérer le colis ?',
                       style: TextStyle(
                         fontSize: 16,
                         color: Colors.black87,

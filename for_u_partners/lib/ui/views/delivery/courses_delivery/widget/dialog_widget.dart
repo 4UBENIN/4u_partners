@@ -1,14 +1,16 @@
 import 'package:flutter/material.dart';
 import 'package:for_u_partners/ui/common/app_colors.dart';
 
-class ClientPickupDialog extends StatelessWidget {
+class DeliveryClientPickupDialog extends StatelessWidget {
   final String clientName;
+  final String demandType;
   final VoidCallback onAccept;
   final VoidCallback? onDecline;
 
-  const ClientPickupDialog({
+  const DeliveryClientPickupDialog({
     Key? key,
     required this.clientName,
+    required this.demandType,
     required this.onAccept,
     this.onDecline,
   }) : super(key: key);
@@ -50,7 +52,7 @@ class ClientPickupDialog extends StatelessWidget {
 
             // Texte principal
             Text(
-              'Souhaitez-vous prendre $clientName ?',
+              'Souhaitez-vous accepter la demande de $demandType de $clientName ?',
               textAlign: TextAlign.center,
               style: const TextStyle(
                 fontSize: 18,
@@ -123,9 +125,10 @@ class ClientPickupDialog extends StatelessWidget {
 }
 
 // Fonction utilitaire pour afficher le dialogue
-void showClientPickupDialog({
+void showDeliveryClientPickupDialog({
   required BuildContext context,
   required String clientName,
+  required String demandType,
   required VoidCallback onAccept,
   VoidCallback? onDecline,
 }) {
@@ -133,10 +136,10 @@ void showClientPickupDialog({
     context: context,
     barrierDismissible: false,
     builder: (BuildContext context) {
-      return ClientPickupDialog(
+      return DeliveryClientPickupDialog(
         clientName: clientName,
         onAccept: onAccept,
-        onDecline: onDecline,
+        onDecline: onDecline, demandType: demandType,
       );
     },
   );

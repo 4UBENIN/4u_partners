@@ -97,7 +97,7 @@ class CoursesDeliveryView extends StackedView<CoursesDeliveryViewModel> {
   Widget _buildBottomSheet(CoursesDeliveryViewModel viewModel, BuildContext context) {
     switch (viewModel.currentBottomSheetType) {
       case BottomSheetAppType.clients:
-        return ClientsBottomSheet(
+        return DeliveryClientsBottomSheet(
           key: const ValueKey('clients'),
           getClientsList: viewModel.getClientsList(),
           onAccept: () {
@@ -111,6 +111,7 @@ class CoursesDeliveryView extends StackedView<CoursesDeliveryViewModel> {
       case BottomSheetAppType.pickup:
         return AcceptedClientBottomSheet(
           key: const ValueKey('pickup'),
+          //* CLIENT SELECTIONNE
           client: viewModel.getClientsList()[0],
           onCancelRide: () {
             print("Pickup confirmé");
@@ -133,6 +134,7 @@ class CoursesDeliveryView extends StackedView<CoursesDeliveryViewModel> {
               context,
               MaterialPageRoute(
                 builder: (context) => DeliveryRecapitulatifCoursePage(
+                  demandType: 'Livraison',
                   pointDepart: 'Seme City, Cadjehoun',
                   destination: 'EREVAN, Cadjehoun Aeroport',
                   nomClient: 'Teddy TOSSOU',
@@ -156,8 +158,7 @@ class CoursesDeliveryView extends StackedView<CoursesDeliveryViewModel> {
         );
 
       case BottomSheetAppType.none:
-      default:
-        return const SizedBox.shrink(
+      return const SizedBox.shrink(
           key: ValueKey('none'),
         );
     }

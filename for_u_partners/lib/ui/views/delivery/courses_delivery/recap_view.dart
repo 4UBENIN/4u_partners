@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:for_u_partners/ui/common/app_colors.dart';
 
 class DeliveryRecapitulatifCoursePage extends StatelessWidget {
+  final String demandType;
   final String pointDepart;
   final String destination;
   final String nomClient;
@@ -15,6 +16,7 @@ class DeliveryRecapitulatifCoursePage extends StatelessWidget {
 
   const DeliveryRecapitulatifCoursePage({
     Key? key,
+    required this.demandType,
     required this.pointDepart,
     required this.destination,
     required this.nomClient,
@@ -56,9 +58,9 @@ class DeliveryRecapitulatifCoursePage extends StatelessWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const Text(
-                    'Detail de la course',
-                    style: TextStyle(
+                  Text(
+                    'Detail de la demande :  $demandType',
+                    style: const TextStyle(
                       fontSize: 20,
                       fontWeight: FontWeight.bold,
                       color: Colors.black,
