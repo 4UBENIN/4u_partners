@@ -143,7 +143,7 @@ class _SummaryWidgetState extends State<SummaryWidget>
                     const Text(
                       'Courses aujourd\'hui',
                       style: TextStyle(
-                        fontSize: 14,
+                        fontSize: 13,
                         color: Color(0xFF64748b),
                         fontWeight: FontWeight.w500,
                         letterSpacing: 0.3,
@@ -210,7 +210,7 @@ class _SummaryWidgetState extends State<SummaryWidget>
                     const Text(
                       'Gains aujourd\'hui',
                       style: TextStyle(
-                        fontSize: 14,
+                        fontSize: 13,
                         color: Color(0xFF64748b),
                         fontWeight: FontWeight.w500,
                         letterSpacing: 0.3,
