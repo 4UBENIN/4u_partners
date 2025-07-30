@@ -1,0 +1,18 @@
+String baseUrl = "https://foryou.cilassocies.com/api";
+String registerUrl = "$baseUrl/partenaire/register";
+String loginUrl = "$baseUrl/partenaire/login";
+String coursesPendingUrl = "$baseUrl/conducteur/courses";
+String acceptCourseUrl(int courseId) =>
+    "$baseUrl/api/conducteur/courses/$courseId/accept";
+String rejectCourseUrl(int courseId) =>
+    "$baseUrl/api/conducteur/courses/$courseId/deny";
+String startCourseUrl(int courseId) =>
+    "$baseUrl/api/conducteur/courses/$courseId/start";
+String completeCourseUrl(int courseId) =>
+    "$baseUrl/api/conducteur/courses/$courseId/finish";
+String factureCourseUrl(int courseId) =>
+    "$baseUrl/api/conducteur/courses/$courseId/facture";
+String coursesDetailsUrl(int courseId) =>
+    "$baseUrl/api/conducteur/courses/$courseId/details";
+String assignedCourseUrl = "$baseUrl/api/conducteur/courses_list";
+Map<String, String> headers = {'Content-Type': 'application/json'};

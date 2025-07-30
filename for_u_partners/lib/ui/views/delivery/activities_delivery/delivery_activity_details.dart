@@ -105,7 +105,9 @@ class _DeliveryActivityDetailsState extends State<DeliveryActivityDetails> {
                         ),
                         const SizedBox(width: 12),
                         Text(
-                          widget.activity!.type.split(' ').length > 1 ? widget.activity!.type.split(' ')[1] : widget.activity!.type,
+                          widget.activity!.type.split(' ').length > 1
+                              ? widget.activity!.type.split(' ')[1]
+                              : widget.activity!.type,
                           style: const TextStyle(
                             color: Colors.white,
                             fontSize: 20,

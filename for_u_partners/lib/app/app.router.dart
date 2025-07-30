@@ -12,12 +12,12 @@ import 'package:for_u_partners/ui/views/auth/register/register_view.dart'
     as _i11;
 import 'package:for_u_partners/ui/views/auth/register_profile/register_profile_view.dart'
     as _i12;
-import 'package:for_u_partners/ui/views//delivery/courses_delivery/courses_delivery_view.dart'
-    as _i23;
 import 'package:for_u_partners/ui/views/delivery/activities_delivery/activities_delivery_view.dart'
     as _i22;
 import 'package:for_u_partners/ui/views/delivery/compte_delivery/compte_delivery_view.dart'
     as _i21;
+import 'package:for_u_partners/ui/views/delivery/courses_delivery/courses_delivery_view.dart'
+    as _i23;
 import 'package:for_u_partners/ui/views/delivery/delivery_home/delivery_home_view.dart'
     as _i19;
 import 'package:for_u_partners/ui/views/delivery/delivery_nav_bar/delivery_nav_bar_view.dart'

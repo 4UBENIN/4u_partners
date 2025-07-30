@@ -139,7 +139,8 @@ void showDeliveryClientPickupDialog({
       return DeliveryClientPickupDialog(
         clientName: clientName,
         onAccept: onAccept,
-        onDecline: onDecline, demandType: demandType,
+        onDecline: onDecline,
+        demandType: demandType,
       );
     },
   );

@@ -26,7 +26,7 @@ class LoginView extends StackedView<LoginViewModel> with $LoginView {
     Widget? child,
   ) {
     return Scaffold(
-      backgroundColor: Theme.of(context).colorScheme.background,
+      backgroundColor: Theme.of(context).colorScheme.surface,
       body: LayoutBuilder(
         builder: (context, constraints) {
           return SingleChildScrollView(

@@ -105,7 +105,7 @@ class _TextComponentState extends State<TextComponent> {
               padding: const EdgeInsets.only(top: 0.0),
               child: Text(
                 _expanded ? widget.collapseText : widget.expandText,
-                style: TextStyle(
+                style: const TextStyle(
                   color: Colors.black,
                   fontWeight: FontWeight.bold,
                   fontSize: 14,

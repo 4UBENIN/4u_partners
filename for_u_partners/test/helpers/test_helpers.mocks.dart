@@ -7,6 +7,10 @@ import 'dart:async' as _i5;
 import 'dart:ui' as _i6;
 
 import 'package:flutter/material.dart' as _i4;
+import 'package:for_u_partners/app/models/login_model.dart' as _i9;
+import 'package:for_u_partners/app/models/register_model.dart' as _i10;
+import 'package:for_u_partners/services/auth_service.dart' as _i8;
+import 'package:for_u_partners/services/driver_service.dart' as _i11;
 import 'package:for_u_partners/services/sharedpreferences_service.dart' as _i7;
 import 'package:mockito/mockito.dart' as _i1;
 import 'package:mockito/src/dummies.dart' as _i3;
@@ -720,3 +724,34 @@ class MockSharedpreferencesService extends _i1.Mock
         returnValueForMissingStub: _i5.Future<void>.value(),
       ) as _i5.Future<void>);
 }
+
+/// A class which mocks [AuthService].
+///
+/// See the documentation for Mockito's code generation for more information.
+class MockAuthService extends _i1.Mock implements _i8.AuthService {
+  @override
+  _i5.Future<void> login(_i9.LoginModel? loginModel) => (super.noSuchMethod(
+        Invocation.method(
+          #login,
+          [loginModel],
+        ),
+        returnValue: _i5.Future<void>.value(),
+        returnValueForMissingStub: _i5.Future<void>.value(),
+      ) as _i5.Future<void>);
+
+  @override
+  _i5.Future<void> register(_i10.RegistrationModel? registrationModel) =>
+      (super.noSuchMethod(
+        Invocation.method(
+          #register,
+          [registrationModel],
+        ),
+        returnValue: _i5.Future<void>.value(),
+        returnValueForMissingStub: _i5.Future<void>.value(),
+      ) as _i5.Future<void>);
+}
+
+/// A class which mocks [DriverService].
+///
+/// See the documentation for Mockito's code generation for more information.
+class MockDriverService extends _i1.Mock implements _i11.DriverService {}

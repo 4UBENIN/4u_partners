@@ -336,10 +336,10 @@ class _ActivityCard extends StatelessWidget {
                 const SizedBox(height: 12),
                 Row(
                   children: [
-                    Icon(
+                    const Icon(
                       Icons.location_on_outlined,
                       size: 16,
-                      color: const Color(0xFF8e8e93),
+                      color: Color(0xFF8e8e93),
                     ),
                     const SizedBox(width: 4),
                     Expanded(

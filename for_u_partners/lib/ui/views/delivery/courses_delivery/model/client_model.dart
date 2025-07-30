@@ -10,7 +10,7 @@ class DeliveryClientData {
     required this.name,
     required this.type,
     required this.timeInfo,
-    required this.position, 
+    required this.position,
     required this.destination,
     required this.initials,
   });

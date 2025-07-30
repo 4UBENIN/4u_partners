@@ -17,41 +17,41 @@ class DeliveryHomeView extends StackedView<DeliveryHomeViewModel> {
     Widget? child,
   ) {
     return DefaultTabController(
-    length: 2, // Nombre de tabs
-    child: Scaffold(
-      backgroundColor: kcWhiteColors,
-      appBar: _buildCustomAppBar(),
-      body: SingleChildScrollView(
-        child: Padding(
-          padding: const EdgeInsets.all(25.0),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              const DeliveryWalletWidget(balance: '67,500 FCFA'),
-              const SizedBox(height: 24),
-              const DeliverySummaryWidget(
-                todayCourses: 8,
-                todayEarnings: '32,500 FCFA',
-              ),
-              const SizedBox(height: 24),
-              DeliveryCurrentRideWidget(),
-              SizedBox(height: 30),
-              Text(
-                'Activité récente',
-                style: TextStyle(
-                  fontSize: 16,
-                  fontWeight: FontWeight.w600,
-                  color: Color(0xFF333333),
+      length: 2, // Nombre de tabs
+      child: Scaffold(
+        backgroundColor: kcWhiteColors,
+        appBar: _buildCustomAppBar(),
+        body: const SingleChildScrollView(
+          child: Padding(
+            padding: EdgeInsets.all(25.0),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                DeliveryWalletWidget(balance: '67,500 FCFA'),
+                SizedBox(height: 24),
+                DeliverySummaryWidget(
+                  todayCourses: 8,
+                  todayEarnings: '32,500 FCFA',
                 ),
-              ),
-              SizedBox(height: 15),
-              DeliveryActivityWidget(),
-            ],
+                SizedBox(height: 24),
+                DeliveryCurrentRideWidget(),
+                SizedBox(height: 30),
+                Text(
+                  'Activité récente',
+                  style: TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.w600,
+                    color: Color(0xFF333333),
+                  ),
+                ),
+                SizedBox(height: 15),
+                DeliveryActivityWidget(),
+              ],
+            ),
           ),
         ),
       ),
-    ),
-  );
+    );
   }
 
   PreferredSizeWidget _buildCustomAppBar() {
@@ -159,7 +159,7 @@ class _TabBarContent extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return SizedBox(
+    return const SizedBox(
       height: 400,
       child: TabBarView(
         children: [

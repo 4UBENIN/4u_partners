@@ -2,7 +2,6 @@ import 'package:stacked/stacked.dart';
 import 'package:flutter/material.dart';
 import 'compte_delivery_viewmodel.dart';
 
-
 class CompteDeliveryView extends StackedView<CompteDeliveryViewModel> {
   const CompteDeliveryView({Key? key}) : super(key: key);
 
@@ -242,6 +241,7 @@ class CompteDeliveryView extends StackedView<CompteDeliveryViewModel> {
       painter: LogoutIconPainter(),
     );
   }
+
   @override
   CompteDeliveryViewModel viewModelBuilder(
     BuildContext context,

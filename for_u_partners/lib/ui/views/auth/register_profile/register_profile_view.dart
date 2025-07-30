@@ -56,9 +56,9 @@ class RegisterProfileView extends StackedView<RegisterProfileViewModel>
       appBar: AppBar(
         title: const Text('Move4u'),
         centerTitle: true,
-        backgroundColor: Theme.of(context).colorScheme.background,
+        backgroundColor: Theme.of(context).colorScheme.surface,
       ),
-      backgroundColor: Theme.of(context).colorScheme.background,
+      backgroundColor: Theme.of(context).colorScheme.surface,
       body: SingleChildScrollView(
         child: Padding(
           padding: const EdgeInsets.symmetric(horizontal: 20),

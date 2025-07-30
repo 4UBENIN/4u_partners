@@ -6,14 +6,13 @@ import 'package:flutter_map/flutter_map.dart';
 import 'package:for_u_partners/ui/common/enum/bottom_enum.dart';
 import 'package:for_u_partners/ui/views/delivery/courses_delivery/model/client_model.dart';
 
-
 class CoursesDeliveryViewModel extends BaseViewModel {
-   // Contrôleur de carte
+  // Contrôleur de carte
   final MapController _mapController = MapController();
   MapController get mapController => _mapController;
 
   // Position initiale de la carte (sera mise à jour avec la position utilisateur)
-  LatLng _mapCenter = LatLng(48.8566, 2.3522); // Position par défaut
+  LatLng _mapCenter = const LatLng(48.8566, 2.3522); // Position par défaut
   LatLng get mapCenter => _mapCenter;
 
   // Niveau de zoom initial
@@ -21,7 +20,7 @@ class CoursesDeliveryViewModel extends BaseViewModel {
   double get mapZoom => _mapZoom;
 
   // Liste des marqueurs
-  List<Marker> _markers = [];
+  final List<Marker> _markers = [];
   List<Marker> get markers => _markers;
 
   // État du chargement de la position
@@ -43,21 +42,24 @@ class CoursesDeliveryViewModel extends BaseViewModel {
         timeInfo: 'A 5 minute de vous',
         position: "Place de l'amazone",
         destination: 'Erevan Cotonou',
-        initials: 'T', type: 'Livraison',
+        initials: 'T',
+        type: 'Livraison',
       ),
       DeliveryClientData(
         name: 'Montana BOSSA',
         timeInfo: 'A 3 minute de vous',
         position: 'Carefour ITA',
         destination: 'Pressing 4U',
-        initials: 'M', type: 'Ramassage',
+        initials: 'M',
+        type: 'Ramassage',
       ),
       DeliveryClientData(
         name: 'Fifa DOVONOU',
         timeInfo: 'A 7 minute de vous',
         position: 'Etoile Rouge',
         destination: 'Erevan Cotonou',
-        initials: 'F', type: 'Livraison',
+        initials: 'F',
+        type: 'Livraison',
       ),
     ];
   }
@@ -139,7 +141,7 @@ class CoursesDeliveryViewModel extends BaseViewModel {
               shape: BoxShape.circle,
               border: Border.all(color: Colors.white, width: 3),
             ),
-            child: Icon(
+            child: const Icon(
               Icons.my_location,
               color: Colors.white,
               size: 30,
@@ -188,7 +190,7 @@ class CoursesDeliveryViewModel extends BaseViewModel {
       height: 80.0,
       point: position,
       builder: (ctx) => Container(
-        child: Icon(
+        child: const Icon(
           Icons.place,
           color: Colors.blue,
           size: 40,

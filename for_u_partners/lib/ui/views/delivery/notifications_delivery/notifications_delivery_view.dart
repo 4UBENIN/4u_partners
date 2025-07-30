@@ -5,7 +5,6 @@ import 'package:for_u_partners/ui/common/app_colors.dart';
 import 'package:for_u_partners/ui/common/text_component.dart';
 import 'package:for_u_partners/ui/views/drivers/notifications/widget/notification_widget.dart';
 
-
 class NotificationsDeliveryView
     extends StackedView<NotificationsDeliveryViewModel> {
   const NotificationsDeliveryView({Key? key}) : super(key: key);
@@ -21,7 +20,7 @@ class NotificationsDeliveryView
         appBar: AppBar(
             automaticallyImplyLeading: false,
             backgroundColor: Colors.white,
-            title: TextComponent(
+            title: const TextComponent(
               "Notifications",
               fontsize: 18,
               textcolor: primaryColor,

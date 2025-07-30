@@ -30,12 +30,12 @@ class _PressingDemandWidgetState extends State<PressingDemandWidget> {
       child: Container(
         decoration: BoxDecoration(
           boxShadow: [
-              BoxShadow(
-                color: Colors.black.withOpacity(0.05),
-                blurRadius: 6,
-                offset: const Offset(0, 3),
-              ),
-            ],
+            BoxShadow(
+              color: Colors.black.withOpacity(0.05),
+              blurRadius: 6,
+              offset: const Offset(0, 3),
+            ),
+          ],
         ),
         margin: const EdgeInsets.only(bottom: 16),
         child: Material(
@@ -136,9 +136,12 @@ class _PressingDemandWidgetState extends State<PressingDemandWidget> {
                   // Services simulés
                   Wrap(
                     spacing: 8,
-                    children: ['Lavage Xpress 24h', 'Repassage'].take(2).map((service) {
+                    children: ['Lavage Xpress 24h', 'Repassage']
+                        .take(2)
+                        .map((service) {
                       return Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 8, vertical: 4),
                         decoration: BoxDecoration(
                           color: const Color(0xFFf1f3f4),
                           borderRadius: BorderRadius.circular(12),

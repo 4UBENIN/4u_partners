@@ -114,7 +114,6 @@ class _PressingDetailContentState extends State<_PressingDetailContent> {
               child: const Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-
                   TextComponent("Repassage",
                       fontsize: 16,
                       textcolor: primaryColor,

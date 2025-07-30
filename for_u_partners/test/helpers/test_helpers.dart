@@ -3,6 +3,8 @@ import 'package:mockito/mockito.dart';
 import 'package:for_u_partners/app/app.locator.dart';
 import 'package:stacked_services/stacked_services.dart';
 import 'package:for_u_partners/services/sharedpreferences_service.dart';
+import 'package:for_u_partners/services/auth_service.dart';
+import 'package:for_u_partners/services/driver_service.dart';
 // @stacked-import
 
 import 'test_helpers.mocks.dart';
@@ -15,6 +17,8 @@ import 'test_helpers.mocks.dart';
     MockSpec<DialogService>(onMissingStub: OnMissingStub.returnDefault),
     MockSpec<SharedpreferencesService>(
         onMissingStub: OnMissingStub.returnDefault),
+    MockSpec<AuthService>(onMissingStub: OnMissingStub.returnDefault),
+    MockSpec<DriverService>(onMissingStub: OnMissingStub.returnDefault),
 // @stacked-mock-spec
   ],
 )
@@ -23,6 +27,8 @@ void registerServices() {
   getAndRegisterBottomSheetService();
   getAndRegisterDialogService();
   getAndRegisterSharedpreferencesService();
+  getAndRegisterAuthService();
+  getAndRegisterDriverService();
 // @stacked-mock-register
 }
 
@@ -84,6 +90,20 @@ MockSharedpreferencesService getAndRegisterSharedpreferencesService() {
   _removeRegistrationIfExists<SharedpreferencesService>();
   final service = MockSharedpreferencesService();
   locator.registerSingleton<SharedpreferencesService>(service);
+  return service;
+}
+
+MockAuthService getAndRegisterAuthService() {
+  _removeRegistrationIfExists<AuthService>();
+  final service = MockAuthService();
+  locator.registerSingleton<AuthService>(service);
+  return service;
+}
+
+MockDriverService getAndRegisterDriverService() {
+  _removeRegistrationIfExists<DriverService>();
+  final service = MockDriverService();
+  locator.registerSingleton<DriverService>(service);
   return service;
 }
 // @stacked-mock-create

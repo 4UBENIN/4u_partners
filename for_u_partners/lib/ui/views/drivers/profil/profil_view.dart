@@ -1,7 +1,6 @@
 import 'profil_viewmodel.dart';
 import 'package:stacked/stacked.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_svg/flutter_svg.dart';
 
 class ProfilView extends StackedView<ProfilViewModel> {
   const ProfilView({Key? key}) : super(key: key);

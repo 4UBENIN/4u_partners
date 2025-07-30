@@ -10,7 +10,6 @@ import 'package:for_u_partners/ui/common/enum/bottom_enum.dart';
 import 'package:for_u_partners/ui/views/delivery/courses_delivery/recap_view.dart';
 import 'package:for_u_partners/ui/views/delivery/courses_delivery/widget/customers_sheet_widget.dart';
 
-
 class CoursesDeliveryView extends StackedView<CoursesDeliveryViewModel> {
   const CoursesDeliveryView({Key? key}) : super(key: key);
 
@@ -94,7 +93,8 @@ class CoursesDeliveryView extends StackedView<CoursesDeliveryViewModel> {
     );
   }
 
-  Widget _buildBottomSheet(CoursesDeliveryViewModel viewModel, BuildContext context) {
+  Widget _buildBottomSheet(
+      CoursesDeliveryViewModel viewModel, BuildContext context) {
     switch (viewModel.currentBottomSheetType) {
       case BottomSheetAppType.clients:
         return DeliveryClientsBottomSheet(
@@ -158,7 +158,7 @@ class CoursesDeliveryView extends StackedView<CoursesDeliveryViewModel> {
         );
 
       case BottomSheetAppType.none:
-      return const SizedBox.shrink(
+        return const SizedBox.shrink(
           key: ValueKey('none'),
         );
     }

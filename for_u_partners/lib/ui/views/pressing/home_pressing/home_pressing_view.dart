@@ -181,7 +181,7 @@ class _TabBarContent extends StatelessWidget {
                     final result = await Navigator.push<bool>(
                       context,
                       MaterialPageRoute(
-                        builder: (_) => FacturationView(),
+                        builder: (_) => const FacturationView(),
                       ),
                     );
 
@@ -196,7 +196,7 @@ class _TabBarContent extends StatelessWidget {
               ),
             ],
           ),
-          
+
           //* Tab Dépôt de vêtements
           Column(
             crossAxisAlignment: CrossAxisAlignment.start,

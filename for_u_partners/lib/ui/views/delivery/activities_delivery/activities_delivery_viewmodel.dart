@@ -7,7 +7,7 @@ class ActivitiesDeliveryViewModel extends BaseViewModel {
   List<DeliveryActivityModel> _activities = [];
   List<DeliveryActivityModel> get activities => _activities;
   final navigationService = locator<NavigationService>();
-  ActivitiesDeliveryViewModel() { 
+  ActivitiesDeliveryViewModel() {
     _initializeActivities();
   }
 
@@ -126,7 +126,6 @@ class ActivitiesDeliveryViewModel extends BaseViewModel {
     _activities.clear();
     notifyListeners();
   }
-  
 }
 
 // Extension du modèle DeliveryActivityModel si vous voulez stocker les vraies dates

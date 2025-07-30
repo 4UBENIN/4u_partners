@@ -292,7 +292,8 @@ class ActivitiesDeliveryView extends StackedView<ActivitiesDeliveryViewModel> {
   void _onActivityTap(DeliveryActivityModel activity) {
     final navigationService = locator<NavigationService>();
     print('Clic sur: ${activity.type} - ${activity.route}');
-    navigationService.navigateToView(DeliveryActivityDetails(activity: activity));
+    navigationService
+        .navigateToView(DeliveryActivityDetails(activity: activity));
   }
 
   @override

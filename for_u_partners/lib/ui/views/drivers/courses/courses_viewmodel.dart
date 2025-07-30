@@ -3,7 +3,6 @@ import 'package:latlong2/latlong.dart';
 import 'package:flutter/material.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:flutter_map/flutter_map.dart';
-import 'package:for_u_partners/app/app.bottomsheets.dart';
 import 'package:for_u_partners/ui/common/enum/bottom_enum.dart';
 import 'package:for_u_partners/ui/views/drivers/courses/model/client_model.dart';
 
@@ -13,7 +12,7 @@ class CoursesViewModel extends BaseViewModel {
   MapController get mapController => _mapController;
 
   // Position initiale de la carte (sera mise à jour avec la position utilisateur)
-  LatLng _mapCenter = LatLng(48.8566, 2.3522); // Position par défaut
+  LatLng _mapCenter = const LatLng(48.8566, 2.3522); // Position par défaut
   LatLng get mapCenter => _mapCenter;
 
   // Niveau de zoom initial
@@ -21,7 +20,7 @@ class CoursesViewModel extends BaseViewModel {
   double get mapZoom => _mapZoom;
 
   // Liste des marqueurs
-  List<Marker> _markers = [];
+  final List<Marker> _markers = [];
   List<Marker> get markers => _markers;
 
   // État du chargement de la position
@@ -136,7 +135,7 @@ class CoursesViewModel extends BaseViewModel {
               shape: BoxShape.circle,
               border: Border.all(color: Colors.white, width: 3),
             ),
-            child: Icon(
+            child: const Icon(
               Icons.my_location,
               color: Colors.white,
               size: 30,
@@ -185,7 +184,7 @@ class CoursesViewModel extends BaseViewModel {
       height: 80.0,
       point: position,
       builder: (ctx) => Container(
-        child: Icon(
+        child: const Icon(
           Icons.place,
           color: Colors.blue,
           size: 40,

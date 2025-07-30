@@ -36,7 +36,7 @@ class _FacturationViewState extends State<FacturationView> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             // Date de passage
-            _DetailSection(
+            const _DetailSection(
               label: "Date de passage",
               value: "Mardi 26 Mars 15h 30",
             ),
@@ -138,10 +138,10 @@ class _FacturationViewState extends State<FacturationView> {
                           top: BorderSide(color: Color(0xFFe5e7eb)),
                         ),
                       ),
-                      child: Column(
+                      child: const Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          const Text(
+                          Text(
                             "Vêtements spéciaux",
                             style: TextStyle(
                               fontSize: 14,
@@ -149,18 +149,18 @@ class _FacturationViewState extends State<FacturationView> {
                               fontWeight: FontWeight.w500,
                             ),
                           ),
-                          const SizedBox(height: 12),
+                          SizedBox(height: 12),
                           Row(
                             mainAxisAlignment: MainAxisAlignment.spaceBetween,
                             children: [
-                              const Text(
+                              Text(
                                 "Veste complète x2",
                                 style: TextStyle(
                                   fontSize: 15,
                                   color: Color(0xFF1a1a1a),
                                 ),
                               ),
-                              const Text(
+                              Text(
                                 "4000 Fcfa",
                                 style: TextStyle(
                                   fontSize: 15,

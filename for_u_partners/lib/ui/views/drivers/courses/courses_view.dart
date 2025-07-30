@@ -1,7 +1,6 @@
 import 'courses_viewmodel.dart';
 import 'package:stacked/stacked.dart';
 import 'package:flutter/material.dart';
-import 'package:latlong2/latlong.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:for_u_partners/app/app.router.dart';
 import 'package:for_u_partners/app/app.locator.dart';
@@ -9,7 +8,6 @@ import 'package:stacked_services/stacked_services.dart';
 import 'package:for_u_partners/ui/common/api_constant.dart';
 import 'package:for_u_partners/ui/common/enum/bottom_enum.dart';
 import 'package:for_u_partners/ui/views/drivers/courses/recap_view.dart';
-import 'package:for_u_partners/ui/views/drivers/courses/widget/dialog_widget.dart';
 import 'package:for_u_partners/ui/views/drivers/courses/widget/customers_sheet_widget.dart';
 
 class CoursesView extends StackedView<CoursesViewModel> {

@@ -33,7 +33,7 @@ class _DepotDetailViewState extends State<DepotDetailView> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             // Date de passage
-            _DetailSection(
+            const _DetailSection(
               label: "Date de passage",
               value: "Mardi 26 Mars 15h 30",
             ),

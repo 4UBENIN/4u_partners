@@ -25,6 +25,8 @@ import 'package:for_u_partners/ui/views/pressing/activites_pressing/activites_pr
 import 'package:for_u_partners/ui/views/delivery/activities_delivery/activities_delivery_view.dart';
 import 'package:for_u_partners/ui/views/delivery/notifications_delivery/notifications_delivery_view.dart';
 import 'package:for_u_partners/ui/views/pressing/notifications_pressing/notifications_pressing_view.dart';
+import 'package:for_u_partners/services/auth_service.dart';
+import 'package:for_u_partners/services/driver_service.dart';
 // @stacked-import
 
 @StackedApp(
@@ -58,6 +60,8 @@ import 'package:for_u_partners/ui/views/pressing/notifications_pressing/notifica
     LazySingleton(classType: DialogService),
     LazySingleton(classType: NavigationService),
     LazySingleton(classType: SharedpreferencesService),
+    LazySingleton(classType: AuthService),
+    LazySingleton(classType: DriverService),
 // @stacked-service
   ],
   bottomsheets: [
