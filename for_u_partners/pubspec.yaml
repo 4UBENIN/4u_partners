@@ -26,6 +26,7 @@ dev_dependencies:
   latlong2:
   http: 
   geolocator:
+  permission_handler: ^11.0.1
   bounce: ^1.0.2
   cached_network_image: ^3.4.1
   file_picker: ^10.2.0

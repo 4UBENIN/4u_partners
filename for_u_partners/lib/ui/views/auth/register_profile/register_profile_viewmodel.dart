@@ -6,6 +6,7 @@ import 'package:for_u_partners/app/app.router.dart';
 import 'package:for_u_partners/app/app.locator.dart';
 import 'package:stacked_services/stacked_services.dart';
 import 'package:for_u_partners/ui/common/app_colors.dart';
+import 'package:permission_handler/permission_handler.dart';
 import 'package:for_u_partners/ui/common/text_component.dart';
 
 class RegisterProfileViewModel extends FormViewModel {
@@ -94,6 +95,12 @@ class RegisterProfileViewModel extends FormViewModel {
         const SizedBox(height: 10),
         GestureDetector(
           onTap: () async {
+            final permission = await Permission.photos.request();
+            if (!permission.isGranted) {
+              print("Permission refusée");
+              return;
+            }
+
             final file = await FilePicker.platform.pickFiles();
             if (file != null) {
               onFilePicked(file.files.first);
