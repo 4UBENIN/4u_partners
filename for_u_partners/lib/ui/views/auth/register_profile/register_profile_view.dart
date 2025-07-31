@@ -95,17 +95,18 @@ class RegisterProfileView extends StackedView<RegisterProfileViewModel>
 
               //* Section by Profile
               _buildSectionByProfile(selectedProfile, viewModel),
+
+              Padding(
+                padding: const EdgeInsets.only(bottom: 34),
+                child: SizedBox(
+                  height: 70,
+                  child: PrimaryButton(
+                    text: "Finaliser l'inscription",
+                    onPressed: () => viewModel.registerEnding(selectedProfile),
+                  ),
+                ),
+              ),
             ],
-          ),
-        ),
-      ),
-      bottomNavigationBar: Padding(
-        padding: const EdgeInsets.only(bottom: 34),
-        child: SizedBox(
-          height: 70,
-          child: PrimaryButton(
-            text: "Finaliser l'inscription",
-            onPressed: () => viewModel.registerEnding(selectedProfile),
           ),
         ),
       ),
@@ -170,14 +171,12 @@ class RegisterProfileView extends StackedView<RegisterProfileViewModel>
                 "Carte grise",
                 viewModel.deliverCarteGrise,
                 (file) => viewModel.deliverCarteGrise = file),
-            const SizedBox(height: 20),
 
             //* Assurance du Livreur
             viewModel.uploadFileComponent(
                 "Assurance",
                 viewModel.deliverAssurance,
                 (file) => viewModel.deliverAssurance = file),
-            const SizedBox(height: 20),
 
             //* Imatriculation du Livreur
             const TextInputField(
