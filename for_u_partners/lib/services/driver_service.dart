@@ -66,16 +66,16 @@ class DriverService {
     }
   }
 
- Future<List<CourseAssignedItem>> fetchCourses() async {
-  final url = Uri.parse(assignedCourseUrl);
-  final response = await http.get(url, headers: headers);
+  Future<List<CourseAssignedItem>> fetchCourses() async {
+    final url = Uri.parse(assignedCourseUrl);
+    final response = await http.get(url, headers: headers);
 
-  if (response.statusCode == 200) {
-    return parseCoursesResponse(response.body);
-  } else {
-    throw Exception("Erreur lors du chargement des courses");
+    if (response.statusCode == 200) {
+      return parseCoursesResponse(response.body);
+    } else {
+      throw Exception("Erreur lors du chargement des courses");
+    }
   }
-}
 
   Future<CourseDetail> fetchCourseDetail(int courseId) async {
     final url = Uri.parse(coursesDetailsUrl(courseId));

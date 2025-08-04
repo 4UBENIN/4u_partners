@@ -43,11 +43,45 @@ class AuthService {
 
   Future<void> register(RegistrationModel registrationModel) async {
     final url = Uri.parse(registerUrl);
-    final response = await http.post(url,
-        headers: headers, body: registrationModel.toJson());
 
-    if (response.statusCode == 200) {
-      final responseJson = jsonDecode(response.body);
+    try {
+      final response = await http.post(
+        url,
+        headers: headers,
+        body: jsonEncode(registrationModel.toJson()),
+      );
+
+      print("Réponse reçue"); // <- ce print doit maintenant s'afficher
+
+      if (response.statusCode == 201) {
+        final responseJson = jsonDecode(response.body);
+        final registerType = responseJson['type'];
+
+        await _sharedPreferencesServices.saveToken(responseJson['token']);
+
+        switch (registerType) {
+          case 'livreur':
+            _navigationService.replaceWithDeliveryNavBarView();
+            break;
+          case 'conducteur':
+            _navigationService.replaceWithHomemainView();
+            break;
+          case 'coursier':
+            _navigationService.replaceWithDeliveryNavBarView();
+            break;
+          case 'pressing':
+            _navigationService.replaceWithNavBarPressingView();
+            break;
+          default:
+            _navigationService.replaceWithNavBarPressingView();
+        }
+      } else {
+        print('Erreur statusCode : ${response.statusCode}');
+        print('Body : ${response.body}');
+      }
+    } catch (e, stack) {
+      print('Erreur pendant l\'envoi de la requête : $e');
+      print('Stack trace : $stack');
     }
   }
 }

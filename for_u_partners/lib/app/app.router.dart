@@ -283,8 +283,9 @@ class StackedRouter extends _i1.RouterBase {
     _i12.RegisterProfileView: (data) {
       final args = data.getArgs<RegisterProfileViewArguments>(nullOk: false);
       return _i24.MaterialPageRoute<dynamic>(
-        builder: (context) =>
-            _i12.RegisterProfileView(args.selectedProfile, key: args.key),
+        builder: (context) => _i12.RegisterProfileView(
+            args.selectedProfile, args.phoneNumber, args.mail, args.password,
+            key: args.key),
         settings: data,
       );
     },
@@ -393,27 +394,40 @@ class ActivitydetailsViewArguments {
 class RegisterProfileViewArguments {
   const RegisterProfileViewArguments({
     required this.selectedProfile,
+    required this.phoneNumber,
+    required this.mail,
+    required this.password,
     this.key,
   });
 
   final String selectedProfile;
-
+  final String phoneNumber;
+  final String mail;
+  final String password;
   final _i24.Key? key;
 
   @override
   String toString() {
-    return '{"selectedProfile": "$selectedProfile", "key": "$key"}';
+    return '{"selectedProfile": "$selectedProfile", "phoneNumber": "$phoneNumber", "mail": "$mail", "password": "$password", "key": "$key"}';
   }
 
   @override
   bool operator ==(covariant RegisterProfileViewArguments other) {
     if (identical(this, other)) return true;
-    return other.selectedProfile == selectedProfile && other.key == key;
+    return other.selectedProfile == selectedProfile &&
+        other.phoneNumber == phoneNumber &&
+        other.mail == mail &&
+        other.password == password &&
+        other.key == key;
   }
 
   @override
   int get hashCode {
-    return selectedProfile.hashCode ^ key.hashCode;
+    return selectedProfile.hashCode ^
+        phoneNumber.hashCode ^
+        mail.hashCode ^
+        password.hashCode ^
+        key.hashCode;
   }
 }
 
@@ -563,6 +577,9 @@ extension NavigatorStateExtension on _i26.NavigationService {
 
   Future<dynamic> navigateToRegisterProfileView({
     required String selectedProfile,
+    required String phoneNumber,
+    required String mail,
+    required String password,
     _i24.Key? key,
     int? routerId,
     bool preventDuplicates = true,
@@ -572,7 +589,11 @@ extension NavigatorStateExtension on _i26.NavigationService {
   }) async {
     return navigateTo<dynamic>(Routes.registerProfileView,
         arguments: RegisterProfileViewArguments(
-            selectedProfile: selectedProfile, key: key),
+            selectedProfile: selectedProfile,
+            phoneNumber: phoneNumber,
+            mail: mail,
+            password: password,
+            key: key),
         id: routerId,
         preventDuplicates: preventDuplicates,
         parameters: parameters,
@@ -878,6 +899,9 @@ extension NavigatorStateExtension on _i26.NavigationService {
 
   Future<dynamic> replaceWithRegisterProfileView({
     required String selectedProfile,
+    required String phoneNumber,
+    required String mail,
+    required String password,
     _i24.Key? key,
     int? routerId,
     bool preventDuplicates = true,
@@ -887,7 +911,11 @@ extension NavigatorStateExtension on _i26.NavigationService {
   }) async {
     return replaceWith<dynamic>(Routes.registerProfileView,
         arguments: RegisterProfileViewArguments(
-            selectedProfile: selectedProfile, key: key),
+            selectedProfile: selectedProfile,
+            phoneNumber: phoneNumber,
+            mail: mail,
+            password: password,
+            key: key),
         id: routerId,
         preventDuplicates: preventDuplicates,
         parameters: parameters,

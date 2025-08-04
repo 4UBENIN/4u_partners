@@ -1,3 +1,5 @@
+import 'package:for_u_partners/app/app.router.dart';
+
 import 'register_view.form.dart';
 import 'register_viewmodel.dart';
 import 'package:stacked/stacked.dart';
@@ -11,6 +13,7 @@ import 'package:for_u_partners/ui/common/app_button_component.dart';
 
 @FormView(fields: [
   FormTextField(name: 'phoneNumberInput'),
+  FormTextField(name: 'emailInput'),
   FormTextField(
     name: 'passwordInput',
     validator: PasswordValidators.validatePassword,
@@ -55,7 +58,17 @@ class RegisterView extends StackedView<RegisterViewModel> with $RegisterView {
                       ),
                       const SizedBox(height: 20),
                       //* Phone Number
-                      const CountryPhoneSelector(),
+                      CountryPhoneSelector(
+                          controller: phoneNumberInputController),
+                      const SizedBox(height: 20),
+
+                      //* Email
+                      TextInputField(
+                        controller: emailInputController,
+                        bigLabel: "Email",
+                        hintText: "votremail@gmail.com",
+                        isEmail: true,
+                      ),
                       const SizedBox(height: 20),
 
                       //* Password
@@ -96,7 +109,13 @@ class RegisterView extends StackedView<RegisterViewModel> with $RegisterView {
                         child: PrimaryButton(
                           text: "Continuer",
                           onPressed: () {
-                            viewModel.registerByProfile();
+                            viewModel.navigationService
+                                .navigateToRegisterProfileView(
+                              selectedProfile: viewModel.selectedProfile,
+                              phoneNumber: phoneNumberInputController.text,
+                              mail: emailInputController.text,
+                              password: passwordInputController.text,
+                            );
                           },
                         ),
                       ),

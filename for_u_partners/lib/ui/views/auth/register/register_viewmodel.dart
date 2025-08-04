@@ -1,22 +1,23 @@
+import 'package:for_u_partners/ui/views/auth/register/register_view.form.dart';
 import 'package:stacked/stacked.dart';
 import 'package:for_u_partners/app/app.router.dart';
 import 'package:for_u_partners/app/app.locator.dart';
 import 'package:stacked_services/stacked_services.dart';
 
 class RegisterViewModel extends FormViewModel {
-  final _navigationService = locator<NavigationService>();
+  final navigationService = locator<NavigationService>();
 
   final profiles = [
-    "Pressing",
-    "Livreur/Coursier",
-    "Conducteur",
-    "Agent d'entretien",
-    "Garagiste"
+    "pressing",
+    "livreur/Coursier",
+    "conducteur",
+    "agent d'entretien",
+    "garagiste"
   ];
 
   bool obscurePassword = true;
 
-  String _selectedProfile = "Pressing";
+  String _selectedProfile = "pressing";
   String get selectedProfile => _selectedProfile;
 
   //* Functions
@@ -27,7 +28,7 @@ class RegisterViewModel extends FormViewModel {
   }
 
   void login() {
-    _navigationService.replaceWithLoginView();
+    navigationService.replaceWithLoginView();
   }
 
   void setSelectedProfile(String value) {
@@ -36,8 +37,7 @@ class RegisterViewModel extends FormViewModel {
   }
 
   void registerByProfile() {
-    _navigationService.navigateToRegisterProfileView(
-        selectedProfile: _selectedProfile);
+   
   }
 }
 

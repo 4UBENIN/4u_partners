@@ -1,3 +1,7 @@
+import 'dart:ui';
+
+import 'package:for_u_partners/app/models/register_model.dart';
+import 'package:loading_animation_widget/loading_animation_widget.dart';
 import 'package:stacked/stacked.dart';
 import 'package:flutter/material.dart';
 import 'register_profile_view.form.dart';
@@ -36,15 +40,21 @@ import 'package:for_u_partners/ui/common/app_button_component.dart';
   //* Entretien
   FormTextField(name: 'cleaningNameInput'),
   FormTextField(name: 'cleaningSurnameInput'),
-  //* Pressing
+  //* Garage
   FormTextField(name: 'garageNameInput'),
   FormTextField(name: 'garageLocalisationInput'),
 ])
 class RegisterProfileView extends StackedView<RegisterProfileViewModel>
     with $RegisterProfileView {
   final String selectedProfile;
+  final String phoneNumber;
+  final String mail;
+  final String password;
 
-  const RegisterProfileView(this.selectedProfile, {Key? key}) : super(key: key);
+  const RegisterProfileView(
+      this.selectedProfile, this.phoneNumber, this.mail, this.password,
+      {Key? key})
+      : super(key: key);
 
   @override
   Widget builder(
@@ -62,52 +72,90 @@ class RegisterProfileView extends StackedView<RegisterProfileViewModel>
       body: SingleChildScrollView(
         child: Padding(
           padding: const EdgeInsets.symmetric(horizontal: 20),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              //* Profile
-              Padding(
-                padding: const EdgeInsets.symmetric(vertical: 20),
-                child: RichText(
-                  text: TextSpan(
-                    text: 'Je suis un ',
-                    style: const TextStyle(
-                      color: Colors.black,
-                      fontSize: 24,
-                    ),
-                    children: <TextSpan>[
-                      TextSpan(
-                        text: "$selectedProfile, ",
-                        style: const TextStyle(
-                            fontWeight: FontWeight.bold, color: primaryColor),
+          child: Stack(children: [
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                //* Profile
+                Padding(
+                  padding: const EdgeInsets.symmetric(vertical: 20),
+                  child: RichText(
+                    text: TextSpan(
+                      text: 'Je suis un ',
+                      style: const TextStyle(
+                        color: Colors.black,
+                        fontSize: 24,
                       ),
-                    ],
+                      children: <TextSpan>[
+                        TextSpan(
+                          text: "$selectedProfile, ",
+                          style: const TextStyle(
+                              fontWeight: FontWeight.bold, color: primaryColor),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+
+                //* Welcome message
+                const TextComponent(
+                  "Bienvenue à Move4u, veuillez remplir le formulaire ci-dessous pour finaliser la création de votre compte.",
+                  fontsize: 15,
+                ),
+                const SizedBox(height: 20),
+
+                //* Section by Profile
+                _buildSectionByProfile(selectedProfile, viewModel),
+
+                Padding(
+                  padding: const EdgeInsets.only(bottom: 34),
+                  child: SizedBox(
+                    height: 70,
+                    child: PrimaryButton(
+                        text: "Finaliser l'inscription",
+                        onPressed: () {
+                          switch (selectedProfile) {
+                            case 'pressing':
+                              RegistrationModel model = RegistrationModel(
+                                  type: selectedProfile,
+                                  telephone: phoneNumber,
+                                  email: mail,
+                                  code: "",
+                                  motDePasse: password,
+                                  motDePasseConfirmation: password,
+                                  nom: pressingNameInputController.text,
+                                  adresse:
+                                      pressingLocalisationInputController.text);
+                              viewModel.registerEnding(model);
+                              break;
+                            case 'conducteur':
+                              break;
+                            case 'Livreur/Coursier':
+                              break;
+                            default:
+                              break;
+                          }
+                        }),
+                  ),
+                ),
+              ],
+            ),
+            if (viewModel.isBusy)
+              Positioned.fill(
+                child: BackdropFilter(
+                  filter: ImageFilter.blur(sigmaX: 3, sigmaY: 3),
+                  child: Container(
+                    color: Colors.black.withOpacity(0.0),
+                    child: Center(
+                      child: LoadingAnimationWidget.inkDrop(
+                        color: kcPrimaryColor,
+                        size: 60,
+                      ),
+                    ),
                   ),
                 ),
               ),
-
-              //* Welcome message
-              const TextComponent(
-                "Bienvenue à Move4u, veuillez remplir le formulaire ci-dessous pour finaliser la création de votre compte.",
-                fontsize: 15,
-              ),
-              const SizedBox(height: 20),
-
-              //* Section by Profile
-              _buildSectionByProfile(selectedProfile, viewModel),
-
-              Padding(
-                padding: const EdgeInsets.only(bottom: 34),
-                child: SizedBox(
-                  height: 70,
-                  child: PrimaryButton(
-                    text: "Finaliser l'inscription",
-                    onPressed: () => viewModel.registerEnding(selectedProfile),
-                  ),
-                ),
-              ),
-            ],
-          ),
+          ]),
         ),
       ),
     );
@@ -116,7 +164,7 @@ class RegisterProfileView extends StackedView<RegisterProfileViewModel>
   Widget _buildSectionByProfile(String profile, dynamic viewModel) {
     switch (profile) {
       //* Pressing
-      case 'Pressing':
+      case 'pressing':
         return Column(
           children: [
             //* Nom du pressing
@@ -138,7 +186,7 @@ class RegisterProfileView extends StackedView<RegisterProfileViewModel>
         );
 
       //* Livreur/Coursier
-      case 'Livreur/Coursier':
+      case 'livreur/Coursier':
         return Column(
           children: [
             //* Nom du Livreur
@@ -188,7 +236,7 @@ class RegisterProfileView extends StackedView<RegisterProfileViewModel>
         );
 
       //* Conducteur
-      case 'Conducteur':
+      case 'conducteur':
         return Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -418,7 +466,7 @@ class RegisterProfileView extends StackedView<RegisterProfileViewModel>
         );
 
       //* Agent d'entretien
-      case "Agent d'entretien":
+      case "agent d'entretien":
         return Column(
           children: [
             //* Nom de l'agent
@@ -447,7 +495,7 @@ class RegisterProfileView extends StackedView<RegisterProfileViewModel>
         );
 
       //* Garagiste
-      case 'Garagiste':
+      case 'garagiste':
         return Column(
           children: [
             //* Nom du Garage

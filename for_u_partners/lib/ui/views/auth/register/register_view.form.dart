@@ -13,6 +13,7 @@ import 'package:stacked/stacked.dart';
 const bool _autoTextFieldValidation = true;
 
 const String PhoneNumberInputValueKey = 'phoneNumberInput';
+const String EmailInputValueKey = 'emailInput';
 const String PasswordInputValueKey = 'passwordInput';
 
 final Map<String, TextEditingController> _RegisterViewTextEditingControllers =
@@ -22,17 +23,21 @@ final Map<String, FocusNode> _RegisterViewFocusNodes = {};
 
 final Map<String, String? Function(String?)?> _RegisterViewTextValidations = {
   PhoneNumberInputValueKey: null,
+  EmailInputValueKey: null,
   PasswordInputValueKey: PasswordValidators.validatePassword,
 };
 
 mixin $RegisterView {
   TextEditingController get phoneNumberInputController =>
       _getFormTextEditingController(PhoneNumberInputValueKey);
+  TextEditingController get emailInputController =>
+      _getFormTextEditingController(EmailInputValueKey);
   TextEditingController get passwordInputController =>
       _getFormTextEditingController(PasswordInputValueKey);
 
   FocusNode get phoneNumberInputFocusNode =>
       _getFormFocusNode(PhoneNumberInputValueKey);
+  FocusNode get emailInputFocusNode => _getFormFocusNode(EmailInputValueKey);
   FocusNode get passwordInputFocusNode =>
       _getFormFocusNode(PasswordInputValueKey);
 
@@ -61,6 +66,7 @@ mixin $RegisterView {
   /// with the latest textController values
   void syncFormWithViewModel(FormStateHelper model) {
     phoneNumberInputController.addListener(() => _updateFormData(model));
+    emailInputController.addListener(() => _updateFormData(model));
     passwordInputController.addListener(() => _updateFormData(model));
 
     _updateFormData(model, forceValidate: _autoTextFieldValidation);
@@ -74,6 +80,7 @@ mixin $RegisterView {
   )
   void listenToFormUpdated(FormViewModel model) {
     phoneNumberInputController.addListener(() => _updateFormData(model));
+    emailInputController.addListener(() => _updateFormData(model));
     passwordInputController.addListener(() => _updateFormData(model));
 
     _updateFormData(model, forceValidate: _autoTextFieldValidation);
@@ -85,6 +92,7 @@ mixin $RegisterView {
       model.formValueMap
         ..addAll({
           PhoneNumberInputValueKey: phoneNumberInputController.text,
+          EmailInputValueKey: emailInputController.text,
           PasswordInputValueKey: passwordInputController.text,
         }),
     );
@@ -129,6 +137,8 @@ extension ValueProperties on FormStateHelper {
 
   String? get phoneNumberInputValue =>
       this.formValueMap[PhoneNumberInputValueKey] as String?;
+  String? get emailInputValue =>
+      this.formValueMap[EmailInputValueKey] as String?;
   String? get passwordInputValue =>
       this.formValueMap[PasswordInputValueKey] as String?;
 
@@ -140,6 +150,17 @@ extension ValueProperties on FormStateHelper {
     if (_RegisterViewTextEditingControllers.containsKey(
         PhoneNumberInputValueKey)) {
       _RegisterViewTextEditingControllers[PhoneNumberInputValueKey]?.text =
+          value ?? '';
+    }
+  }
+
+  set emailInputValue(String? value) {
+    this.setData(
+      this.formValueMap..addAll({EmailInputValueKey: value}),
+    );
+
+    if (_RegisterViewTextEditingControllers.containsKey(EmailInputValueKey)) {
+      _RegisterViewTextEditingControllers[EmailInputValueKey]?.text =
           value ?? '';
     }
   }
@@ -159,6 +180,9 @@ extension ValueProperties on FormStateHelper {
   bool get hasPhoneNumberInput =>
       this.formValueMap.containsKey(PhoneNumberInputValueKey) &&
       (phoneNumberInputValue?.isNotEmpty ?? false);
+  bool get hasEmailInput =>
+      this.formValueMap.containsKey(EmailInputValueKey) &&
+      (emailInputValue?.isNotEmpty ?? false);
   bool get hasPasswordInput =>
       this.formValueMap.containsKey(PasswordInputValueKey) &&
       (passwordInputValue?.isNotEmpty ?? false);
@@ -166,11 +190,15 @@ extension ValueProperties on FormStateHelper {
   bool get hasPhoneNumberInputValidationMessage =>
       this.fieldsValidationMessages[PhoneNumberInputValueKey]?.isNotEmpty ??
       false;
+  bool get hasEmailInputValidationMessage =>
+      this.fieldsValidationMessages[EmailInputValueKey]?.isNotEmpty ?? false;
   bool get hasPasswordInputValidationMessage =>
       this.fieldsValidationMessages[PasswordInputValueKey]?.isNotEmpty ?? false;
 
   String? get phoneNumberInputValidationMessage =>
       this.fieldsValidationMessages[PhoneNumberInputValueKey];
+  String? get emailInputValidationMessage =>
+      this.fieldsValidationMessages[EmailInputValueKey];
   String? get passwordInputValidationMessage =>
       this.fieldsValidationMessages[PasswordInputValueKey];
 }
@@ -179,12 +207,15 @@ extension Methods on FormStateHelper {
   setPhoneNumberInputValidationMessage(String? validationMessage) =>
       this.fieldsValidationMessages[PhoneNumberInputValueKey] =
           validationMessage;
+  setEmailInputValidationMessage(String? validationMessage) =>
+      this.fieldsValidationMessages[EmailInputValueKey] = validationMessage;
   setPasswordInputValidationMessage(String? validationMessage) =>
       this.fieldsValidationMessages[PasswordInputValueKey] = validationMessage;
 
   /// Clears text input fields on the Form
   void clearForm() {
     phoneNumberInputValue = '';
+    emailInputValue = '';
     passwordInputValue = '';
   }
 
@@ -192,6 +223,7 @@ extension Methods on FormStateHelper {
   void validateForm() {
     this.setValidationMessages({
       PhoneNumberInputValueKey: getValidationMessage(PhoneNumberInputValueKey),
+      EmailInputValueKey: getValidationMessage(EmailInputValueKey),
       PasswordInputValueKey: getValidationMessage(PasswordInputValueKey),
     });
   }
@@ -213,5 +245,6 @@ String? getValidationMessage(String key) {
 void updateValidationData(FormStateHelper model) =>
     model.setValidationMessages({
       PhoneNumberInputValueKey: getValidationMessage(PhoneNumberInputValueKey),
+      EmailInputValueKey: getValidationMessage(EmailInputValueKey),
       PasswordInputValueKey: getValidationMessage(PasswordInputValueKey),
     });

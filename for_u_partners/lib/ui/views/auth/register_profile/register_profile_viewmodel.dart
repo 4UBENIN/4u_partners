@@ -1,4 +1,6 @@
 import 'dart:io';
+import 'package:for_u_partners/app/models/register_model.dart';
+import 'package:for_u_partners/services/auth_service.dart';
 import 'package:stacked/stacked.dart';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
@@ -48,7 +50,7 @@ class RegisterProfileViewModel extends FormViewModel {
   String _wantedVehicle = "Moto";
   String get wantedVehicle => _wantedVehicle;
 
-  final _navigationService = locator<NavigationService>();
+  final _authService = locator<AuthService>();
   final ImagePicker _picker = ImagePicker();
 
   //* Functions
@@ -68,17 +70,14 @@ class RegisterProfileViewModel extends FormViewModel {
     rebuildUi();
   }
 
-  void registerEnding(String selectedProfile) {
-    if (selectedProfile == "Pressing") {
-      _navigationService.replaceWithNavBarPressingView();
-    } else if (selectedProfile == "Conducteur") {
-      _navigationService.replaceWithHomemainView();
-    } else if (selectedProfile == "Livreur/Coursier") {
-      _navigationService.replaceWithDeliveryNavBarView();
-    } else if (selectedProfile == "Garagiste") {
-      // Navigation pour garagiste
-    } else if (selectedProfile == "Agent d'entretien") {
-      // Navigation pour agent d'entretien
+  Future<void> registerEnding(RegistrationModel model) async {
+    setBusy(true);
+    // print("Register Ending");
+    try {
+      // print("Register");
+      await _authService.register(model);
+    } catch (e) {
+      setBusy(false);
     }
   }
 
