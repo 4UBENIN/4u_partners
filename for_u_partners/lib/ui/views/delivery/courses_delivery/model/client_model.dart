@@ -4,6 +4,7 @@ class DeliveryClientData {
   final String timeInfo;
   final String position;
   final String destination;
+  final List<String> details;
   final String initials;
 
   DeliveryClientData({
@@ -12,6 +13,7 @@ class DeliveryClientData {
     required this.timeInfo,
     required this.position,
     required this.destination,
+    required this.details,
     required this.initials,
   });
 }

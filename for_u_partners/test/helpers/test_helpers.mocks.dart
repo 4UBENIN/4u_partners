@@ -9,9 +9,12 @@ import 'dart:ui' as _i7;
 import 'package:flutter/material.dart' as _i5;
 import 'package:for_u_partners/app/models/course_model.dart' as _i2;
 import 'package:for_u_partners/app/models/login_model.dart' as _i10;
+import 'package:for_u_partners/app/models/pressing_dashboard_model.dart'
+    as _i14;
 import 'package:for_u_partners/app/models/register_model.dart' as _i11;
 import 'package:for_u_partners/services/auth_service.dart' as _i9;
 import 'package:for_u_partners/services/driver_service.dart' as _i12;
+import 'package:for_u_partners/services/pressing_service.dart' as _i13;
 import 'package:for_u_partners/services/sharedpreferences_service.dart' as _i8;
 import 'package:mockito/mockito.dart' as _i1;
 import 'package:mockito/src/dummies.dart' as _i4;
@@ -744,6 +747,66 @@ class MockSharedpreferencesService extends _i1.Mock
         returnValue: _i6.Future<void>.value(),
         returnValueForMissingStub: _i6.Future<void>.value(),
       ) as _i6.Future<void>);
+
+  @override
+  _i6.Future<void> saveUserType(dynamic type) => (super.noSuchMethod(
+        Invocation.method(
+          #saveUserType,
+          [type],
+        ),
+        returnValue: _i6.Future<void>.value(),
+        returnValueForMissingStub: _i6.Future<void>.value(),
+      ) as _i6.Future<void>);
+
+  @override
+  _i6.Future<String?> getUserType() => (super.noSuchMethod(
+        Invocation.method(
+          #getUserType,
+          [],
+        ),
+        returnValue: _i6.Future<String?>.value(),
+        returnValueForMissingStub: _i6.Future<String?>.value(),
+      ) as _i6.Future<String?>);
+
+  @override
+  _i6.Future<void> removeUserType() => (super.noSuchMethod(
+        Invocation.method(
+          #removeUserType,
+          [],
+        ),
+        returnValue: _i6.Future<void>.value(),
+        returnValueForMissingStub: _i6.Future<void>.value(),
+      ) as _i6.Future<void>);
+
+  @override
+  _i6.Future<void> saveUserId(dynamic id) => (super.noSuchMethod(
+        Invocation.method(
+          #saveUserId,
+          [id],
+        ),
+        returnValue: _i6.Future<void>.value(),
+        returnValueForMissingStub: _i6.Future<void>.value(),
+      ) as _i6.Future<void>);
+
+  @override
+  _i6.Future<String?> getUserId() => (super.noSuchMethod(
+        Invocation.method(
+          #getUserId,
+          [],
+        ),
+        returnValue: _i6.Future<String?>.value(),
+        returnValueForMissingStub: _i6.Future<String?>.value(),
+      ) as _i6.Future<String?>);
+
+  @override
+  _i6.Future<void> removeUserId() => (super.noSuchMethod(
+        Invocation.method(
+          #removeUserId,
+          [],
+        ),
+        returnValue: _i6.Future<void>.value(),
+        returnValueForMissingStub: _i6.Future<void>.value(),
+      ) as _i6.Future<void>);
 }
 
 /// A class which mocks [AuthService].
@@ -751,10 +814,17 @@ class MockSharedpreferencesService extends _i1.Mock
 /// See the documentation for Mockito's code generation for more information.
 class MockAuthService extends _i1.Mock implements _i9.AuthService {
   @override
-  _i6.Future<void> login(_i10.LoginModel? loginModel) => (super.noSuchMethod(
+  _i6.Future<void> login(
+    _i10.LoginModel? loginModel,
+    String? type,
+  ) =>
+      (super.noSuchMethod(
         Invocation.method(
           #login,
-          [loginModel],
+          [
+            loginModel,
+            type,
+          ],
         ),
         returnValue: _i6.Future<void>.value(),
         returnValueForMissingStub: _i6.Future<void>.value(),
@@ -891,4 +961,19 @@ class MockDriverService extends _i1.Mock implements _i12.DriverService {
           ),
         )),
       ) as _i6.Future<_i2.CourseDetail>);
+}
+
+/// A class which mocks [PressingService].
+///
+/// See the documentation for Mockito's code generation for more information.
+class MockPressingService extends _i1.Mock implements _i13.PressingService {
+  @override
+  _i6.Future<_i14.PressingResponse?> getPressingInfo() => (super.noSuchMethod(
+        Invocation.method(
+          #getPressingInfo,
+          [],
+        ),
+        returnValue: _i6.Future<_i14.PressingResponse?>.value(),
+        returnValueForMissingStub: _i6.Future<_i14.PressingResponse?>.value(),
+      ) as _i6.Future<_i14.PressingResponse?>);
 }

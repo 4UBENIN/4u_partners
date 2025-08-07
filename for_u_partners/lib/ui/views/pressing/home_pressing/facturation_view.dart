@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:for_u_partners/ui/common/app_textInput.dart';
 import 'package:for_u_partners/ui/common/app_button_component.dart';
+import 'package:for_u_partners/ui/common/text_component.dart';
 
 class FacturationView extends StatefulWidget {
   const FacturationView({Key? key}) : super(key: key);
@@ -112,23 +112,21 @@ class _FacturationViewState extends State<FacturationView> {
                     const SizedBox(height: 16),
 
                     // Section poids
-                    Container(
-                        padding: const EdgeInsets.all(16),
-                        decoration: BoxDecoration(
-                          color: Colors.white,
-                          borderRadius: BorderRadius.circular(12),
-                          border: Border.all(color: const Color(0xFFe5e7eb)),
-                        ),
-                        child: TextInputField(
-                          inputFormatters: [
-                            FilteringTextInputFormatter.digitsOnly,
-                          ],
-                          keyboardType: TextInputType.number,
-                          hintText: "Poids (kg)",
-                          bigLabel: "Poids",
-                        )),
-
-                    const SizedBox(height: 16),
+                    // Container(
+                    //     padding: const EdgeInsets.all(16),
+                    //     decoration: BoxDecoration(
+                    //       color: Colors.white,
+                    //       borderRadius: BorderRadius.circular(12),
+                    //       border: Border.all(color: const Color(0xFFe5e7eb)),
+                    //     ),
+                    //     child: TextInputField(
+                    //       inputFormatters: [
+                    //         FilteringTextInputFormatter.digitsOnly,
+                    //       ],
+                    //       keyboardType: TextInputType.number,
+                    //       hintText: "Poids (kg)",
+                    //       bigLabel: "Poids",
+                    //     )),
 
                     // Vêtements spéciaux
                     Container(
@@ -178,6 +176,25 @@ class _FacturationViewState extends State<FacturationView> {
               ),
             ),
 
+            const Padding(
+              padding: EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  TextComponent(
+                    "Poids Total (kg) :",
+                    fontweight: FontWeight.bold,
+                    fontsize: 16,
+                  ),
+                  TextComponent(
+                    "1kg",
+                    fontweight: FontWeight.bold,
+                    fontsize: 16,
+                  ),
+                ],
+              ),
+            ),
+
             // Total
             Container(
               padding: const EdgeInsets.only(top: 16),
@@ -212,7 +229,7 @@ class _FacturationViewState extends State<FacturationView> {
 
             const SizedBox(height: 20),
             PrimaryButton(
-                text: "Enregistrer",
+                text: "Facturer",
                 onPressed: () {
                   Navigator.pop(context, true);
                 }),

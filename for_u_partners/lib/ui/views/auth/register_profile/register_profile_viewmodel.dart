@@ -4,7 +4,6 @@ import 'package:for_u_partners/services/auth_service.dart';
 import 'package:stacked/stacked.dart';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
-import 'package:for_u_partners/app/app.router.dart';
 import 'package:for_u_partners/app/app.locator.dart';
 import 'package:stacked_services/stacked_services.dart';
 import 'package:for_u_partners/ui/common/app_colors.dart';

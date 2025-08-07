@@ -16,7 +16,6 @@ import 'package:for_u_partners/ui/common/app_button_component.dart';
   FormTextField(name: 'emailInput'),
   FormTextField(
     name: 'passwordInput',
-    validator: PasswordValidators.validatePassword,
   ),
 ])
 class RegisterView extends StackedView<RegisterViewModel> with $RegisterView {
@@ -60,7 +59,7 @@ class RegisterView extends StackedView<RegisterViewModel> with $RegisterView {
                       //* Phone Number
                       CountryPhoneSelector(
                           controller: phoneNumberInputController),
-                      const SizedBox(height: 20),
+                      const SizedBox(height: 15),
 
                       //* Email
                       TextInputField(
@@ -87,9 +86,20 @@ class RegisterView extends StackedView<RegisterViewModel> with $RegisterView {
                                 : Icons.visibility_rounded,
                           ),
                         ),
-                        // errorText: viewModel.passwordInputValidationMessage,
+                        // Utilisez validator pour la validation automatique
+                        validator: PasswordValidators.validatePassword,
+                        // Utilisez errorText seulement si le champ a été touché
+                        errorText: viewModel.passwordErrorText,
+                        // Ajoutez un callback onTap pour marquer le champ comme touché
+                        onTap: () {
+                          viewModel.onPasswordFieldTouched();
+                        },
+                        // Ajoutez aussi onChanged pour marquer comme touché dès la première saisie
+                        onChanged: (value) {
+                          viewModel.onPasswordFieldTouched();
+                        },
                       ),
-                      const SizedBox(height: 30),
+                      const SizedBox(height: 20),
 
                       //* Profile Dropdown
                       CustomDropdown(

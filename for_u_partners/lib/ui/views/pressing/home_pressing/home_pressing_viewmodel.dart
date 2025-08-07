@@ -6,28 +6,47 @@ class HomePressingViewModel extends BaseViewModel {
   final navigationService = locator<NavigationService>();
   bool isAccepted = false;
   String depotStatus = "En attente de validation";
-  String ramassageStatus = "En attente";
+  String _ramassageStatus = "En attente";
+
+  String get ramassageStatus => _ramassageStatus;
 
   void setAccepted(bool value) {
+    print("setAccepted called with: $value");
     isAccepted = value;
     if (value) {
-      ramassageStatus = "En attente de facturation";
+      _ramassageStatus = "A finaliser";
+      print("Status changed to: $_ramassageStatus");
+      print("Calling notifyListeners...");
+      notifyListeners();
+      print("notifyListeners called");
     }
-    notifyListeners();
   }
 
   void setDepotStatus(String status) {
+    print("setDepotStatus called with: $status");
     depotStatus = status;
     notifyListeners();
   }
 
   void setRamassageStatus(String status) {
-    ramassageStatus = status;
+    print("setRamassageStatus called with: $status");
+    _ramassageStatus = status;
     notifyListeners();
   }
 
-  void finalizeRamassage() {
-    ramassageStatus = "Terminé";
+  void contactDelivery() {
+    print("contactDelivery called");
+    _ramassageStatus = "A facturer";
+    print("Status changed to: $_ramassageStatus");
     notifyListeners();
+    print("notifyListeners called from contactDelivery");
+  }
+
+  void finalizeRamassage() {
+    print("finalizeRamassage called");
+    _ramassageStatus = "Terminé";
+    print("Status changed to: $_ramassageStatus");
+    notifyListeners();
+    print("notifyListeners called from finalizeRamassage");
   }
 }

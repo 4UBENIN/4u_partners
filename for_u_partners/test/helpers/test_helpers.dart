@@ -5,6 +5,7 @@ import 'package:stacked_services/stacked_services.dart';
 import 'package:for_u_partners/services/sharedpreferences_service.dart';
 import 'package:for_u_partners/services/auth_service.dart';
 import 'package:for_u_partners/services/driver_service.dart';
+import 'package:for_u_partners/services/pressing_service.dart';
 // @stacked-import
 
 import 'test_helpers.mocks.dart';
@@ -19,6 +20,7 @@ import 'test_helpers.mocks.dart';
         onMissingStub: OnMissingStub.returnDefault),
     MockSpec<AuthService>(onMissingStub: OnMissingStub.returnDefault),
     MockSpec<DriverService>(onMissingStub: OnMissingStub.returnDefault),
+    MockSpec<PressingService>(onMissingStub: OnMissingStub.returnDefault),
 // @stacked-mock-spec
   ],
 )
@@ -29,6 +31,7 @@ void registerServices() {
   getAndRegisterSharedpreferencesService();
   getAndRegisterAuthService();
   getAndRegisterDriverService();
+  getAndRegisterPressingService();
 // @stacked-mock-register
 }
 
@@ -104,6 +107,13 @@ MockDriverService getAndRegisterDriverService() {
   _removeRegistrationIfExists<DriverService>();
   final service = MockDriverService();
   locator.registerSingleton<DriverService>(service);
+  return service;
+}
+
+MockPressingService getAndRegisterPressingService() {
+  _removeRegistrationIfExists<PressingService>();
+  final service = MockPressingService();
+  locator.registerSingleton<PressingService>(service);
   return service;
 }
 // @stacked-mock-create

@@ -138,12 +138,9 @@ class CoursesDeliveryView extends StackedView<CoursesDeliveryViewModel> {
                   pointDepart: 'Seme City, Cadjehoun',
                   destination: 'EREVAN, Cadjehoun Aeroport',
                   nomClient: 'Teddy TOSSOU',
+                  type: 'Ramassage',
                   initialeClient: 'T',
-                  distance: 21.0,
-                  prix: 250,
-                  moyenPaiement: 'Espèces',
-                  coutParMinute: 1.0,
-                  coutDistance: 220.0,
+                  vetements: ["Tshirt x5", "Jeans x2", "Short x2"],
                   onSoumettre: () {
                     final navigationService = locator<NavigationService>();
                     navigationService.navigateToDeliveryNavBarView();

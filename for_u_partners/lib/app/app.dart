@@ -27,6 +27,8 @@ import 'package:for_u_partners/ui/views/delivery/notifications_delivery/notifica
 import 'package:for_u_partners/ui/views/pressing/notifications_pressing/notifications_pressing_view.dart';
 import 'package:for_u_partners/services/auth_service.dart';
 import 'package:for_u_partners/services/driver_service.dart';
+import 'package:for_u_partners/services/pressing_service.dart';
+import 'package:for_u_partners/ui/views/pressing/compte_pressing/profil_pressing/profil_pressing_view.dart';
 // @stacked-import
 
 @StackedApp(
@@ -53,6 +55,7 @@ import 'package:for_u_partners/services/driver_service.dart';
     MaterialRoute(page: CompteDeliveryView),
     MaterialRoute(page: ActivitiesDeliveryView),
     MaterialRoute(page: CoursesDeliveryView),
+    MaterialRoute(page: ProfilPressingView),
 // @stacked-route
   ],
   dependencies: [
@@ -62,6 +65,7 @@ import 'package:for_u_partners/services/driver_service.dart';
     LazySingleton(classType: SharedpreferencesService),
     LazySingleton(classType: AuthService),
     LazySingleton(classType: DriverService),
+    LazySingleton(classType: PressingService),
 // @stacked-service
   ],
   bottomsheets: [

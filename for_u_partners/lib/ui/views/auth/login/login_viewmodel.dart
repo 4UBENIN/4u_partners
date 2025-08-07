@@ -1,3 +1,7 @@
+import 'package:for_u_partners/app/models/login_model.dart';
+import 'package:for_u_partners/services/auth_service.dart';
+import 'package:for_u_partners/ui/views/auth/login/login_view.form.dart';
+// import 'package:for_u_partners/services/sharedpreferences_service.dart';
 import 'package:stacked/stacked.dart';
 import 'package:for_u_partners/app/app.router.dart';
 import 'package:for_u_partners/app/app.locator.dart';
@@ -5,16 +9,27 @@ import 'package:stacked_services/stacked_services.dart';
 
 class LoginViewModel extends FormViewModel {
   final _navigationService = locator<NavigationService>();
+  // final _sharedPreferencesServices = locator<SharedpreferencesService>();
+  final _authService = locator<AuthService>();
   bool obscurePassword = true;
   final profiles = [
-    "Pressing",
-    "Livreur/Coursier",
-    "Conducteur",
-    "Agent d'entretien",
-    "Garagiste"
+    "pressing",
+    "coursier",
+    "conducteur",
+    "agent d'entretien",
+    "garagiste"
   ];
-  String _selectedProfile = "Pressing";
+
+  String _selectedProfile = "pressing";
   String get selectedProfile => _selectedProfile;
+
+  bool hasPasswordBeenTouched = false;
+
+  // late Future<String?> selectedProfile;
+
+  // LoginViewModel() {
+  //  selectedProfile = _sharedPreferencesServices.getUserType();
+  // }
 
   //* METHODS
 
@@ -23,15 +38,14 @@ class LoginViewModel extends FormViewModel {
     rebuildUi();
   }
 
-  void login(String selectedProfile) {
-    if (selectedProfile == "Pressing") {
-      _navigationService.replaceWithNavBarPressingView();
-    } else if (selectedProfile == "Conducteur") {
-      _navigationService.replaceWithHomemainView();
-    } else if (selectedProfile == "Livreur/Coursier") {
-      _navigationService.replaceWithDeliveryNavBarView();
-    } else if (selectedProfile == "Garagiste") {
-    } else if (selectedProfile == "Agent d'entretien") {}
+  void login(LoginModel model) async {
+    setBusy(true);
+
+    try {
+      await _authService.login(model, _selectedProfile);
+    } catch (e) {
+      setBusy(false);
+    }
   }
 
   void register() {
@@ -42,6 +56,22 @@ class LoginViewModel extends FormViewModel {
     obscurePassword = !obscurePassword;
     rebuildUi();
   }
+
+  // Nouvelle méthode pour marquer que le champ password a été touché
+  void onPasswordFieldTouched() {
+    if (!hasPasswordBeenTouched) {
+      hasPasswordBeenTouched = true;
+      rebuildUi();
+    }
+  }
+
+  // Méthode pour obtenir le message d'erreur seulement si le champ a été touché
+  String? get passwordErrorText {
+    if (!hasPasswordBeenTouched) {
+      return null; // Ne pas afficher d'erreur si pas encore touché
+    }
+    return passwordInputValidationMessage;
+  }
 }
 
 class PasswordValidators {
@@ -50,10 +80,8 @@ class PasswordValidators {
       return 'Le mot de passe ne peut pas être vide';
     }
 
-    final passwordRegex = RegExp(r'^(?=.*[a-z])(?=.*[A-Z])(?=.*\d).{8,}$');
-
-    if (!passwordRegex.hasMatch(value)) {
-      return 'Le mot de passe doit contenir au moins une majuscule, une minuscule, un chiffre, et avoir 8 caractères minimum.';
+    if (value.length < 8) {
+      return 'Le mot de passe doit contenir au moins 8 caractères';
     }
 
     return null;

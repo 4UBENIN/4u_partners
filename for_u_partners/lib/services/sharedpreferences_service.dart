@@ -3,6 +3,10 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 class SharedpreferencesService {
   static const String _tokenKey = 'user_token';
+  static const String _userType = 'user_type';
+  static const String _userId = 'user_id';
+
+  //* USER TOKEN
 
   // Enregistre n'importe quel type de valeur en la convertissant en JSON
   Future<void> saveToken(dynamic token) async {
@@ -21,5 +25,47 @@ class SharedpreferencesService {
   Future<void> removeToken() async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.remove(_tokenKey);
+  }
+
+  //* USER TYPE
+
+  // Enregistre le type de l'utilisateur en la convertissant en JSON
+  Future<void> saveUserType(dynamic type) async {
+    final prefs = await SharedPreferences.getInstance();
+    String jsonType = jsonEncode(type);
+    await prefs.setString(_userType, jsonType);
+  }
+
+  // Récupère le type de l'utilisateur (brut ou reconverti en Map, selon besoin)
+  Future<String?> getUserType() async {
+    final prefs = await SharedPreferences.getInstance();
+    return prefs.getString(_userType);
+  }
+
+  // Supprimer le Type de l'utilisateur
+  Future<void> removeUserType() async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.remove(_userType);
+  }
+
+  //* USER ID
+
+  // Enregistre l'ID de l'utilisateur en la convertissant en JSON
+  Future<void> saveUserId(dynamic id) async {
+    final prefs = await SharedPreferences.getInstance();
+    String jsonType = jsonEncode(id);
+    await prefs.setString(_userId, jsonType);
+  }
+
+  // Récupère l'ID de l'utilisateur (brut ou reconverti en Map, selon besoin)
+  Future<String?> getUserId() async {
+    final prefs = await SharedPreferences.getInstance();
+    return prefs.getString(_userId);
+  }
+
+  // Supprimer l'ID de l'utilisateur
+  Future<void> removeUserId() async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.remove(_userId);
   }
 }

@@ -16,11 +16,13 @@ class RegisterViewModel extends FormViewModel {
   ];
 
   bool obscurePassword = true;
+  bool hasPasswordBeenTouched =
+      false; // Nouvelle variable pour tracker l'interaction
 
   String _selectedProfile = "pressing";
   String get selectedProfile => _selectedProfile;
 
-  //* Functions
+  //* FONCTIONS
 
   void viewPassword() {
     obscurePassword = !obscurePassword;
@@ -36,9 +38,23 @@ class RegisterViewModel extends FormViewModel {
     rebuildUi();
   }
 
-  void registerByProfile() {
-   
+  // Nouvelle méthode pour marquer que le champ password a été touché
+  void onPasswordFieldTouched() {
+    if (!hasPasswordBeenTouched) {
+      hasPasswordBeenTouched = true;
+      rebuildUi();
+    }
   }
+
+  // Méthode pour obtenir le message d'erreur seulement si le champ a été touché
+  String? get passwordErrorText {
+    if (!hasPasswordBeenTouched) {
+      return null; // Ne pas afficher d'erreur si pas encore touché
+    }
+    return passwordInputValidationMessage;
+  }
+
+  void registerByProfile() {}
 }
 
 class PasswordValidators {
@@ -47,10 +63,8 @@ class PasswordValidators {
       return 'Le mot de passe ne peut pas être vide';
     }
 
-    final passwordRegex = RegExp(r'^(?=.*[a-z])(?=.*[A-Z])(?=.*\d).{8,}$');
-
-    if (!passwordRegex.hasMatch(value)) {
-      return 'Le mot de passe doit contenir au moins une majuscule, une minuscule, un chiffre, et avoir 8 caractères minimum.';
+    if (value.length < 8) {
+      return 'Le mot de passe doit contenir au moins 8 caractères';
     }
 
     return null;

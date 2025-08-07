@@ -7,7 +7,6 @@
 // ignore_for_file: public_member_api_docs, constant_identifier_names, non_constant_identifier_names,unnecessary_this
 
 import 'package:flutter/material.dart';
-import 'package:for_u_partners/ui/views/auth/register/register_viewmodel.dart';
 import 'package:stacked/stacked.dart';
 
 const bool _autoTextFieldValidation = true;
@@ -24,7 +23,7 @@ final Map<String, FocusNode> _RegisterViewFocusNodes = {};
 final Map<String, String? Function(String?)?> _RegisterViewTextValidations = {
   PhoneNumberInputValueKey: null,
   EmailInputValueKey: null,
-  PasswordInputValueKey: PasswordValidators.validatePassword,
+  PasswordInputValueKey: null,
 };
 
 mixin $RegisterView {

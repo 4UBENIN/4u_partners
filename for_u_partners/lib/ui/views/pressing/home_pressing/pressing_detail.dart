@@ -6,9 +6,12 @@ import 'package:for_u_partners/ui/views/pressing/widgets/dialog_widget.dart';
 
 class PressingDetailView extends StatelessWidget {
   final bool isA;
+  final String? currentStatus;
+
   const PressingDetailView({
     super.key,
     this.isA = false,
+    this.currentStatus,
   });
 
   @override
@@ -24,14 +27,22 @@ class PressingDetailView extends StatelessWidget {
         ),
         centerTitle: true,
       ),
-      body: _PressingDetailContent(isAccepted: isA),
+      body: _PressingDetailContent(
+        isAccepted: isA,
+        currentStatus: currentStatus,
+      ),
     );
   }
 }
 
 class _PressingDetailContent extends StatefulWidget {
   final bool isAccepted;
-  const _PressingDetailContent({required this.isAccepted});
+  final String? currentStatus;
+
+  const _PressingDetailContent({
+    required this.isAccepted,
+    this.currentStatus,
+  });
 
   @override
   State<_PressingDetailContent> createState() => _PressingDetailContentState();
@@ -126,36 +137,11 @@ class _PressingDetailContentState extends State<_PressingDetailContent> {
                 ],
               ),
             ),
-            // const SizedBox(height: 20),
-            // const TextComponent("Moyen de Paiement",
-            //     fontsize: 17, textcolor: kcLightGrey),
-            // const SizedBox(height: 10),
-            // _buildRadioOption("Portefeuille"),
-            // _buildRadioOption("Espèces"),
             const SizedBox(height: 20),
-            if (widget.isAccepted)
-              PrimaryButton(
-                text: "Finaliser la demande",
-                onPressed: () {
-                  showDemandCompletedDialog(
-                    context: context,
-                    clientName: "Teddy TOSSOU",
-                    onAccept: () {
-                      Navigator.pop(context, true); // retourne vrai
-                    },
-                    onDecline: () {
-                      Navigator.pop(context);
-                    },
-                  );
-                },
-              )
-            else
-              PrimaryButton(
-                text: "Accepter la demande",
-                onPressed: () {
-                  Navigator.pop(context, true); // retourne vrai
-                },
-              ),
+
+            // Bouton principal qui change selon le statut
+            _buildMainButton(context),
+
             Center(
               child: TextButton(
                 onPressed: () {},
@@ -167,6 +153,44 @@ class _PressingDetailContentState extends State<_PressingDetailContent> {
         ),
       ),
     );
+  }
+
+  Widget _buildMainButton(BuildContext context) {
+    // Utiliser currentStatus pour déterminer le bouton à afficher
+    switch (widget.currentStatus) {
+      case "En attente":
+        return PrimaryButton(
+          text: "Accepter la demande",
+          onPressed: () {
+            Navigator.pop(context, true);
+          },
+        );
+
+      case "A finaliser":
+        return PrimaryButton(
+          text: "Contacter le livreur",
+          onPressed: () {
+            Navigator.pop(context, true);
+          },
+        );
+
+      default: // Pour "A facturer" et autres cas
+        return PrimaryButton(
+          text: "Finaliser la demande",
+          onPressed: () {
+            showDemandCompletedDialog(
+              context: context,
+              clientName: "Teddy TOSSOU",
+              onAccept: () {
+                Navigator.pop(context, true);
+              },
+              onDecline: () {
+                Navigator.pop(context);
+              },
+            );
+          },
+        );
+    }
   }
 
   Widget _buildRadioOption(String label) {

@@ -1,3 +1,4 @@
+import 'package:for_u_partners/app/models/pressing_dashboard_model.dart';
 import 'package:for_u_partners/app/models/user_model.dart';
 
 class LoginModel {
@@ -36,6 +37,26 @@ class LoginResponseModel {
   factory LoginResponseModel.fromJson(Map<String, dynamic> json) {
     return LoginResponseModel(
       user: UserModel.fromJson(json['data']),
+      token: json['token'],
+      message: json['message'],
+    );
+  }
+}
+
+class LoginPressingResponseModel {
+  final Pressing pressing;
+  final String token;
+  final String message;
+
+  LoginPressingResponseModel({
+    required this.pressing,
+    required this.token,
+    required this.message,
+  });
+
+  factory LoginPressingResponseModel.fromJson(Map<String, dynamic> json) {
+    return LoginPressingResponseModel(
+      pressing: Pressing.fromJson(json['data']),
       token: json['token'],
       message: json['message'],
     );

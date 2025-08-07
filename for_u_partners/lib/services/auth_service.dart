@@ -12,17 +12,33 @@ class AuthService {
   final _sharedPreferencesServices = locator<SharedpreferencesService>();
   final _navigationService = locator<NavigationService>();
 
-  Future<void> login(LoginModel loginModel) async {
-    final url = Uri.parse(loginUrl);
-    final response =
-        await http.post(url, headers: headers, body: loginModel.toJson());
+  //* LOGIN FUNCTION
+
+  Future<void> login(LoginModel loginModel, String type) async {
+    final url =
+        Uri.parse("https://foryou.cilassocies.com/api/partenaire/login");
+
+    final response = await http.post(url,
+        headers: headers, body: jsonEncode(loginModel.toJson()));
+
+    print("type");
+    print(type);
+
+    print("status");
+    print(response.statusCode);
 
     if (response.statusCode == 200) {
       final responseJson = jsonDecode(response.body);
+      print("reponseJson");
+      print(responseJson);
 
-      final loginResponse = LoginResponseModel.fromJson(responseJson);
-      _sharedPreferencesServices.saveToken(loginResponse.token);
-      switch (loginResponse.user.role) {
+      final loginResponse = LoginPressingResponseModel.fromJson(responseJson);
+      await _sharedPreferencesServices.saveToken(loginResponse.token);
+
+      print("login response");
+      print(loginResponse);
+
+      switch (type) {
         case 'livreur':
           _navigationService.replaceWithDeliveryNavBarView();
           break;
@@ -33,17 +49,23 @@ class AuthService {
           _navigationService.replaceWithDeliveryNavBarView();
           break;
         case 'pressing':
+          print("Dans pressing ici");
           _navigationService.replaceWithNavBarPressingView();
           break;
         default:
           _navigationService.replaceWithNavBarPressingView();
       }
+    } else {
+      throw Exception('Something went wrong');
     }
   }
 
-  Future<void> register(RegistrationModel registrationModel) async {
-    final url = Uri.parse(registerUrl);
+  //* REGISTER FUNCTION
 
+  Future<void> register(RegistrationModel registrationModel) async {
+    final url =
+        Uri.parse("https://foryou.cilassocies.com/api/partenaire/register");
+    print(url);
     try {
       final response = await http.post(
         url,
@@ -51,13 +73,16 @@ class AuthService {
         body: jsonEncode(registrationModel.toJson()),
       );
 
-      print("Réponse reçue"); // <- ce print doit maintenant s'afficher
+      print(
+          registrationModel.toJson()); // <- ce print doit maintenant s'afficher
 
       if (response.statusCode == 201) {
         final responseJson = jsonDecode(response.body);
         final registerType = responseJson['type'];
 
         await _sharedPreferencesServices.saveToken(responseJson['token']);
+        await _sharedPreferencesServices.saveUserId(responseJson['data']['id']);
+        await _sharedPreferencesServices.saveUserType(registerType);
 
         switch (registerType) {
           case 'livreur':

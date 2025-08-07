@@ -11,8 +11,24 @@ class StartupViewModel extends BaseViewModel {
   Future runStartupLogic() async {
     await Future.delayed(const Duration(seconds: 3));
     final token = await _sharedpreferencesService.getToken();
-    if (token != null) {
-      _navigationService.navigateToHomemainView();
+    final userType = await _sharedpreferencesService.getUserType();
+    if (token != null && userType != null) {
+      switch (userType) {
+        case 'livreur':
+          _navigationService.replaceWithDeliveryNavBarView();
+          break;
+        case 'conducteur':
+          _navigationService.replaceWithHomemainView();
+          break;
+        case 'coursier':
+          _navigationService.replaceWithDeliveryNavBarView();
+          break;
+        case 'pressing':
+          _navigationService.replaceWithNavBarPressingView();
+          break;
+        default:
+          _navigationService.replaceWithNavBarPressingView();
+      }
     } else {
       _navigationService.navigateToLoginView();
     }

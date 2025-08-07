@@ -1,11 +1,12 @@
 import 'package:flutter/material.dart';
+import 'package:for_u_partners/ui/views/pressing/home_pressing/home_pressing_viewmodel.dart';
+import 'package:stacked/stacked.dart';
 
-class PressingDemandWidget extends StatefulWidget {
+class PressingDemandWidget extends ViewModelWidget<HomePressingViewModel> {
   final String name;
   final String date;
   final String place;
   final bool isValid;
-  final String status; // "En attente", "En attente de facturation", "Terminé"
   final VoidCallback? onClick;
 
   const PressingDemandWidget({
@@ -15,16 +16,10 @@ class PressingDemandWidget extends StatefulWidget {
     required this.onClick,
     required this.date,
     required this.place,
-    required this.status,
   });
 
   @override
-  State<PressingDemandWidget> createState() => _PressingDemandWidgetState();
-}
-
-class _PressingDemandWidgetState extends State<PressingDemandWidget> {
-  @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, HomePressingViewModel viewModel) {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 10),
       child: Container(
@@ -44,7 +39,7 @@ class _PressingDemandWidgetState extends State<PressingDemandWidget> {
           elevation: 2,
           shadowColor: Colors.black.withOpacity(0.04),
           child: InkWell(
-            onTap: widget.onClick,
+            onTap: onClick,
             borderRadius: BorderRadius.circular(16),
             child: Container(
               padding: const EdgeInsets.all(20),
@@ -78,7 +73,7 @@ class _PressingDemandWidgetState extends State<PressingDemandWidget> {
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
                               Text(
-                                widget.name,
+                                name,
                                 style: const TextStyle(
                                   fontSize: 16,
                                   fontWeight: FontWeight.w600,
@@ -99,7 +94,8 @@ class _PressingDemandWidgetState extends State<PressingDemandWidget> {
                       Column(
                         crossAxisAlignment: CrossAxisAlignment.end,
                         children: [
-                          _buildStatusBadge(),
+                          _buildStatusBadge(viewModel
+                              .ramassageStatus), // ← Utilise le statut du ViewModel
                           const SizedBox(height: 4),
                           Text(
                             _getFormattedDate(),
@@ -123,7 +119,7 @@ class _PressingDemandWidgetState extends State<PressingDemandWidget> {
                       const SizedBox(width: 4),
                       Expanded(
                         child: Text(
-                          widget.place,
+                          place,
                           style: const TextStyle(
                             fontSize: 14,
                             color: Color(0xFF8e8e93),
@@ -165,13 +161,13 @@ class _PressingDemandWidgetState extends State<PressingDemandWidget> {
     );
   }
 
-  Widget _buildStatusBadge() {
+  Widget _buildStatusBadge(String status) {
     Color backgroundColor;
     Color textColor;
     String displayText;
 
-    switch (widget.status) {
-      case "En attente de facturation":
+    switch (status) {
+      case "A facturer":
         backgroundColor = const Color(0xFFFEF3C7);
         textColor = const Color(0xFFD97706);
         displayText = "À facturer";
@@ -180,6 +176,11 @@ class _PressingDemandWidgetState extends State<PressingDemandWidget> {
         backgroundColor = const Color(0xFFD1FAE5);
         textColor = const Color(0xFF059669);
         displayText = "Terminé";
+        break;
+      case "A finaliser":
+        backgroundColor = const Color(0xFFDDD6FE);
+        textColor = const Color(0xFF7C3AED);
+        displayText = "À finaliser";
         break;
       default: // "En attente"
         backgroundColor = const Color(0xFFE5E7EB);
@@ -206,6 +207,6 @@ class _PressingDemandWidgetState extends State<PressingDemandWidget> {
 
   String _getFormattedDate() {
     // Formatage simple de la date
-    return widget.date.split(' ').take(3).join(' ');
+    return date.split(' ').take(3).join(' ');
   }
 }

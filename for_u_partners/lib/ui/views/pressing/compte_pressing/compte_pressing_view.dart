@@ -73,7 +73,9 @@ class ComptePressingView extends StackedView<ComptePressingViewModel> {
                     _buildMenuItem(
                       icon: _buildUserIcon(),
                       text: 'Mon compte',
-                      onTap: () {},
+                      onTap: () {
+                        viewModel.viewProfile();
+                      },
                     ),
                     _buildMenuItem(
                       icon: _buildStatsIcon(),
@@ -95,7 +97,7 @@ class ComptePressingView extends StackedView<ComptePressingViewModel> {
                       text: 'Log Out',
                       isLogout: true,
                       onTap: () {
-                        viewModel.logOut();
+                        viewModel.logOutAlert(context);
                       },
                     ),
                   ],

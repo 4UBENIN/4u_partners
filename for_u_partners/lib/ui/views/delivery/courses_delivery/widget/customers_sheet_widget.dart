@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:for_u_partners/ui/common/app_colors.dart';
+import 'package:for_u_partners/ui/common/app_textInput.dart';
 import 'package:for_u_partners/ui/views/delivery/courses_delivery/model/client_model.dart';
 import 'package:for_u_partners/ui/views/delivery/courses_delivery/widget/dialog_widget.dart';
 
@@ -235,6 +237,7 @@ class AcceptedClientBottomSheet extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    List details = client.details;
     return DraggableScrollableSheet(
       initialChildSize: 0.45,
       minChildSize: 0.25,
@@ -434,6 +437,67 @@ class AcceptedClientBottomSheet extends StatelessWidget {
                   ),
 
                   const SizedBox(height: 30),
+
+                  //Details
+                  if (client.type == 'Ramassage') ...{
+                    Container(
+                      width: double.infinity,
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 12, vertical: 12),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFF7F8FD),
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            'Détails',
+                            style: TextStyle(
+                              fontSize: 14,
+                              color: Colors.grey[600],
+                              fontWeight: FontWeight.w500,
+                            ),
+                          ),
+                          const SizedBox(height: 8),
+                          for (int i = 0; i < details.length; i++) ...{
+                            Text(
+                              details[i],
+                              style: const TextStyle(
+                                fontSize: 16,
+                                fontWeight: FontWeight.bold,
+                                color: Colors.black87,
+                              ),
+                            ),
+                          }
+                        ],
+                      ),
+                    ),
+
+                    // ignore: equal_elements_in_set
+                    const SizedBox(height: 30),
+
+                    // Section poids
+                    Container(
+                        padding: const EdgeInsets.all(16),
+                        decoration: BoxDecoration(
+                          color: Colors.white,
+                          borderRadius: BorderRadius.circular(12),
+                          border: Border.all(color: const Color(0xFFe5e7eb)),
+                        ),
+                        child: TextInputField(
+                          inputFormatters: [
+                            FilteringTextInputFormatter.digitsOnly,
+                          ],
+                          keyboardType: TextInputType.number,
+                          hintText: "Poids (kg)",
+                          bigLabel: "Poids",
+                        )),
+                    // ignore: equal_elements_in_set
+                    const SizedBox(height: 30),
+                  } else ...{
+                    Container()
+                  },
 
                   // Question
                   const Center(
@@ -714,36 +778,103 @@ class InProgressRideBottomSheet extends StatelessWidget {
                   ),
 
                   const SizedBox(height: 20),
-                  Container(
-                    height: 50,
-                    width: double.infinity,
-                    decoration: BoxDecoration(
-                      color: const Color(0xFFD9D9D9),
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        const Text(
-                          'Course en cours:',
-                          style: TextStyle(
-                            fontSize: 14,
-                            color: Color(0xFF757575),
-                            fontWeight: FontWeight.w500,
+                  //Details
+                  if (client.type == 'Ramassage') ...{
+                    Container(
+                      width: double.infinity,
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 12, vertical: 12),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFF7F8FD),
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            'Détails',
+                            style: TextStyle(
+                              fontSize: 14,
+                              color: Colors.grey[600],
+                              fontWeight: FontWeight.w500,
+                            ),
                           ),
-                        ),
-                        const SizedBox(width: 8),
-                        Text(
-                          '$price CFA',
-                          style: const TextStyle(
-                            fontSize: 16,
-                            fontWeight: FontWeight.bold,
-                            color: Color(0xFF757575),
-                          ),
-                        ),
-                      ],
+                          const SizedBox(height: 8),
+                          for (int i = 0; i < client.details.length; i++) ...{
+                            Text(
+                              client.details[i],
+                              style: const TextStyle(
+                                fontSize: 16,
+                                fontWeight: FontWeight.bold,
+                                color: Colors.black87,
+                              ),
+                            ),
+                          }
+                        ],
+                      ),
                     ),
-                  ),
+                    const SizedBox(height: 30),
+                    Padding(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 12,
+                      ),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          const Text(
+                            'Poids',
+                            style: TextStyle(
+                              fontSize: 16,
+                              color: Colors.black,
+                              fontWeight: FontWeight.w500,
+                            ),
+                          ),
+                          Text(
+                            '1kg',
+                            style: const TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.w500,
+                              color: Colors.black,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    // ignore: equal_elements_in_set
+                    const SizedBox(height: 10),
+                  } else ...{
+                    Container()
+                  },
+                  // Container(
+                  //   height: 50,
+                  //   width: double.infinity,
+                  //   decoration: BoxDecoration(
+                  //     color: const Color(0xFFD9D9D9),
+                  //     borderRadius: BorderRadius.circular(12),
+                  //   ),
+                  //   child: Row(
+                  //     mainAxisAlignment: MainAxisAlignment.center,
+                  //     children: [
+                  //       const Text(
+                  //         'Course en cours:',
+                  //         style: TextStyle(
+                  //           fontSize: 14,
+                  //           color: Color(0xFF757575),
+                  //           fontWeight: FontWeight.w500,
+                  //         ),
+                  //       ),
+                  //       const SizedBox(width: 8),
+                  //       Text(
+                  //         '$price CFA',
+                  //         style: const TextStyle(
+                  //           fontSize: 16,
+                  //           fontWeight: FontWeight.bold,
+                  //           color: Color(0xFF757575),
+                  //         ),
+                  //       ),
+                  //     ],
+                  //   ),
+                  // ),
 
                   const SizedBox(height: 20),
 

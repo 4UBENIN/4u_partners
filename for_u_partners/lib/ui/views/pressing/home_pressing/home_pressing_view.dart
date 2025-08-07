@@ -31,7 +31,131 @@ class HomePressingView extends StackedView<HomePressingViewModel> {
               children: [
                 const WalletPressingWidget(balance: "67,500 FCFA"),
                 const _TabBarSection(),
-                _TabBarContent(viewModel: viewModel),
+                // UTILISATION DIRECTE sans classe séparée
+                SizedBox(
+                  height: 400,
+                  child: TabBarView(
+                    children: [
+                      //* Tab Ramassage
+                      Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          const SizedBox(height: 20),
+                          const TextComponent(
+                            "Demandes récentes",
+                            fontweight: FontWeight.bold,
+                            fontsize: 19,
+                          ),
+                          PressingDemandWidget(
+                            name: "Teddy TOUSSOU",
+                            isValid: true,
+                            // status: viewModel.ramassageStatus, // DIRECT
+                            onClick: () async {
+                              print(
+                                  "Statut actuel: ${viewModel.ramassageStatus}");
+
+                              if (viewModel.ramassageStatus == "En attente") {
+                                // Premier clic
+                                final result = await Navigator.push<bool>(
+                                  context,
+                                  MaterialPageRoute(
+                                    builder: (_) => PressingDetailView(
+                                      isA: false,
+                                      currentStatus: "En attente",
+                                    ),
+                                  ),
+                                );
+
+                                if (result == true) {
+                                  print("Acceptation confirmée");
+                                  viewModel.setAccepted(true);
+                                  print(
+                                      "Nouveau statut: ${viewModel.ramassageStatus}");
+                                }
+                              } else if (viewModel.ramassageStatus ==
+                                  "A finaliser") {
+                                // Deuxième clic
+                                final result = await Navigator.push<bool>(
+                                  context,
+                                  MaterialPageRoute(
+                                    builder: (_) => PressingDetailView(
+                                      isA: true,
+                                      currentStatus: "A finaliser",
+                                    ),
+                                  ),
+                                );
+
+                                if (result == true) {
+                                  print("Contact livreur confirmé");
+                                  viewModel.contactDelivery();
+                                  print(
+                                      "Nouveau statut: ${viewModel.ramassageStatus}");
+                                }
+                              } else if (viewModel.ramassageStatus ==
+                                  "A facturer") {
+                                // Troisième clic
+                                final result = await Navigator.push<bool>(
+                                  context,
+                                  MaterialPageRoute(
+                                    builder: (_) => const FacturationView(),
+                                  ),
+                                );
+
+                                if (result == true) {
+                                  print("Facturation confirmée");
+                                  viewModel.finalizeRamassage();
+                                  print(
+                                      "Nouveau statut: ${viewModel.ramassageStatus}");
+                                }
+                              }
+                            },
+                            date: "Mardi 12 Décembre 2025",
+                            place: "EREVAN, Cadjehoun Aeroport",
+                          ),
+                        ],
+                      ),
+
+                      //* Tab Dépôt de vêtements
+                      Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          const SizedBox(height: 20),
+                          const TextComponent(
+                            "Demandes de dépôt",
+                            fontweight: FontWeight.bold,
+                            fontsize: 19,
+                          ),
+                          _DepotDemandWidget(
+                            name: "Teddy TOSSOU",
+                            date: "Mardi 26 Mars à 15h30",
+                            status: viewModel.depotStatus,
+                            onTap: () async {
+                              if (viewModel.depotStatus == "Validé") {
+                                Navigator.push(
+                                  context,
+                                  MaterialPageRoute(
+                                      builder: (_) => const FacturationView()),
+                                );
+                              } else {
+                                final result = await Navigator.push<bool>(
+                                  context,
+                                  MaterialPageRoute(
+                                      builder: (_) => const DepotDetailView()),
+                                );
+
+                                if (result == true) {
+                                  viewModel.setDepotStatus("Validé");
+                                } else if (result == false) {
+                                  viewModel.setDepotStatus("Rejeté");
+                                }
+                              }
+                            },
+                          )
+                        ],
+                      ),
+                    ],
+                  ),
+                ),
               ],
             ),
           ),
@@ -133,110 +257,6 @@ class _TabBarSection extends StatelessWidget {
         Tab(text: 'Ramassage'),
         Tab(text: 'Dépot de vêtements'),
       ],
-    );
-  }
-}
-
-class _TabBarContent extends StatelessWidget {
-  final HomePressingViewModel viewModel;
-  const _TabBarContent({required this.viewModel});
-
-  @override
-  Widget build(BuildContext context) {
-    return SizedBox(
-      height: 400,
-      child: TabBarView(
-        children: [
-          //* Tab Ramassage
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              const SizedBox(height: 20),
-              const TextComponent(
-                "Demandes récentes",
-                fontweight: FontWeight.bold,
-                fontsize: 19,
-              ),
-              PressingDemandWidget(
-                name: "Teddy TOUSSOU",
-                isValid: true,
-                status: viewModel.ramassageStatus,
-                onClick: () async {
-                  if (viewModel.ramassageStatus == "En attente") {
-                    // Premier clic - aller à la page de détail pour accepter
-                    final result = await Navigator.push<bool>(
-                      context,
-                      MaterialPageRoute(
-                        builder: (_) =>
-                            PressingDetailView(isA: viewModel.isAccepted),
-                      ),
-                    );
-
-                    if (result == true) {
-                      viewModel.setAccepted(true);
-                    }
-                  } else if (viewModel.ramassageStatus ==
-                      "En attente de facturation") {
-                    // Deuxième clic - aller à la page avec bouton "Finaliser"
-                    final result = await Navigator.push<bool>(
-                      context,
-                      MaterialPageRoute(
-                        builder: (_) => const FacturationView(),
-                      ),
-                    );
-
-                    if (result == true) {
-                      viewModel.finalizeRamassage();
-                    }
-                  }
-                  // Si "Terminé", on peut aller vers une page de détail ou ne rien faire
-                },
-                date: "Mardi 12 Décembre 2025",
-                place: "EREVAN, Cadjehoun Aeroport",
-              ),
-            ],
-          ),
-
-          //* Tab Dépôt de vêtements
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              const SizedBox(height: 20),
-              const TextComponent(
-                "Demandes de dépôt",
-                fontweight: FontWeight.bold,
-                fontsize: 19,
-              ),
-              _DepotDemandWidget(
-                name: "Teddy TOSSOU",
-                date: "Mardi 26 Mars à 15h30",
-                status: viewModel.depotStatus,
-                onTap: () async {
-                  if (viewModel.depotStatus == "Validé") {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                          builder: (_) => const FacturationView()),
-                    );
-                  } else {
-                    final result = await Navigator.push<bool>(
-                      context,
-                      MaterialPageRoute(
-                          builder: (_) => const DepotDetailView()),
-                    );
-
-                    if (result == true) {
-                      viewModel.setDepotStatus("Validé");
-                    } else if (result == false) {
-                      viewModel.setDepotStatus("Rejeté");
-                    }
-                  }
-                },
-              )
-            ],
-          ),
-        ],
-      ),
     );
   }
 }

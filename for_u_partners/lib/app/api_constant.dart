@@ -14,5 +14,8 @@ String factureCourseUrl(int courseId) =>
     "$baseUrl/api/conducteur/courses/$courseId/facture";
 String coursesDetailsUrl(int courseId) =>
     "$baseUrl/api/conducteur/courses/$courseId/details";
-String assignedCourseUrl = "$baseUrl/api/conducteur/courses_list";
-Map<String, String> headers = {'Content-Type': 'application/json'};
+String assignedCourseUrl = "$baseUrl/conducteur/courses_list";
+Map<String, String> headers = {
+  'Content-Type': 'application/json',
+  'Accept': 'application/json'
+};
