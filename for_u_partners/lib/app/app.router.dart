@@ -42,14 +42,14 @@ import 'package:for_u_partners/ui/views/pressing/activites_pressing/activites_pr
     as _i15;
 import 'package:for_u_partners/ui/views/pressing/compte_pressing/compte_pressing_view.dart'
     as _i17;
+import 'package:for_u_partners/ui/views/pressing/compte_pressing/profil_pressing/profil_pressing_view.dart'
+    as _i24;
 import 'package:for_u_partners/ui/views/pressing/home_pressing/home_pressing_view.dart'
     as _i13;
 import 'package:for_u_partners/ui/views/pressing/nav_bar_pressing/nav_bar_pressing_view.dart'
     as _i14;
 import 'package:for_u_partners/ui/views/pressing/notifications_pressing/notifications_pressing_view.dart'
     as _i16;
-import 'package:for_u_partners/ui/views/pressing/compte_pressing/profil_pressing/profil_pressing_view.dart'
-    as _i24;
 import 'package:for_u_partners/ui/views/startup/startup_view.dart' as _i2;
 import 'package:stacked/stacked.dart' as _i1;
 import 'package:stacked_services/stacked_services.dart' as _i27;

@@ -1,4 +1,4 @@
-import 'package:for_u_partners/app/models/pressing_dashboard_model.dart';
+import 'package:for_u_partners/app/models/pressing_model.dart';
 import 'package:for_u_partners/app/models/user_model.dart';
 
 class LoginModel {

@@ -1,10 +1,12 @@
+import 'package:for_u_partners/app/models/ramassage_model.dart';
+import 'package:for_u_partners/ui/views/pressing/home_pressing/pressing_detail.dart';
+import 'package:for_u_partners/ui/views/pressing/widgets/animated_dot.dart';
 import 'package:stacked/stacked.dart';
 import 'home_pressing_viewmodel.dart';
 import 'package:flutter/material.dart';
 import 'package:for_u_partners/ui/common/app_colors.dart';
 import 'package:for_u_partners/ui/common/text_component.dart';
 import 'package:for_u_partners/ui/views/pressing/widgets/wallet_widget.dart';
-import 'package:for_u_partners/ui/views/pressing/home_pressing/pressing_detail.dart';
 import 'package:for_u_partners/ui/views/pressing/home_pressing/facturation_view.dart';
 import 'package:for_u_partners/ui/views/pressing/widgets/pressing_demand_widget.dart';
 import 'package:for_u_partners/ui/views/pressing/home_pressing/pressing_depot_detail.dart';
@@ -22,149 +24,192 @@ class HomePressingView extends StackedView<HomePressingViewModel> {
       length: 2,
       child: Scaffold(
         backgroundColor: kcWhiteColors,
-        appBar: _buildCustomAppBar(),
-        body: SingleChildScrollView(
-          child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 25),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                const WalletPressingWidget(balance: "67,500 FCFA"),
-                const _TabBarSection(),
-                // UTILISATION DIRECTE sans classe séparée
-                SizedBox(
-                  height: 400,
-                  child: TabBarView(
-                    children: [
-                      //* Tab Ramassage
-                      Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          const SizedBox(height: 20),
-                          const TextComponent(
-                            "Demandes récentes",
-                            fontweight: FontWeight.bold,
-                            fontsize: 19,
-                          ),
-                          PressingDemandWidget(
-                            name: "Teddy TOUSSOU",
-                            isValid: true,
-                            // status: viewModel.ramassageStatus, // DIRECT
-                            onClick: () async {
-                              print(
-                                  "Statut actuel: ${viewModel.ramassageStatus}");
-
-                              if (viewModel.ramassageStatus == "En attente") {
-                                // Premier clic
-                                final result = await Navigator.push<bool>(
-                                  context,
-                                  MaterialPageRoute(
-                                    builder: (_) => PressingDetailView(
-                                      isA: false,
-                                      currentStatus: "En attente",
-                                    ),
-                                  ),
-                                );
-
-                                if (result == true) {
-                                  print("Acceptation confirmée");
-                                  viewModel.setAccepted(true);
-                                  print(
-                                      "Nouveau statut: ${viewModel.ramassageStatus}");
-                                }
-                              } else if (viewModel.ramassageStatus ==
-                                  "A finaliser") {
-                                // Deuxième clic
-                                final result = await Navigator.push<bool>(
-                                  context,
-                                  MaterialPageRoute(
-                                    builder: (_) => PressingDetailView(
-                                      isA: true,
-                                      currentStatus: "A finaliser",
-                                    ),
-                                  ),
-                                );
-
-                                if (result == true) {
-                                  print("Contact livreur confirmé");
-                                  viewModel.contactDelivery();
-                                  print(
-                                      "Nouveau statut: ${viewModel.ramassageStatus}");
-                                }
-                              } else if (viewModel.ramassageStatus ==
-                                  "A facturer") {
-                                // Troisième clic
-                                final result = await Navigator.push<bool>(
-                                  context,
-                                  MaterialPageRoute(
-                                    builder: (_) => const FacturationView(),
-                                  ),
-                                );
-
-                                if (result == true) {
-                                  print("Facturation confirmée");
-                                  viewModel.finalizeRamassage();
-                                  print(
-                                      "Nouveau statut: ${viewModel.ramassageStatus}");
-                                }
-                              }
-                            },
-                            date: "Mardi 12 Décembre 2025",
-                            place: "EREVAN, Cadjehoun Aeroport",
-                          ),
-                        ],
-                      ),
-
-                      //* Tab Dépôt de vêtements
-                      Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          const SizedBox(height: 20),
-                          const TextComponent(
-                            "Demandes de dépôt",
-                            fontweight: FontWeight.bold,
-                            fontsize: 19,
-                          ),
-                          _DepotDemandWidget(
-                            name: "Teddy TOSSOU",
-                            date: "Mardi 26 Mars à 15h30",
-                            status: viewModel.depotStatus,
-                            onTap: () async {
-                              if (viewModel.depotStatus == "Validé") {
-                                Navigator.push(
-                                  context,
-                                  MaterialPageRoute(
-                                      builder: (_) => const FacturationView()),
-                                );
-                              } else {
-                                final result = await Navigator.push<bool>(
-                                  context,
-                                  MaterialPageRoute(
-                                      builder: (_) => const DepotDetailView()),
-                                );
-
-                                if (result == true) {
-                                  viewModel.setDepotStatus("Validé");
-                                } else if (result == false) {
-                                  viewModel.setDepotStatus("Rejeté");
-                                }
-                              }
-                            },
-                          )
-                        ],
-                      ),
-                    ],
-                  ),
+        appBar: _buildCustomAppBar(viewModel),
+        body: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 25),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const WalletPressingWidget(balance: "67,500 FCFA"),
+              const _TabBarSection(),
+              // Ajout du TabBarView pour gérer les deux onglets
+              Expanded(
+                child: TabBarView(
+                  children: [
+                    // Premier onglet : Ramassage
+                    _buildRamassageTab(viewModel),
+                    // Deuxième onglet : Dépôt de vêtements
+                    _buildDepotTab(viewModel, context),
+                  ],
                 ),
-              ],
-            ),
+              ),
+            ],
           ),
         ),
       ),
     );
   }
 
-  PreferredSizeWidget _buildCustomAppBar() {
+  //* BUILD RAMASSAGE TAB
+
+  Widget _buildRamassageTab(HomePressingViewModel viewModel) {
+    if (viewModel.isBusy) {
+      return const Center(child: CircularProgressIndicator());
+    }
+
+    if (viewModel.errorMessage != null) {
+      return Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            const Icon(Icons.error, size: 48, color: Colors.red),
+            const SizedBox(height: 16),
+            Text(viewModel.errorMessage!),
+            ElevatedButton(
+              onPressed: viewModel.retry,
+              child: const Text('Réessayer'),
+            ),
+          ],
+        ),
+      );
+    }
+
+    if (viewModel.ramassages.isEmpty) {
+      return const Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(Icons.inbox, size: 48, color: Colors.grey),
+            SizedBox(height: 16),
+            Text('Aucune demande de ramassage trouvée'),
+          ],
+        ),
+      );
+    }
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const SizedBox(height: 20),
+        const TextComponent(
+          "Demandes récentes",
+          fontweight: FontWeight.bold,
+          fontsize: 19,
+        ),
+        const SizedBox(height: 10),
+        Expanded(
+          child: ListView.builder(
+            itemCount: viewModel.ramassages.length,
+            itemBuilder: (context, index) {
+              final ramassage = viewModel.ramassages[index];
+              return PressingDemandWidget(
+                ramassage: ramassage,
+                onTap: () async {
+                  await _handleRamassageAction(context, viewModel, ramassage);
+                },
+              );
+            },
+          ),
+        ),
+      ],
+    );
+  }
+
+  //* BUILD DEPOT TAB
+
+  Widget _buildDepotTab(HomePressingViewModel viewModel, BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const SizedBox(height: 20),
+        const TextComponent(
+          "Demandes de dépôt",
+          fontweight: FontWeight.bold,
+          fontsize: 19,
+        ),
+        _DepotDemandWidget(
+          name: "Teddy TOSSOU",
+          date: "Mardi 26 Mars à 15h30",
+          status: viewModel.depotStatus,
+          onTap: () async {
+            if (viewModel.depotStatus == "Validé") {
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (_) => const FacturationView()),
+              );
+            } else {
+              final result = await Navigator.push<bool>(
+                context,
+                MaterialPageRoute(builder: (_) => const DepotDetailView()),
+              );
+
+              if (result == true) {
+                viewModel.setDepotStatus("Validé");
+              } else if (result == false) {
+                viewModel.setDepotStatus("Rejeté");
+              }
+            }
+          },
+        )
+      ],
+    );
+  }
+
+  Future<void> _handleRamassageAction(
+    BuildContext context,
+    HomePressingViewModel viewModel,
+    Ramassage ramassage,
+  ) async {
+    switch (ramassage.statut) {
+      case 'affecté':
+        final result = await Navigator.push<bool>(
+          context,
+          MaterialPageRoute(
+            builder: (_) => PressingDetailView(
+              isA: false,
+              currentStatus: "En attente",
+              ramassage: ramassage,
+            ),
+          ),
+        );
+        if (result == true) {
+          // await viewModel.accepterRamassage(ramassage.id);
+        }
+        break;
+
+      case 'accepté':
+        final result = await Navigator.push<bool>(
+          context,
+          MaterialPageRoute(
+            builder: (_) => PressingDetailView(
+              isA: true,
+              currentStatus: "A finaliser",
+              ramassage: ramassage,
+            ),
+          ),
+        );
+        if (result == true) {
+          // await viewModel.finaliserRamassage(ramassage.id);
+        }
+        break;
+
+      case 'finalisé':
+        final result = await Navigator.push<bool>(
+          context,
+          MaterialPageRoute(
+            builder: (_) => FacturationView(ramassage: ramassage),
+          ),
+        );
+        if (result == true) {
+          // await viewModel.facturerRamassage(ramassage.id);
+        }
+        break;
+    }
+  }
+
+  //* BUILD APP BAR
+
+  PreferredSizeWidget _buildCustomAppBar(HomePressingViewModel viewModel) {
     return PreferredSize(
       preferredSize: const Size.fromHeight(100),
       child: Container(
@@ -191,26 +236,40 @@ class HomePressingView extends StackedView<HomePressingViewModel> {
                         color: Color(0xFF184E9C),
                         shape: BoxShape.circle,
                       ),
-                      child: const Center(
-                        child: Text(
-                          'O',
-                          style: TextStyle(
-                            color: Colors.white,
-                            fontSize: 18,
-                            fontWeight: FontWeight.w600,
-                          ),
-                        ),
+                      child: Center(
+                        child: viewModel.isBusy
+                            ? const CircularProgressIndicator(
+                                strokeWidth: 2,
+                                valueColor:
+                                    AlwaysStoppedAnimation<Color>(primaryColor),
+                              )
+                            : Text(
+                                viewModel.pressingDetails?.nom.isNotEmpty ==
+                                        true
+                                    ? viewModel.pressingDetails!.nom[0]
+                                        .toUpperCase()
+                                    : '?',
+                                style: const TextStyle(
+                                  color: Colors.white,
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: 20,
+                                ),
+                              ),
                       ),
                     ),
                     const SizedBox(width: 12),
-                    const Text(
-                      'Olivier ',
-                      style: TextStyle(
-                        fontSize: 18,
-                        fontWeight: FontWeight.w600,
-                        color: Color(0xFF1a1a1a),
-                      ),
-                    ),
+                    viewModel.isBusy
+                        ? const DotsLoader()
+                        : Text(
+                            viewModel.pressingDetails?.nom.isNotEmpty == true
+                                ? viewModel.pressingDetails!.nom
+                                : '?',
+                            style: const TextStyle(
+                              color: primaryColor,
+                              fontWeight: FontWeight.bold,
+                              fontSize: 20,
+                            ),
+                          ),
                   ],
                 ),
                 Container(
@@ -314,7 +373,6 @@ class _DepotDemandWidget extends StatelessWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // Nom et date
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
@@ -336,8 +394,6 @@ class _DepotDemandWidget extends StatelessWidget {
                 ],
               ),
               const SizedBox(height: 12),
-
-              // Status
               bgColor != null
                   ? Container(
                       padding: const EdgeInsets.symmetric(

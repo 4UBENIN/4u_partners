@@ -1,21 +1,31 @@
 import 'package:flutter/material.dart';
+import 'package:for_u_partners/app/models/ramassage_detail_model.dart';
+import 'package:for_u_partners/app/models/ramassage_model.dart';
 import 'package:for_u_partners/ui/common/app_colors.dart';
 import 'package:for_u_partners/ui/common/text_component.dart';
 import 'package:for_u_partners/ui/common/app_button_component.dart';
 import 'package:for_u_partners/ui/views/pressing/widgets/dialog_widget.dart';
+import 'package:for_u_partners/ui/views/pressing/home_pressing/home_pressing_viewmodel.dart';
+import 'package:stacked/stacked.dart';
 
-class PressingDetailView extends StatelessWidget {
+class PressingDetailView extends StackedView<HomePressingViewModel> {
   final bool isA;
   final String? currentStatus;
+  final Ramassage ramassage;
 
   const PressingDetailView({
-    super.key,
+    Key? key,
     this.isA = false,
     this.currentStatus,
-  });
+    required this.ramassage,
+  }) : super(key: key);
 
   @override
-  Widget build(BuildContext context) {
+  Widget builder(
+    BuildContext context,
+    HomePressingViewModel viewModel,
+    Widget? child,
+  ) {
     return Scaffold(
       backgroundColor: kcWhiteColors,
       appBar: AppBar(
@@ -30,211 +40,313 @@ class PressingDetailView extends StatelessWidget {
       body: _PressingDetailContent(
         isAccepted: isA,
         currentStatus: currentStatus,
+        ramassage: ramassage,
+        viewModel: viewModel,
       ),
     );
   }
+
+  @override
+  HomePressingViewModel viewModelBuilder(BuildContext context) =>
+      HomePressingViewModel();
+
+  @override
+  void onViewModelReady(HomePressingViewModel viewModel) {
+    // Charger les détails du ramassage si nécessaire
+    viewModel.getRamassageDetailComplet(ramassage.id!);
+  }
 }
 
-class _PressingDetailContent extends StatefulWidget {
+class _PressingDetailContent extends ViewModelWidget<HomePressingViewModel> {
   final bool isAccepted;
   final String? currentStatus;
+  final Ramassage ramassage;
+  final HomePressingViewModel viewModel;
 
   const _PressingDetailContent({
     required this.isAccepted,
     this.currentStatus,
+    required this.ramassage,
+    required this.viewModel,
   });
 
   @override
-  State<_PressingDetailContent> createState() => _PressingDetailContentState();
-}
+  Widget build(BuildContext context, HomePressingViewModel viewModel) {
+    // Utiliser le ramassage sélectionné du viewModel s'il est disponible,
+    // sinon utiliser celui passé en paramètre
+    final currentRamassage = viewModel.selectedRamassageDetail;
+    print("LAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA");
+    print(currentRamassage);
 
-class _PressingDetailContentState extends State<_PressingDetailContent> {
-  String _selectedMethod = 'Espèces';
-
-  @override
-  Widget build(BuildContext context) {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 20),
-      child: SingleChildScrollView(
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            const TextComponent("Destination",
-                fontsize: 17, textcolor: kcLightGrey),
-            const SizedBox(height: 10),
-            const TextComponent("EREVAN, Cadjehoun Aeroport",
-                fontsize: 18, fontweight: FontWeight.bold),
-            const SizedBox(height: 20),
-            const TextComponent("Date de ramassage",
-                fontsize: 17, textcolor: kcLightGrey),
-            const SizedBox(height: 10),
-            const TextComponent("Mardi 12 Décembre à 15h 30",
-                fontsize: 18,
-                fontweight: FontWeight.bold,
-                textcolor: primaryColor),
-            const SizedBox(height: 20),
-            const TextComponent("Adresse de ramassage",
-                fontsize: 17, textcolor: kcLightGrey),
-            const SizedBox(height: 10),
-            const TextComponent("Cadjehoun, Place centrale, 123-B403",
-                fontsize: 18,
-                fontweight: FontWeight.bold,
-                textcolor: primaryColor),
-
-            //* VETEMENTS LAVES
-            const SizedBox(height: 20),
-            const TextComponent("Vêtements lavés",
-                fontsize: 17, textcolor: kcLightGrey),
-            const SizedBox(height: 10),
-            Container(
-              padding: const EdgeInsets.all(20),
-              width: double.infinity,
-              decoration: BoxDecoration(
-                color: backgroundService,
-                borderRadius: BorderRadius.circular(10),
-              ),
-              child: const Column(
+      child: viewModel.isBusy
+          ? const Center(child: CircularProgressIndicator())
+          : SingleChildScrollView(
+              child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
+                  //* adresse ramassage
+                  const TextComponent("Adresse de ramassage",
+                      fontsize: 17, textcolor: kcLightGrey),
+                  const SizedBox(height: 10),
+                  TextComponent(currentRamassage!.adresseRamassage!,
+                      fontsize: 16,
+                      fontweight: FontWeight.bold,
+                      textcolor: primaryColor),
+                  const SizedBox(height: 20),
+
+                  //* adresse livraison
+                  const TextComponent("Adresse de livraison",
+                      fontsize: 17, textcolor: kcLightGrey),
+                  const SizedBox(height: 10),
+                  TextComponent(currentRamassage.adresseLivraison!,
+                      fontsize: 16,
+                      fontweight: FontWeight.bold,
+                      textcolor: primaryColor),
+                  const SizedBox(height: 20),
+
+                  //* date de ramassage
+                  const TextComponent("Date de ramassage",
+                      fontsize: 17, textcolor: kcLightGrey),
+                  const SizedBox(height: 10),
                   TextComponent(
-                    "Tshirt x5",
+                    currentRamassage.dateRamassage != null
+                        ? viewModel
+                            .changeFormatDate(currentRamassage.dateRamassage!)
+                        : "Date non disponible",
                     fontsize: 16,
-                    textcolor: mediumGrey,
+                    fontweight: FontWeight.bold,
+                    textcolor: primaryColor,
                   ),
-                  SizedBox(height: 5),
-                  TextComponent("Jupe x2", fontsize: 16, textcolor: mediumGrey),
-                  SizedBox(height: 5),
-                  TextComponent("Pantalon x2",
-                      fontsize: 16, textcolor: mediumGrey),
+                  const SizedBox(height: 20),
+
+                  //* nom du client
+                  const TextComponent("Client",
+                      fontsize: 17, textcolor: kcLightGrey),
+                  const SizedBox(height: 10),
+                  TextComponent(
+                    '${currentRamassage.client?.prenom ?? ''} ${currentRamassage.client?.nom ?? ''}'
+                        .trim(),
+                    fontsize: 16,
+                    fontweight: FontWeight.bold,
+                    textcolor: primaryColor,
+                  ),
+                  const SizedBox(height: 20),
+
+                  //* telephone du client
+                  const TextComponent("Numéro du client",
+                      fontsize: 17, textcolor: kcLightGrey),
+                  const SizedBox(height: 10),
+                  TextComponent(
+                    currentRamassage.client?.telephone ?? '',
+                    fontsize: 16,
+                    fontweight: FontWeight.bold,
+                    textcolor: primaryColor,
+                  ),
+                  const SizedBox(height: 20),
+
+                  //* mail du client
+                  const TextComponent("Mail du client",
+                      fontsize: 17, textcolor: kcLightGrey),
+                  const SizedBox(height: 10),
+                  TextComponent(
+                    currentRamassage.client?.email ?? '',
+                    fontsize: 16,
+                    fontweight: FontWeight.bold,
+                    textcolor: primaryColor,
+                  ),
+
+                  const SizedBox(height: 20),
+
+                  //* numero de commande
+                  const TextComponent("Numéro de commande",
+                      fontsize: 17, textcolor: kcLightGrey),
+                  const SizedBox(height: 10),
+                  TextComponent(
+                    currentRamassage.numero ?? "N/A",
+                    fontsize: 16,
+                    fontweight: FontWeight.bold,
+                    textcolor: primaryColor,
+                  ),
+                  const SizedBox(height: 20),
+
+                  //* nom du ramasseur
+                  const TextComponent("Nom du ramasseur",
+                      fontsize: 17, textcolor: kcLightGrey),
+                  const SizedBox(height: 10),
+                  TextComponent(
+                    '${currentRamassage.ramasseur?.prenom ?? ''} ${currentRamassage.ramasseur?.nom ?? ''}'
+                        .trim(),
+                    fontsize: 16,
+                    fontweight: FontWeight.bold,
+                    textcolor: primaryColor,
+                  ),
+                  const SizedBox(height: 20),
+
+                  //* telephone du ramassage
+                  const TextComponent("Numéro du ramasseur",
+                      fontsize: 17, textcolor: kcLightGrey),
+                  const SizedBox(height: 10),
+                  TextComponent(
+                    currentRamassage.ramasseur?.telephone ?? '',
+                    fontsize: 16,
+                    fontweight: FontWeight.bold,
+                    textcolor: primaryColor,
+                  ),
+                  const SizedBox(height: 20),
+
+                  // const TextComponent("Statut actuel",
+                  // fontsize: 17, textcolor: kcLightGrey),
+                  // const SizedBox(height: 10),
+                  // _buildStatusBadge(currentRamassage.statut),
+                  // const SizedBox(height: 20),
+
+                  //* DETAILS VETEMENTS
+                  const TextComponent(
+                    "Détails du lavage",
+                    fontsize: 20,
+                    textcolor: black,
+                    fontweight: FontWeight.w500,
+                  ),
+                  const SizedBox(height: 15),
+
+                  const TextComponent("Vêtements",
+                      fontsize: 17, textcolor: kcLightGrey),
+                  const SizedBox(height: 10),
+                  Container(
+                    padding: const EdgeInsets.all(20),
+                    width: double.infinity,
+                    decoration: BoxDecoration(
+                      color: backgroundService,
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        TextComponent(
+                          currentRamassage.details
+                                  ?.map((item) =>
+                                      '${item.libelle} x${item.quantite?.toInt()}')
+                                  .join('\n') ??
+                              'Aucun détail',
+                          fontsize: 16,
+                          textcolor: mediumGrey,
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: 20),
+
+                  //* SERVICES ADDITIONNELS
+                  const TextComponent("Services additionnels",
+                      fontsize: 17, textcolor: kcLightGrey),
+                  const SizedBox(height: 10),
+                  Container(
+                    padding: const EdgeInsets.all(20),
+                    width: double.infinity,
+                    decoration: BoxDecoration(
+                      color: backgroundService,
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        TextComponent(
+                          currentRamassage.servicesComplementaires
+                                  ?.map((item) => '${item.libelle}')
+                                  .join('\n') ??
+                              'Aucun détail',
+                          fontsize: 16,
+                          textcolor: mediumGrey,
+                        ),
+                      ],
+                    ),
+                  ),
+                  // const SizedBox(height: 20),
+
+                  //* Bouton principal
+                  Padding(
+                    padding: const EdgeInsets.symmetric(vertical: 20),
+                    child: SizedBox(
+                      width: double.infinity,
+                      height: 54,
+                      child: ElevatedButton.icon(
+                        onPressed: () {
+                          // Logique pour contacter le client ou autre action
+                        },
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: const Color(0xFF184E9C),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(16),
+                          ),
+                          elevation: 0,
+                        ),
+                        icon:
+                            const Icon(Icons.phone_outlined, color: Colors.white),
+                        label: const Text(
+                          'Contacter le ramasseur',
+                          style: TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.w600,
+                            color: Colors.white,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+
+                  if (viewModel.errorMessage != null)
+                    Padding(
+                      padding: const EdgeInsets.symmetric(vertical: 10),
+                      child: Text(
+                        viewModel.errorMessage!,
+                        style: const TextStyle(color: Colors.red),
+                        textAlign: TextAlign.center,
+                      ),
+                    ),
                 ],
               ),
             ),
-            const SizedBox(height: 20),
-
-            //* SERVICES ADDITIONNELS
-            const TextComponent("Services additionnels",
-                fontsize: 17, textcolor: kcLightGrey),
-            const SizedBox(height: 10),
-            Container(
-              padding: const EdgeInsets.all(20),
-              width: double.infinity,
-              decoration: BoxDecoration(
-                color: backgroundService,
-                borderRadius: BorderRadius.circular(10),
-              ),
-              child: const Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  TextComponent("Repassage",
-                      fontsize: 16,
-                      textcolor: primaryColor,
-                      fontweight: FontWeight.bold),
-                  SizedBox(height: 5),
-                  TextComponent("Traitement de taches",
-                      fontsize: 16,
-                      textcolor: primaryColor,
-                      fontweight: FontWeight.bold),
-                ],
-              ),
-            ),
-            const SizedBox(height: 20),
-
-            // Bouton principal qui change selon le statut
-            _buildMainButton(context),
-
-            Center(
-              child: TextButton(
-                onPressed: () {},
-                child: const TextComponent("Rejeter",
-                    textcolor: red, fontsize: 15),
-              ),
-            ),
-          ],
-        ),
-      ),
     );
   }
 
-  Widget _buildMainButton(BuildContext context) {
-    // Utiliser currentStatus pour déterminer le bouton à afficher
-    switch (widget.currentStatus) {
-      case "En attente":
-        return PrimaryButton(
-          text: "Accepter la demande",
-          onPressed: () {
-            Navigator.pop(context, true);
-          },
-        );
+  Widget _buildStatusBadge(String? status) {
+    Color backgroundColor;
+    Color textColor;
 
-      case "A finaliser":
-        return PrimaryButton(
-          text: "Contacter le livreur",
-          onPressed: () {
-            Navigator.pop(context, true);
-          },
-        );
-
-      default: // Pour "A facturer" et autres cas
-        return PrimaryButton(
-          text: "Finaliser la demande",
-          onPressed: () {
-            showDemandCompletedDialog(
-              context: context,
-              clientName: "Teddy TOSSOU",
-              onAccept: () {
-                Navigator.pop(context, true);
-              },
-              onDecline: () {
-                Navigator.pop(context);
-              },
-            );
-          },
-        );
+    switch (status) {
+      case "À facturer":
+      case "finalisé":
+        backgroundColor = const Color(0xFFFEF3C7);
+        textColor = const Color(0xFFD97706);
+        break;
+      case "Terminé":
+        backgroundColor = const Color(0xFFD1FAE5);
+        textColor = const Color(0xFF059669);
+        break;
+      case "accepté":
+      case "À finaliser":
+        backgroundColor = const Color(0xFFDDD6FE);
+        textColor = const Color(0xFF7C3AED);
+        break;
+      default: // "En attente"
+        backgroundColor = const Color(0xFFE5E7EB);
+        textColor = const Color(0xFF6B7280);
     }
-  }
 
-  Widget _buildRadioOption(String label) {
-    final bool isSelected = _selectedMethod == label;
-
-    return Padding(
-      padding: const EdgeInsets.all(8.0),
-      child: GestureDetector(
-        onTap: () {
-          setState(() {
-            _selectedMethod = label;
-          });
-        },
-        child: Container(
-          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-          decoration: BoxDecoration(
-            color:
-                isSelected ? const Color(0xF0F4F9FF) : const Color(0xFFF9FAFB),
-            borderRadius: BorderRadius.circular(10),
-            border: isSelected
-                ? Border.all(color: primaryColor, width: 1)
-                : Border.all(color: Colors.transparent),
-          ),
-          child: Row(
-            children: [
-              Radio<String>(
-                value: label,
-                groupValue: _selectedMethod,
-                onChanged: (value) {
-                  setState(() {
-                    _selectedMethod = value!;
-                  });
-                },
-                activeColor: primaryColor,
-                materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                visualDensity: VisualDensity.compact,
-              ),
-              const SizedBox(width: 8),
-              Text(
-                label,
-                style: const TextStyle(fontSize: 15, color: Colors.black87),
-              )
-            ],
-          ),
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 7),
+      decoration: BoxDecoration(
+        color: backgroundColor,
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: Text(
+        status ?? "En attente",
+        style: TextStyle(
+          fontSize: 12,
+          fontWeight: FontWeight.w600,
+          color: textColor,
         ),
       ),
     );

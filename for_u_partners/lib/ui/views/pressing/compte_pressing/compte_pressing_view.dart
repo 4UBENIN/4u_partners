@@ -1,3 +1,5 @@
+import 'package:for_u_partners/ui/common/app_colors.dart';
+import 'package:for_u_partners/ui/views/pressing/widgets/animated_dot.dart';
 import 'package:stacked/stacked.dart';
 import 'package:flutter/material.dart';
 import 'compte_pressing_viewmodel.dart';
@@ -11,6 +13,7 @@ class ComptePressingView extends StackedView<ComptePressingViewModel> {
     ComptePressingViewModel viewModel,
     Widget? child,
   ) {
+    final pressing = viewModel.pressing;
     return Scaffold(
       backgroundColor: Colors.white,
       body: SafeArea(
@@ -20,7 +23,7 @@ class ComptePressingView extends StackedView<ComptePressingViewModel> {
               const SizedBox(height: 50),
               // Avatar
               Container(
-                margin: const EdgeInsets.only(bottom: 40),
+                margin: const EdgeInsets.only(bottom: 20),
                 child: Container(
                   width: 120,
                   height: 120,
@@ -32,18 +35,38 @@ class ComptePressingView extends StackedView<ComptePressingViewModel> {
                       colors: [Color(0xFF184E9C), Color(0xFF2A5BB8)],
                     ),
                   ),
-                  child: const Center(
-                    child: Text(
-                      'P',
-                      style: TextStyle(
-                        fontSize: 48,
-                        fontWeight: FontWeight.bold,
-                        color: Colors.white,
-                      ),
-                    ),
+                  child: Center(
+                    child: viewModel.isBusy
+                        ? const CircularProgressIndicator(
+                            strokeWidth: 2,
+                            valueColor:
+                                AlwaysStoppedAnimation<Color>(Colors.white),
+                          )
+                        : Text(
+                            pressing?.nom.isNotEmpty == true
+                                ? pressing!.nom[0].toUpperCase()
+                                : '?',
+                            style: const TextStyle(
+                              color: Colors.white,
+                              fontWeight: FontWeight.bold,
+                              fontSize: 40,
+                            ),
+                          ),
                   ),
                 ),
               ),
+
+              viewModel.isBusy
+                  ? const DotsLoader()
+                  : Text(
+                      pressing?.nom.isNotEmpty == true ? pressing!.nom : '?',
+                      style: const TextStyle(
+                        color: primaryColor,
+                        fontWeight: FontWeight.bold,
+                        fontSize: 20,
+                      ),
+                    ),
+              const SizedBox(height: 20),
 
               // Stats Section
               Container(

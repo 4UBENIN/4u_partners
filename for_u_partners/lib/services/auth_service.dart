@@ -21,22 +21,11 @@ class AuthService {
     final response = await http.post(url,
         headers: headers, body: jsonEncode(loginModel.toJson()));
 
-    print("type");
-    print(type);
-
-    print("status");
-    print(response.statusCode);
-
     if (response.statusCode == 200) {
       final responseJson = jsonDecode(response.body);
-      print("reponseJson");
-      print(responseJson);
 
       final loginResponse = LoginPressingResponseModel.fromJson(responseJson);
       await _sharedPreferencesServices.saveToken(loginResponse.token);
-
-      print("login response");
-      print(loginResponse);
 
       switch (type) {
         case 'livreur':
@@ -49,7 +38,6 @@ class AuthService {
           _navigationService.replaceWithDeliveryNavBarView();
           break;
         case 'pressing':
-          print("Dans pressing ici");
           _navigationService.replaceWithNavBarPressingView();
           break;
         default:
@@ -58,6 +46,25 @@ class AuthService {
     } else {
       throw Exception('Something went wrong');
     }
+  }
+
+  //* GET TOKEN HEADERS
+
+  Future<Map<String, String>> getAuthenticatedHeaders() async {
+    final token = await _sharedPreferencesServices.getToken();
+
+    // Créer une copie des headers de base et ajouter le token
+    final authenticatedHeaders = Map<String, String>.from(headers);
+
+    if (token != null && token.isNotEmpty) {
+      // Remove any existing quotes from the token
+      final cleanToken = token.replaceAll('"', '').trim();
+      authenticatedHeaders['Authorization'] = 'Bearer $cleanToken';
+    }
+    print("AUTH HEADERS : ");
+    print(authenticatedHeaders);
+
+    return authenticatedHeaders;
   }
 
   //* REGISTER FUNCTION
@@ -108,5 +115,29 @@ class AuthService {
       print('Erreur pendant l\'envoi de la requête : $e');
       print('Stack trace : $stack');
     }
+  }
+
+  Future<void> logOut() async {
+    // try {
+    // Optionnel: appeler l'API de déconnexion
+    //   final url =
+    //       Uri.parse("https://foryou.cilassocies.com/api/partenaire/logout");
+
+    //   await http.post(
+    //     url,
+    //     headers: await getAuthenticatedHeaders(),
+    //   );
+    // } catch (e) {
+    //   print("Erreur lors du logout API: $e");
+    // } finally {
+
+    // Supprimer toutes les données locales
+    await _sharedPreferencesServices.removeToken();
+    await _sharedPreferencesServices.removeUserId();
+    await _sharedPreferencesServices.removeUserType();
+
+    // Rediriger vers l'écran de connexion
+    _navigationService.clearStackAndShow(Routes.loginView);
+    // }
   }
 }
