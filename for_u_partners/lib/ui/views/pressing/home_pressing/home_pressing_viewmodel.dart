@@ -1,4 +1,6 @@
+import 'package:for_u_partners/app/models/depot_model.dart';
 import 'package:for_u_partners/app/models/ramassage_detail_model.dart';
+import 'package:for_u_partners/services/wallet_service.dart';
 import 'package:intl/intl.dart';
 import 'package:for_u_partners/app/models/pressing_model.dart';
 import 'package:for_u_partners/services/pressing_service.dart';
@@ -10,6 +12,7 @@ import 'package:stacked_services/stacked_services.dart';
 class HomePressingViewModel extends BaseViewModel {
   final navigationService = locator<NavigationService>();
   final _pressingService = locator<PressingService>();
+  final _walletService = locator<WalletService>();
 
   Pressing? _pressingDetails;
   Pressing? get pressingDetails => _pressingDetails;
@@ -22,7 +25,11 @@ class HomePressingViewModel extends BaseViewModel {
   RamassageDetail? _selectedRamassageDetail;
   RamassageDetail? get selectedRamassageDetail => _selectedRamassageDetail;
 
-  //statut de la 
+  // Depot
+  List<Depot> _depot = [];
+  List<Depot> get depot => _depot;
+
+  // Depot details
 
   String? _errorMessage;
   String? get errorMessage => _errorMessage;
@@ -31,14 +38,47 @@ class HomePressingViewModel extends BaseViewModel {
   String _depotStatus = "En attente de validation";
   String get depotStatus => _depotStatus;
 
+  // Wallet de l'utilisateur
+  String _wallet = "";
+  String get wallet => _wallet;
+
   @override
   HomePressingViewModel() {
+    getWalletSold();
     fetchPressingInfo();
     getRamassagesList();
+    getDepotList();
   }
 
-  //* GET PRESSING INFO
+  //! WALLET
 
+  //* GET WALLET SOLD
+  Future<void> getWalletSold() async {
+    setBusy(true);
+    _errorMessage = null; // Reset l'erreur
+    notifyListeners();
+
+    try {
+      final response = await _walletService.getWalletSold();
+      // ignore: unnecessary_null_comparison
+      if (response != null && response.solde != null) {
+        _wallet = response.solde.toString();
+        _errorMessage = null;
+      } else {
+        _errorMessage = "Aucun solde trouvé";
+      }
+    } catch (e) {
+      _errorMessage = e.toString();
+      print("Erreur dans ViewModel: $e");
+    } finally {
+      setBusy(false);
+      notifyListeners();
+    }
+  }
+
+  //! PRESSING
+
+  //* GET PRESSING INFO
   Future<void> fetchPressingInfo() async {
     setBusy(true);
     _errorMessage = null; // Reset l'erreur
@@ -67,8 +107,9 @@ class HomePressingViewModel extends BaseViewModel {
     await fetchPressingInfo();
   }
 
-  //* GET RAMASSAGES LIST
+  //! RAMASSAGE PART
 
+  //* GET RAMASSAGES LIST
   // Charger toute les demandes de ramassages assignées au pressing connecté
   Future<void> getRamassagesList() async {
     setBusy(true);
@@ -107,13 +148,42 @@ class HomePressingViewModel extends BaseViewModel {
     }
   }
 
-//* UPDATE RAMASSAGE STATUT
-
+  //* VALIDER RAMASSAGE
   // Garde tes méthodes existantes pour le dépôt
   void setDepotStatus(String status) {
     _depotStatus = status;
     notifyListeners();
   }
+
+  //* VIDER RAMASSAGE
+  // Vider les détails lors du changement de ramassage
+  void clearRamassageDetail() {
+    _selectedRamassageDetail = null;
+    notifyListeners();
+  }
+
+  //! DEPOT PART
+
+  //* GET DEPOT LIST
+  // Charger toute les demandes de dépot assignées au pressing connecté
+  Future<void> getDepotList() async {
+    setBusy(true);
+    _errorMessage = null;
+
+    try {
+      _depot = await _pressingService.getDepotList();
+      print("Dépots chargés: ${_depot.length}");
+      print(_depot);
+    } catch (e) {
+      _errorMessage = e.toString();
+      print("Erreur chargement dépots: $e");
+    } finally {
+      setBusy(false);
+      notifyListeners();
+    }
+  }
+
+  //! OTHERS
 
   //* HELPER FUNCTIONS
 
@@ -156,11 +226,4 @@ class HomePressingViewModel extends BaseViewModel {
         .map((service) => service.libelle)
         .join(", ");
   }
-
-  // Vider les détails lors du changement de ramassage
-  // void clearRamassageDetail() {
-  //   _selectedRamassageDetail = null;
-  //   _selectedRamassage = null;
-  //   notifyListeners();
-  // }
 }

@@ -30,9 +30,9 @@ class HomePressingView extends StackedView<HomePressingViewModel> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const WalletPressingWidget(balance: "67,500 FCFA"),
+              WalletPressingWidget(
+                  balance: viewModel.isBusy ? "..." : "${viewModel.wallet} FCFA"),
               const _TabBarSection(),
-              // Ajout du TabBarView pour gérer les deux onglets
               Expanded(
                 child: TabBarView(
                   children: [
@@ -118,6 +118,39 @@ class HomePressingView extends StackedView<HomePressingViewModel> {
   //* BUILD DEPOT TAB
 
   Widget _buildDepotTab(HomePressingViewModel viewModel, BuildContext context) {
+    if (viewModel.isBusy) {
+      return const Center(child: CircularProgressIndicator());
+    }
+
+    if (viewModel.errorMessage != null) {
+      return Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            const Icon(Icons.error, size: 48, color: Colors.red),
+            const SizedBox(height: 16),
+            Text(viewModel.errorMessage!),
+            ElevatedButton(
+              onPressed: viewModel.retry,
+              child: const Text('Réessayer'),
+            ),
+          ],
+        ),
+      );
+    }
+
+    if (viewModel.depot.isEmpty) {
+      return const Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(Icons.inbox, size: 48, color: Colors.grey),
+            SizedBox(height: 16),
+            Text('Aucune demande de dépot trouvée'),
+          ],
+        ),
+      );
+    }
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -127,30 +160,42 @@ class HomePressingView extends StackedView<HomePressingViewModel> {
           fontweight: FontWeight.bold,
           fontsize: 19,
         ),
-        _DepotDemandWidget(
-          name: "Teddy TOSSOU",
-          date: "Mardi 26 Mars à 15h30",
-          status: viewModel.depotStatus,
-          onTap: () async {
-            if (viewModel.depotStatus == "Validé") {
-              Navigator.push(
-                context,
-                MaterialPageRoute(builder: (_) => const FacturationView()),
-              );
-            } else {
-              final result = await Navigator.push<bool>(
-                context,
-                MaterialPageRoute(builder: (_) => const DepotDetailView()),
-              );
+        const SizedBox(height: 10),
+        Expanded(
+          child: ListView.builder(
+            itemCount: viewModel.depot.length,
+            itemBuilder: (context, index) {
+              final depot = viewModel.depot[index];
+              return _DepotDemandWidget(
+                name:
+                    '${depot.client?.prenom ?? ''} ${depot.client?.nom ?? ''}',
+                date: depot.dateRdv!,
+                status: viewModel.depotStatus,
+                onTap: () async {
+                  if (viewModel.depotStatus == "Validé") {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                          builder: (_) => const FacturationView()),
+                    );
+                  } else {
+                    final result = await Navigator.push<bool>(
+                      context,
+                      MaterialPageRoute(
+                          builder: (_) => const DepotDetailView()),
+                    );
 
-              if (result == true) {
-                viewModel.setDepotStatus("Validé");
-              } else if (result == false) {
-                viewModel.setDepotStatus("Rejeté");
-              }
-            }
-          },
-        )
+                    if (result == true) {
+                      viewModel.setDepotStatus("Validé");
+                    } else if (result == false) {
+                      viewModel.setDepotStatus("Rejeté");
+                    }
+                  }
+                },
+              );
+            },
+          ),
+        ),
       ],
     );
   }

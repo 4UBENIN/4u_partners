@@ -15,6 +15,7 @@ import '../services/auth_service.dart';
 import '../services/driver_service.dart';
 import '../services/pressing_service.dart';
 import '../services/sharedpreferences_service.dart';
+import '../services/wallet_service.dart';
 
 final locator = StackedLocator.instance;
 
@@ -34,4 +35,5 @@ Future<void> setupLocator({
   locator.registerLazySingleton(() => AuthService());
   locator.registerLazySingleton(() => DriverService());
   locator.registerLazySingleton(() => PressingService());
+  locator.registerLazySingleton(() => WalletService());
 }

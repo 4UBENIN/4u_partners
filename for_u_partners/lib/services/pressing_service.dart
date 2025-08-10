@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'package:for_u_partners/app/models/depot_model.dart';
 import 'package:for_u_partners/app/models/ramassage_detail_model.dart';
 import 'package:for_u_partners/app/models/ramassage_model.dart';
 import 'package:http/http.dart' as http;
@@ -45,7 +46,7 @@ class PressingService {
     }
   }
 
-  //* RAMASSAGE
+  //! RAMASSAGE SERVICE
 
   //* GET PRESSING RAMASSAGE LIST
   // Récupérer la liste des ramassages assignés au pressing
@@ -112,7 +113,7 @@ class PressingService {
     }
   }
 
-  //* PRESSING RAMASSAGE TERMINE
+  //* RAMASSAGE TERMINE
   // Marquer une demande comme terminée
   Future<void> updateRamassageStatut(int id) async {
     try {
@@ -137,6 +138,74 @@ class PressingService {
       }
     } catch (e) {
       print("Erreur update statut: $e");
+      rethrow;
+    }
+  }
+
+  //! DEPOT PRESSING SERVICE
+
+  //* GET DEPOT DEMAND LIST
+  // Récupérer la liste des dépot assignés au pressing
+  Future<List<Depot>> getDepotList() async {
+    try {
+      final url =
+          Uri.parse("https://foryou.cilassocies.com/api/pressing/rendezvous");
+      final response = await http.get(
+        url,
+        headers: await _authService.getAuthenticatedHeaders(),
+      );
+
+      print('Dépot Status: ${response.statusCode}');
+      print('Dépot Body: ${response.body}');
+
+      if (response.statusCode == 200) {
+        final jsonData = jsonDecode(response.body);
+        final depotList = DepotDemandModel.fromJson(jsonData);
+        return depotList.data ?? [];
+
+        //* Non authentifié
+      } else if (response.statusCode == 401) {
+        await _authService.logOut();
+        throw Exception('Session expirée');
+
+        //* erreur
+      } else {
+        throw Exception('Erreur lors du chargement des ramassages');
+      }
+    } catch (e) {
+      print("Erreur ramassages: $e");
+      rethrow;
+    }
+  }
+
+  //* GET PRESSING DEPOT DETAILS COMPLET
+  // Récupérer le détail complet d'un dépot avec toutes les infos
+  Future<RamassageDetail> getDepotDetailComplet(int id) async {
+    try {
+      final url = Uri.parse(
+          "https://foryou.cilassocies.com/api/pressing/rendezvous/$id");
+      final response = await http.get(
+        url,
+        headers: await _authService.getAuthenticatedHeaders(),
+      );
+
+      print('Detail Status: ${response.statusCode}');
+      print('Detail Body: ${response.body}');
+
+      if (response.statusCode == 200) {
+        final jsonData = jsonDecode(response.body);
+        // TODO: Récupérer les détails du ramassage
+        return RamassageDetail.fromJson(jsonData);
+      } else if (response.statusCode == 401) {
+        await _authService.logOut();
+        throw Exception('Session expirée');
+      } else if (response.statusCode == 404) {
+        throw Exception('Ramassage non trouvé');
+      } else {
+        throw Exception('Erreur lors du chargement des détails');
+      }
+    } catch (e) {
+      print("Erreur détail ramassage complet: $e");
       rethrow;
     }
   }

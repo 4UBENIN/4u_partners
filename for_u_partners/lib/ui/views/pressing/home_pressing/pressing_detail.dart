@@ -1,10 +1,7 @@
 import 'package:flutter/material.dart';
-import 'package:for_u_partners/app/models/ramassage_detail_model.dart';
 import 'package:for_u_partners/app/models/ramassage_model.dart';
 import 'package:for_u_partners/ui/common/app_colors.dart';
 import 'package:for_u_partners/ui/common/text_component.dart';
-import 'package:for_u_partners/ui/common/app_button_component.dart';
-import 'package:for_u_partners/ui/views/pressing/widgets/dialog_widget.dart';
 import 'package:for_u_partners/ui/views/pressing/home_pressing/home_pressing_viewmodel.dart';
 import 'package:stacked/stacked.dart';
 
@@ -72,11 +69,7 @@ class _PressingDetailContent extends ViewModelWidget<HomePressingViewModel> {
 
   @override
   Widget build(BuildContext context, HomePressingViewModel viewModel) {
-    // Utiliser le ramassage sélectionné du viewModel s'il est disponible,
-    // sinon utiliser celui passé en paramètre
     final currentRamassage = viewModel.selectedRamassageDetail;
-    print("LAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA");
-    print(currentRamassage);
 
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 20),
@@ -120,6 +113,15 @@ class _PressingDetailContent extends ViewModelWidget<HomePressingViewModel> {
                     textcolor: primaryColor,
                   ),
                   const SizedBox(height: 20),
+
+                  //* DETAILS Client
+                  const TextComponent(
+                    "Détails du client",
+                    fontsize: 20,
+                    textcolor: black,
+                    fontweight: FontWeight.w500,
+                  ),
+                  const SizedBox(height: 15),
 
                   //* nom du client
                   const TextComponent("Client",
@@ -171,6 +173,15 @@ class _PressingDetailContent extends ViewModelWidget<HomePressingViewModel> {
                   ),
                   const SizedBox(height: 20),
 
+                  //* DETAILS RAMASSEUR
+                  const TextComponent(
+                    "Détails du ramasseur",
+                    fontsize: 20,
+                    textcolor: black,
+                    fontweight: FontWeight.w500,
+                  ),
+                  const SizedBox(height: 15),
+
                   //* nom du ramasseur
                   const TextComponent("Nom du ramasseur",
                       fontsize: 17, textcolor: kcLightGrey),
@@ -195,12 +206,6 @@ class _PressingDetailContent extends ViewModelWidget<HomePressingViewModel> {
                     textcolor: primaryColor,
                   ),
                   const SizedBox(height: 20),
-
-                  // const TextComponent("Statut actuel",
-                  // fontsize: 17, textcolor: kcLightGrey),
-                  // const SizedBox(height: 10),
-                  // _buildStatusBadge(currentRamassage.statut),
-                  // const SizedBox(height: 20),
 
                   //* DETAILS VETEMENTS
                   const TextComponent(
@@ -231,7 +236,7 @@ class _PressingDetailContent extends ViewModelWidget<HomePressingViewModel> {
                                   .join('\n') ??
                               'Aucun détail',
                           fontsize: 16,
-                          textcolor: mediumGrey,
+                          textcolor: darkGreyColor,
                         ),
                       ],
                     ),
@@ -253,13 +258,12 @@ class _PressingDetailContent extends ViewModelWidget<HomePressingViewModel> {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         TextComponent(
-                          currentRamassage.servicesComplementaires
-                                  ?.map((item) => '${item.libelle}')
-                                  .join('\n') ??
-                              'Aucun détail',
-                          fontsize: 16,
-                          textcolor: mediumGrey,
-                        ),
+                            currentRamassage.servicesComplementaires
+                                    ?.map((item) => '${item.libelle}')
+                                    .join('\n') ??
+                                'Aucun détail',
+                            fontsize: 16,
+                            textcolor: darkGreyColor),
                       ],
                     ),
                   ),
@@ -282,8 +286,8 @@ class _PressingDetailContent extends ViewModelWidget<HomePressingViewModel> {
                           ),
                           elevation: 0,
                         ),
-                        icon:
-                            const Icon(Icons.phone_outlined, color: Colors.white),
+                        icon: const Icon(Icons.phone_outlined,
+                            color: Colors.white),
                         label: const Text(
                           'Contacter le ramasseur',
                           style: TextStyle(
@@ -308,47 +312,6 @@ class _PressingDetailContent extends ViewModelWidget<HomePressingViewModel> {
                 ],
               ),
             ),
-    );
-  }
-
-  Widget _buildStatusBadge(String? status) {
-    Color backgroundColor;
-    Color textColor;
-
-    switch (status) {
-      case "À facturer":
-      case "finalisé":
-        backgroundColor = const Color(0xFFFEF3C7);
-        textColor = const Color(0xFFD97706);
-        break;
-      case "Terminé":
-        backgroundColor = const Color(0xFFD1FAE5);
-        textColor = const Color(0xFF059669);
-        break;
-      case "accepté":
-      case "À finaliser":
-        backgroundColor = const Color(0xFFDDD6FE);
-        textColor = const Color(0xFF7C3AED);
-        break;
-      default: // "En attente"
-        backgroundColor = const Color(0xFFE5E7EB);
-        textColor = const Color(0xFF6B7280);
-    }
-
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 7),
-      decoration: BoxDecoration(
-        color: backgroundColor,
-        borderRadius: BorderRadius.circular(12),
-      ),
-      child: Text(
-        status ?? "En attente",
-        style: TextStyle(
-          fontSize: 12,
-          fontWeight: FontWeight.w600,
-          color: textColor,
-        ),
-      ),
     );
   }
 }

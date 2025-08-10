@@ -6,6 +6,7 @@ import 'package:for_u_partners/services/sharedpreferences_service.dart';
 import 'package:for_u_partners/services/auth_service.dart';
 import 'package:for_u_partners/services/driver_service.dart';
 import 'package:for_u_partners/services/pressing_service.dart';
+import 'package:for_u_partners/services/wallet_service.dart';
 // @stacked-import
 
 import 'test_helpers.mocks.dart';
@@ -22,6 +23,7 @@ import 'test_helpers.mocks.dart';
     MockSpec<DriverService>(onMissingStub: OnMissingStub.returnDefault),
     MockSpec<PressingService>(onMissingStub: OnMissingStub.returnDefault),
     MockSpec<RamassageService>(onMissingStub: OnMissingStub.returnDefault),
+    MockSpec<WalletService>(onMissingStub: OnMissingStub.returnDefault),
 // @stacked-mock-spec
   ],
 )
@@ -34,6 +36,7 @@ void registerServices() {
   getAndRegisterDriverService();
   getAndRegisterPressingService();
   getAndRegisterRamassageService();
+  getAndRegisterWalletService();
 // @stacked-mock-register
 }
 
@@ -119,6 +122,12 @@ MockPressingService getAndRegisterPressingService() {
   return service;
 }
 
+MockWalletService getAndRegisterWalletService() {
+  _removeRegistrationIfExists<WalletService>();
+  final service = MockWalletService();
+  locator.registerSingleton<WalletService>(service);
+  return service;
+}
 // @stacked-mock-create
 
 void _removeRegistrationIfExists<T extends Object>() {

@@ -37,7 +37,7 @@ class PressingDemandWidget extends ViewModelWidget<HomePressingViewModel> {
             onTap: onTap,
             borderRadius: BorderRadius.circular(16),
             child: Container(
-              padding: const EdgeInsets.all(20),
+              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
               decoration: BoxDecoration(
                 borderRadius: BorderRadius.circular(16),
                 border: Border.all(color: const Color(0xFFf1f3f4)),
@@ -76,30 +76,16 @@ class PressingDemandWidget extends ViewModelWidget<HomePressingViewModel> {
                                   color: Color(0xFF1a1a1a),
                                 ),
                               ),
-                              const SizedBox(height: 4),
+                              const SizedBox(height: 5),
                               Text(
-                                'Ramassage',
+                                viewModel
+                                    .changeFormatDate(ramassage.dateRamassage!),
                                 style: const TextStyle(
                                   fontSize: 14,
                                   color: Color(0xFF8e8e93),
                                 ),
                               ),
                             ],
-                          ),
-                        ],
-                      ),
-                      Column(
-                        crossAxisAlignment: CrossAxisAlignment.end,
-                        children: [
-                          // _buildStatusBadge("En attente"),
-                          const SizedBox(height: 7),
-                          Text(
-                            viewModel
-                                .changeFormatDate(ramassage.dateRamassage!),
-                            style: const TextStyle(
-                              fontSize: 14,
-                              color: Color(0xFF8e8e93),
-                            ),
                           ),
                         ],
                       ),

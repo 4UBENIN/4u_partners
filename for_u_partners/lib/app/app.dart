@@ -29,6 +29,7 @@ import 'package:for_u_partners/services/auth_service.dart';
 import 'package:for_u_partners/services/driver_service.dart';
 import 'package:for_u_partners/services/pressing_service.dart';
 import 'package:for_u_partners/ui/views/pressing/compte_pressing/profil_pressing/profil_pressing_view.dart';
+import 'package:for_u_partners/services/wallet_service.dart';
 // @stacked-import
 
 @StackedApp(
@@ -66,6 +67,7 @@ import 'package:for_u_partners/ui/views/pressing/compte_pressing/profil_pressing
     LazySingleton(classType: AuthService),
     LazySingleton(classType: DriverService),
     LazySingleton(classType: PressingService),
+    LazySingleton(classType: WalletService),
 // @stacked-service
   ],
   bottomsheets: [

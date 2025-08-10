@@ -29,7 +29,8 @@ class RamassageDetail {
   RamassageDetail.fromJson(Map<String, dynamic> json) {
     id = json['id'] is int ? json['id'] : int.tryParse(json['id'].toString());
     numero = json['numero'];
-    client = json['client'] != null ? ClientDetail.fromJson(json['client']) : null;
+    client =
+        json['client'] != null ? ClientDetail.fromJson(json['client']) : null;
     dateRamassage = json['date_ramassage'];
     adresseRamassage = json['adresse_ramassage'];
     adresseLivraison = json['adresse_livraison'];
@@ -39,7 +40,9 @@ class RamassageDetail {
         : null;
 
     statut = json['statut'];
-    ramasseur = json['ramasseur'] != null ? Ramasseur.fromJson(json['ramasseur']) : null;
+    ramasseur = json['ramasseur'] != null
+        ? Ramasseur.fromJson(json['ramasseur'])
+        : null;
 
     if (json['details'] != null) {
       details = <DetailItem>[];
