@@ -111,21 +111,32 @@ class Details {
 
 class Vetement {
   final String libelle;
-  final int quantiteClient;
-  final int montant;
+  final double quantiteClient; // Changé en double pour gérer "5.00"
+  final double? montant; // Changé en double nullable pour gérer null et "6000.00"
 
   Vetement({
     required this.libelle,
     required this.quantiteClient,
-    required this.montant,
+    this.montant,
   });
 
   factory Vetement.fromJson(Map<String, dynamic> json) {
     return Vetement(
       libelle: json['libelle'],
-      quantiteClient: json['quantite_client'],
-      montant: json['montant'],
+      // Conversion sécurisée de String vers double
+      quantiteClient: _parseToDouble(json['quantite_client']),
+      // Gestion du montant qui peut être null ou string
+      montant: json['montant'] != null ? _parseToDouble(json['montant']) : null,
     );
+  }
+
+  // Méthode helper pour convertir de façon sécurisée
+  static double _parseToDouble(dynamic value) {
+    if (value == null) return 0.0;
+    if (value is double) return value;
+    if (value is int) return value.toDouble();
+    if (value is String) return double.tryParse(value) ?? 0.0;
+    return 0.0;
   }
 
   Map<String, dynamic> toJson() {
@@ -140,7 +151,7 @@ class Vetement {
 class ServiceAdditionnel {
   final int id;
   final String libelle;
-  final int montant;
+  final double montant; // Changé en double pour gérer "1200.00"
 
   ServiceAdditionnel({
     required this.id,
@@ -152,8 +163,18 @@ class ServiceAdditionnel {
     return ServiceAdditionnel(
       id: json['id'],
       libelle: json['libelle'],
-      montant: json['montant'],
+      // Conversion sécurisée de String vers double
+      montant: _parseToDouble(json['montant']),
     );
+  }
+
+  // Méthode helper pour convertir de façon sécurisée
+  static double _parseToDouble(dynamic value) {
+    if (value == null) return 0.0;
+    if (value is double) return value;
+    if (value is int) return value.toDouble();
+    if (value is String) return double.tryParse(value) ?? 0.0;
+    return 0.0;
   }
 
   Map<String, dynamic> toJson() {

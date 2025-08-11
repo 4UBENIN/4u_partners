@@ -197,8 +197,8 @@ class PressingService {
         headers: await _authService.getAuthenticatedHeaders(),
       );
 
-      print('Detail Status: ${response.statusCode}');
-      print('Detail Body: ${response.body}');
+      print('Detail depot Status: ${response.statusCode}');
+      print('Detail depot Body: ${response.body}');
 
       if (response.statusCode == 200) {
         final jsonData = jsonDecode(response.body);
@@ -207,12 +207,12 @@ class PressingService {
         await _authService.logOut();
         throw Exception('Session expirée');
       } else if (response.statusCode == 404) {
-        throw Exception('Ramassage non trouvé');
+        throw Exception('depot non trouvé');
       } else {
         throw Exception('Erreur lors du chargement des détails');
       }
     } catch (e) {
-      print("Erreur détail ramassage complet: $e");
+      print("Erreur détail depot complet: $e");
       rethrow;
     }
   }

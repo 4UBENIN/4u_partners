@@ -218,7 +218,7 @@ class HomePressingView extends StackedView<HomePressingViewModel> {
               return _DepotDemandWidget(
                 name:
                     '${depot.client?.prenom ?? ''} ${depot.client?.nom ?? ''}',
-                date: depot.dateRdv!,
+                date: viewModel.changeFormatDate(depot.dateRdv!),
                 status: viewModel.depotStatus,
                 onTap: () async {
                   if (viewModel.depotStatus == "Validé") {
@@ -231,7 +231,7 @@ class HomePressingView extends StackedView<HomePressingViewModel> {
                     final result = await Navigator.push<bool>(
                       context,
                       MaterialPageRoute(
-                          builder: (_) => const DepotDetailView()),
+                          builder: (_) => DepotDetailView(depot: depot,)),
                     );
 
                     if (result == true) {

@@ -1,3 +1,4 @@
+import 'package:for_u_partners/app/models/depot_models/depot_detail_model.dart';
 import 'package:for_u_partners/app/models/depot_models/depot_model.dart';
 import 'package:for_u_partners/app/models/ramassage_models/ramassage_detail_model.dart';
 import 'package:for_u_partners/app/models/ramassage_models/ramassage_statut_model.dart';
@@ -36,6 +37,8 @@ class HomePressingViewModel extends BaseViewModel {
   List<Depot> get depot => _depots;
 
   // Depot details
+  Rdv? _selectedDepotDetail;
+  Rdv? get selectedDepotDetail => _selectedDepotDetail;
 
   String? _errorMessage;
   String? get errorMessage => _errorMessage;
@@ -221,6 +224,53 @@ class HomePressingViewModel extends BaseViewModel {
       setBusy(false);
       notifyListeners();
     }
+  }
+
+  //* GET DEPOT DETAIL COMPLET
+  // Charger le détail complet d'un dépôt spécifique
+  Future<void> getDepotDetailComplet(int depotId) async {
+    setBusy(true);
+    _errorMessage = null;
+
+    try {
+      _selectedDepotDetail =
+          await _pressingService.getDepotDetailComplet(depotId);
+      print("Détail complet dépôt chargé: ${_selectedDepotDetail?.numero}");
+    } catch (e) {
+      _errorMessage = e.toString();
+      print("Erreur détail dépôt: $e");
+    } finally {
+      setBusy(false);
+      notifyListeners();
+    }
+  }
+
+  //* VALIDER DEPOT
+  Future<void> validateSelectedDepot(int depotId) async {
+    setBusy(true);
+    _errorMessage = null;
+
+    try {
+      // Tu peux créer une méthode similaire dans PressingService pour valider un dépôt
+      // await _pressingService.updateDepotStatut(depotId);
+      print("Dépôt $depotId validé");
+
+      // Rafraîchir la liste des dépôts après validation
+      await getDepotList();
+    } catch (e) {
+      _errorMessage = e.toString();
+      print("Erreur validation dépôt: $e");
+    } finally {
+      setBusy(false);
+      notifyListeners();
+    }
+  }
+
+  //* VIDER DEPOT DETAIL
+  // Vider les détails lors du changement de dépôt
+  void clearDepotDetail() {
+    _selectedDepotDetail = null;
+    notifyListeners();
   }
 
   //! OTHERS
