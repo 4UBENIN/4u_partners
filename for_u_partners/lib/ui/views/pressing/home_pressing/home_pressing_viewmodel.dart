@@ -1,12 +1,13 @@
-import 'package:for_u_partners/app/models/depot_model.dart';
-import 'package:for_u_partners/app/models/ramassage_detail_model.dart';
+import 'package:for_u_partners/app/models/depot_models/depot_model.dart';
+import 'package:for_u_partners/app/models/ramassage_models/ramassage_detail_model.dart';
+import 'package:for_u_partners/app/models/ramassage_models/ramassage_statut_model.dart';
 import 'package:for_u_partners/services/wallet_service.dart';
 import 'package:intl/intl.dart';
 import 'package:for_u_partners/app/models/pressing_model.dart';
 import 'package:for_u_partners/services/pressing_service.dart';
 import 'package:stacked/stacked.dart';
 import 'package:for_u_partners/app/app.locator.dart';
-import 'package:for_u_partners/app/models/ramassage_model.dart';
+import 'package:for_u_partners/app/models/ramassage_models/ramassage_model.dart';
 import 'package:stacked_services/stacked_services.dart';
 
 class HomePressingViewModel extends BaseViewModel {
@@ -24,6 +25,11 @@ class HomePressingViewModel extends BaseViewModel {
   // Ramassage details
   RamassageDetail? _selectedRamassageDetail;
   RamassageDetail? get selectedRamassageDetail => _selectedRamassageDetail;
+
+  RamassageStatutModel? _validateRamassage;
+  RamassageStatutModel? get validateRamassage => _validateRamassage;
+
+  List<Ramassage> validateRamassages = [];
 
   // Depot
   List<Depot> _depot = [];
@@ -149,6 +155,40 @@ class HomePressingViewModel extends BaseViewModel {
   }
 
   //* VALIDER RAMASSAGE
+
+  Future<void> validateSelectedRamassage(int ramassageId) async {
+    setBusy(true);
+    _errorMessage = null;
+
+    try {
+      _validateRamassage =
+          await _pressingService.updateRamassageStatut(ramassageId);
+      print("message de validation ramassage: ${_validateRamassage?.message}");
+
+      // Find the ramassage in _ramassages list
+      final ramassageIndex = _ramassages.indexWhere((r) => r.id == ramassageId);
+
+      if (ramassageIndex != -1) {
+        // Get the ramassage to be moved
+        final ramassage = _ramassages[ramassageIndex];
+
+        // Remove from _ramassages
+        _ramassages.removeAt(ramassageIndex);
+
+        // Add to validateRamassages
+        validateRamassages.add(ramassage);
+
+        // Notify listeners to update the UI
+        notifyListeners();
+      }
+    } catch (e) {
+      _errorMessage = e.toString();
+      print("Erreur détail ramassage: $e");
+    } finally {
+      setBusy(false);
+    }
+  }
+
   // Garde tes méthodes existantes pour le dépôt
   void setDepotStatus(String status) {
     _depotStatus = status;

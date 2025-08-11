@@ -1,7 +1,8 @@
 import 'dart:convert';
-import 'package:for_u_partners/app/models/depot_model.dart';
-import 'package:for_u_partners/app/models/ramassage_detail_model.dart';
-import 'package:for_u_partners/app/models/ramassage_model.dart';
+import 'package:for_u_partners/app/models/depot_models/depot_model.dart';
+import 'package:for_u_partners/app/models/ramassage_models/ramassage_detail_model.dart';
+import 'package:for_u_partners/app/models/ramassage_models/ramassage_model.dart';
+import 'package:for_u_partners/app/models/ramassage_models/ramassage_statut_model.dart';
 import 'package:http/http.dart' as http;
 import 'package:for_u_partners/app/app.locator.dart';
 import 'package:for_u_partners/services/auth_service.dart';
@@ -115,7 +116,7 @@ class PressingService {
 
   //* RAMASSAGE TERMINE
   // Marquer une demande comme terminée
-  Future<void> updateRamassageStatut(int id) async {
+  Future<RamassageStatutModel> updateRamassageStatut(int id) async {
     try {
       final url = Uri.parse(
           "https://foryou.cilassocies.com/api/pressing/ramassages/$id/complete");
@@ -130,10 +131,16 @@ class PressingService {
       print('Update Status Code: ${response.statusCode}');
       print('Update Response: ${response.body}');
 
-      if (response.statusCode == 401) {
+      if (response.statusCode == 200) {
+        final jsonData = jsonDecode(response.body);
+        return RamassageStatutModel.fromJson(jsonData);
+      } else if (response.statusCode == 204) {
+        // Return a default RamassageStatutModel when there's no content
+        return RamassageStatutModel();
+      } else if (response.statusCode == 401) {
         await _authService.logOut();
         throw Exception('Session expirée');
-      } else if (response.statusCode != 200 && response.statusCode != 204) {
+      } else {
         throw Exception('Erreur lors de la mise à jour du statut');
       }
     } catch (e) {

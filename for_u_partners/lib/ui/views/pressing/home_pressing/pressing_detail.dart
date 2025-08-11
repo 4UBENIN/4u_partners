@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
-import 'package:for_u_partners/app/models/ramassage_model.dart';
+import 'package:for_u_partners/app/app.router.dart';
+import 'package:for_u_partners/app/models/ramassage_models/ramassage_model.dart';
 import 'package:for_u_partners/ui/common/app_colors.dart';
 import 'package:for_u_partners/ui/common/text_component.dart';
 import 'package:for_u_partners/ui/views/pressing/home_pressing/home_pressing_viewmodel.dart';
+import 'package:for_u_partners/ui/views/pressing/widgets/dialog_widget.dart';
 import 'package:stacked/stacked.dart';
 
 class PressingDetailView extends StackedView<HomePressingViewModel> {
@@ -277,7 +279,21 @@ class _PressingDetailContent extends ViewModelWidget<HomePressingViewModel> {
                       height: 54,
                       child: ElevatedButton.icon(
                         onPressed: () {
-                          // Logique pour contacter le client ou autre action
+                          showDemandCompletedDialog(
+                            context: context,
+                            clientName:
+                                '${currentRamassage.client?.prenom ?? ''} ${currentRamassage.client?.nom ?? ''}',
+                            onAccept: () {
+                              viewModel
+                                  .validateSelectedRamassage(ramassage.id!);
+                              Navigator.of(context).pop();
+                              viewModel.navigationService
+                                  .replaceWithNavBarPressingView();
+                            },
+                            onDecline: () {
+                              Navigator.of(context).pop();
+                            },
+                          );
                         },
                         style: ElevatedButton.styleFrom(
                           backgroundColor: const Color(0xFF184E9C),

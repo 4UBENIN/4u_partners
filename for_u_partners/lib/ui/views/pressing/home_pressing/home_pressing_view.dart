@@ -1,4 +1,4 @@
-import 'package:for_u_partners/app/models/ramassage_model.dart';
+import 'package:for_u_partners/app/models/ramassage_models/ramassage_model.dart';
 import 'package:for_u_partners/ui/views/pressing/home_pressing/pressing_detail.dart';
 import 'package:for_u_partners/ui/views/pressing/widgets/animated_dot.dart';
 import 'package:stacked/stacked.dart';
@@ -31,7 +31,7 @@ class HomePressingView extends StackedView<HomePressingViewModel> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               WalletPressingWidget(
-                  balance: viewModel.isBusy ? "..." : "${viewModel.wallet} FCFA"),
+                  balance: viewModel.isBusy ? "..." : "${viewModel.wallet} FCFA",),
               const _TabBarSection(),
               Expanded(
                 child: TabBarView(
@@ -54,7 +54,7 @@ class HomePressingView extends StackedView<HomePressingViewModel> {
 
   Widget _buildRamassageTab(HomePressingViewModel viewModel) {
     if (viewModel.isBusy) {
-      return const Center(child: CircularProgressIndicator());
+      return const Center(child: CircularProgressIndicator(color: primaryColor,));
     }
 
     if (viewModel.errorMessage != null) {
@@ -119,7 +119,7 @@ class HomePressingView extends StackedView<HomePressingViewModel> {
 
   Widget _buildDepotTab(HomePressingViewModel viewModel, BuildContext context) {
     if (viewModel.isBusy) {
-      return const Center(child: CircularProgressIndicator());
+      return const Center(child: CircularProgressIndicator(color: primaryColor,));
     }
 
     if (viewModel.errorMessage != null) {

@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:for_u_partners/app/models/ramassage_model.dart';
+import 'package:for_u_partners/app/models/ramassage_models/ramassage_model.dart';
 import 'package:for_u_partners/ui/views/pressing/home_pressing/home_pressing_viewmodel.dart';
 import 'package:stacked/stacked.dart';
 
