@@ -112,7 +112,8 @@ class Details {
 class Vetement {
   final String libelle;
   final double quantiteClient; // Changé en double pour gérer "5.00"
-  final double? montant; // Changé en double nullable pour gérer null et "6000.00"
+  final double?
+      montant; // Changé en double nullable pour gérer null et "6000.00"
 
   Vetement({
     required this.libelle,

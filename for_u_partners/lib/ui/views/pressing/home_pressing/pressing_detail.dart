@@ -78,7 +78,10 @@ class _PressingDetailContent extends ViewModelWidget<HomePressingViewModel> {
   @override
   Widget build(BuildContext context, HomePressingViewModel viewModel) {
     if (viewModel.isBusy || viewModel.selectedRamassageDetail == null) {
-      return const Center(child: CircularProgressIndicator(color: primaryColor,));
+      return const Center(
+          child: CircularProgressIndicator(
+        color: primaryColor,
+      ));
     }
     final currentRamassage = viewModel.selectedRamassageDetail;
 

@@ -1,12 +1,19 @@
 import 'package:flutter/material.dart';
+import 'pressing_depot_detail.form.dart';
 import 'package:for_u_partners/app/models/depot_models/depot_model.dart';
 import 'package:for_u_partners/ui/common/app_button_component.dart';
 import 'package:for_u_partners/ui/common/app_colors.dart';
+import 'package:for_u_partners/ui/common/app_textInput.dart';
 import 'package:for_u_partners/ui/common/text_component.dart';
 import 'package:for_u_partners/ui/views/pressing/home_pressing/home_pressing_viewmodel.dart';
 import 'package:stacked/stacked.dart';
+import 'package:stacked/stacked_annotations.dart';
 
-class DepotDetailView extends StackedView<HomePressingViewModel> {
+@FormView(fields: [
+  FormTextField(name: 'poidsInput'),
+])
+class DepotDetailView extends StackedView<HomePressingViewModel>
+    with $DepotDetailView {
   final Depot depot;
 
   const DepotDetailView({
@@ -57,6 +64,7 @@ class DepotDetailView extends StackedView<HomePressingViewModel> {
   void onViewModelReady(HomePressingViewModel viewModel) {
     // Charger les détails du dépôt
     viewModel.getDepotDetailComplet(depot.id!);
+    syncFormWithViewModel(viewModel);
   }
 }
 
@@ -120,8 +128,7 @@ class _DepotDetailContent extends ViewModelWidget<HomePressingViewModel> {
           // Date de passage
           _DetailSection(
             label: "Date de passage",
-            value: viewModel
-                .changeFormatDate(currentDepot.dateRdv.toIso8601String()),
+            value: viewModel.changeFormatDateHour(currentDepot.dateRdv),
           ),
 
           // Détails du client
@@ -223,13 +230,17 @@ class _DepotDetailContent extends ViewModelWidget<HomePressingViewModel> {
               ),
             ),
 
-          const SizedBox(height: 10),
+          const SizedBox(height: 5),
+
+          TextInputField(
+            // controller: poidsInputController,
+            bigLabel: "Poids",
+            hintText: "Poids en kg",
+          ),
+          const SizedBox(height: 20),
 
           //button principal
-          PrimaryButton(
-              text: "Finaliser le rendez-vous",
-              onPressed: () {
-              }),
+          PrimaryButton(text: "Finaliser le rendez-vous", onPressed: () {}),
           const SizedBox(height: 20),
 
           if (viewModel.errorMessage != null)

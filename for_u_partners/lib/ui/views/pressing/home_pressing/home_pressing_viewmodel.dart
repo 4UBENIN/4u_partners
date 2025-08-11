@@ -11,7 +11,7 @@ import 'package:for_u_partners/app/app.locator.dart';
 import 'package:for_u_partners/app/models/ramassage_models/ramassage_model.dart';
 import 'package:stacked_services/stacked_services.dart';
 
-class HomePressingViewModel extends BaseViewModel {
+class HomePressingViewModel extends FormViewModel {
   final navigationService = locator<NavigationService>();
   final _pressingService = locator<PressingService>();
   final _walletService = locator<WalletService>();
@@ -280,6 +280,12 @@ class HomePressingViewModel extends BaseViewModel {
   String changeFormatDate(String dateString) {
     DateTime date = DateTime.parse(dateString);
     String formatted = DateFormat('EEEE d MMMM', 'fr_FR').format(date);
+    return formatted[0].toUpperCase() + formatted.substring(1);
+  }
+
+  String changeFormatDateHour(DateTime date) {
+    String formatted =
+        DateFormat("EEEE d MMMM 'à' HH'h'mm", 'fr_FR').format(date);
     return formatted[0].toUpperCase() + formatted.substring(1);
   }
 

@@ -6,14 +6,13 @@ import 'package:for_u_partners/app/app.locator.dart';
 import 'package:for_u_partners/services/auth_service.dart';
 
 class WalletService {
-   final _authService = locator<AuthService>();
+  final _authService = locator<AuthService>();
 
-   //* GET WALLET SOLD
-    // Récupérer le détail complet d'un dépot avec toutes les infos
+  //* GET WALLET SOLD
+  // Récupérer le détail complet d'un dépot avec toutes les infos
   Future<WalletModel> getWalletSold() async {
     try {
-      final url = Uri.parse(
-          "https://foryou.cilassocies.com/api/wallet_solde/");
+      final url = Uri.parse("https://foryou.cilassocies.com/api/wallet_solde/");
       final response = await http.get(
         url,
         headers: await _authService.getAuthenticatedHeaders(),

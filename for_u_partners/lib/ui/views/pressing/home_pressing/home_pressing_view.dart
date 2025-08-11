@@ -231,7 +231,9 @@ class HomePressingView extends StackedView<HomePressingViewModel> {
                     final result = await Navigator.push<bool>(
                       context,
                       MaterialPageRoute(
-                          builder: (_) => DepotDetailView(depot: depot,)),
+                          builder: (_) => DepotDetailView(
+                                depot: depot,
+                              )),
                     );
 
                     if (result == true) {

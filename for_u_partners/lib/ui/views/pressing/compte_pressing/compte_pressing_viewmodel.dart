@@ -3,6 +3,7 @@ import 'package:for_u_partners/app/models/pressing_model.dart';
 import 'package:for_u_partners/services/auth_service.dart';
 import 'package:for_u_partners/services/pressing_service.dart';
 import 'package:for_u_partners/ui/common/app_colors.dart';
+import 'package:for_u_partners/ui/views/auth/login/login_view.dart';
 import 'package:stacked/stacked.dart';
 import 'package:for_u_partners/app/app.router.dart';
 import 'package:for_u_partners/app/app.locator.dart';
@@ -71,12 +72,11 @@ class ComptePressingViewModel extends BaseViewModel {
               child: const Text('Non'),
             ),
             TextButton(
-              style: ButtonStyle(
-              ),
+              style: ButtonStyle(),
               onPressed: () {
                 Navigator.of(context).pop();
                 _authService.logOut();
-                _navigationService.replaceWithLoginView();
+                _navigationService.clearStackAndShowView(const LoginView());
               },
               child: const Text(
                 'Oui, bye',
