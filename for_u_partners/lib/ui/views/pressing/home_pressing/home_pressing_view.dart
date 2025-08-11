@@ -1,4 +1,7 @@
 import 'package:for_u_partners/app/models/ramassage_models/ramassage_model.dart';
+import 'package:for_u_partners/ui/common/app_button_component.dart';
+import 'package:for_u_partners/ui/common/app_textInput.dart';
+import 'package:for_u_partners/ui/common/bottomsheet_component.dart';
 import 'package:for_u_partners/ui/views/pressing/home_pressing/pressing_detail.dart';
 import 'package:for_u_partners/ui/views/pressing/widgets/animated_dot.dart';
 import 'package:stacked/stacked.dart';
@@ -31,7 +34,39 @@ class HomePressingView extends StackedView<HomePressingViewModel> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               WalletPressingWidget(
-                  balance: viewModel.isBusy ? "..." : "${viewModel.wallet} FCFA",),
+                balance: viewModel.isBusy ? "..." : "${viewModel.wallet} FCFA",
+                onAdd: () {
+                  showModalBottomSheet(
+                    context: context,
+                    isScrollControlled: true,
+                    backgroundColor: Colors.transparent,
+                    builder: (context) => customBottomsheetComponent(
+                      context,
+                      column: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          TextComponent(
+                            "Quel montant souhaitez-vous ajouter à votre portefeuille ?",
+                            fontweight: FontWeight.bold,
+                            fontsize: 18,
+                          ),
+                          const SizedBox(
+                            height: 20,
+                          ),
+                          TextInputField(
+                            bigLabel: "Montant",
+                            hintText: "1000 FCFA",
+                          ),
+                          const SizedBox(
+                            height: 20,
+                          ),
+                          PrimaryButton(text: "Ajouter", onPressed: () {})
+                        ],
+                      ),
+                    ),
+                  );
+                },
+              ),
               const _TabBarSection(),
               Expanded(
                 child: TabBarView(
@@ -54,7 +89,10 @@ class HomePressingView extends StackedView<HomePressingViewModel> {
 
   Widget _buildRamassageTab(HomePressingViewModel viewModel) {
     if (viewModel.isBusy) {
-      return const Center(child: CircularProgressIndicator(color: primaryColor,));
+      return const Center(
+          child: CircularProgressIndicator(
+        color: primaryColor,
+      ));
     }
 
     if (viewModel.errorMessage != null) {
@@ -105,7 +143,15 @@ class HomePressingView extends StackedView<HomePressingViewModel> {
               return PressingDemandWidget(
                 ramassage: ramassage,
                 onTap: () async {
-                  await _handleRamassageAction(context, viewModel, ramassage);
+                  await Navigator.push<bool>(
+                      context,
+                      MaterialPageRoute(
+                        builder: (_) => PressingDetailView(
+                          isA: false,
+                          currentStatus: "En attente",
+                          ramassage: ramassage,
+                        ),
+                      ));
                 },
               );
             },
@@ -119,7 +165,10 @@ class HomePressingView extends StackedView<HomePressingViewModel> {
 
   Widget _buildDepotTab(HomePressingViewModel viewModel, BuildContext context) {
     if (viewModel.isBusy) {
-      return const Center(child: CircularProgressIndicator(color: primaryColor,));
+      return const Center(
+          child: CircularProgressIndicator(
+        color: primaryColor,
+      ));
     }
 
     if (viewModel.errorMessage != null) {

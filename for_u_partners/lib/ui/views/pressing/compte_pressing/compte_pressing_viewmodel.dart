@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:for_u_partners/app/models/pressing_model.dart';
 import 'package:for_u_partners/services/auth_service.dart';
 import 'package:for_u_partners/services/pressing_service.dart';
+import 'package:for_u_partners/ui/common/app_colors.dart';
 import 'package:stacked/stacked.dart';
 import 'package:for_u_partners/app/app.router.dart';
 import 'package:for_u_partners/app/app.locator.dart';
@@ -61,6 +62,7 @@ class ComptePressingViewModel extends BaseViewModel {
       context: context,
       builder: (BuildContext context) {
         return AlertDialog(
+          backgroundColor: white,
           title: const Text('Se déconnecter'),
           content: const Text('Êtes-vous sûr de vouloir vous déconnecter ?'),
           actions: [
@@ -69,10 +71,12 @@ class ComptePressingViewModel extends BaseViewModel {
               child: const Text('Non'),
             ),
             TextButton(
+              style: ButtonStyle(
+              ),
               onPressed: () {
                 Navigator.of(context).pop();
                 _authService.logOut();
-                _navigationService.navigateToLoginView();
+                _navigationService.replaceWithLoginView();
               },
               child: const Text(
                 'Oui, bye',

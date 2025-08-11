@@ -16,7 +16,7 @@ class PressingDemandWidget extends ViewModelWidget<HomePressingViewModel> {
   @override
   Widget build(BuildContext context, HomePressingViewModel viewModel) {
     return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 10),
+      padding: const EdgeInsets.symmetric(vertical: 5),
       child: Container(
         decoration: BoxDecoration(
           boxShadow: [

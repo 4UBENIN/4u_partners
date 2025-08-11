@@ -29,6 +29,12 @@ class PressingDetailView extends StackedView<HomePressingViewModel> {
       backgroundColor: kcWhiteColors,
       appBar: AppBar(
         automaticallyImplyLeading: true,
+        leading: IconButton(
+            onPressed: () {
+              viewModel.clearRamassageDetail();
+              Navigator.pop(context);
+            },
+            icon: Icon(Icons.arrow_back)),
         backgroundColor: kcWhiteColors,
         title: const TextComponent(
           "Détails de la demande",
@@ -71,6 +77,9 @@ class _PressingDetailContent extends ViewModelWidget<HomePressingViewModel> {
 
   @override
   Widget build(BuildContext context, HomePressingViewModel viewModel) {
+    if (viewModel.isBusy || viewModel.selectedRamassageDetail == null) {
+      return const Center(child: CircularProgressIndicator(color: primaryColor,));
+    }
     final currentRamassage = viewModel.selectedRamassageDetail;
 
     return Padding(
@@ -287,6 +296,7 @@ class _PressingDetailContent extends ViewModelWidget<HomePressingViewModel> {
                               viewModel
                                   .validateSelectedRamassage(ramassage.id!);
                               Navigator.of(context).pop();
+                              viewModel.clearRamassageDetail();
                               viewModel.navigationService
                                   .replaceWithNavBarPressingView();
                             },

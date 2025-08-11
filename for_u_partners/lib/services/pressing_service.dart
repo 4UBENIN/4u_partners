@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'package:for_u_partners/app/models/depot_models/depot_detail_model.dart';
 import 'package:for_u_partners/app/models/depot_models/depot_model.dart';
 import 'package:for_u_partners/app/models/ramassage_models/ramassage_detail_model.dart';
 import 'package:for_u_partners/app/models/ramassage_models/ramassage_model.dart';
@@ -187,7 +188,7 @@ class PressingService {
 
   //* GET PRESSING DEPOT DETAILS COMPLET
   // Récupérer le détail complet d'un dépot avec toutes les infos
-  Future<RamassageDetail> getDepotDetailComplet(int id) async {
+  Future<Rdv> getDepotDetailComplet(int id) async {
     try {
       final url = Uri.parse(
           "https://foryou.cilassocies.com/api/pressing/rendezvous/$id");
@@ -201,8 +202,7 @@ class PressingService {
 
       if (response.statusCode == 200) {
         final jsonData = jsonDecode(response.body);
-        // TODO: Récupérer les détails du ramassage
-        return RamassageDetail.fromJson(jsonData);
+        return Rdv.fromJson(jsonData);
       } else if (response.statusCode == 401) {
         await _authService.logOut();
         throw Exception('Session expirée');

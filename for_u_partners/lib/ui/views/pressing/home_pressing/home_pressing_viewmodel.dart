@@ -32,8 +32,8 @@ class HomePressingViewModel extends BaseViewModel {
   List<Ramassage> validateRamassages = [];
 
   // Depot
-  List<Depot> _depot = [];
-  List<Depot> get depot => _depot;
+  List<Depot> _depots = [];
+  List<Depot> get depot => _depots;
 
   // Depot details
 
@@ -166,21 +166,21 @@ class HomePressingViewModel extends BaseViewModel {
       print("message de validation ramassage: ${_validateRamassage?.message}");
 
       // Find the ramassage in _ramassages list
-      final ramassageIndex = _ramassages.indexWhere((r) => r.id == ramassageId);
+      // final ramassageIndex = _ramassages.indexWhere((r) => r.id == ramassageId);
 
-      if (ramassageIndex != -1) {
-        // Get the ramassage to be moved
-        final ramassage = _ramassages[ramassageIndex];
+      // if (ramassageIndex != -1) {
+      //   // Get the ramassage to be moved
+      //   final ramassage = _ramassages[ramassageIndex];
 
-        // Remove from _ramassages
-        _ramassages.removeAt(ramassageIndex);
+      //   // Remove from _ramassages
+      //   _ramassages.removeAt(ramassageIndex);
 
-        // Add to validateRamassages
-        validateRamassages.add(ramassage);
+      //   // Add to validateRamassages
+      //   validateRamassages.add(ramassage);
 
-        // Notify listeners to update the UI
-        notifyListeners();
-      }
+      //   // Notify listeners to update the UI
+      //   notifyListeners();
+      // }
     } catch (e) {
       _errorMessage = e.toString();
       print("Erreur détail ramassage: $e");
@@ -211,9 +211,9 @@ class HomePressingViewModel extends BaseViewModel {
     _errorMessage = null;
 
     try {
-      _depot = await _pressingService.getDepotList();
-      print("Dépots chargés: ${_depot.length}");
-      print(_depot);
+      _depots = await _pressingService.getDepotList();
+      print("Dépots chargés: ${_depots.length}");
+      print(_depots);
     } catch (e) {
       _errorMessage = e.toString();
       print("Erreur chargement dépots: $e");
