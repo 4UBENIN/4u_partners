@@ -32,22 +32,39 @@ class RegisterProfileViewModel extends FormViewModel {
   XFile? cleaningIdentity;
 
   final vehicles = [
-    "Moto",
-    "Voiture",
-    "Tricycle",
+    "moto",
+    "voiture",
+    "tricycle",
+  ];
+
+  final categories = [
+    "standard",
+    "premium",
+    "vip",
   ];
 
   final wantedVehicles = [
-    "Moto",
-    "Voiture",
-    "Tricycle",
+    "moto",
+    "voiture",
+    "tricycle",
   ];
 
-  String _selectedVehicle = "Moto";
+  final genders = [
+    "masculin",
+    "feminin",
+  ];
+
+  String _selectedVehicle = "moto";
   String get selectedVehicle => _selectedVehicle;
 
-  String _wantedVehicle = "Moto";
+  String _wantedVehicle = "moto";
   String get wantedVehicle => _wantedVehicle;
+
+  String _selectedCategory = "standard";
+  String get selectedCategory => _selectedCategory;
+
+  String _selectedGender = "masculin";
+  String get selectedGender => _selectedGender;
 
   final _authService = locator<AuthService>();
   final ImagePicker _picker = ImagePicker();
@@ -66,6 +83,16 @@ class RegisterProfileViewModel extends FormViewModel {
 
   void setHasVehicle(bool value) {
     hasVehicle = value;
+    rebuildUi();
+  }
+
+  void setSelectedCategory(String value) {
+    _selectedCategory = value;
+    rebuildUi();
+  }
+
+  void setSelectedGender(String value) {
+    _selectedGender = value;
     rebuildUi();
   }
 

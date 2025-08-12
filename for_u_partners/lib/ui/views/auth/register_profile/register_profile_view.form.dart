@@ -22,7 +22,9 @@ const String DeliverImmatriculationInputValueKey =
     'deliverImmatriculationInput';
 const String DriverNameInputValueKey = 'driverNameInput';
 const String DriverSurnameInputValueKey = 'driverSurnameInput';
+const String DriverGenderInputValueKey = 'driverGenderInput';
 const String DriverMailInputValueKey = 'driverMailInput';
+const String DriverAdresseInputValueKey = 'driverAdresseInput';
 const String DriverImmatriculationBikeInputValueKey =
     'driverImmatriculationBikeInput';
 const String DriverCarColorInputValueKey = 'driverCarColorInput';
@@ -31,6 +33,7 @@ const String DriverCarModelInputValueKey = 'driverCarModelInput';
 const String DriverCarYearInputValueKey = 'driverCarYearInput';
 const String DriverImmatriculationCarInputValueKey =
     'driverImmatriculationCarInput';
+const String DriverCarPlacesInputValueKey = 'driverCarPlacesInput';
 const String CleaningNameInputValueKey = 'cleaningNameInput';
 const String CleaningSurnameInputValueKey = 'cleaningSurnameInput';
 const String GarageNameInputValueKey = 'garageNameInput';
@@ -53,13 +56,16 @@ final Map<String, String? Function(String?)?>
   DeliverImmatriculationInputValueKey: null,
   DriverNameInputValueKey: null,
   DriverSurnameInputValueKey: null,
+  DriverGenderInputValueKey: null,
   DriverMailInputValueKey: null,
+  DriverAdresseInputValueKey: null,
   DriverImmatriculationBikeInputValueKey: null,
   DriverCarColorInputValueKey: null,
   DriverCarBrandInputValueKey: null,
   DriverCarModelInputValueKey: null,
   DriverCarYearInputValueKey: null,
   DriverImmatriculationCarInputValueKey: null,
+  DriverCarPlacesInputValueKey: null,
   CleaningNameInputValueKey: null,
   CleaningSurnameInputValueKey: null,
   GarageNameInputValueKey: null,
@@ -87,8 +93,12 @@ mixin $RegisterProfileView {
       _getFormTextEditingController(DriverNameInputValueKey);
   TextEditingController get driverSurnameInputController =>
       _getFormTextEditingController(DriverSurnameInputValueKey);
+  TextEditingController get driverGenderInputController =>
+      _getFormTextEditingController(DriverGenderInputValueKey);
   TextEditingController get driverMailInputController =>
       _getFormTextEditingController(DriverMailInputValueKey);
+  TextEditingController get driverAdresseInputController =>
+      _getFormTextEditingController(DriverAdresseInputValueKey);
   TextEditingController get driverImmatriculationBikeInputController =>
       _getFormTextEditingController(DriverImmatriculationBikeInputValueKey);
   TextEditingController get driverCarColorInputController =>
@@ -101,6 +111,8 @@ mixin $RegisterProfileView {
       _getFormTextEditingController(DriverCarYearInputValueKey);
   TextEditingController get driverImmatriculationCarInputController =>
       _getFormTextEditingController(DriverImmatriculationCarInputValueKey);
+  TextEditingController get driverCarPlacesInputController =>
+      _getFormTextEditingController(DriverCarPlacesInputValueKey);
   TextEditingController get cleaningNameInputController =>
       _getFormTextEditingController(CleaningNameInputValueKey);
   TextEditingController get cleaningSurnameInputController =>
@@ -130,8 +142,12 @@ mixin $RegisterProfileView {
       _getFormFocusNode(DriverNameInputValueKey);
   FocusNode get driverSurnameInputFocusNode =>
       _getFormFocusNode(DriverSurnameInputValueKey);
+  FocusNode get driverGenderInputFocusNode =>
+      _getFormFocusNode(DriverGenderInputValueKey);
   FocusNode get driverMailInputFocusNode =>
       _getFormFocusNode(DriverMailInputValueKey);
+  FocusNode get driverAdresseInputFocusNode =>
+      _getFormFocusNode(DriverAdresseInputValueKey);
   FocusNode get driverImmatriculationBikeInputFocusNode =>
       _getFormFocusNode(DriverImmatriculationBikeInputValueKey);
   FocusNode get driverCarColorInputFocusNode =>
@@ -144,6 +160,8 @@ mixin $RegisterProfileView {
       _getFormFocusNode(DriverCarYearInputValueKey);
   FocusNode get driverImmatriculationCarInputFocusNode =>
       _getFormFocusNode(DriverImmatriculationCarInputValueKey);
+  FocusNode get driverCarPlacesInputFocusNode =>
+      _getFormFocusNode(DriverCarPlacesInputValueKey);
   FocusNode get cleaningNameInputFocusNode =>
       _getFormFocusNode(CleaningNameInputValueKey);
   FocusNode get cleaningSurnameInputFocusNode =>
@@ -189,7 +207,9 @@ mixin $RegisterProfileView {
         .addListener(() => _updateFormData(model));
     driverNameInputController.addListener(() => _updateFormData(model));
     driverSurnameInputController.addListener(() => _updateFormData(model));
+    driverGenderInputController.addListener(() => _updateFormData(model));
     driverMailInputController.addListener(() => _updateFormData(model));
+    driverAdresseInputController.addListener(() => _updateFormData(model));
     driverImmatriculationBikeInputController
         .addListener(() => _updateFormData(model));
     driverCarColorInputController.addListener(() => _updateFormData(model));
@@ -198,6 +218,7 @@ mixin $RegisterProfileView {
     driverCarYearInputController.addListener(() => _updateFormData(model));
     driverImmatriculationCarInputController
         .addListener(() => _updateFormData(model));
+    driverCarPlacesInputController.addListener(() => _updateFormData(model));
     cleaningNameInputController.addListener(() => _updateFormData(model));
     cleaningSurnameInputController.addListener(() => _updateFormData(model));
     garageNameInputController.addListener(() => _updateFormData(model));
@@ -225,7 +246,9 @@ mixin $RegisterProfileView {
         .addListener(() => _updateFormData(model));
     driverNameInputController.addListener(() => _updateFormData(model));
     driverSurnameInputController.addListener(() => _updateFormData(model));
+    driverGenderInputController.addListener(() => _updateFormData(model));
     driverMailInputController.addListener(() => _updateFormData(model));
+    driverAdresseInputController.addListener(() => _updateFormData(model));
     driverImmatriculationBikeInputController
         .addListener(() => _updateFormData(model));
     driverCarColorInputController.addListener(() => _updateFormData(model));
@@ -234,6 +257,7 @@ mixin $RegisterProfileView {
     driverCarYearInputController.addListener(() => _updateFormData(model));
     driverImmatriculationCarInputController
         .addListener(() => _updateFormData(model));
+    driverCarPlacesInputController.addListener(() => _updateFormData(model));
     cleaningNameInputController.addListener(() => _updateFormData(model));
     cleaningSurnameInputController.addListener(() => _updateFormData(model));
     garageNameInputController.addListener(() => _updateFormData(model));
@@ -259,7 +283,9 @@ mixin $RegisterProfileView {
               deliverImmatriculationInputController.text,
           DriverNameInputValueKey: driverNameInputController.text,
           DriverSurnameInputValueKey: driverSurnameInputController.text,
+          DriverGenderInputValueKey: driverGenderInputController.text,
           DriverMailInputValueKey: driverMailInputController.text,
+          DriverAdresseInputValueKey: driverAdresseInputController.text,
           DriverImmatriculationBikeInputValueKey:
               driverImmatriculationBikeInputController.text,
           DriverCarColorInputValueKey: driverCarColorInputController.text,
@@ -268,6 +294,7 @@ mixin $RegisterProfileView {
           DriverCarYearInputValueKey: driverCarYearInputController.text,
           DriverImmatriculationCarInputValueKey:
               driverImmatriculationCarInputController.text,
+          DriverCarPlacesInputValueKey: driverCarPlacesInputController.text,
           CleaningNameInputValueKey: cleaningNameInputController.text,
           CleaningSurnameInputValueKey: cleaningSurnameInputController.text,
           GarageNameInputValueKey: garageNameInputController.text,
@@ -334,8 +361,12 @@ extension ValueProperties on FormStateHelper {
       this.formValueMap[DriverNameInputValueKey] as String?;
   String? get driverSurnameInputValue =>
       this.formValueMap[DriverSurnameInputValueKey] as String?;
+  String? get driverGenderInputValue =>
+      this.formValueMap[DriverGenderInputValueKey] as String?;
   String? get driverMailInputValue =>
       this.formValueMap[DriverMailInputValueKey] as String?;
+  String? get driverAdresseInputValue =>
+      this.formValueMap[DriverAdresseInputValueKey] as String?;
   String? get driverImmatriculationBikeInputValue =>
       this.formValueMap[DriverImmatriculationBikeInputValueKey] as String?;
   String? get driverCarColorInputValue =>
@@ -348,6 +379,8 @@ extension ValueProperties on FormStateHelper {
       this.formValueMap[DriverCarYearInputValueKey] as String?;
   String? get driverImmatriculationCarInputValue =>
       this.formValueMap[DriverImmatriculationCarInputValueKey] as String?;
+  String? get driverCarPlacesInputValue =>
+      this.formValueMap[DriverCarPlacesInputValueKey] as String?;
   String? get cleaningNameInputValue =>
       this.formValueMap[CleaningNameInputValueKey] as String?;
   String? get cleaningSurnameInputValue =>
@@ -479,6 +512,18 @@ extension ValueProperties on FormStateHelper {
     }
   }
 
+  set driverGenderInputValue(String? value) {
+    this.setData(
+      this.formValueMap..addAll({DriverGenderInputValueKey: value}),
+    );
+
+    if (_RegisterProfileViewTextEditingControllers.containsKey(
+        DriverGenderInputValueKey)) {
+      _RegisterProfileViewTextEditingControllers[DriverGenderInputValueKey]
+          ?.text = value ?? '';
+    }
+  }
+
   set driverMailInputValue(String? value) {
     this.setData(
       this.formValueMap..addAll({DriverMailInputValueKey: value}),
@@ -487,6 +532,18 @@ extension ValueProperties on FormStateHelper {
     if (_RegisterProfileViewTextEditingControllers.containsKey(
         DriverMailInputValueKey)) {
       _RegisterProfileViewTextEditingControllers[DriverMailInputValueKey]
+          ?.text = value ?? '';
+    }
+  }
+
+  set driverAdresseInputValue(String? value) {
+    this.setData(
+      this.formValueMap..addAll({DriverAdresseInputValueKey: value}),
+    );
+
+    if (_RegisterProfileViewTextEditingControllers.containsKey(
+        DriverAdresseInputValueKey)) {
+      _RegisterProfileViewTextEditingControllers[DriverAdresseInputValueKey]
           ?.text = value ?? '';
     }
   }
@@ -562,6 +619,18 @@ extension ValueProperties on FormStateHelper {
         DriverImmatriculationCarInputValueKey)) {
       _RegisterProfileViewTextEditingControllers[
               DriverImmatriculationCarInputValueKey]
+          ?.text = value ?? '';
+    }
+  }
+
+  set driverCarPlacesInputValue(String? value) {
+    this.setData(
+      this.formValueMap..addAll({DriverCarPlacesInputValueKey: value}),
+    );
+
+    if (_RegisterProfileViewTextEditingControllers.containsKey(
+        DriverCarPlacesInputValueKey)) {
+      _RegisterProfileViewTextEditingControllers[DriverCarPlacesInputValueKey]
           ?.text = value ?? '';
     }
   }
@@ -645,9 +714,15 @@ extension ValueProperties on FormStateHelper {
   bool get hasDriverSurnameInput =>
       this.formValueMap.containsKey(DriverSurnameInputValueKey) &&
       (driverSurnameInputValue?.isNotEmpty ?? false);
+  bool get hasDriverGenderInput =>
+      this.formValueMap.containsKey(DriverGenderInputValueKey) &&
+      (driverGenderInputValue?.isNotEmpty ?? false);
   bool get hasDriverMailInput =>
       this.formValueMap.containsKey(DriverMailInputValueKey) &&
       (driverMailInputValue?.isNotEmpty ?? false);
+  bool get hasDriverAdresseInput =>
+      this.formValueMap.containsKey(DriverAdresseInputValueKey) &&
+      (driverAdresseInputValue?.isNotEmpty ?? false);
   bool get hasDriverImmatriculationBikeInput =>
       this.formValueMap.containsKey(DriverImmatriculationBikeInputValueKey) &&
       (driverImmatriculationBikeInputValue?.isNotEmpty ?? false);
@@ -666,6 +741,9 @@ extension ValueProperties on FormStateHelper {
   bool get hasDriverImmatriculationCarInput =>
       this.formValueMap.containsKey(DriverImmatriculationCarInputValueKey) &&
       (driverImmatriculationCarInputValue?.isNotEmpty ?? false);
+  bool get hasDriverCarPlacesInput =>
+      this.formValueMap.containsKey(DriverCarPlacesInputValueKey) &&
+      (driverCarPlacesInputValue?.isNotEmpty ?? false);
   bool get hasCleaningNameInput =>
       this.formValueMap.containsKey(CleaningNameInputValueKey) &&
       (cleaningNameInputValue?.isNotEmpty ?? false);
@@ -712,8 +790,14 @@ extension ValueProperties on FormStateHelper {
   bool get hasDriverSurnameInputValidationMessage =>
       this.fieldsValidationMessages[DriverSurnameInputValueKey]?.isNotEmpty ??
       false;
+  bool get hasDriverGenderInputValidationMessage =>
+      this.fieldsValidationMessages[DriverGenderInputValueKey]?.isNotEmpty ??
+      false;
   bool get hasDriverMailInputValidationMessage =>
       this.fieldsValidationMessages[DriverMailInputValueKey]?.isNotEmpty ??
+      false;
+  bool get hasDriverAdresseInputValidationMessage =>
+      this.fieldsValidationMessages[DriverAdresseInputValueKey]?.isNotEmpty ??
       false;
   bool get hasDriverImmatriculationBikeInputValidationMessage =>
       this
@@ -736,6 +820,9 @@ extension ValueProperties on FormStateHelper {
       this
           .fieldsValidationMessages[DriverImmatriculationCarInputValueKey]
           ?.isNotEmpty ??
+      false;
+  bool get hasDriverCarPlacesInputValidationMessage =>
+      this.fieldsValidationMessages[DriverCarPlacesInputValueKey]?.isNotEmpty ??
       false;
   bool get hasCleaningNameInputValidationMessage =>
       this.fieldsValidationMessages[CleaningNameInputValueKey]?.isNotEmpty ??
@@ -772,8 +859,12 @@ extension ValueProperties on FormStateHelper {
       this.fieldsValidationMessages[DriverNameInputValueKey];
   String? get driverSurnameInputValidationMessage =>
       this.fieldsValidationMessages[DriverSurnameInputValueKey];
+  String? get driverGenderInputValidationMessage =>
+      this.fieldsValidationMessages[DriverGenderInputValueKey];
   String? get driverMailInputValidationMessage =>
       this.fieldsValidationMessages[DriverMailInputValueKey];
+  String? get driverAdresseInputValidationMessage =>
+      this.fieldsValidationMessages[DriverAdresseInputValueKey];
   String? get driverImmatriculationBikeInputValidationMessage =>
       this.fieldsValidationMessages[DriverImmatriculationBikeInputValueKey];
   String? get driverCarColorInputValidationMessage =>
@@ -786,6 +877,8 @@ extension ValueProperties on FormStateHelper {
       this.fieldsValidationMessages[DriverCarYearInputValueKey];
   String? get driverImmatriculationCarInputValidationMessage =>
       this.fieldsValidationMessages[DriverImmatriculationCarInputValueKey];
+  String? get driverCarPlacesInputValidationMessage =>
+      this.fieldsValidationMessages[DriverCarPlacesInputValueKey];
   String? get cleaningNameInputValidationMessage =>
       this.fieldsValidationMessages[CleaningNameInputValueKey];
   String? get cleaningSurnameInputValidationMessage =>
@@ -826,8 +919,14 @@ extension Methods on FormStateHelper {
   setDriverSurnameInputValidationMessage(String? validationMessage) =>
       this.fieldsValidationMessages[DriverSurnameInputValueKey] =
           validationMessage;
+  setDriverGenderInputValidationMessage(String? validationMessage) =>
+      this.fieldsValidationMessages[DriverGenderInputValueKey] =
+          validationMessage;
   setDriverMailInputValidationMessage(String? validationMessage) =>
       this.fieldsValidationMessages[DriverMailInputValueKey] =
+          validationMessage;
+  setDriverAdresseInputValidationMessage(String? validationMessage) =>
+      this.fieldsValidationMessages[DriverAdresseInputValueKey] =
           validationMessage;
   setDriverImmatriculationBikeInputValidationMessage(
           String? validationMessage) =>
@@ -848,6 +947,9 @@ extension Methods on FormStateHelper {
   setDriverImmatriculationCarInputValidationMessage(
           String? validationMessage) =>
       this.fieldsValidationMessages[DriverImmatriculationCarInputValueKey] =
+          validationMessage;
+  setDriverCarPlacesInputValidationMessage(String? validationMessage) =>
+      this.fieldsValidationMessages[DriverCarPlacesInputValueKey] =
           validationMessage;
   setCleaningNameInputValidationMessage(String? validationMessage) =>
       this.fieldsValidationMessages[CleaningNameInputValueKey] =
@@ -874,13 +976,16 @@ extension Methods on FormStateHelper {
     deliverImmatriculationInputValue = '';
     driverNameInputValue = '';
     driverSurnameInputValue = '';
+    driverGenderInputValue = '';
     driverMailInputValue = '';
+    driverAdresseInputValue = '';
     driverImmatriculationBikeInputValue = '';
     driverCarColorInputValue = '';
     driverCarBrandInputValue = '';
     driverCarModelInputValue = '';
     driverCarYearInputValue = '';
     driverImmatriculationCarInputValue = '';
+    driverCarPlacesInputValue = '';
     cleaningNameInputValue = '';
     cleaningSurnameInputValue = '';
     garageNameInputValue = '';
@@ -905,7 +1010,11 @@ extension Methods on FormStateHelper {
       DriverNameInputValueKey: getValidationMessage(DriverNameInputValueKey),
       DriverSurnameInputValueKey:
           getValidationMessage(DriverSurnameInputValueKey),
+      DriverGenderInputValueKey:
+          getValidationMessage(DriverGenderInputValueKey),
       DriverMailInputValueKey: getValidationMessage(DriverMailInputValueKey),
+      DriverAdresseInputValueKey:
+          getValidationMessage(DriverAdresseInputValueKey),
       DriverImmatriculationBikeInputValueKey:
           getValidationMessage(DriverImmatriculationBikeInputValueKey),
       DriverCarColorInputValueKey:
@@ -918,6 +1027,8 @@ extension Methods on FormStateHelper {
           getValidationMessage(DriverCarYearInputValueKey),
       DriverImmatriculationCarInputValueKey:
           getValidationMessage(DriverImmatriculationCarInputValueKey),
+      DriverCarPlacesInputValueKey:
+          getValidationMessage(DriverCarPlacesInputValueKey),
       CleaningNameInputValueKey:
           getValidationMessage(CleaningNameInputValueKey),
       CleaningSurnameInputValueKey:
@@ -959,7 +1070,11 @@ void updateValidationData(FormStateHelper model) =>
       DriverNameInputValueKey: getValidationMessage(DriverNameInputValueKey),
       DriverSurnameInputValueKey:
           getValidationMessage(DriverSurnameInputValueKey),
+      DriverGenderInputValueKey:
+          getValidationMessage(DriverGenderInputValueKey),
       DriverMailInputValueKey: getValidationMessage(DriverMailInputValueKey),
+      DriverAdresseInputValueKey:
+          getValidationMessage(DriverAdresseInputValueKey),
       DriverImmatriculationBikeInputValueKey:
           getValidationMessage(DriverImmatriculationBikeInputValueKey),
       DriverCarColorInputValueKey:
@@ -972,6 +1087,8 @@ void updateValidationData(FormStateHelper model) =>
           getValidationMessage(DriverCarYearInputValueKey),
       DriverImmatriculationCarInputValueKey:
           getValidationMessage(DriverImmatriculationCarInputValueKey),
+      DriverCarPlacesInputValueKey:
+          getValidationMessage(DriverCarPlacesInputValueKey),
       CleaningNameInputValueKey:
           getValidationMessage(CleaningNameInputValueKey),
       CleaningSurnameInputValueKey:

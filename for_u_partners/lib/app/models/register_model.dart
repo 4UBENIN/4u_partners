@@ -8,6 +8,7 @@ class VehiculeModel {
   final String categorie;
   final String? cartegrise;
   final String? assurance;
+  final String? permis;
   final int annee;
 
   VehiculeModel({
@@ -20,6 +21,7 @@ class VehiculeModel {
     required this.categorie,
     this.cartegrise,
     this.assurance,
+    this.permis,
     required this.annee,
   });
 
@@ -33,6 +35,7 @@ class VehiculeModel {
         'categorie': categorie,
         'carte_grise': cartegrise,
         'assurance': assurance,
+        'permis_conduire': permis,
         'annee': annee,
       };
 }

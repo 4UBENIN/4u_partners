@@ -28,7 +28,9 @@ import 'package:for_u_partners/ui/common/app_button_component.dart';
   //* Conducteur
   FormTextField(name: 'driverNameInput'),
   FormTextField(name: 'driverSurnameInput'),
+  FormTextField(name: 'driverGenderInput'),
   FormTextField(name: 'driverMailInput'),
+  FormTextField(name: 'driverAdresseInput'),
   //* has a Moto, Tricycle
   FormTextField(name: 'driverImmatriculationBikeInput'),
   //* has a Car
@@ -37,6 +39,8 @@ import 'package:for_u_partners/ui/common/app_button_component.dart';
   FormTextField(name: 'driverCarModelInput'),
   FormTextField(name: 'driverCarYearInput'),
   FormTextField(name: 'driverImmatriculationCarInput'),
+  FormTextField(name: 'driverCarPlacesInput'),
+
   //* Entretien
   FormTextField(name: 'cleaningNameInput'),
   FormTextField(name: 'cleaningSurnameInput'),
@@ -129,6 +133,64 @@ class RegisterProfileView extends StackedView<RegisterProfileViewModel>
                               viewModel.registerEnding(model);
                               break;
                             case 'conducteur':
+                              if (viewModel.hasVehicle == true) {
+                                VehiculeModel vehiculemodel = VehiculeModel(
+                                  type: viewModel.selectedVehicle,
+                                  marque: driverCarBrandInputController.text,
+                                  modele: driverCarModelInputController.text,
+                                  immatriculation:
+                                      driverImmatriculationCarInputController
+                                          .text,
+                                  nombrePlaces: int.parse(
+                                      driverCarPlacesInputController.text),
+                                  couleur: driverCarColorInputController.text,
+                                  categorie: viewModel.selectedCategory,
+                                  annee: int.parse(
+                                      driverCarYearInputController.text),
+                                  cartegrise:
+                                      viewModel.driverCarCarteGrise?.path,
+                                  permis: viewModel.driverCarPermis?.path,
+                                  assurance: viewModel.driverCarAssurance?.path,
+                                );
+
+                                RegistrationModel model = RegistrationModel(
+                                  type: selectedProfile,
+                                  telephone: phoneNumber,
+                                  email: mail,
+                                  code: "",
+                                  motDePasse: password,
+                                  motDePasseConfirmation: password,
+                                  nom: driverNameInputController.text,
+                                  prenom: driverSurnameInputController.text,
+                                  adresse: driverAdresseInputController.text,
+                                  documentIdentite:
+                                      viewModel.driverIdentity?.path,
+                                  possedeVehicule:
+                                      viewModel.hasVehicle == true ? 1 : 0,
+                                  typeConducteurId: 1,
+                                  vehicule: vehiculemodel,
+                                );
+                                print(model.toJson());
+                                viewModel.registerEnding(model);
+                              } else {
+                                RegistrationModel model = RegistrationModel(
+                                  type: selectedProfile,
+                                  telephone: phoneNumber,
+                                  email: mail,
+                                  code: "",
+                                  motDePasse: password,
+                                  motDePasseConfirmation: password,
+                                  nom: driverNameInputController.text,
+                                  prenom: driverSurnameInputController.text,
+                                  adresse: driverAdresseInputController.text,
+                                  documentIdentite:
+                                      viewModel.driverIdentity?.path,
+                                  possedeVehicule: 0,
+                                  typeConducteurId: 1,
+                                );
+                                viewModel.registerEnding(model);
+                              }
+
                               break;
                             case 'Livreur/Coursier':
                               break;
@@ -256,12 +318,22 @@ class RegisterProfileView extends StackedView<RegisterProfileViewModel>
             ),
             const SizedBox(height: 20),
 
-            //* Adresse Mail du conducteur
+            CustomDropdown(
+              title: "Genre",
+              items: viewModel.genders,
+              value: viewModel.selectedGender,
+              onChanged: (value) {
+                if (value != null) {
+                  viewModel.setSelectedGender(value);
+                }
+              },
+            ),
+            const SizedBox(height: 20),
+            //* Adresse du conducteur
             TextInputField(
-              bigLabel: "Adresse Mail",
-              hintText: "bastiendounou@gmail.com",
-              controller: driverMailInputController,
-              isEmail: true,
+              bigLabel: "Adresse",
+              hintText: "123 rue de la paix",
+              controller: driverAdresseInputController,
             ),
             const SizedBox(height: 20),
 
@@ -333,8 +405,8 @@ class RegisterProfileView extends StackedView<RegisterProfileViewModel>
                         ),
 
                         //* OUI Moto, Tricycle
-                        if (viewModel.selectedVehicle == "Moto" ||
-                            viewModel.selectedVehicle == "Tricycle") ...[
+                        if (viewModel.selectedVehicle == "moto" ||
+                            viewModel.selectedVehicle == "tricycle") ...[
                           const SizedBox(height: 20),
                           //* Carte grise
                           viewModel.uploadFileComponent(
@@ -361,7 +433,7 @@ class RegisterProfileView extends StackedView<RegisterProfileViewModel>
                         ],
 
                         //* OUI Voiture
-                        if (viewModel.selectedVehicle == "Voiture") ...[
+                        if (viewModel.selectedVehicle == "voiture") ...[
                           const SizedBox(height: 20),
                           //* Permis
                           viewModel.uploadFileComponent(
@@ -416,11 +488,32 @@ class RegisterProfileView extends StackedView<RegisterProfileViewModel>
                           ),
                           const SizedBox(height: 20),
 
+                          //* Nombre de places
+                          TextInputField(
+                            bigLabel: "Nombre de places",
+                            hintText: "Ex: 5",
+                            controller: driverCarPlacesInputController,
+                          ),
+                          const SizedBox(height: 20),
+
                           //* Année de sortie
                           TextInputField(
                             bigLabel: "Année du véhicule",
                             hintText: "Ex: 2008",
                             controller: driverCarYearInputController,
+                          ),
+                          const SizedBox(height: 20),
+
+                          //* Catégorie
+                          CustomDropdown(
+                            title: "Catégorie du véhicule",
+                            items: viewModel.categories,
+                            value: viewModel.selectedCategory,
+                            onChanged: (value) {
+                              if (value != null) {
+                                viewModel.setSelectedCategory(value);
+                              }
+                            },
                           ),
                           const SizedBox(height: 20),
                         ],

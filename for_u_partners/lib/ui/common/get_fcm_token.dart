@@ -10,10 +10,10 @@ import 'dart:io' show Platform;
 class FirebaseMessagingService {
   static final FirebaseMessaging _messaging = FirebaseMessaging.instance;
   final _sharedPreferencesServices = locator<SharedpreferencesService>();
-  
+
   // Token FCM stocké localement
   static String? _currentToken;
-  
+
   // Callbacks pour les mises à jour de l'UI
   static Function(String?)? onTokenUpdate;
 
@@ -29,13 +29,12 @@ class FirebaseMessagingService {
 
       if (settings.authorizationStatus == AuthorizationStatus.authorized ||
           settings.authorizationStatus == AuthorizationStatus.provisional) {
-        
         // Configurer les handlers de messages
         await _setupMessageHandlers();
-        
+
         // Récupérer le token selon la plateforme
         await _getToken();
-        
+
         // Écouter les mises à jour de token
         _setupTokenListener();
       }
@@ -48,21 +47,21 @@ class FirebaseMessagingService {
   Future<void> _getToken() async {
     try {
       String? token;
-      
+
       // Pour iOS, attendre le token APNS si nécessaire
       if (Platform.isIOS) {
         String? apnsToken = await _messaging.getAPNSToken();
-        
+
         if (apnsToken == null) {
           // Attendre 3 secondes comme recommandé
           await Future.delayed(const Duration(seconds: 3));
           apnsToken = await _messaging.getAPNSToken();
         }
       }
-      
+
       // Récupérer le token FCM
       token = await _messaging.getToken();
-      
+
       if (token != null) {
         _currentToken = token; // Stocker le token
         onTokenUpdate?.call(token);
@@ -98,7 +97,8 @@ class FirebaseMessagingService {
     // Tap sur notification (app fermée)
     RemoteMessage? initialMessage = await _messaging.getInitialMessage();
     if (initialMessage != null) {
-      print('App ouvert depuis notification: ${initialMessage.notification?.title}');
+      print(
+          'App ouvert depuis notification: ${initialMessage.notification?.title}');
     }
   }
 
@@ -111,14 +111,16 @@ class FirebaseMessagingService {
         return false;
       }
 
-      final response = await http.post(
-        Uri.parse(url),
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': 'Bearer $authToken',
-        },
-        body: jsonEncode({'fcm_token': token}),
-      ).timeout(Duration(seconds: 10));
+      final response = await http
+          .post(
+            Uri.parse(url),
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': 'Bearer $authToken',
+            },
+            body: jsonEncode({'fcm_token': token}),
+          )
+          .timeout(Duration(seconds: 10));
 
       if (response.statusCode == 200 || response.statusCode == 201) {
         print('Token envoyé avec succès vers: $url');
@@ -140,7 +142,7 @@ class FirebaseMessagingService {
       if (_currentToken != null && _currentToken!.isNotEmpty) {
         return _currentToken;
       }
-      
+
       // Sinon, récupérer depuis Firebase
       String? token = await _messaging.getToken();
       if (token != null) {
@@ -196,7 +198,7 @@ class FirebaseMessagingService {
         }
         if (apnsToken == null) return false;
       }
-      
+
       await _messaging.subscribeToTopic(topic);
       return true;
     } catch (e) {
