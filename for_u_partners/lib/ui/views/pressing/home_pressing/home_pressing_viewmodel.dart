@@ -3,6 +3,8 @@ import 'package:for_u_partners/app/models/depot_models/depot_model.dart';
 import 'package:for_u_partners/app/models/ramassage_models/ramassage_detail_model.dart';
 import 'package:for_u_partners/app/models/ramassage_models/ramassage_statut_model.dart';
 import 'package:for_u_partners/services/wallet_service.dart';
+import 'package:for_u_partners/ui/common/api_constant.dart';
+import 'package:for_u_partners/ui/common/get_fcm_token.dart';
 import 'package:intl/intl.dart';
 import 'package:for_u_partners/app/models/pressing_model.dart';
 import 'package:for_u_partners/services/pressing_service.dart';
@@ -49,11 +51,31 @@ class HomePressingViewModel extends FormViewModel {
 
   @override
   HomePressingViewModel() {
+    sendPressingFcmToken();
     getWalletSold();
     fetchPressingInfo();
     getRamassagesList();
     getDepotList();
   }
+
+  //! FCM TOKEN
+
+  void sendPressingFcmToken() async {
+   await registerPressingToken();
+  }
+
+  Future<void> registerPressingToken() async {
+    // Enregistrer le token pour le pressing
+    bool success = await FirebaseMessagingService().sendCurrentTokenToBackend(
+      ApiConstant.saveFcmTokenPressing // URL spécifique pressing
+    );
+    
+    if (success) {
+      print('Token pressing enregistré');
+    }
+  }
+
+
 
   //! WALLET
 
