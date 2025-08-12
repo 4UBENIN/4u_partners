@@ -219,29 +219,14 @@ class HomePressingView extends StackedView<HomePressingViewModel> {
                 name:
                     '${depot.client?.prenom ?? ''} ${depot.client?.nom ?? ''}',
                 date: viewModel.changeFormatDate(depot.dateRdv!),
-                status: viewModel.depotStatus,
-                onTap: () async {
-                  if (viewModel.depotStatus == "Validé") {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                          builder: (_) => const FacturationView()),
-                    );
-                  } else {
-                    final result = await Navigator.push<bool>(
-                      context,
-                      MaterialPageRoute(
-                          builder: (_) => DepotDetailView(
-                                depot: depot,
-                              )),
-                    );
-
-                    if (result == true) {
-                      viewModel.setDepotStatus("Validé");
-                    } else if (result == false) {
-                      viewModel.setDepotStatus("Rejeté");
-                    }
-                  }
+                onTap: () {
+                  Navigator.push<bool>(
+                    context,
+                    MaterialPageRoute(
+                        builder: (_) => DepotDetailView(
+                              depot: depot,
+                            )),
+                  );
                 },
               );
             },
@@ -419,35 +404,16 @@ class _TabBarSection extends StatelessWidget {
 class _DepotDemandWidget extends StatelessWidget {
   final String name;
   final String date;
-  final String status;
   final VoidCallback onTap;
 
   const _DepotDemandWidget({
     required this.name,
     required this.date,
-    required this.status,
     required this.onTap,
   });
 
   @override
   Widget build(BuildContext context) {
-    Color? bgColor;
-    Color textColor;
-
-    switch (status) {
-      case "Validé":
-        bgColor = const Color.fromARGB(37, 16, 185, 129);
-        textColor = Colors.green;
-        break;
-      case "Rejeté":
-        bgColor = const Color.fromARGB(32, 239, 68, 68);
-        textColor = Colors.red;
-        break;
-      default:
-        bgColor = null;
-        textColor = const Color(0xFF6b7280);
-    }
-
     return GestureDetector(
       onTap: onTap,
       child: Padding(
@@ -469,51 +435,24 @@ class _DepotDemandWidget extends StatelessWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Text(
-                    name,
-                    style: const TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.w600,
-                      color: Color(0xFF1a1a1a),
-                    ),
-                  ),
-                  Text(
-                    date,
-                    style: const TextStyle(
-                      fontSize: 14,
-                      color: Color(0xFF8e8e93),
-                    ),
-                  ),
-                ],
+              Text(
+                name,
+                style: const TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.w600,
+                  color: Color(0xFF1a1a1a),
+                ),
               ),
               const SizedBox(height: 12),
-              bgColor != null
-                  ? Container(
-                      padding: const EdgeInsets.symmetric(
-                          horizontal: 12, vertical: 6),
-                      decoration: BoxDecoration(
-                        color: bgColor,
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      child: Text(
-                        status,
-                        style: TextStyle(
-                          color: textColor,
-                          fontSize: 13,
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
-                    )
-                  : Text(
-                      status,
-                      style: TextStyle(
-                        fontSize: 14,
-                        color: textColor,
-                      ),
-                    ),
+              Text.rich(TextSpan(
+                children: [
+                  TextSpan(
+                      text: "$date",
+                      style: TextStyle(fontWeight: FontWeight.w500, color: primaryColor))
+                ],
+                text: "Rendez vous le ",
+                style: TextStyle(fontSize: 14, color: mediumGrey),
+              )),
             ],
           ),
         ),

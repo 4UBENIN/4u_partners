@@ -3,15 +3,10 @@ import 'pressing_depot_detail.form.dart';
 import 'package:for_u_partners/app/models/depot_models/depot_model.dart';
 import 'package:for_u_partners/ui/common/app_button_component.dart';
 import 'package:for_u_partners/ui/common/app_colors.dart';
-import 'package:for_u_partners/ui/common/app_textInput.dart';
 import 'package:for_u_partners/ui/common/text_component.dart';
 import 'package:for_u_partners/ui/views/pressing/home_pressing/home_pressing_viewmodel.dart';
 import 'package:stacked/stacked.dart';
-import 'package:stacked/stacked_annotations.dart';
 
-@FormView(fields: [
-  FormTextField(name: 'poidsInput'),
-])
 class DepotDetailView extends StackedView<HomePressingViewModel>
     with $DepotDetailView {
   final Depot depot;
@@ -231,16 +226,10 @@ class _DepotDetailContent extends ViewModelWidget<HomePressingViewModel> {
             ),
 
           const SizedBox(height: 5),
-
-          TextInputField(
-            // controller: poidsInputController,
-            bigLabel: "Poids",
-            hintText: "Poids en kg",
-          ),
-          const SizedBox(height: 20),
-
+    
           //button principal
-          PrimaryButton(text: "Finaliser le rendez-vous", onPressed: () {}),
+          PrimaryButton(text: "Planifier le rendez-vous", onPressed: () {}),
+
           const SizedBox(height: 20),
 
           if (viewModel.errorMessage != null)

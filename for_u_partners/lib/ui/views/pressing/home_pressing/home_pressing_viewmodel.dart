@@ -43,10 +43,6 @@ class HomePressingViewModel extends FormViewModel {
   String? _errorMessage;
   String? get errorMessage => _errorMessage;
 
-  // État du dépôt (garde ta logique existante)
-  String _depotStatus = "En attente de validation";
-  String get depotStatus => _depotStatus;
-
   // Wallet de l'utilisateur
   String _wallet = "";
   String get wallet => _wallet;
@@ -192,12 +188,6 @@ class HomePressingViewModel extends FormViewModel {
     }
   }
 
-  // Garde tes méthodes existantes pour le dépôt
-  void setDepotStatus(String status) {
-    _depotStatus = status;
-    notifyListeners();
-  }
-
   //* VIDER RAMASSAGE
   // Vider les détails lors du changement de ramassage
   void clearRamassageDetail() {
@@ -279,7 +269,7 @@ class HomePressingViewModel extends FormViewModel {
 
   String changeFormatDate(String dateString) {
     DateTime date = DateTime.parse(dateString);
-    String formatted = DateFormat('EEEE d MMMM', 'fr_FR').format(date);
+    String formatted = DateFormat("EEEE d MMMM 'à' HH'h'mm", 'fr_FR').format(date);
     return formatted[0].toUpperCase() + formatted.substring(1);
   }
 
