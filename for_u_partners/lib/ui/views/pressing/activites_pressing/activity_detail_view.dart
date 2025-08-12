@@ -1,309 +1,258 @@
 import 'package:flutter/material.dart';
-import 'package:for_u_partners/ui/views/pressing/activites_pressing/models/pressing_activities_models.dart';
+import 'package:for_u_partners/app/models/depot_models/depot_detail_model.dart';
+import 'package:for_u_partners/app/models/ramassage_models/ramassage_detail_model.dart';
+import 'package:for_u_partners/services/pressing_service.dart';
+import 'package:for_u_partners/ui/common/app_colors.dart';
+import 'package:for_u_partners/ui/common/text_component.dart';
 
 class ActivityDetailView extends StatelessWidget {
-  final PressingActivityModel activity;
+  final String type; // 'ramassage' ou 'depot'
+  final int id;
 
-  const ActivityDetailView({Key? key, required this.activity})
-      : super(key: key);
+  const ActivityDetailView({
+    Key? key,
+    required this.type,
+    required this.id,
+  }) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.white,
+      backgroundColor: kcWhiteColors,
       appBar: AppBar(
-        backgroundColor: Colors.white,
-        elevation: 0,
-        leading: IconButton(
-          icon: const Icon(
-            Icons.arrow_back,
-            size: 18,
-          ),
-          onPressed: () => Navigator.pop(context),
-        ),
-        title: Text(
-          'Détail ${activity.type == 'pickup' ? 'ramassage' : 'dépôt'}',
-          style: const TextStyle(
-            fontSize: 18,
-            fontWeight: FontWeight.w600,
-            color: Color(0xFF1a1a1a),
-          ),
-        ),
-        centerTitle: false,
+        title: Text("Détails de la demande"),
+        backgroundColor: kcWhiteColors,
       ),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.all(25),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // Header avec statut
-            Container(
-              width: double.infinity,
-              padding: const EdgeInsets.all(20),
-              decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                  colors: activity.type == 'pickup'
-                      ? [const Color(0xFF10b981), const Color(0xFF059669)]
-                      : [const Color(0xFF184E9C), const Color(0xFF2563eb)],
+      body: FutureBuilder(
+        future: PressingService().getActivityDetails(type: type, id: id),
+        builder: (context, snapshot) {
+          if (snapshot.connectionState == ConnectionState.waiting) {
+            return const Center(
+                child: CircularProgressIndicator(
+              color: primaryColor,
+            ));
+          } else if (snapshot.hasError) {
+            return Center(child: Text("Erreur: ${snapshot.error}"));
+          } else if (!snapshot.hasData) {
+            return const Center(child: Text("Aucune donnée trouvée"));
+          }
+
+          final data = snapshot.data;
+          if (data is Rdv) {
+            return _buildDepotDetails(data);
+          } else if (data is RamassageDetail) {
+            return _buildRamassageDetails(data);
+          } else {
+            return const Center(child: Text("Type de demande inconnu"));
+          }
+        },
+      ),
+    );
+  }
+
+  Widget _buildDepotDetails(Rdv rdv) {
+    return ListView(
+      padding: const EdgeInsets.all(16),
+      children: [
+        _DetailSection(label: "Numéro", value: rdv.numero),
+        _DetailSection(
+            label: "Client", value: "${rdv.client.prenom} ${rdv.client.nom}"),
+        _DetailSection(label: "Date", value: rdv.dateRdv.toString()),
+        _DetailSection(label: "Statut", value: rdv.statut),
+        _DetailSection(
+          label: "Vêtements au kilo",
+          child: Column(
+            children: rdv.details.vetementAuKilo
+                .map((v) => Text("${v.libelle} - ${v.quantiteClient} kg"))
+                .toList(),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildRamassageDetails(RamassageDetail ram) {
+    return ListView(
+      padding: const EdgeInsets.all(16),
+      children: [
+        const TextComponent(
+          "Détails de la demande",
+          fontsize: 18,
+          textcolor: black,
+          fontweight: FontWeight.w500,
+        ),
+        const SizedBox(height: 15),
+        _DetailSection(label: "Numéro", value: ram.numero),
+        _DetailSection(label: "Adresse ramassage", value: ram.adresseRamassage),
+        _DetailSection(label: "Adresse livraison", value: ram.adresseLivraison),
+        const TextComponent(
+          "Détails du client",
+          fontsize: 18,
+          textcolor: black,
+          fontweight: FontWeight.w500,
+        ),
+        const SizedBox(height: 15),
+        _DetailSection(
+            label: "Nom du Client",
+            value: "${ram.client?.prenom} ${ram.client?.nom}"),
+        _DetailSection(
+            label: "Numéro Client", value: "${ram.client?.telephone}"),
+        const TextComponent(
+          "Détails du ramasseur",
+          fontsize: 18,
+          textcolor: black,
+          fontweight: FontWeight.w500,
+        ),
+        const SizedBox(height: 15),
+        _DetailSection(
+            label: "Nom du ramasseur",
+            value:
+                '${ram.ramasseur?.prenom ?? ''} ${ram.ramasseur?.nom ?? ''}'),
+        _DetailSection(
+            label: "Téléphone du ramasseur",
+            value: ram.ramasseur?.telephone ?? ''),
+        const TextComponent(
+          "Détails du lavage",
+          fontsize: 18,
+          textcolor: black,
+          fontweight: FontWeight.w500,
+        ),
+        const SizedBox(height: 15),
+        _DetailSection(
+          label: "Vêtements au Kilo",
+          child: Container(
+            padding: const EdgeInsets.all(20),
+            width: double.infinity,
+            decoration: BoxDecoration(
+              color: backgroundService,
+              borderRadius: BorderRadius.circular(10),
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                TextComponent(
+                  ram.details
+                          ?.map((item) =>
+                              '${item.libelle} x${item.quantite?.toInt()}')
+                          .join('\n') ??
+                      'Aucun détail',
+                  fontsize: 16,
+                  textcolor: darkGreyColor,
                 ),
-                borderRadius: BorderRadius.circular(16),
-              ),
-              child: Column(
-                children: [
-                  Icon(
-                    activity.type == 'pickup'
-                        ? Icons.local_shipping
-                        : Icons.local_laundry_service,
-                    color: Colors.white,
-                    size: 40,
-                  ),
-                  const SizedBox(height: 12),
-                  Text(
-                    activity.clientName,
-                    style: const TextStyle(
-                      color: Colors.white,
-                      fontSize: 20,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                  const SizedBox(height: 4),
-                  Container(
-                    padding:
-                        const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                    decoration: BoxDecoration(
-                      color: Colors.white.withOpacity(0.2),
-                      borderRadius: BorderRadius.circular(20),
-                    ),
-                    child: const Text(
-                      'TERMINÉ',
-                      style: TextStyle(
-                        color: Colors.white,
-                        fontSize: 12,
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
-                  ),
-                ],
-              ),
+              ],
             ),
-
-            const SizedBox(height: 30),
-
-            // Informations générales
-            _DetailSection(
-              label:
-                  "Date de ${activity.type == 'pickup' ? 'ramassage' : 'dépôt'}",
-              value: activity.getFormattedDate(),
+          ),
+        ),
+        _DetailSection(
+          label: "Services additionnels",
+          child: Container(
+            padding: const EdgeInsets.all(20),
+            width: double.infinity,
+            decoration: BoxDecoration(
+              color: backgroundService,
+              borderRadius: BorderRadius.circular(10),
             ),
-
-            _DetailSection(
-              label: "Adresse",
-              value: activity.location,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                TextComponent(
+                    ram.servicesComplementaires
+                            ?.map((item) => '${item.libelle}')
+                            .join('\n') ??
+                        'Aucun détail',
+                    fontsize: 16,
+                    textcolor: darkGreyColor),
+              ],
             ),
-
-            // Services additionnels
-            if (activity.services.isNotEmpty)
-              _DetailSection(
-                label: "Services additionnels",
+          ),
+        ),
+        Row(
+          children: [
+            Expanded(
+              child: _DetailSection(
+                label: "Poids total",
                 child: Container(
                   padding: const EdgeInsets.all(16),
                   decoration: BoxDecoration(
                     color: const Color(0xFFf8f9fa),
                     borderRadius: BorderRadius.circular(12),
                   ),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: activity.services.map((service) {
-                      return Padding(
-                        padding: const EdgeInsets.only(bottom: 8),
-                        child: Row(
-                          children: [
-                            Container(
-                              width: 6,
-                              height: 6,
-                              decoration: const BoxDecoration(
-                                color: Color(0xFF184E9C),
-                                shape: BoxShape.circle,
-                              ),
-                            ),
-                            const SizedBox(width: 12),
-                            Text(
-                              service,
-                              style: const TextStyle(
-                                color: Color(0xFF184E9C),
-                                fontSize: 15,
-                                fontWeight: FontWeight.w500,
-                              ),
-                            ),
-                          ],
-                        ),
-                      );
-                    }).toList(),
-                  ),
-                ),
-              ),
-
-            // Vêtements
-            _DetailSection(
-              label: "Vêtements lavés",
-              child: Container(
-                width: double.infinity,
-                padding: const EdgeInsets.all(16),
-                decoration: BoxDecoration(
-                  color: const Color(0xFFf8f9fa),
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    if (activity.standardClothes.isNotEmpty) ...[
-                      const Text(
-                        "Vêtements standards",
-                        style: TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.w600,
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Text(
+                        "1",
+                        style: const TextStyle(
+                          fontSize: 24,
+                          fontWeight: FontWeight.bold,
                           color: Color(0xFF1a1a1a),
                         ),
                       ),
-                      const SizedBox(height: 8),
-                      ...activity.standardClothes.map((item) {
-                        return Padding(
-                          padding: const EdgeInsets.only(bottom: 4),
-                          child: Text(
-                            item,
-                            style: const TextStyle(
-                              fontSize: 15,
-                              color: Color(0xFF6b7280),
-                            ),
-                          ),
-                        );
-                      }),
-                    ],
-                    if (activity.specialClothes.isNotEmpty) ...[
-                      if (activity.standardClothes.isNotEmpty)
-                        const SizedBox(height: 16),
+                      const SizedBox(width: 8),
                       const Text(
-                        "Vêtements spéciaux",
+                        'kg',
                         style: TextStyle(
                           fontSize: 16,
-                          fontWeight: FontWeight.w600,
-                          color: Color(0xFF1a1a1a),
+                          color: Color(0xFF6b7280),
                         ),
                       ),
-                      const SizedBox(height: 8),
-                      ...activity.specialClothes.map((item) {
-                        return Padding(
-                          padding: const EdgeInsets.only(bottom: 4),
-                          child: Text(
-                            item,
-                            style: const TextStyle(
-                              fontSize: 15,
-                              color: Color(0xFF6b7280),
-                            ),
-                          ),
-                        );
-                      }),
                     ],
-                  ],
+                  ),
                 ),
               ),
             ),
-
-            // Poids et prix
-            Row(
-              children: [
-                Expanded(
-                  child: _DetailSection(
-                    label: "Poids total",
-                    child: Container(
-                      padding: const EdgeInsets.all(16),
-                      decoration: BoxDecoration(
-                        color: const Color(0xFFf8f9fa),
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          Text(
-                            activity.weight,
-                            style: const TextStyle(
-                              fontSize: 24,
-                              fontWeight: FontWeight.bold,
-                              color: Color(0xFF1a1a1a),
-                            ),
-                          ),
-                          const SizedBox(width: 8),
-                          const Text(
-                            'kg',
-                            style: TextStyle(
-                              fontSize: 16,
-                              color: Color(0xFF6b7280),
-                            ),
-                          ),
-                        ],
+            const SizedBox(width: 16),
+            Expanded(
+              child: _DetailSection(
+                label: "Montant total",
+                child: Container(
+                  padding: const EdgeInsets.all(16),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFF184E9C).withOpacity(0.1),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: Center(
+                    child: Text(
+                      "${ram.montant?.toInt() ?? 0} FCFA",
+                      style: const TextStyle(
+                        fontSize: 20,
+                        fontWeight: FontWeight.bold,
+                        color: Color(0xFF184E9C),
                       ),
                     ),
-                  ),
-                ),
-                const SizedBox(width: 16),
-                Expanded(
-                  child: _DetailSection(
-                    label: "Montant total",
-                    child: Container(
-                      padding: const EdgeInsets.all(16),
-                      decoration: BoxDecoration(
-                        color: const Color(0xFF184E9C).withOpacity(0.1),
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      child: Center(
-                        child: Text(
-                          activity.amount,
-                          style: const TextStyle(
-                            fontSize: 20,
-                            fontWeight: FontWeight.bold,
-                            color: Color(0xFF184E9C),
-                          ),
-                        ),
-                      ),
-                    ),
-                  ),
-                ),
-              ],
-            ),
-
-            const SizedBox(height: 40),
-
-            // Bouton d'action (optionnel)
-            SizedBox(
-              width: double.infinity,
-              height: 54,
-              child: ElevatedButton.icon(
-                onPressed: () {
-                  // Logique pour contacter le client ou autre action
-                },
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: const Color(0xFF184E9C),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(16),
-                  ),
-                  elevation: 0,
-                ),
-                icon: const Icon(Icons.phone_outlined, color: Colors.white),
-                label: const Text(
-                  'Contacter le client',
-                  style: TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.w600,
-                    color: Colors.white,
                   ),
                 ),
               ),
             ),
           ],
         ),
-      ),
+        Padding(
+          padding: const EdgeInsets.symmetric(vertical: 20),
+          child: SizedBox(
+            width: double.infinity,
+            height: 54,
+            child: ElevatedButton.icon(
+              onPressed: () {},
+              style: ElevatedButton.styleFrom(
+                backgroundColor: const Color(0xFF184E9C),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(16),
+                ),
+                elevation: 0,
+              ),
+              icon: const Icon(Icons.phone_outlined, color: Colors.white),
+              label: const Text(
+                'Contacter le client',
+                style: TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.w600,
+                  color: Colors.white,
+                ),
+              ),
+            ),
+          ),
+        ),
+      ],
     );
   }
 }

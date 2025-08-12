@@ -1,5 +1,6 @@
 import 'package:for_u_partners/app/models/depot_models/depot_detail_model.dart';
 import 'package:for_u_partners/app/models/depot_models/depot_model.dart';
+import 'package:for_u_partners/app/models/depot_models/planned_depot_model.dart';
 import 'package:for_u_partners/app/models/ramassage_models/ramassage_detail_model.dart';
 import 'package:for_u_partners/app/models/ramassage_models/ramassage_statut_model.dart';
 import 'package:for_u_partners/services/wallet_service.dart';
@@ -34,6 +35,19 @@ class HomePressingViewModel extends FormViewModel {
 
   List<Ramassage> validateRamassages = [];
 
+  PlannedDepotModel plannedDepot = PlannedDepotModel();
+
+  // Filtres pour les dépôts
+  bool _demands = true; // Par défaut sur "Demandes"
+  bool get demands => _demands;
+
+  bool _planified = false;
+  bool get planified => _planified;
+
+  // Liste des dépôts planifiés
+  List<Depot> _planifiedDepots = [];
+  List<Depot> get planifiedDepots => _planifiedDepots;
+
   // Depot
   List<Depot> _depots = [];
   List<Depot> get depot => _depots;
@@ -49,6 +63,10 @@ class HomePressingViewModel extends FormViewModel {
   String _wallet = "";
   String get wallet => _wallet;
 
+  // Variable pour gérer les états de loading séparément
+  bool _isLoadingDepots = false;
+  bool get isLoadingDepots => _isLoadingDepots;
+
   @override
   HomePressingViewModel() {
     sendPressingFcmToken();
@@ -56,29 +74,58 @@ class HomePressingViewModel extends FormViewModel {
     fetchPressingInfo();
     getRamassagesList();
     getDepotList();
+    // Ne pas charger les dépôts planifiés au démarrage
+  }
+
+  // Méthodes pour gérer les filtres
+  void toggleDemandsFilter() {
+    if (!_demands) {
+      _demands = true;
+      _planified = false;
+      notifyListeners();
+      // Recharger les demandes si la liste est vide
+      if (_depots.isEmpty) {
+        getDepotList();
+      }
+    }
+  }
+
+  void togglePlanifiedFilter() {
+    if (!_planified) {
+      _demands = false;
+      _planified = true;
+      notifyListeners();
+      // Charger les dépôts planifiés si ce n'est pas déjà fait
+      getPlanifiedDepotList();
+    }
+  }
+
+  // Getter pour obtenir la liste appropriée selon le filtre sélectionné
+  List<Depot> get currentDepotList {
+    if (_demands) {
+      return _depots; // Liste des demandes
+    } else {
+      return _planifiedDepots; // Liste des dépôts planifiés
+    }
   }
 
   //! FCM TOKEN
-
   void sendPressingFcmToken() async {
-   await registerPressingToken();
+    await registerPressingToken();
   }
 
   Future<void> registerPressingToken() async {
     // Enregistrer le token pour le pressing
     bool success = await FirebaseMessagingService().sendCurrentTokenToBackend(
-      ApiConstant.saveFcmTokenPressing // URL spécifique pressing
-    );
-    
+        ApiConstant.saveFcmTokenPressing // URL spécifique pressing
+        );
+
     if (success) {
       print('Token pressing enregistré');
     }
   }
 
-
-
   //! WALLET
-
   //* GET WALLET SOLD
   Future<void> getWalletSold() async {
     setBusy(true);
@@ -104,7 +151,6 @@ class HomePressingViewModel extends FormViewModel {
   }
 
   //! PRESSING
-
   //* GET PRESSING INFO
   Future<void> fetchPressingInfo() async {
     setBusy(true);
@@ -132,12 +178,16 @@ class HomePressingViewModel extends FormViewModel {
   // Méthode pour retry en cas d'erreur
   Future<void> retry() async {
     await fetchPressingInfo();
+    await getRamassagesList();
+    if (_demands) {
+      await getDepotList();
+    } else if (_planified) {
+      await getPlanifiedDepotList();
+    }
   }
 
   //! RAMASSAGE PART
-
   //* GET RAMASSAGES LIST
-  // Charger toute les demandes de ramassages assignées au pressing connecté
   Future<void> getRamassagesList() async {
     setBusy(true);
     _errorMessage = null;
@@ -156,7 +206,6 @@ class HomePressingViewModel extends FormViewModel {
   }
 
   //* GET RAMASSAGE DETAIL COMPLET
-  // Charger le détail complet d'un ramassage spécifique
   Future<void> getRamassageDetailComplet(int ramassageId) async {
     setBusy(true);
     _errorMessage = null;
@@ -176,7 +225,6 @@ class HomePressingViewModel extends FormViewModel {
   }
 
   //* VALIDER RAMASSAGE
-
   Future<void> validateSelectedRamassage(int ramassageId) async {
     setBusy(true);
     _errorMessage = null;
@@ -185,23 +233,6 @@ class HomePressingViewModel extends FormViewModel {
       _validateRamassage =
           await _pressingService.updateRamassageStatut(ramassageId);
       print("message de validation ramassage: ${_validateRamassage?.message}");
-
-      // Find the ramassage in _ramassages list
-      // final ramassageIndex = _ramassages.indexWhere((r) => r.id == ramassageId);
-
-      // if (ramassageIndex != -1) {
-      //   // Get the ramassage to be moved
-      //   final ramassage = _ramassages[ramassageIndex];
-
-      //   // Remove from _ramassages
-      //   _ramassages.removeAt(ramassageIndex);
-
-      //   // Add to validateRamassages
-      //   validateRamassages.add(ramassage);
-
-      //   // Notify listeners to update the UI
-      //   notifyListeners();
-      // }
     } catch (e) {
       _errorMessage = e.toString();
       print("Erreur détail ramassage: $e");
@@ -211,35 +242,54 @@ class HomePressingViewModel extends FormViewModel {
   }
 
   //* VIDER RAMASSAGE
-  // Vider les détails lors du changement de ramassage
   void clearRamassageDetail() {
     _selectedRamassageDetail = null;
     notifyListeners();
   }
 
   //! DEPOT PART
-
+  
   //* GET DEPOT LIST
-  // Charger toute les demandes de dépot assignées au pressing connecté
   Future<void> getDepotList() async {
-    setBusy(true);
+    _isLoadingDepots = true;
+    if (_demands) setBusy(true);
     _errorMessage = null;
+    notifyListeners();
 
     try {
       _depots = await _pressingService.getDepotList();
       print("Dépots chargés: ${_depots.length}");
-      print(_depots);
     } catch (e) {
       _errorMessage = e.toString();
       print("Erreur chargement dépots: $e");
     } finally {
-      setBusy(false);
+      _isLoadingDepots = false;
+      if (_demands) setBusy(false);
+      notifyListeners();
+    }
+  }
+
+  //* GET DEPOT PLANIFIED LIST
+  Future<void> getPlanifiedDepotList() async {
+    _isLoadingDepots = true;
+    if (_planified) setBusy(true);
+    _errorMessage = null;
+    notifyListeners();
+
+    try {
+      _planifiedDepots = await _pressingService.getPlanifiedDepotList();
+      print("Dépôts planifiés chargés: ${_planifiedDepots.length}");
+    } catch (e) {
+      _errorMessage = e.toString();
+      print("Erreur chargement dépôts planifiés: $e");
+    } finally {
+      _isLoadingDepots = false;
+      if (_planified) setBusy(false);
       notifyListeners();
     }
   }
 
   //* GET DEPOT DETAIL COMPLET
-  // Charger le détail complet d'un dépôt spécifique
   Future<void> getDepotDetailComplet(int depotId) async {
     setBusy(true);
     _errorMessage = null;
@@ -257,21 +307,29 @@ class HomePressingViewModel extends FormViewModel {
     }
   }
 
-  //* VALIDER DEPOT
-  Future<void> validateSelectedDepot(int depotId) async {
+  //* PLANIFIER DEPOT
+  Future<PlannedDepotModel?> planifierDepot(int depotId) async {
     setBusy(true);
     _errorMessage = null;
 
     try {
-      // Tu peux créer une méthode similaire dans PressingService pour valider un dépôt
-      // await _pressingService.updateDepotStatut(depotId);
-      print("Dépôt $depotId validé");
-
-      // Rafraîchir la liste des dépôts après validation
+      // Appeler le service pour planifier le dépôt
+      plannedDepot = await _pressingService.planifierDepot(depotId);
+      
+      // Trouver et supprimer le dépôt de la liste des demandes
+      _depots.removeWhere((depot) => depot.id == depotId);
+      
+      // Rafraîchir la liste des dépôts planifiés
+      await getPlanifiedDepotList();
+      
+      // Rafraîchir aussi la liste des demandes pour être sûr
       await getDepotList();
+
+      return plannedDepot;
     } catch (e) {
-      _errorMessage = e.toString();
-      print("Erreur validation dépôt: $e");
+      _errorMessage = 'Erreur lors de la planification du dépôt: ${e.toString()}';
+      print("Erreur planification dépôt: $e");
+      return null;
     } finally {
       setBusy(false);
       notifyListeners();
@@ -279,30 +337,37 @@ class HomePressingViewModel extends FormViewModel {
   }
 
   //* VIDER DEPOT DETAIL
-  // Vider les détails lors du changement de dépôt
   void clearDepotDetail() {
     _selectedDepotDetail = null;
     notifyListeners();
   }
 
   //! OTHERS
-
   //* HELPER FUNCTIONS
-
   String changeFormatDate(String dateString) {
-    DateTime date = DateTime.parse(dateString);
-    String formatted = DateFormat("EEEE d MMMM 'à' HH'h'mm", 'fr_FR').format(date);
-    return formatted[0].toUpperCase() + formatted.substring(1);
+    try {
+      DateTime date = DateTime.parse(dateString);
+      String formatted =
+          DateFormat("EEEE d MMMM 'à' HH'h'mm", 'fr_FR').format(date);
+      return formatted[0].toUpperCase() + formatted.substring(1);
+    } catch (e) {
+      print("Erreur format date: $e");
+      return dateString;
+    }
   }
 
   String changeFormatDateHour(DateTime date) {
-    String formatted =
-        DateFormat("EEEE d MMMM 'à' HH'h'mm", 'fr_FR').format(date);
-    return formatted[0].toUpperCase() + formatted.substring(1);
+    try {
+      String formatted =
+          DateFormat("EEEE d MMMM 'à' HH'h'mm", 'fr_FR').format(date);
+      return formatted[0].toUpperCase() + formatted.substring(1);
+    } catch (e) {
+      print("Erreur format date heure: $e");
+      return date.toString();
+    }
   }
 
   //* HELPER METHODS pour les détails
-
   // Calculer le montant total des vêtements
   double get montantVetements {
     if (_selectedRamassageDetail?.details == null) return 0.0;

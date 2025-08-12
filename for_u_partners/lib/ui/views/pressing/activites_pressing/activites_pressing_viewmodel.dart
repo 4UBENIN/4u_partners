@@ -1,60 +1,64 @@
+import 'package:for_u_partners/app/app.locator.dart';
+import 'package:for_u_partners/app/models/depot_models/depot_model.dart';
+import 'package:for_u_partners/app/models/ramassage_models/ramassage_model.dart';
+import 'package:for_u_partners/services/pressing_service.dart';
 import 'package:stacked/stacked.dart';
-import 'package:for_u_partners/ui/views/pressing/activites_pressing/models/pressing_activities_models.dart';
 
 class ActivitesPressingViewModel extends BaseViewModel {
+  final _pressingService = locator<PressingService>();
+
   String _selectedFilter = 'all';
   String get selectedFilter => _selectedFilter;
 
-  int get todayCount => _activities.where((a) => a.isToday()).length;
-  int get weekCount => _activities.where((a) => a.isThisWeek()).length;
+  // Dépôts
+  List<Depot> _depots = [];
+  List<Depot> get depot => _depots;
 
+  // Ramassages
+  List<Ramassage> _ramassages = [];
+  List<Ramassage> get ramassages => _ramassages;
+
+  String? _errorMessage;
+  String? get errorMessage => _errorMessage;
+
+  // (optionnel) statistiques simples (tu peux les remplir depuis /dashboard si tu veux)
+  int? get todayCount => null;
+  int? get weekCount => null;
+
+  /// Charge les activités selon le filtre sélectionné.
+  /// si filter == null, on utilise le filtre courant.
+  Future<void> loadFinishedActivities({String? filter}) async {
+    final f = filter ?? _selectedFilter;
+    setBusy(true);
+    _errorMessage = null;
+
+    try {
+      if (f == 'pickup') {
+        _ramassages = await _pressingService.getFinishedRamassageList();
+      } else if (f == 'deposit') {
+        _depots = await _pressingService.getFinishedDepotList();
+      } else {
+        //Toutes : on charge les deux listes en parallèle
+        final results = await Future.wait([
+          _pressingService.getFinishedDepotList(),
+          _pressingService.getFinishedRamassageList(),
+        ]);
+        _depots = results[0] as List<Depot>;
+        _ramassages = results[1] as List<Ramassage>;
+      }
+    } catch (e) {
+      _errorMessage = e.toString();
+    } finally {
+      setBusy(false);
+      notifyListeners();
+    }
+  }
+
+  /// Change le filtre et recharge les données adaptées.
   void setFilter(String filter) {
+    if (_selectedFilter == filter) return;
     _selectedFilter = filter;
     notifyListeners();
+    loadFinishedActivities(filter: filter);
   }
-
-  List<PressingActivityModel> getFilteredActivities() {
-    if (_selectedFilter == 'all') return _activities;
-    return _activities.where((a) => a.type == _selectedFilter).toList();
-  }
-
-  // Données d'exemple - remplacez par vos vraies données
-  final List<PressingActivityModel> _activities = [
-    PressingActivityModel(
-      id: '1',
-      clientName: 'Teddy TOSSOU',
-      type: 'pickup',
-      date: DateTime.now().subtract(const Duration(hours: 2)),
-      location: 'EREVAN, Cadjehoun Aeroport',
-      amount: '5 000 FCFA',
-      weight: '2.5',
-      services: ['Lavage Xpress 24h', 'Repassage', 'Traitement de taches'],
-      standardClothes: ['T-Shirt x 4', 'Pantalon x 3', 'Boxer x 4'],
-      specialClothes: ['Veste complète x2'],
-    ),
-    PressingActivityModel(
-      id: '2',
-      clientName: 'Marie KOUASSI',
-      type: 'deposit',
-      date: DateTime.now().subtract(const Duration(days: 1)),
-      location: 'Cotonou Centre, Rue des Palmiers',
-      amount: '3 500 FCFA',
-      weight: '1.8',
-      services: ['Lavage standard', 'Repassage'],
-      standardClothes: ['Robe x 2', 'Chemisier x 3'],
-      specialClothes: [],
-    ),
-    PressingActivityModel(
-      id: '3',
-      clientName: 'Jean SOGLO',
-      type: 'pickup',
-      date: DateTime.now().subtract(const Duration(days: 2)),
-      location: 'Akpakpa, Marché International',
-      amount: '7 200 FCFA',
-      weight: '3.2',
-      services: ['Lavage Xpress 24h', 'Repassage', 'Pliage'],
-      standardClothes: ['Pantalon x 5', 'Chemise x 6'],
-      specialClothes: ['Costume complet x1'],
-    ),
-  ];
 }

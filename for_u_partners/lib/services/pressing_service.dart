@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'package:for_u_partners/app/models/depot_models/depot_detail_model.dart';
 import 'package:for_u_partners/app/models/depot_models/depot_model.dart';
+import 'package:for_u_partners/app/models/depot_models/planned_depot_model.dart';
 import 'package:for_u_partners/app/models/ramassage_models/ramassage_detail_model.dart';
 import 'package:for_u_partners/app/models/ramassage_models/ramassage_model.dart';
 import 'package:for_u_partners/app/models/ramassage_models/ramassage_statut_model.dart';
@@ -150,6 +151,40 @@ class PressingService {
     }
   }
 
+  //* GET FINISHED RAMASSAGE DEMAND LIST
+  // Récupérer la liste des ramassages finis du pressing
+  Future<List<Ramassage>> getFinishedRamassageList() async {
+    try {
+      final url = Uri.parse(
+          "https://foryou.cilassocies.com/api/pressing/ramassages/finish");
+      final response = await http.get(
+        url,
+        headers: await _authService.getAuthenticatedHeaders(),
+      );
+
+      print('Ramassages Finis Status: ${response.statusCode}');
+      print('Ramassages Finis Body: ${response.body}');
+
+      if (response.statusCode == 200) {
+        final jsonData = jsonDecode(response.body);
+        final ramassageList = RamassageDemandModel.fromJson(jsonData);
+        return ramassageList.ramassages ?? [];
+
+        //* Non authentifié
+      } else if (response.statusCode == 401) {
+        await _authService.logOut();
+        throw Exception('Session expirée');
+
+        //* erreur
+      } else {
+        throw Exception('Erreur lors du chargement des ramassages finis');
+      }
+    } catch (e) {
+      print("Erreur ramassages finis: $e");
+      rethrow;
+    }
+  }
+
   //! DEPOT PRESSING SERVICE
 
   //* GET DEPOT DEMAND LIST
@@ -214,6 +249,128 @@ class PressingService {
     } catch (e) {
       print("Erreur détail depot complet: $e");
       rethrow;
+    }
+  }
+
+  //* PLANIFIER UN DEPOT
+  // Planifier un rendez-vous pour un dépot
+  Future<PlannedDepotModel> planifierDepot(int id) async {
+    try {
+      final url = Uri.parse(
+          "https://foryou.cilassocies.com/api/pressing/rendezvous/$id/valider");
+      final response = await http.post(
+        url,
+        headers: await _authService.getAuthenticatedHeaders(),
+      );
+
+      print('planifier depot Status: ${response.statusCode}');
+      print('planifier depot Body: ${response.body}');
+
+      if (response.statusCode == 200) {
+        final jsonData = jsonDecode(response.body);
+        return PlannedDepotModel.fromJson(jsonData);
+      } else if (response.statusCode == 401) {
+        await _authService.logOut();
+        throw Exception('Session expirée');
+      } else if (response.statusCode == 404) {
+        throw Exception('depot non trouvé');
+      } else {
+        throw Exception('Erreur lors de la planification du rendez-vous');
+      }
+    } catch (e) {
+      print("Erreur dépôt planifié: $e");
+      rethrow;
+    }
+  }
+
+  //* GET DEPOT PLANIFIED LIST
+  // Récupérer la liste des dépôts planifiés assignés au pressing
+  Future<List<Depot>> getPlanifiedDepotList() async {
+    try {
+      final url = Uri.parse(
+          "https://foryou.cilassocies.com/api/pressing/rendezvous/planifier");
+
+      final response = await http.get(
+        url,
+        headers: await _authService.getAuthenticatedHeaders(),
+      );
+
+      print('Dépôts planifiés Status: ${response.statusCode}');
+      print('Dépôts planifiés Body: ${response.body}');
+
+      if (response.statusCode == 200) {
+        final jsonData = jsonDecode(response.body);
+        final depotList = DepotDemandModel.fromJson(jsonData);
+        return depotList.data ?? [];
+      } else if (response.statusCode == 401) {
+        await _authService.logOut();
+        throw Exception('Session expirée');
+      } else {
+        throw Exception('Erreur lors du chargement des dépôts planifiés');
+      }
+    } catch (e) {
+      print("Erreur dépôts planifiés: $e");
+
+      return [];
+    }
+  }
+
+  //* GET FINISHED DEPOT DEMAND LIST
+  // Récupérer la liste des dépot assignés au pressing
+  Future<List<Depot>> getFinishedDepotList() async {
+    try {
+      final url = Uri.parse(
+          "https://foryou.cilassocies.com/api/pressing/rendezvous/finish");
+      final response = await http.get(
+        url,
+        headers: await _authService.getAuthenticatedHeaders(),
+      );
+
+      print('Dépot Finis Status: ${response.statusCode}');
+      print('Dépot Finis Body: ${response.body}');
+
+      if (response.statusCode == 200) {
+        final jsonData = jsonDecode(response.body);
+        final depotList = DepotDemandModel.fromJson(jsonData);
+        return depotList.data ?? [];
+
+        //* Non authentifié
+      } else if (response.statusCode == 401) {
+        await _authService.logOut();
+        throw Exception('Session expirée');
+
+        //* erreur
+      } else {
+        throw Exception('Erreur lors du chargement des depots finis');
+      }
+    } catch (e) {
+      print("Erreur depots finis: $e");
+      rethrow;
+    }
+  }
+
+  //! ACTIVITY PART
+
+  Future<dynamic> getActivityDetails({
+    required String type,
+    required int id,
+  }) async {
+    final url =
+        Uri.parse("https://foryou.cilassocies.com/api/pressing/$type/$id");
+    final response = await http.get(
+      url,
+      headers: await _authService.getAuthenticatedHeaders(),
+    );
+
+    if (response.statusCode == 200) {
+      final data = jsonDecode(response.body);
+      if (type == 'ramassages') {
+        return RamassageDetail.fromJson(data);
+      } else {
+        return Rdv.fromJson(data);
+      }
+    } else {
+      throw Exception("Erreur lors de la récupération des détails");
     }
   }
 }

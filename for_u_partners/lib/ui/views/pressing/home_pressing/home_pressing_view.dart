@@ -1,4 +1,3 @@
-import 'package:for_u_partners/app/models/ramassage_models/ramassage_model.dart';
 import 'package:for_u_partners/ui/common/app_button_component.dart';
 import 'package:for_u_partners/ui/common/app_textInput.dart';
 import 'package:for_u_partners/ui/common/bottomsheet_component.dart';
@@ -10,7 +9,6 @@ import 'package:flutter/material.dart';
 import 'package:for_u_partners/ui/common/app_colors.dart';
 import 'package:for_u_partners/ui/common/text_component.dart';
 import 'package:for_u_partners/ui/views/pressing/widgets/wallet_widget.dart';
-import 'package:for_u_partners/ui/views/pressing/home_pressing/facturation_view.dart';
 import 'package:for_u_partners/ui/views/pressing/widgets/pressing_demand_widget.dart';
 import 'package:for_u_partners/ui/views/pressing/home_pressing/pressing_depot_detail.dart';
 
@@ -86,7 +84,6 @@ class HomePressingView extends StackedView<HomePressingViewModel> {
   }
 
   //* BUILD RAMASSAGE TAB
-
   Widget _buildRamassageTab(HomePressingViewModel viewModel) {
     if (viewModel.isBusy) {
       return const Center(
@@ -162,13 +159,81 @@ class HomePressingView extends StackedView<HomePressingViewModel> {
   }
 
   //* BUILD DEPOT TAB
-
   Widget _buildDepotTab(HomePressingViewModel viewModel, BuildContext context) {
-    if (viewModel.isBusy) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const SizedBox(height: 20),
+
+        // Filtres
+        Row(
+          children: [
+            FilterChip(
+              label: const Text("Demandes"),
+              selected: viewModel.demands,
+              onSelected: (value) {
+                viewModel.toggleDemandsFilter();
+              },
+              backgroundColor: Colors.grey[100],
+              selectedColor: const Color(0xFF184E9C).withOpacity(0.1),
+              labelStyle: TextStyle(
+                color: viewModel.demands
+                    ? const Color(0xFF184E9C)
+                    : Colors.grey[600],
+                fontWeight:
+                    viewModel.demands ? FontWeight.w600 : FontWeight.normal,
+              ),
+              side: BorderSide(
+                color: viewModel.demands
+                    ? const Color(0xFF184E9C)
+                    : Colors.grey[300]!,
+                width: 2,
+              ),
+            ),
+            const SizedBox(width: 12),
+            FilterChip(
+              label: const Text("Planifiés"),
+              selected: viewModel.planified,
+              onSelected: (value) {
+                viewModel.togglePlanifiedFilter();
+              },
+              backgroundColor: Colors.grey[100],
+              selectedColor: const Color(0xFF10B981).withOpacity(0.1),
+              labelStyle: TextStyle(
+                color: viewModel.planified
+                    ? const Color(0xFF10B981)
+                    : Colors.grey[600],
+                fontWeight:
+                    viewModel.planified ? FontWeight.w600 : FontWeight.normal,
+              ),
+              side: BorderSide(
+                color: viewModel.planified
+                    ? const Color(0xFF10B981)
+                    : Colors.grey[300]!,
+                width: 2,
+              ),
+            ),
+          ],
+        ),
+
+        const SizedBox(height: 20),
+
+        // Contenu selon le filtre sélectionné
+        Expanded(
+          child: _buildDepotContent(viewModel, context),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildDepotContent(
+      HomePressingViewModel viewModel, BuildContext context) {
+    // Utiliser isLoadingDepots pour un loading plus précis
+    if (viewModel.isLoadingDepots || 
+        (viewModel.isBusy && viewModel.currentDepotList.isEmpty)) {
       return const Center(
-          child: CircularProgressIndicator(
-        color: primaryColor,
-      ));
+        child: CircularProgressIndicator(color: primaryColor),
+      );
     }
 
     if (viewModel.errorMessage != null) {
@@ -180,7 +245,13 @@ class HomePressingView extends StackedView<HomePressingViewModel> {
             const SizedBox(height: 16),
             Text(viewModel.errorMessage!),
             ElevatedButton(
-              onPressed: viewModel.retry,
+              onPressed: () {
+                if (viewModel.demands) {
+                  viewModel.getDepotList();
+                } else {
+                  viewModel.getPlanifiedDepotList();
+                }
+              },
               child: const Text('Réessayer'),
             ),
           ],
@@ -188,45 +259,64 @@ class HomePressingView extends StackedView<HomePressingViewModel> {
       );
     }
 
-    if (viewModel.depot.isEmpty) {
-      return const Center(
+    final currentList = viewModel.currentDepotList;
+
+    if (currentList.isEmpty) {
+      return Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(Icons.inbox, size: 48, color: Colors.grey),
-            SizedBox(height: 16),
-            Text('Aucune demande de dépot trouvée'),
+            Icon(
+              viewModel.demands ? Icons.inbox : Icons.schedule,
+              size: 48,
+              color: Colors.grey,
+            ),
+            const SizedBox(height: 16),
+            Text(
+              viewModel.demands
+                  ? 'Aucune demande de dépôt trouvée'
+                  : 'Aucun dépôt planifié trouvé',
+            ),
           ],
         ),
       );
     }
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const SizedBox(height: 20),
-        const TextComponent(
-          "Demandes de dépôt",
+        TextComponent(
+          viewModel.demands ? "Demandes de dépôt" : "Rendez-vous planifiés",
           fontweight: FontWeight.bold,
           fontsize: 19,
         ),
         const SizedBox(height: 10),
         Expanded(
           child: ListView.builder(
-            itemCount: viewModel.depot.length,
+            itemCount: currentList.length,
             itemBuilder: (context, index) {
-              final depot = viewModel.depot[index];
+              final depot = currentList[index];
               return _DepotDemandWidget(
                 name:
                     '${depot.client?.prenom ?? ''} ${depot.client?.nom ?? ''}',
                 date: viewModel.changeFormatDate(depot.dateRdv!),
-                onTap: () {
-                  Navigator.push<bool>(
+                isPlanned: viewModel.planified,
+                status: depot.statut,
+                onTap: () async {
+                  // Attendre le retour et vérifier s'il y a eu des changements
+                  final result = await Navigator.push<bool>(
                     context,
                     MaterialPageRoute(
-                        builder: (_) => DepotDetailView(
-                              depot: depot,
-                            )),
+                      builder: (_) => DepotDetailView(depot: depot),
+                    ),
                   );
+                  
+                  // Si result est true, cela signifie qu'un dépôt a été planifié
+                  if (result == true) {
+                    // Rafraîchir les listes
+                    await viewModel.getDepotList();
+                    await viewModel.getPlanifiedDepotList();
+                  }
                 },
               );
             },
@@ -236,60 +326,7 @@ class HomePressingView extends StackedView<HomePressingViewModel> {
     );
   }
 
-  Future<void> _handleRamassageAction(
-    BuildContext context,
-    HomePressingViewModel viewModel,
-    Ramassage ramassage,
-  ) async {
-    switch (ramassage.statut) {
-      case 'affecté':
-        final result = await Navigator.push<bool>(
-          context,
-          MaterialPageRoute(
-            builder: (_) => PressingDetailView(
-              isA: false,
-              currentStatus: "En attente",
-              ramassage: ramassage,
-            ),
-          ),
-        );
-        if (result == true) {
-          // await viewModel.accepterRamassage(ramassage.id);
-        }
-        break;
-
-      case 'accepté':
-        final result = await Navigator.push<bool>(
-          context,
-          MaterialPageRoute(
-            builder: (_) => PressingDetailView(
-              isA: true,
-              currentStatus: "A finaliser",
-              ramassage: ramassage,
-            ),
-          ),
-        );
-        if (result == true) {
-          // await viewModel.finaliserRamassage(ramassage.id);
-        }
-        break;
-
-      case 'finalisé':
-        final result = await Navigator.push<bool>(
-          context,
-          MaterialPageRoute(
-            builder: (_) => FacturationView(ramassage: ramassage),
-          ),
-        );
-        if (result == true) {
-          // await viewModel.facturerRamassage(ramassage.id);
-        }
-        break;
-    }
-  }
-
   //* BUILD APP BAR
-
   PreferredSizeWidget _buildCustomAppBar(HomePressingViewModel viewModel) {
     return PreferredSize(
       preferredSize: const Size.fromHeight(100),
@@ -405,11 +442,15 @@ class _DepotDemandWidget extends StatelessWidget {
   final String name;
   final String date;
   final VoidCallback onTap;
+  final bool isPlanned;
+  final String? status;
 
   const _DepotDemandWidget({
     required this.name,
     required this.date,
     required this.onTap,
+    this.isPlanned = false,
+    this.status,
   });
 
   @override
@@ -417,11 +458,15 @@ class _DepotDemandWidget extends StatelessWidget {
     return GestureDetector(
       onTap: onTap,
       child: Padding(
-        padding: const EdgeInsets.symmetric(vertical: 15),
+        padding: const EdgeInsets.symmetric(vertical: 8),
         child: Container(
           decoration: BoxDecoration(
             color: Colors.white,
-            border: Border.all(color: const Color(0xFFe5e7eb)),
+            border: Border.all(
+              color: isPlanned
+                  ? const Color(0xFF10B981).withOpacity(0.3)
+                  : const Color(0xFFe5e7eb),
+            ),
             boxShadow: [
               BoxShadow(
                 color: Colors.black.withOpacity(0.05),
@@ -435,26 +480,110 @@ class _DepotDemandWidget extends StatelessWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text(
-                name,
-                style: const TextStyle(
-                  fontSize: 16,
-                  fontWeight: FontWeight.w600,
-                  color: Color(0xFF1a1a1a),
-                ),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Expanded(
+                    child: Text(
+                      name,
+                      style: const TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w600,
+                        color: Color(0xFF1a1a1a),
+                      ),
+                    ),
+                  ),
+                  if (status != null) _buildStatusChip(status!),
+                ],
               ),
               const SizedBox(height: 12),
-              Text.rich(TextSpan(
+              Row(
                 children: [
-                  TextSpan(
-                      text: "$date",
-                      style: TextStyle(fontWeight: FontWeight.w500, color: primaryColor))
+                  Icon(
+                    isPlanned ? Icons.schedule : Icons.access_time,
+                    size: 16,
+                    color: isPlanned ? const Color(0xFF10B981) : primaryColor,
+                  ),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: Text.rich(
+                      TextSpan(
+                        children: [
+                          TextSpan(
+                            text: date,
+                            style: TextStyle(
+                              fontWeight: FontWeight.w500,
+                              color: isPlanned
+                                  ? const Color(0xFF10B981)
+                                  : primaryColor,
+                            ),
+                          )
+                        ],
+                        text:
+                            isPlanned ? "Planifié pour le " : "Rendez-vous le ",
+                        style: const TextStyle(
+                          fontSize: 14,
+                          color: mediumGrey,
+                        ),
+                      ),
+                    ),
+                  ),
                 ],
-                text: "Rendez vous le ",
-                style: TextStyle(fontSize: 14, color: mediumGrey),
-              )),
+              ),
             ],
           ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildStatusChip(String status) {
+    Color backgroundColor;
+    Color textColor;
+    String displayText;
+
+    switch (status.toLowerCase()) {
+      case 'en_attente':
+        backgroundColor = Colors.orange.withOpacity(0.1);
+        textColor = Colors.orange[700]!;
+        displayText = 'En attente';
+        break;
+      case 'confirme':
+      case 'confirmed':
+        backgroundColor = const Color(0xFF10B981).withOpacity(0.1);
+        textColor = const Color(0xFF10B981);
+        displayText = 'Confirmé';
+        break;
+      case 'planifie':
+      case 'planned':
+        backgroundColor = const Color(0xFF184E9C).withOpacity(0.1);
+        textColor = const Color(0xFF184E9C);
+        displayText = 'Planifié';
+        break;
+      case 'termine':
+      case 'completed':
+        backgroundColor = Colors.green.withOpacity(0.1);
+        textColor = Colors.green[700]!;
+        displayText = 'Terminé';
+        break;
+      default:
+        backgroundColor = Colors.grey.withOpacity(0.1);
+        textColor = Colors.grey[600]!;
+        displayText = status;
+    }
+
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+      decoration: BoxDecoration(
+        color: backgroundColor,
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: Text(
+        displayText,
+        style: TextStyle(
+          color: textColor,
+          fontSize: 12,
+          fontWeight: FontWeight.w500,
         ),
       ),
     );
