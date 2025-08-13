@@ -5,14 +5,14 @@ class SharedpreferencesService {
   static const String _tokenKey = 'user_token';
   static const String _userType = 'user_type';
   static const String _userId = 'user_id';
+  static const String _userName= 'user_name';
 
   //* USER TOKEN
 
   // Enregistre n'importe quel type de valeur en la convertissant en JSON
   Future<void> saveToken(dynamic token) async {
     final prefs = await SharedPreferences.getInstance();
-    String jsonToken = jsonEncode(token);
-    await prefs.setString(_tokenKey, jsonToken);
+    await prefs.setString(_tokenKey, token);
   }
 
   // Récupère le token (brut ou reconverti en Map, selon besoin)
@@ -32,8 +32,7 @@ class SharedpreferencesService {
   // Enregistre le type de l'utilisateur en la convertissant en JSON
   Future<void> saveUserType(dynamic type) async {
     final prefs = await SharedPreferences.getInstance();
-    String jsonType = jsonEncode(type);
-    await prefs.setString(_userType, jsonType);
+    await prefs.setString(_userType, type);
   }
 
   // Récupère le type de l'utilisateur (brut ou reconverti en Map, selon besoin)
@@ -53,8 +52,7 @@ class SharedpreferencesService {
   // Enregistre l'ID de l'utilisateur en la convertissant en JSON
   Future<void> saveUserId(dynamic id) async {
     final prefs = await SharedPreferences.getInstance();
-    String jsonType = jsonEncode(id);
-    await prefs.setString(_userId, jsonType);
+    await prefs.setString(_userId, id);
   }
 
   // Récupère l'ID de l'utilisateur (brut ou reconverti en Map, selon besoin)
@@ -67,5 +65,25 @@ class SharedpreferencesService {
   Future<void> removeUserId() async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.remove(_userId);
+  }
+
+  //* USER NAME
+
+  // Enregistre le nom de l'utilisateur en la convertissant en JSON
+  Future<void> saveUserName(dynamic name) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString(_userName, name);
+  }
+
+  // Récupère le nom de l'utilisateur (brut ou reconverti en Map, selon besoin)
+  Future<String?> getUserName() async {
+    final prefs = await SharedPreferences.getInstance();
+    return prefs.getString(_userName);
+  }
+
+  // Supprimer le nom de l'utilisateur
+  Future<void> removeUserName() async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.remove(_userName);
   }
 }

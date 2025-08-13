@@ -1,3 +1,4 @@
+import 'dart:io';
 import 'dart:ui';
 
 import 'package:for_u_partners/app/models/register_model.dart';
@@ -123,6 +124,7 @@ class RegisterProfileView extends StackedView<RegisterProfileViewModel>
                               RegistrationModel model = RegistrationModel(
                                   type: selectedProfile,
                                   telephone: phoneNumber,
+                                  dateNaissance: '',
                                   email: mail,
                                   code: "",
                                   motDePasse: password,
@@ -147,50 +149,100 @@ class RegisterProfileView extends StackedView<RegisterProfileViewModel>
                                   categorie: viewModel.selectedCategory,
                                   annee: int.parse(
                                       driverCarYearInputController.text),
-                                  cartegrise:
-                                      viewModel.driverCarCarteGrise?.path,
-                                  permis: viewModel.driverCarPermis?.path,
-                                  assurance: viewModel.driverCarAssurance?.path,
+                                  cartegrise: viewModel.driverCarCarteGrise !=
+                                          null
+                                      ? File(
+                                          viewModel.driverCarCarteGrise!.path)
+                                      : null,
+                                  permis: viewModel.driverCarPermis != null
+                                      ? File(viewModel.driverCarPermis!.path)
+                                      : null,
+                                  assurance: viewModel.driverCarAssurance !=
+                                          null
+                                      ? File(viewModel.driverCarAssurance!.path)
+                                      : null,
                                 );
 
                                 RegistrationModel model = RegistrationModel(
                                   type: selectedProfile,
                                   telephone: phoneNumber,
                                   email: mail,
-                                  code: "",
+                                  code:"1234", 
+                                  genre: viewModel.selectedGender,
                                   motDePasse: password,
                                   motDePasseConfirmation: password,
                                   nom: driverNameInputController.text,
                                   prenom: driverSurnameInputController.text,
                                   adresse: driverAdresseInputController.text,
+                                  dateNaissance:"1990-01-15", 
+                                  numeroPermis: "TEMP_PERMIS",
+                                  dateExpirationPermis: "2030-12-31",
                                   documentIdentite:
-                                      viewModel.driverIdentity?.path,
-                                  possedeVehicule:
-                                      viewModel.hasVehicle == true ? 1 : 0,
-                                  typeConducteurId: 1,
+                                      viewModel.driverIdentity != null
+                                          ? File(viewModel.driverIdentity!.path)
+                                          : null,
+                                  possedeVehicule: 1,
+                                  typeConducteurId:
+                                      1, // Dans le curl c'est 2, pas 1
                                   vehicule: vehiculemodel,
                                 );
-                                print(model.toJson());
+
+                                print("=== MODEL AVANT ENVOI ===");
+                                print("Type: ${model.type}");
+                                print("Email: ${model.email}");
+                                print("Telephone: ${model.telephone}");
+                                print("Code: ${model.code}");
+                                print("Nom: ${model.nom}");
+                                print("Prenom: ${model.prenom}");
+                                print("Genre: ${model.genre}");
+                                print("Date naissance: ${model.dateNaissance}");
+                                print("Adresse: ${model.adresse}");
+                                print("Numero permis: ${model.numeroPermis}");
+                                print("Date expiration permis: ${model.dateExpirationPermis}");
+                                print(
+                                    "Possède véhicule: ${model.possedeVehicule}");
+                                print(
+                                    "Type conducteur ID: ${model.typeConducteurId}");
+                                print(
+                                    "Document identité: ${model.documentIdentite?.path}");
+                                if (model.vehicule != null) {
+                                  print(
+                                      "Véhicule type: ${model.vehicule!.type}");
+                                  print(
+                                      "Véhicule marque: ${model.vehicule!.marque}");
+                                  print(
+                                      "Véhicule modele: ${model.vehicule!.modele}");
+                                  print(
+                                      "Véhicule immatriculation: ${model.vehicule!.immatriculation}");
+                                }
+                                print("=== FIN MODEL DEBUG ===");
+
                                 viewModel.registerEnding(model);
                               } else {
                                 RegistrationModel model = RegistrationModel(
                                   type: selectedProfile,
                                   telephone: phoneNumber,
                                   email: mail,
-                                  code: "",
+                                  code: "1234", // Même remarque pour le code
+                                  genre: viewModel.selectedGender,
                                   motDePasse: password,
                                   motDePasseConfirmation: password,
                                   nom: driverNameInputController.text,
                                   prenom: driverSurnameInputController.text,
                                   adresse: driverAdresseInputController.text,
+                                  dateNaissance: "1990-01-15", // À adapter
+                                  numeroPermis: "TEMP_PERMIS",
+                                  dateExpirationPermis: "2030-12-31",
                                   documentIdentite:
-                                      viewModel.driverIdentity?.path,
+                                      viewModel.driverIdentity != null
+                                          ? File(viewModel.driverIdentity!.path)
+                                          : null,
                                   possedeVehicule: 0,
-                                  typeConducteurId: 1,
+                                  typeConducteurId: 1, // Dans le curl c'est 2
                                 );
+
                                 viewModel.registerEnding(model);
                               }
-
                               break;
                             case 'Livreur/Coursier':
                               break;

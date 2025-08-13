@@ -97,16 +97,18 @@ class RegisterProfileViewModel extends FormViewModel {
   }
 
   Future<void> registerEnding(RegistrationModel model) async {
-    setBusy(true);
-    // print("Register Ending");
-    try {
-      // print("Register");
-      await _authService.register(model);
-    } catch (e) {
-      setBusy(false);
-    }
+  setBusy(true);
+  try {
+    await _authService.register(model);
+    // Succès - le setBusy(false) sera appelé dans finally
+  } catch (e) {
+    // Gérer l'erreur
+    print("Erreur lors de l'inscription: $e");
+    // Afficher un message d'erreur à l'utilisateur si nécessaire
+  } finally {
+    setBusy(false);
   }
-
+}
   Future<void> _pickImage(void Function(XFile file) onImagePicked) async {
     try {
       // Demander les permissions nécessaires

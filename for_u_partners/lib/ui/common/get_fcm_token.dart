@@ -106,6 +106,8 @@ class FirebaseMessagingService {
   Future<bool> sendTokenToBackend(String token, String url) async {
     try {
       final authToken = await _sharedPreferencesServices.getToken();
+      print("=== AUTH TOKEN: $authToken ===");
+      print("=== TOKEN: $token ===");
       if (authToken == null || authToken.isEmpty) {
         print('Token d\'authentification manquant');
         return false;

@@ -1,5 +1,6 @@
 import 'package:for_u_partners/app/models/pressing_model.dart';
-import 'package:for_u_partners/app/models/user_model.dart';
+
+import 'user_model.dart';
 
 class LoginModel {
   String? type;
@@ -22,6 +23,8 @@ class LoginModel {
     return data;
   }
 }
+
+
 
 class LoginResponseModel {
   final UserModel user;

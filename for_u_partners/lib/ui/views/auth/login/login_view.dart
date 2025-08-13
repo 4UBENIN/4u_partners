@@ -127,6 +127,7 @@ class LoginView extends StackedView<LoginViewModel> with $LoginView {
                                   motDePasse: passwordInputController.text,
                                   type: viewModel.selectedProfile,
                                 );
+                                print("=== MODEL: ${model.toJson()} ===");
                                 viewModel.login(model);
                               }),
                         ),

@@ -1,3 +1,5 @@
+import 'package:for_u_partners/ui/views/pressing/widgets/animated_dot.dart';
+
 import 'home_viewmodel.dart';
 import 'widgets/wallet_widget.dart';
 import 'widgets/summary_widget.dart';
@@ -18,7 +20,7 @@ class HomeView extends StackedView<HomeViewModel> {
   ) {
     return Scaffold(
       backgroundColor: kcWhiteColors,
-      appBar: _buildCustomAppBar(),
+      appBar: _buildCustomAppBar(viewModel),
       body: const SingleChildScrollView(
         child: Padding(
           padding: EdgeInsets.all(25.0),
@@ -51,7 +53,7 @@ class HomeView extends StackedView<HomeViewModel> {
     );
   }
 
-  PreferredSizeWidget _buildCustomAppBar() {
+  PreferredSizeWidget _buildCustomAppBar(HomeViewModel model) {
     return PreferredSize(
       preferredSize: const Size.fromHeight(100),
       child: Container(
@@ -78,26 +80,38 @@ class HomeView extends StackedView<HomeViewModel> {
                         color: Color(0xFF184E9C),
                         shape: BoxShape.circle,
                       ),
-                      child: const Center(
-                        child: Text(
-                          'O',
-                          style: TextStyle(
-                            color: Colors.white,
-                            fontSize: 18,
-                            fontWeight: FontWeight.w600,
-                          ),
-                        ),
+                      child: Center(
+                        child: model.isBusy
+                            ? const CircularProgressIndicator(
+                                strokeWidth: 2,
+                                valueColor:
+                                    AlwaysStoppedAnimation<Color>(primaryColor),
+                              )
+                            : Text(
+                                model.name!.isNotEmpty == true
+                                    ? model.name![0].toUpperCase()
+                                    : '?',
+                                style: const TextStyle(
+                                  color: Colors.white,
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: 20,
+                                ),
+                              ),
                       ),
                     ),
                     const SizedBox(width: 12),
-                    const Text(
-                      'Olivier ',
-                      style: TextStyle(
-                        fontSize: 18,
-                        fontWeight: FontWeight.w600,
-                        color: Color(0xFF1a1a1a),
-                      ),
-                    ),
+                   model.isBusy
+                        ? const DotsLoader()
+                        : Text(
+                            model.name!.isNotEmpty == true
+                                ? model.name!
+                                : '?',
+                            style: const TextStyle(
+                              color: primaryColor,
+                              fontWeight: FontWeight.bold,
+                              fontSize: 20,
+                            ),
+                          ),
                   ],
                 ),
                 Container(

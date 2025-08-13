@@ -1,5 +1,9 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
+import 'package:dio/dio.dart';
+import 'package:path/path.dart' as path;
+import 'package:http_parser/http_parser.dart';
+import 'dart:io';
 import 'package:for_u_partners/app/app.router.dart';
 import 'package:for_u_partners/app/app.locator.dart';
 import 'package:for_u_partners/app/api_constant.dart';
@@ -21,13 +25,23 @@ class AuthService {
     final response = await http.post(url,
         headers: headers, body: jsonEncode(loginModel.toJson()));
 
+    print("=== RESPONSE: ${response.body} ===");
     if (response.statusCode == 200) {
       final responseJson = jsonDecode(response.body);
 
-      final loginResponse = LoginPressingResponseModel.fromJson(responseJson);
-      await _sharedPreferencesServices.saveToken(loginResponse.token);
+// Récupération directe des valeurs
+      String role = responseJson['data']['role'];
+      String name = responseJson['data']['nom'];
+      String userId = responseJson['data']['id']
+          .toString(); // Si tu veux le garder en String
+      String token = responseJson['token'];
 
-      switch (type) {
+// Sauvegarde dans SharedPreferences
+      await _sharedPreferencesServices.saveToken(token);
+      await _sharedPreferencesServices.saveUserName(name);
+      await _sharedPreferencesServices.saveUserType(role);
+      await _sharedPreferencesServices.saveUserId(userId);
+      switch (role) {
         case 'livreur':
           _navigationService.replaceWithDeliveryNavBarView();
           break;
@@ -68,28 +82,231 @@ class AuthService {
   }
 
   //* REGISTER FUNCTION
+  MediaType getMediaTypeFromFileName(String filePath) {
+    final ext = path.extension(filePath).toLowerCase();
+    switch (ext) {
+      case '.pdf':
+        return MediaType('application', 'pdf');
+      case '.jpg':
+      case '.jpeg':
+        return MediaType('image', 'jpeg');
+      case '.png':
+        return MediaType('image', 'png');
+      default:
+        return MediaType('application', 'octet-stream');
+    }
+  }
+
+  Future<FormData> registrationModelToFormData(RegistrationModel model) async {
+    final formData = FormData();
+
+    print("=== CONSTRUCTION FORMDATA SELON API ===");
+
+    // Champs obligatoires de base
+    formData.fields.addAll([
+      MapEntry('type', model.type),
+      MapEntry('telephone', model.telephone),
+      MapEntry('email', model.email),
+      MapEntry('code', model.code), // L'API l'attend (voir curl)
+      MapEntry('mot_de_passe', model.motDePasse),
+      MapEntry('mot_de_passe_confirmation', model.motDePasseConfirmation),
+      MapEntry('nom', model.nom),
+      MapEntry('adresse', model.adresse),
+    ]);
+
+    // Champs optionnels mais présents dans le curl
+    if (model.prenom != null) {
+      formData.fields.add(MapEntry('prenom', model.prenom!));
+    }
+    if (model.genre != null) {
+      formData.fields.add(MapEntry('genre', model.genre!));
+    }
+
+    // IMPORTANT: date_naissance est dans le curl, il faut une vraie date ou null
+    if (model.dateNaissance != null && model.dateNaissance!.isNotEmpty) {
+      formData.fields.add(MapEntry('date_naissance', model.dateNaissance!));
+    }
+
+    if (model.numeroPermis != null) {
+      formData.fields
+          .add(MapEntry('numero_permis', model.numeroPermis ?? 'TEMP_PERMIS'));
+    }
+    if (model.dateExpirationPermis != null) {
+      formData.fields.add(MapEntry('date_expiration_permis',
+          model.dateExpirationPermis ?? '2030-12-31'));
+    }
+    if (model.possedeVehicule != null) {
+      formData.fields
+          .add(MapEntry('possedevehicule', model.possedeVehicule.toString()));
+    }
+    if (model.typeConducteurId != null) {
+      formData.fields.add(
+          MapEntry('type_conducteur_id', model.typeConducteurId.toString()));
+    }
+
+    // Document d'identité
+    if (model.documentIdentite != null) {
+      try {
+        final file = await MultipartFile.fromFile(
+          model.documentIdentite!.path,
+          filename: path.basename(model.documentIdentite!.path),
+          contentType: getMediaTypeFromFileName(model.documentIdentite!.path),
+        );
+        formData.files.add(MapEntry('document_identite', file));
+        print("Document d'identité ajouté: ${model.documentIdentite!.path}");
+      } catch (e) {
+        print("Erreur avec document d'identité: $e");
+      }
+    }
+
+    // VEHICULE - Utiliser la syntaxe vehicule[champ] comme dans le curl
+    if (model.vehicule != null) {
+      final v = model.vehicule!;
+      print("=== AJOUT DU VEHICULE (syntaxe API) ===");
+
+      // Champs du véhicule avec syntaxe vehicule[champ]
+      formData.fields.addAll([
+        MapEntry('vehicule[type]', v.type),
+        MapEntry('vehicule[marque]', v.marque),
+        MapEntry('vehicule[modele]', v.modele),
+        MapEntry('vehicule[immatriculation]', v.immatriculation),
+        MapEntry('vehicule[nombre_places]', v.nombrePlaces.toString()),
+        MapEntry('vehicule[couleur]', v.couleur),
+        MapEntry('vehicule[categorie]', v.categorie),
+        MapEntry('vehicule[annee]', v.annee.toString()),
+      ]);
+
+      print("Champs véhicule ajoutés");
+
+      // FICHIERS DU VEHICULE avec syntaxe vehicule[champ]
+      if (v.cartegrise != null) {
+        try {
+          final file = await MultipartFile.fromFile(
+            v.cartegrise!.path,
+            filename: path.basename(v.cartegrise!.path),
+            contentType: getMediaTypeFromFileName(v.cartegrise!.path),
+          );
+          formData.files.add(MapEntry('vehicule[carte_grise]', file));
+          print("Carte grise ajoutée: ${v.cartegrise!.path}");
+        } catch (e) {
+          print("Erreur avec carte grise: $e");
+        }
+      }
+
+      if (v.assurance != null) {
+        try {
+          final file = await MultipartFile.fromFile(
+            v.assurance!.path,
+            filename: path.basename(v.assurance!.path),
+            contentType: getMediaTypeFromFileName(v.assurance!.path),
+          );
+          formData.files.add(MapEntry('vehicule[assurance]', file));
+          print("Assurance ajoutée: ${v.assurance!.path}");
+        } catch (e) {
+          print("Erreur avec assurance: $e");
+        }
+      }
+
+      if (v.permis != null) {
+        try {
+          final file = await MultipartFile.fromFile(
+            v.permis!.path,
+            filename: path.basename(v.permis!.path),
+            contentType: getMediaTypeFromFileName(v.permis!.path),
+          );
+          // CORRECTION: Envoyer à la racine, pas dans vehicule[]
+          formData.files.add(MapEntry('permis_conduire', file));
+          print("Permis ajouté: ${v.permis!.path}");
+        } catch (e) {
+          print("Erreur avec permis: $e");
+        }
+      }
+    }
+
+    print("=== FIN CONSTRUCTION FORMDATA ===");
+    return formData;
+  }
 
   Future<void> register(RegistrationModel registrationModel) async {
-    final url =
-        Uri.parse("https://foryou.cilassocies.com/api/partenaire/register");
-    print(url);
+    final dio = Dio();
+    final url = 'https://foryou.cilassocies.com/api/partenaire/register';
+
+    // Activer les logs de Dio pour voir les requêtes
+    dio.interceptors.add(LogInterceptor(
+      requestBody: true,
+      responseBody: true,
+      requestHeader: true,
+      responseHeader: false,
+      error: true,
+    ));
+
+    print("=== DEBUT DE L'INSCRIPTION ===");
+    print("URL: $url");
+    print("Type: ${registrationModel.type}");
+    print("Telephone: ${registrationModel.telephone}");
+    print("Email: ${registrationModel.email}");
+    print("Nom: ${registrationModel.nom}");
+    print("Vehicule présent: ${registrationModel.vehicule != null}");
+
+    if (registrationModel.vehicule != null) {
+      print("Vehicule type: ${registrationModel.vehicule!.type}");
+      print("Vehicule marque: ${registrationModel.vehicule!.marque}");
+      print(
+          "Fichier carte grise: ${registrationModel.vehicule!.cartegrise?.path}");
+      print(
+          "Fichier assurance: ${registrationModel.vehicule!.assurance?.path}");
+      print("Fichier permis: ${registrationModel.vehicule!.permis?.path}");
+    }
+
+    print("Document identité: ${registrationModel.documentIdentite?.path}");
+
     try {
-      final response = await http.post(
+      print("=== CREATION DU FORMDATA ===");
+      final formData = await registrationModelToFormData(registrationModel);
+
+      // Afficher le contenu du FormData
+      print("=== CONTENU DU FORMDATA ===");
+      print("Fields:");
+      for (var field in formData.fields) {
+        print("  ${field.key}: ${field.value}");
+      }
+      print("Files:");
+      for (var file in formData.files) {
+        print(
+            "  ${file.key}: ${file.value.filename} (${file.value.length} bytes)");
+      }
+
+      print("=== ENVOI DE LA REQUETE ===");
+      final response = await dio.post(
         url,
-        headers: headers,
-        body: jsonEncode(registrationModel.toJson()),
+        data: formData,
+        options: Options(
+          headers: {
+            'accept': 'application/json',
+            'Content-Type': 'multipart/form-data',
+          },
+          validateStatus: (status) {
+            // Accepter tous les status codes pour pouvoir les traiter
+            return status != null && status < 500;
+          },
+        ),
       );
 
-      print(
-          registrationModel.toJson()); // <- ce print doit maintenant s'afficher
+      print("=== REPONSE RECUE ===");
+      print("Status Code: ${response.statusCode}");
+      print("Response Data: ${response.data}");
 
       if (response.statusCode == 201) {
-        final responseJson = jsonDecode(response.body);
+        final responseJson = response.data;
         final registerType = responseJson['type'];
 
         await _sharedPreferencesServices.saveToken(responseJson['token']);
         await _sharedPreferencesServices.saveUserId(responseJson['data']['id']);
         await _sharedPreferencesServices.saveUserType(registerType);
+        await _sharedPreferencesServices
+            .saveUserName(responseJson['data']['nom']);
+
+        print('Inscription réussie pour le type: $registerType');
 
         switch (registerType) {
           case 'livreur':
@@ -108,11 +325,46 @@ class AuthService {
             _navigationService.replaceWithNavBarPressingView();
         }
       } else {
-        print('Erreur statusCode : ${response.statusCode}');
-        print('Body : ${response.body}');
+        print('=== ERREUR SERVEUR ===');
+        print('Status Code: ${response.statusCode}');
+        print('Response: ${response.data}');
+
+        // Afficher les erreurs de validation si disponibles
+        if (response.data is Map && response.data.containsKey('errors')) {
+          print('Erreurs de validation:');
+          final errors = response.data['errors'] as Map<String, dynamic>;
+          errors.forEach((key, value) {
+            print('  $key: $value');
+          });
+        }
+
+        if (response.data is Map && response.data.containsKey('message')) {
+          print('Message d\'erreur: ${response.data['message']}');
+        }
       }
     } catch (e, stack) {
+      print('=== EXCEPTION ===');
       print('Erreur pendant l\'envoi de la requête : $e');
+
+      if (e is DioException) {
+        print('DioException details:');
+        print('  Type: ${e.type}');
+        print('  Message: ${e.message}');
+        print('  Response: ${e.response?.data}');
+        print('  Status Code: ${e.response?.statusCode}');
+
+        if (e.response?.data is Map) {
+          final responseData = e.response!.data as Map<String, dynamic>;
+          if (responseData.containsKey('errors')) {
+            print('Erreurs de validation:');
+            final errors = responseData['errors'] as Map<String, dynamic>;
+            errors.forEach((key, value) {
+              print('    $key: $value');
+            });
+          }
+        }
+      }
+
       print('Stack trace : $stack');
     }
   }

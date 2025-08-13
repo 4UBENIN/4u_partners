@@ -1,3 +1,5 @@
+import 'dart:io';
+
 class VehiculeModel {
   final String type;
   final String marque;
@@ -6,9 +8,9 @@ class VehiculeModel {
   final int nombrePlaces;
   final String couleur;
   final String categorie;
-  final String? cartegrise;
-  final String? assurance;
-  final String? permis;
+  final File? cartegrise;     // fichier image ou PDF
+  final File? assurance;     // fichier image ou PDF
+  final File? permis;        // fichier image ou PDF
   final int annee;
 
   VehiculeModel({
@@ -25,19 +27,7 @@ class VehiculeModel {
     required this.annee,
   });
 
-  Map<String, dynamic> toJson() => {
-        'type': type,
-        'marque': marque,
-        'modele': modele,
-        'immatriculation': immatriculation,
-        'nombre_places': nombrePlaces,
-        'couleur': couleur,
-        'categorie': categorie,
-        'carte_grise': cartegrise,
-        'assurance': assurance,
-        'permis_conduire': permis,
-        'annee': annee,
-      };
+  // Ne pas utiliser toJson() pour envoyer les fichiers
 }
 
 class RegistrationModel {
@@ -51,11 +41,11 @@ class RegistrationModel {
   final String adresse;
   final String? prenom;
   final String? genre;
-  final String? dateNaissance; // Format: YYYY-MM-DD
+  final String? dateNaissance; // YYYY-MM-DD
   final String? numeroPermis;
-  final String? dateExpirationPermis; // Format: YYYY-MM-DD
-  final String? documentIdentite; // peut être un path ou une URL de fichier
-  final int? possedeVehicule; // 1 = oui, 0 = non
+  final String? dateExpirationPermis; // YYYY-MM-DD
+  final File? documentIdentite; // fichier image ou PDF
+  final int? possedeVehicule; // 1 ou 0
   final int? typeConducteurId;
   final VehiculeModel? vehicule;
 
@@ -79,26 +69,5 @@ class RegistrationModel {
     this.vehicule,
   });
 
-  Map<String, dynamic> toJson() {
-    return {
-      'type': type,
-      'telephone': telephone,
-      'email': email,
-      'code': code,
-      'mot_de_passe': motDePasse,
-      'mot_de_passe_confirmation': motDePasseConfirmation,
-      'nom': nom,
-      'adresse': adresse,
-      if (prenom != null) 'prenom': prenom,
-      if (genre != null) 'genre': genre,
-      if (dateNaissance != null) 'date_naissance': dateNaissance,
-      if (numeroPermis != null) 'numero_permis': numeroPermis,
-      if (dateExpirationPermis != null)
-        'date_expiration_permis': dateExpirationPermis,
-      if (documentIdentite != null) 'document_identite': documentIdentite,
-      if (possedeVehicule != null) 'possedevehicule': possedeVehicule,
-      if (typeConducteurId != null) 'type_conducteur_id': typeConducteurId,
-      if (vehicule != null) 'vehicule': vehicule!.toJson(),
-    };
-  }
+  // Pas de toJson() direct pour envoyer les fichiers
 }
