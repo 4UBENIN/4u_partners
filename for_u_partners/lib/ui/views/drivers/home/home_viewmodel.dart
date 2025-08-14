@@ -3,15 +3,17 @@ import 'package:for_u_partners/ui/common/api_constant.dart';
 import 'package:stacked/stacked.dart';
 import 'package:for_u_partners/ui/common/get_fcm_token.dart';
 import 'package:for_u_partners/app/app.locator.dart';
+import 'package:for_u_partners/services/tracking_service.dart';
 
 class HomeViewModel extends BaseViewModel {
   final _sharedpreferencesService = locator<SharedpreferencesService>();
-
+  final trackingService = TrackingService(); 
   String? name;
 
   HomeViewModel() {
     registerDriverToken();
     getUserName();
+    trackingService.demarrerTrackingContinu();
   }
 
   void sendTokenToBackend() async {

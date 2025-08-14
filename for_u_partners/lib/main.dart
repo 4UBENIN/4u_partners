@@ -17,6 +17,8 @@ Future<void> main() async {
   await FirebaseMessaging.instance.setAutoInitEnabled(true);
   FirebaseMessaging.onBackgroundMessage(firebaseMessagingBackgroundHandler);
   await FirebaseMessagingService().init();
+  await FirebaseMessaging.instance.requestPermission();
+  await FirebaseMessagingService().setupFlutterNotifications();
   setupDialogUi();
   setupBottomSheetUi();
   await dotenv.load(fileName: ".env");
