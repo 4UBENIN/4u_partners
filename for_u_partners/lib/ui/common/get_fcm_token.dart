@@ -293,3 +293,4 @@ Future<void> firebaseMessagingBackgroundHandler(RemoteMessage message) async {
   await Firebase.initializeApp();
   print("Message en arrière-plan: ${message.messageId}");
 }
+
