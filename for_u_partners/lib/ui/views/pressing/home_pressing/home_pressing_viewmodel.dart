@@ -384,8 +384,9 @@ class HomePressingViewModel extends FormViewModel {
 
   // Obtenir la liste formatée des vêtements
   String get vetementsFormates {
-    if (_selectedRamassageDetail?.details == null)
+    if (_selectedRamassageDetail?.details == null) {
       return "Aucun détail disponible";
+    }
     return _selectedRamassageDetail!.details!
         .map((item) => "${item.libelle} x${item.quantite}")
         .join(", ");
@@ -393,8 +394,9 @@ class HomePressingViewModel extends FormViewModel {
 
   // Obtenir la liste formatée des services
   String get servicesFormates {
-    if (_selectedRamassageDetail?.servicesComplementaires == null)
+    if (_selectedRamassageDetail?.servicesComplementaires == null) {
       return "Aucun service";
+    }
     return _selectedRamassageDetail!.servicesComplementaires!
         .map((service) => service.libelle)
         .join(", ");

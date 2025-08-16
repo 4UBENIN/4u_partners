@@ -42,7 +42,7 @@ class TrackingService {
     // Obtenir la position GPS
     Position position = await Geolocator.getCurrentPosition(
       desiredAccuracy: LocationAccuracy.high,
-      timeLimit: Duration(seconds: 10),
+      timeLimit: const Duration(seconds: 10),
     );
 
     // Reverse geocoding pour obtenir l'adresse
@@ -110,7 +110,7 @@ class TrackingService {
             },
             body: jsonEncode(requestBody),
           )
-          .timeout(Duration(seconds: 15));
+          .timeout(const Duration(seconds: 15));
 
       // Traiter la réponse
       if (response.statusCode == 201) {

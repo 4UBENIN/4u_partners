@@ -7,13 +7,13 @@ class DepotDemandModel {
     if (json['data'] != null) {
       data = <Depot>[];
       json['data'].forEach((v) {
-        data!.add(new Depot.fromJson(v));
+        data!.add(Depot.fromJson(v));
       });
     }
   }
 
   Map<String, dynamic> toJson() {
-    final Map<String, dynamic> data = new Map<String, dynamic>();
+    final Map<String, dynamic> data = <String, dynamic>{};
     if (this.data != null) {
       data['data'] = this.data!.map((v) => v.toJson()).toList();
     }
@@ -36,17 +36,17 @@ class Depot {
     dateRdv = json['date_rdv'];
     statut = json['statut'];
     client =
-        json['client'] != null ? new Client.fromJson(json['client']) : null;
+        json['client'] != null ? Client.fromJson(json['client']) : null;
   }
 
   Map<String, dynamic> toJson() {
-    final Map<String, dynamic> data = new Map<String, dynamic>();
-    data['id'] = this.id;
-    data['numero'] = this.numero;
-    data['date_rdv'] = this.dateRdv;
-    data['statut'] = this.statut;
-    if (this.client != null) {
-      data['client'] = this.client!.toJson();
+    final Map<String, dynamic> data = <String, dynamic>{};
+    data['id'] = id;
+    data['numero'] = numero;
+    data['date_rdv'] = dateRdv;
+    data['statut'] = statut;
+    if (client != null) {
+      data['client'] = client!.toJson();
     }
     return data;
   }
@@ -66,10 +66,10 @@ class Client {
   }
 
   Map<String, dynamic> toJson() {
-    final Map<String, dynamic> data = new Map<String, dynamic>();
-    data['id'] = this.id;
-    data['nom'] = this.nom;
-    data['prenom'] = this.prenom;
+    final Map<String, dynamic> data = <String, dynamic>{};
+    data['id'] = id;
+    data['nom'] = nom;
+    data['prenom'] = prenom;
     return data;
   }
 }

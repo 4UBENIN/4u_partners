@@ -814,14 +814,14 @@ class InProgressRideBottomSheet extends StatelessWidget {
                       ),
                     ),
                     const SizedBox(height: 30),
-                    Padding(
-                      padding: const EdgeInsets.symmetric(
+                    const Padding(
+                      padding: EdgeInsets.symmetric(
                         horizontal: 12,
                       ),
                       child: Row(
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
-                          const Text(
+                          Text(
                             'Poids',
                             style: TextStyle(
                               fontSize: 16,
@@ -831,7 +831,7 @@ class InProgressRideBottomSheet extends StatelessWidget {
                           ),
                           Text(
                             '1kg',
-                            style: const TextStyle(
+                            style: TextStyle(
                               fontSize: 16,
                               fontWeight: FontWeight.w500,
                               color: Colors.black,

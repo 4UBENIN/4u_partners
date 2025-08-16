@@ -8,8 +8,8 @@ class WalletModel {
   }
 
   Map<String, dynamic> toJson() {
-    final Map<String, dynamic> data = new Map<String, dynamic>();
-    data['solde'] = this.solde;
+    final Map<String, dynamic> data = <String, dynamic>{};
+    data['solde'] = solde;
     return data;
   }
 }

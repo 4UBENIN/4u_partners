@@ -1,21 +1,42 @@
 import 'dart:convert';
+import 'package:for_u_partners/app/app.locator.dart';
+import 'package:for_u_partners/services/sharedpreferences_service.dart';
+import 'package:for_u_partners/ui/common/toast.dart';
 import 'package:http/http.dart' as http;
 import 'package:for_u_partners/app/api_constant.dart';
 import 'package:for_u_partners/app/models/course_model.dart';
 
 class DriverService {
-  Future<void> acceptCourse(int courseId) async {
-    final url = Uri.parse(acceptCourseUrl(courseId));
-    final response = await http.patch(url, headers: headers);
+  final sharedPreferencesService = locator<SharedpreferencesService>();
 
+  Future<void> acceptCourse(int courseId) async {
+    final token = await sharedPreferencesService.getToken();
+    final url = Uri.parse(acceptCourseUrl(courseId));
+    print(url);
+    final response = await http.patch(url, headers: {
+      'Accept': 'application/json',
+      'Content-Type': 'application/json',
+      'Authorization': 'Bearer $token',
+    });
+
+    print("accept-body: ${response.body}");
+
+    final responseJson = jsonDecode(response.body);
     if (response.statusCode == 200) {
-      final responseJson = jsonDecode(response.body);
+      
+    }
+    else {
+      throw responseJson['error'];
     }
   }
 
   Future<void> rejectCourse(int courseId) async {
+    final token = await sharedPreferencesService.getToken();
     final url = Uri.parse(rejectCourseUrl(courseId));
-    final response = await http.patch(url, headers: headers);
+    final response = await http.patch(url, headers: {
+      'Content-Type': 'application/json',
+      'Authorization': 'Bearer $token',
+    });
 
     if (response.statusCode == 200) {
       final responseJson = jsonDecode(response.body);

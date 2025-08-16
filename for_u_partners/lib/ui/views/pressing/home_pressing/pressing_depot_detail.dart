@@ -31,7 +31,7 @@ class DepotDetailView extends StackedView<HomePressingViewModel>
             viewModel.clearDepotDetail();
             Navigator.pop(context);
           },
-          icon: Icon(Icons.arrow_back),
+          icon: const Icon(Icons.arrow_back),
         ),
         backgroundColor: kcWhiteColors,
         title: Text(

@@ -56,9 +56,9 @@ class ProfilPressingView extends StackedView<ProfilPressingViewModel> {
                 color: Colors.red,
               ),
               const SizedBox(height: 16),
-              Text(
+              const Text(
                 "Erreur",
-                style: const TextStyle(
+                style: TextStyle(
                   fontSize: 20,
                   fontWeight: FontWeight.bold,
                 ),

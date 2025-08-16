@@ -1,11 +1,12 @@
+import 'package:for_u_partners/ui/common/app_colors.dart';
+
 import 'courses_viewmodel.dart';
 import 'package:stacked/stacked.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_map/flutter_map.dart';
+import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:for_u_partners/app/app.router.dart';
 import 'package:for_u_partners/app/app.locator.dart';
 import 'package:stacked_services/stacked_services.dart';
-import 'package:for_u_partners/ui/common/api_constant.dart';
 import 'package:for_u_partners/ui/common/enum/bottom_enum.dart';
 import 'package:for_u_partners/ui/views/drivers/courses/recap_view.dart';
 import 'package:for_u_partners/ui/views/drivers/courses/widget/customers_sheet_widget.dart';
@@ -23,7 +24,6 @@ class CoursesView extends StackedView<CoursesViewModel> {
       backgroundColor: Theme.of(context).colorScheme.surface,
       body: Container(
         color: Colors.white,
-        //padding: const EdgeInsets.only(left: 25.0, right: 25.0),
         child: viewModel.isLoadingLocation
             ? const Center(
                 child: Column(
@@ -37,40 +37,19 @@ class CoursesView extends StackedView<CoursesViewModel> {
               )
             : Stack(
                 children: [
-                  FlutterMap(
-                    mapController: viewModel.mapController,
-                    options: MapOptions(
-                      center: viewModel.mapCenter,
+                  GoogleMap(
+                    onMapCreated: viewModel.onMapCreated,
+                    initialCameraPosition: CameraPosition(
+                      target: viewModel.mapCenter,
                       zoom: viewModel.mapZoom,
-                      onTap: (tapPosition, point) =>
-                          viewModel.onMapTapped(point),
                     ),
-                    children: [
-                      TileLayer(
-                        urlTemplate: ApiConstant.mapboxUrl,
-                        additionalOptions: {
-                          'accessToken': ApiConstant.mapboxprivaToken,
-                          'id': 'mapbox.streets',
-                        },
-                      ),
-                      MarkerLayer(
-                        markers: viewModel.markers,
-                      ),
-                    ],
+                    onTap: viewModel.onMapTapped,
+                    markers: viewModel.markers,
+                    myLocationEnabled: true,
+                    myLocationButtonEnabled: false,
                   ),
                   // Bouton pour recentrer sur la position utilisateur
-                  Positioned(
-                    bottom: 20,
-                    right: 20,
-                    child: FloatingActionButton(
-                      onPressed: viewModel.recenterOnUserLocation,
-                      backgroundColor: Colors.blue,
-                      child: const Icon(
-                        Icons.my_location,
-                        color: Colors.white,
-                      ),
-                    ),
-                  ),
+
                   AnimatedSwitcher(
                     duration: const Duration(milliseconds: 300),
                     transitionBuilder:
@@ -87,6 +66,116 @@ class CoursesView extends StackedView<CoursesViewModel> {
                     },
                     child: _buildBottomSheet(viewModel, context),
                   ),
+                  viewModel.isBusy
+                      ? Positioned.fill(
+                          child: Container(
+                            color: Colors.black.withOpacity(
+                                0.3), // Arrière-plan semi-transparent
+                            child: Center(
+                              child: Container(
+                                padding: const EdgeInsets.all(20),
+                                decoration: BoxDecoration(
+                                  color: Colors.white,
+                                  borderRadius: BorderRadius.circular(12),
+                                  boxShadow: [
+                                    BoxShadow(
+                                      color: Colors.black.withOpacity(0.1),
+                                      blurRadius: 10,
+                                      offset: const Offset(0, 4),
+                                    ),
+                                  ],
+                                ),
+                                child: const Column(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    CircularProgressIndicator(
+                                      valueColor: AlwaysStoppedAnimation<Color>(
+                                          kcPrimaryColor),
+                                    ),
+                                    SizedBox(height: 16),
+                                    Text(
+                                      'Acceptation en cours...',
+                                      style: TextStyle(
+                                        fontSize: 16,
+                                        fontWeight: FontWeight.w500,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ),
+                          ),
+                        )
+                      : const SizedBox.shrink(),
+
+                  Positioned(
+                    top: 52,
+                    left: 20,
+                    child: InkWell(
+                      onTap: () => viewModel.navigationService.back(),
+                      child: Container(
+                        height: 48,
+                        width: 48,
+                        decoration: BoxDecoration(
+                          color: Colors.white,
+                          shape: BoxShape.circle,
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.black.withOpacity(0.1),
+                              blurRadius: 4,
+                              offset: const Offset(0, 2),
+                            ),
+                          ],
+                        ),
+                        child: Center(
+                          child: viewModel.isAndroid
+                              ? const Icon(Icons.arrow_back, size: 20)
+                              : const Row(
+                                  mainAxisAlignment: MainAxisAlignment.center,
+                                  children: [
+                                    SizedBox(width: 6),
+                                    Icon(Icons.arrow_back_ios, size: 20),
+                                  ],
+                                ),
+                        ),
+                      ),
+                    ),
+                  ),
+
+                  Positioned(
+                    top: 52,
+                    right: 20,
+                    child: Column(
+                      children: [
+                        // Bouton pour recentrer sur la position actuelle
+                        InkWell(
+                          onTap: () {
+                            viewModel.recenterOnUserLocation();
+                          },
+                          child: Container(
+                            height: 48,
+                            width: 48,
+                            decoration: BoxDecoration(
+                              color: Colors.white,
+                              shape: BoxShape.circle,
+                              boxShadow: [
+                                BoxShadow(
+                                  color: Colors.black.withOpacity(0.1),
+                                  blurRadius: 4,
+                                  offset: const Offset(0, 2),
+                                ),
+                              ],
+                            ),
+                            child: const Icon(
+                              Icons.my_location,
+                              size: 20,
+                              color: kcPrimaryColor,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
                 ],
               ),
       ),
@@ -96,52 +185,110 @@ class CoursesView extends StackedView<CoursesViewModel> {
   Widget _buildBottomSheet(CoursesViewModel viewModel, BuildContext context) {
     switch (viewModel.currentBottomSheetType) {
       case BottomSheetAppType.clients:
+        // Afficher uniquement s'il y a des courses disponibles
+        if (viewModel.availableCourses.isEmpty) {
+          // UTILISER WidgetsBinding seulement ici car c'est pendant le build
+          WidgetsBinding.instance.addPostFrameCallback((_) {
+            viewModel.setBottomSheetType(BottomSheetAppType.none);
+          });
+          return const SizedBox.shrink(key: ValueKey('empty'));
+        }
+
         return ClientsBottomSheet(
           key: const ValueKey('clients'),
-          getClientsList: viewModel.getClientsList(),
+          getClientsList: viewModel.availableCourses,
           onAccept: () {
-            viewModel.setBottomSheetType(BottomSheetAppType.pickup);
+            // Accepter la première course disponible
+            if (viewModel.availableCourses.isNotEmpty) {
+              final firstCourse = viewModel.availableCourses.first;
+              if (firstCourse.hasValidCourseId) {
+                viewModel.acceptCourse(firstCourse.courseId!, context);
+              }
+            }
           },
           onDecline: () {
-            viewModel.setBottomSheetType(BottomSheetAppType.none);
+            // Refuser la première course
+            if (viewModel.availableCourses.isNotEmpty) {
+              final firstCourse = viewModel.availableCourses.first;
+              if (firstCourse.hasValidCourseId) {
+                viewModel.rejectCourse(firstCourse.courseId!);
+              }
+            }
+            // Fermer seulement s'il n'y a plus de courses - PAS de WidgetsBinding ici
+            if (viewModel.availableCourses.length <= 1) {
+              viewModel.setBottomSheetType(BottomSheetAppType.none);
+            }
           },
         );
 
       case BottomSheetAppType.pickup:
+        if (viewModel.availableCourses.isEmpty) {
+          // UTILISER WidgetsBinding seulement ici car c'est pendant le build
+          WidgetsBinding.instance.addPostFrameCallback((_) {
+            viewModel.setBottomSheetType(BottomSheetAppType.none);
+          });
+          return const SizedBox.shrink(key: ValueKey('no-pickup'));
+        }
+
+        final pickupCourse = viewModel.availableCourses.first;
+
         return AcceptedClientBottomSheet(
           key: const ValueKey('pickup'),
-          client: viewModel.getClientsList()[0],
+          client: pickupCourse,
           onCancelRide: () {
-            print("Pickup confirmé");
+            // Annuler la course acceptée - PAS de WidgetsBinding ici
+            if (pickupCourse.hasValidCourseId) {
+              viewModel.removeCourse(pickupCourse.courseId!);
+            }
             viewModel.setBottomSheetType(BottomSheetAppType.none);
           },
           onStartRide: () {
+            // PAS de WidgetsBinding ici
             viewModel.setBottomSheetType(BottomSheetAppType.inprogress);
           },
-          onCallClients: () {},
+          onCallClients: () {
+            // Logique d'appel du client
+          },
         );
 
       case BottomSheetAppType.inprogress:
+        if (viewModel.availableCourses.isEmpty) {
+          // UTILISER WidgetsBinding seulement ici car c'est pendant le build
+          WidgetsBinding.instance.addPostFrameCallback((_) {
+            viewModel.setBottomSheetType(BottomSheetAppType.none);
+          });
+          return const SizedBox.shrink(key: ValueKey('no-inprogress'));
+        }
+
+        final currentCourse = viewModel.availableCourses.first;
+
         return InProgressRideBottomSheet(
           key: const ValueKey('inprogress'),
-          client: viewModel.getClientsList()[0],
+          client: currentCourse,
           onCancelRide: () {
-            print("Pickup confirmé");
+            // Terminer la course - PAS de WidgetsBinding ici
             viewModel.setBottomSheetType(BottomSheetAppType.none);
+
+            // Naviguer vers le récapitulatif avec les vraies données
             Navigator.push(
               context,
               MaterialPageRoute(
                 builder: (context) => RecapitulatifCoursePage(
-                  pointDepart: 'Seme City, Cadjehoun',
-                  destination: 'EREVAN, Cadjehoun Aeroport',
-                  nomClient: 'Teddy TOSSOU',
-                  initialeClient: 'T',
-                  distance: 21.0,
-                  prix: 250,
-                  moyenPaiement: 'Espèces',
-                  coutParMinute: 1.0,
-                  coutDistance: 220.0,
+                  pointDepart:
+                      currentCourse.adresseDepart ?? 'Position actuelle',
+                  destination: currentCourse.destination,
+                  nomClient: currentCourse.name,
+                  initialeClient: currentCourse.initials,
+                  distance: currentCourse.distance ?? 0.0,
+                  prix: (currentCourse.prix ?? 0.0).toInt(),
+                  moyenPaiement: 'Mobile Money',
+                  coutParMinute: currentCourse.duree ?? 0.0,
+                  coutDistance: currentCourse.distance ?? 0.0,
                   onSoumettre: () {
+                    // Supprimer la course terminée
+                    if (currentCourse.hasValidCourseId) {
+                      viewModel.removeCourse(currentCourse.courseId!);
+                    }
                     final navigationService = locator<NavigationService>();
                     navigationService.navigateToHomemainView();
                   },
@@ -149,22 +296,21 @@ class CoursesView extends StackedView<CoursesViewModel> {
               ),
             );
           },
-          onAddPenalily: () {},
-          onCallClients: () {},
-          price: 2,
+          onAddPenalily: () {
+            // Logique pour ajouter une pénalité
+          },
+          onCallClients: () {
+            // Appeler le client pendant la course
+          },
+          price: (currentCourse.prix ?? 0.0),
         );
 
       case BottomSheetAppType.none:
       default:
-        return const SizedBox.shrink(
-          key: ValueKey('none'),
-        );
+        return const SizedBox.shrink(key: ValueKey('none'));
     }
   }
 
   @override
-  CoursesViewModel viewModelBuilder(
-    BuildContext context,
-  ) =>
-      CoursesViewModel();
+  CoursesViewModel viewModelBuilder(BuildContext context) => CoursesViewModel();
 }

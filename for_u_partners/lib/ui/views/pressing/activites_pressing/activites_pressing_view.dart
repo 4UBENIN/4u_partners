@@ -396,7 +396,7 @@ class _DepotDemandWidget extends StatelessWidget {
               const SizedBox(height: 12),
               Row(
                 children: [
-                  Icon(
+                  const Icon(
                     Icons.schedule,
                     size: 16,
                     color: primaryColor,
@@ -413,7 +413,7 @@ class _DepotDemandWidget extends StatelessWidget {
                         children: [
                           TextSpan(
                             text: changeFormatDate(date),
-                            style: TextStyle(
+                            style: const TextStyle(
                               fontWeight: FontWeight.w500,
                               color: primaryColor,
                             ),

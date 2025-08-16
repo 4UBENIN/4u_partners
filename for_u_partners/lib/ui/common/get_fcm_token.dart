@@ -1,16 +1,22 @@
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:for_u_partners/app/app.locator.dart';
+import 'package:for_u_partners/app/app.router.dart';
+import 'package:for_u_partners/services/course_event_service.dart';
+import 'package:for_u_partners/services/course_notificationstorage_service.dart';
 import 'package:for_u_partners/services/sharedpreferences_service.dart';
 import 'package:for_u_partners/ui/common/api_constant.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
 import 'dart:io' show Platform;
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
+import 'package:stacked_services/stacked_services.dart';
 
 class FirebaseMessagingService {
   static final FirebaseMessaging _messaging = FirebaseMessaging.instance;
+   final CourseEventService _courseEventService = CourseEventService();
   final _sharedPreferencesServices = locator<SharedpreferencesService>();
+  final navigationServices = locator<NavigationService>();
   final FlutterLocalNotificationsPlugin flutterLocalNotificationsPlugin =
     FlutterLocalNotificationsPlugin();
   // Token FCM stocké localement
@@ -23,6 +29,8 @@ class FirebaseMessagingService {
   Future<void> init() async {
     try {
       // Demander les permissions
+
+      await initAndCleanStorage();
       NotificationSettings settings = await _messaging.requestPermission(
         alert: true,
         badge: true,
@@ -85,22 +93,57 @@ class FirebaseMessagingService {
   }
 
   /// Configure les handlers pour les messages
+  
+   void _handleIncomingMessage(RemoteMessage message) async {
+  try {
+    final data = message.data;
+    
+    // Vérifier si c'est une notification de course
+    if (data.containsKey('course_id') && data.containsKey('client_nom')) {
+      print('📱 Course détectée dans la notification');
+      
+      // ✨ Créer l'objet CourseNotificationData avec timestamp actuel
+      final courseData = CourseNotificationData.fromFirebaseData(
+        data,
+        receivedAt: DateTime.now(), // ✨ Timestamp de réception côté client
+      );
+      
+      // ✨ Sauvegarder en mémoire
+      await CourseNotificationStorage.saveNotification(courseData);
+      
+      // Transmettre au service d'événements (comme avant)
+      _courseEventService.onNewCourseReceived(data);
+
+      navigationServices.navigateToCoursesView();
+      
+      print('✅ Notification course sauvée: ${courseData.courseId} à ${courseData.timestamp}');
+    } else {
+      print('📱 Message non-course reçu: $data');
+    }
+  } catch (e) {
+    print('❌ Erreur traitement message: $e');
+  }
+}
+
   Future<void> _setupMessageHandlers() async {
     // Messages en premier plan
     FirebaseMessaging.onMessage.listen((message) {
-      print('Message reçu: ${message.notification?.title}');
+      print('Message reçu: ${message.data}');
+      
+      // ✨ Nouvelle logique : transmettre les données au service d'événements
+      _handleIncomingMessage(message);
     });
 
-    // Tap sur notification (app en arrière-plan)
-    FirebaseMessaging.onMessageOpenedApp.listen((message) {
-      print('Notification ouverte: ${message.notification?.title}');
+     FirebaseMessaging.onMessageOpenedApp.listen((message) {
+      print('Notification ouverte: ${message.notification?.body}');
+      _handleIncomingMessage(message);
     });
 
     // Tap sur notification (app fermée)
     RemoteMessage? initialMessage = await _messaging.getInitialMessage();
     if (initialMessage != null) {
-      print(
-          'App ouvert depuis notification: ${initialMessage.notification?.title}');
+      print('App ouvert depuis notification: ${initialMessage.notification?.title}');
+      _handleIncomingMessage(initialMessage);
     }
   }
 
@@ -108,8 +151,8 @@ class FirebaseMessagingService {
   Future<bool> sendTokenToBackend(String token, String url) async {
     try {
       final authToken = await _sharedPreferencesServices.getToken();
-      print("=== AUTH TOKEN: $authToken ===");
       print("=== TOKEN: $token ===");
+      print("=== AUTH TOKEN: $authToken ===");
       if (authToken == null || authToken.isEmpty) {
         print('Token d\'authentification manquant');
         return false;
@@ -124,7 +167,7 @@ class FirebaseMessagingService {
             },
             body: jsonEncode({'fcm_token': token}),
           )
-          .timeout(Duration(seconds: 10));
+          .timeout(const Duration(seconds: 10));
 
       if (response.statusCode == 200 || response.statusCode == 201) {
         print('Token envoyé avec succès vers: $url');
@@ -138,6 +181,22 @@ class FirebaseMessagingService {
       return false;
     }
   }
+
+  Future<void> initAndCleanStorage() async {
+  try {
+    // Nettoyer les notifications expirées au démarrage
+    await CourseNotificationStorage.cleanExpiredNotifications(
+      maxAge: const Duration(hours: 24), // ou la durée que tu veux
+    );
+    
+    final count = await CourseNotificationStorage.getValidNotificationCount();
+    print('📱 $count notifications valides en mémoire');
+  } catch (e) {
+    print('❌ Erreur nettoyage storage: $e');
+  }
+}
+
+
 
   /// Récupère le token FCM actuel (depuis le cache ou Firebase)
   static Future<String?> getCurrentToken() async {
@@ -252,38 +311,43 @@ Future<void> setupFlutterNotifications() async {
     initializationSettings,
     onDidReceiveNotificationResponse: (details) {
       // Gère la réponse à la notification si besoin
+      print("Notification reçue: ${details.data}");
     },
   );
 
-  FirebaseMessaging.onMessage.listen((RemoteMessage message) {
-    RemoteNotification? notification = message.notification;
-    AndroidNotification? android = message.notification?.android;
+ FirebaseMessaging.onMessage.listen((RemoteMessage message) {
+      RemoteNotification? notification = message.notification;
+      AndroidNotification? android = message.notification?.android;
 
-    if (notification != null) {
-      flutterLocalNotificationsPlugin.show(
-        notification.hashCode,
-        notification.title,
-        notification.body,
-        NotificationDetails(
-          android: android != null
-              ? AndroidNotificationDetails(
-                  'channel_id',
-                  'channel_name',
-                  importance: Importance.max,
-                  priority: Priority.high,
-                  icon: '@mipmap/ic_launcher',
-                )
-              : null,
-          iOS: const DarwinNotificationDetails(
-            presentAlert: true,
-            presentBadge: true,
-            presentSound: true,
+      // ✨ Traiter le message pour les courses
+      _handleIncomingMessage(message);
+
+      // Afficher la notification locale (votre code existant)
+      if (notification != null) {
+        flutterLocalNotificationsPlugin.show(
+          notification.hashCode,
+          notification.title,
+          notification.body,
+          NotificationDetails(
+            android: android != null
+                ? const AndroidNotificationDetails(
+                    'channel_id',
+                    'channel_name',
+                    importance: Importance.max,
+                    priority: Priority.high,
+                    icon: '@mipmap/ic_launcher',
+                  )
+                : null,
+            iOS: const DarwinNotificationDetails(
+              presentAlert: true,
+              presentBadge: true,
+              presentSound: true,
+            ),
           ),
-        ),
-      );
-    }
-  });
-}
+        );
+      }
+    });
+  }
 
 }
 
@@ -292,5 +356,25 @@ Future<void> setupFlutterNotifications() async {
 Future<void> firebaseMessagingBackgroundHandler(RemoteMessage message) async {
   await Firebase.initializeApp();
   print("Message en arrière-plan: ${message.messageId}");
+  
+  // ✨ Traiter aussi les messages en arrière-plan
+  try {
+    final data = message.data;
+    if (data.containsKey('course_id') && data.containsKey('client_nom')) {
+      print('📱 Course reçue en arrière-plan: $data');
+      
+      // ✨ Créer et sauvegarder la notification avec timestamp actuel
+      final courseData = CourseNotificationData.fromFirebaseData(
+        data,
+        receivedAt: DateTime.now(), // ✨ Timestamp de réception en background
+      );
+      
+      // ✨ Sauvegarder en mémoire même en arrière-plan
+      await CourseNotificationStorage.saveNotification(courseData);
+      
+      print('✅ Notification background sauvée: ${courseData.courseId}');
+    }
+  } catch (e) {
+    print('❌ Erreur traitement background: $e');
+  }
 }
-

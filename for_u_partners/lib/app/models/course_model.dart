@@ -38,6 +38,62 @@ class CoursePendingModel {
   }
 }
 
+class CourseData {
+  final int isNight;
+  final String clientPrenom;
+  final String clientNom;
+  final String adresseDepart;
+  final String adresseArrivee;
+  final double distance;
+  final String typeCourse;
+  final double duree;
+  final int prix;
+  final int courseId;
+
+  CourseData({
+    required this.isNight,
+    required this.clientPrenom,
+    required this.clientNom,
+    required this.adresseDepart,
+    required this.adresseArrivee,
+    required this.distance,
+    required this.typeCourse,
+    required this.duree,
+    required this.prix,
+    required this.courseId,
+  });
+
+  factory CourseData.fromMap(Map<String, dynamic> data) {
+    return CourseData(
+      isNight: int.parse(data['is_night'].toString()),
+      clientPrenom: data['client_prenom'] ?? '',
+      clientNom: data['client_nom'] ?? '',
+      adresseDepart: data['adresse_depart'] ?? '',
+      adresseArrivee: data['adresse_arrivee'] ?? '',
+      distance: double.parse(data['distance'].toString()),
+      typeCourse: data['type_course'] ?? '',
+      duree: double.parse(data['duree'].toString()),
+      prix: int.parse(data['prix'].toString()),
+      courseId: int.parse(data['course_id'].toString()),
+    );
+  }
+
+  Map<String, dynamic> toMap() {
+    return {
+      'is_night': isNight,
+      'client_prenom': clientPrenom,
+      'client_nom': clientNom,
+      'adresse_depart': adresseDepart,
+      'adresse_arrivee': adresseArrivee,
+      'distance': distance,
+      'type_course': typeCourse,
+      'duree': duree,
+      'prix': prix,
+      'course_id': courseId,
+    };
+  }
+}
+
 class FactureCourse {
   final int courseId;
   final String adresseDepart;

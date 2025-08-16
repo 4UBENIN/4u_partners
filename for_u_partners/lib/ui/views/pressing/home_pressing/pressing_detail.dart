@@ -34,7 +34,7 @@ class PressingDetailView extends StackedView<HomePressingViewModel> {
               viewModel.clearRamassageDetail();
               Navigator.pop(context);
             },
-            icon: Icon(Icons.arrow_back)),
+            icon: const Icon(Icons.arrow_back)),
         backgroundColor: kcWhiteColors,
         title: const TextComponent(
           "Détails de la demande",

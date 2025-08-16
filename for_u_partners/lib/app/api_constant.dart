@@ -3,17 +3,17 @@ String registerUrl = "$baseUrl/partenaire/register";
 String loginUrl = "$baseUrl/partenaire/login";
 String coursesPendingUrl = "$baseUrl/conducteur/courses";
 String acceptCourseUrl(int courseId) =>
-    "$baseUrl/api/conducteur/courses/$courseId/accept";
+    "$baseUrl/conducteur/courses/$courseId/accept";
 String rejectCourseUrl(int courseId) =>
-    "$baseUrl/api/conducteur/courses/$courseId/deny";
+    "$baseUrl/conducteur/courses/$courseId/deny";
 String startCourseUrl(int courseId) =>
-    "$baseUrl/api/conducteur/courses/$courseId/start";
+    "$baseUrl/conducteur/courses/$courseId/start";
 String completeCourseUrl(int courseId) =>
-    "$baseUrl/api/conducteur/courses/$courseId/finish";
+    "$baseUrl/conducteur/courses/$courseId/finish";
 String factureCourseUrl(int courseId) =>
-    "$baseUrl/api/conducteur/courses/$courseId/facture";
+    "$baseUrl/conducteur/courses/$courseId/facture";
 String coursesDetailsUrl(int courseId) =>
-    "$baseUrl/api/conducteur/courses/$courseId/details";
+    "$baseUrl/conducteur/courses/$courseId/details";
 String assignedCourseUrl = "$baseUrl/conducteur/courses_list";
 Map<String, String> headers = {
   'Content-Type': 'application/json',

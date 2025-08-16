@@ -9,15 +9,15 @@ class RamassageStatutModel {
     message = json['message'];
     statut = json['statut'];
     demande =
-        json['demande'] != null ? new Demande.fromJson(json['demande']) : null;
+        json['demande'] != null ? Demande.fromJson(json['demande']) : null;
   }
 
   Map<String, dynamic> toJson() {
-    final Map<String, dynamic> data = new Map<String, dynamic>();
-    data['message'] = this.message;
-    data['statut'] = this.statut;
-    if (this.demande != null) {
-      data['demande'] = this.demande!.toJson();
+    final Map<String, dynamic> data = <String, dynamic>{};
+    data['message'] = message;
+    data['statut'] = statut;
+    if (demande != null) {
+      data['demande'] = demande!.toJson();
     }
     return data;
   }
@@ -35,9 +35,9 @@ class Demande {
   }
 
   Map<String, dynamic> toJson() {
-    final Map<String, dynamic> data = new Map<String, dynamic>();
-    data['id'] = this.id;
-    data['statut'] = this.statut;
+    final Map<String, dynamic> data = <String, dynamic>{};
+    data['id'] = id;
+    data['statut'] = statut;
     return data;
   }
 }

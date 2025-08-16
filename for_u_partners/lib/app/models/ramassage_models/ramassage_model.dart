@@ -7,15 +7,15 @@ class RamassageDemandModel {
     if (json['ramassages'] != null) {
       ramassages = <Ramassage>[];
       json['ramassages'].forEach((v) {
-        ramassages!.add(new Ramassage.fromJson(v));
+        ramassages!.add(Ramassage.fromJson(v));
       });
     }
   }
 
   Map<String, dynamic> toJson() {
-    final Map<String, dynamic> data = new Map<String, dynamic>();
-    if (this.ramassages != null) {
-      data['ramassages'] = this.ramassages!.map((v) => v.toJson()).toList();
+    final Map<String, dynamic> data = <String, dynamic>{};
+    if (ramassages != null) {
+      data['ramassages'] = ramassages!.map((v) => v.toJson()).toList();
     }
     return data;
   }
@@ -35,20 +35,20 @@ class Ramassage {
     id = json['id'];
     numero = json['numero'];
     client =
-        json['client'] != null ? new Client.fromJson(json['client']) : null;
+        json['client'] != null ? Client.fromJson(json['client']) : null;
     dateRamassage = json['date_ramassage'];
     statut = json['statut'];
   }
 
   Map<String, dynamic> toJson() {
-    final Map<String, dynamic> data = new Map<String, dynamic>();
-    data['id'] = this.id;
-    data['numero'] = this.numero;
-    if (this.client != null) {
-      data['client'] = this.client!.toJson();
+    final Map<String, dynamic> data = <String, dynamic>{};
+    data['id'] = id;
+    data['numero'] = numero;
+    if (client != null) {
+      data['client'] = client!.toJson();
     }
-    data['date_ramassage'] = this.dateRamassage;
-    data['statut'] = this.statut;
+    data['date_ramassage'] = dateRamassage;
+    data['statut'] = statut;
     return data;
   }
 }
@@ -65,9 +65,9 @@ class Client {
   }
 
   Map<String, dynamic> toJson() {
-    final Map<String, dynamic> data = new Map<String, dynamic>();
-    data['nom'] = this.nom;
-    data['prenom'] = this.prenom;
+    final Map<String, dynamic> data = <String, dynamic>{};
+    data['nom'] = nom;
+    data['prenom'] = prenom;
     return data;
   }
 }

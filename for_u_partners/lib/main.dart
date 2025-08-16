@@ -22,7 +22,6 @@ Future<void> main() async {
   setupDialogUi();
   setupBottomSheetUi();
   await dotenv.load(fileName: ".env");
-  // Initialisation des données locales pour le français
   await initializeDateFormatting('fr_FR');
 
   runApp(const MainApp());

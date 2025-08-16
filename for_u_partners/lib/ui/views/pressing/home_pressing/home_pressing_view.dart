@@ -43,7 +43,7 @@ class HomePressingView extends StackedView<HomePressingViewModel> {
                       column: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          TextComponent(
+                          const TextComponent(
                             "Quel montant souhaitez-vous ajouter à votre portefeuille ?",
                             fontweight: FontWeight.bold,
                             fontsize: 18,
@@ -51,7 +51,7 @@ class HomePressingView extends StackedView<HomePressingViewModel> {
                           const SizedBox(
                             height: 20,
                           ),
-                          TextInputField(
+                          const TextInputField(
                             bigLabel: "Montant",
                             hintText: "1000 FCFA",
                           ),

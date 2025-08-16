@@ -20,7 +20,7 @@ class ActivityDetailView extends StatelessWidget {
     return Scaffold(
       backgroundColor: kcWhiteColors,
       appBar: AppBar(
-        title: Text("Détails de la demande"),
+        title: const Text("Détails de la demande"),
         backgroundColor: kcWhiteColors,
       ),
       body: FutureBuilder(
@@ -177,19 +177,19 @@ class ActivityDetailView extends StatelessWidget {
                     color: const Color(0xFFf8f9fa),
                     borderRadius: BorderRadius.circular(12),
                   ),
-                  child: Row(
+                  child: const Row(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
                       Text(
                         "1",
-                        style: const TextStyle(
+                        style: TextStyle(
                           fontSize: 24,
                           fontWeight: FontWeight.bold,
                           color: Color(0xFF1a1a1a),
                         ),
                       ),
-                      const SizedBox(width: 8),
-                      const Text(
+                      SizedBox(width: 8),
+                      Text(
                         'kg',
                         style: TextStyle(
                           fontSize: 16,

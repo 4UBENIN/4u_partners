@@ -140,7 +140,7 @@ class CoursesDeliveryView extends StackedView<CoursesDeliveryViewModel> {
                   nomClient: 'Teddy TOSSOU',
                   type: 'Ramassage',
                   initialeClient: 'T',
-                  vetements: ["Tshirt x5", "Jeans x2", "Short x2"],
+                  vetements: const ["Tshirt x5", "Jeans x2", "Short x2"],
                   onSoumettre: () {
                     final navigationService = locator<NavigationService>();
                     navigationService.navigateToDeliveryNavBarView();

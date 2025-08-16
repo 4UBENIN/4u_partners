@@ -72,7 +72,7 @@ class ComptePressingViewModel extends BaseViewModel {
               child: const Text('Non'),
             ),
             TextButton(
-              style: ButtonStyle(),
+              style: const ButtonStyle(),
               onPressed: () {
                 Navigator.of(context).pop();
                 _authService.logOut();

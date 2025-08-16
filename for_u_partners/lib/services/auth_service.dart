@@ -229,7 +229,7 @@ class AuthService {
 
   Future<void> register(RegistrationModel registrationModel) async {
     final dio = Dio();
-    final url = 'https://foryou.cilassocies.com/api/partenaire/register';
+    const url = 'https://foryou.cilassocies.com/api/partenaire/register';
 
     // Activer les logs de Dio pour voir les requêtes
     dio.interceptors.add(LogInterceptor(

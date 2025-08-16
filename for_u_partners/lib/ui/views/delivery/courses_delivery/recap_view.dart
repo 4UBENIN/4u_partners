@@ -314,10 +314,10 @@ class DeliveryRecapitulatifCoursePage extends StatelessWidget {
                     const SizedBox(height: 20),
 
                     // Poids
-                    Row(
+                    const Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
-                        const Text(
+                        Text(
                           'Poids',
                           style: TextStyle(
                             fontSize: 16,
@@ -327,7 +327,7 @@ class DeliveryRecapitulatifCoursePage extends StatelessWidget {
                         ),
                         Text(
                           '1kg',
-                          style: const TextStyle(
+                          style: TextStyle(
                             fontSize: 16,
                             fontWeight: FontWeight.w500,
                             color: Colors.black,
