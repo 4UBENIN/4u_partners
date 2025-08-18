@@ -5,7 +5,6 @@ import 'package:for_u_partners/app/app.router.dart';
 import 'package:for_u_partners/services/course_event_service.dart';
 import 'package:for_u_partners/services/course_notificationstorage_service.dart';
 import 'package:for_u_partners/services/sharedpreferences_service.dart';
-import 'package:for_u_partners/ui/common/api_constant.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
 import 'dart:io' show Platform;
@@ -99,7 +98,7 @@ class FirebaseMessagingService {
     final data = message.data;
     
     // Vérifier si c'est une notification de course
-    if (data.containsKey('course_id') && data.containsKey('client_nom')) {
+    if (data.containsKey('course_id') && data.containsKey('client_nom') && data.containsKey('eta_minutes'))  {
       print('📱 Course détectée dans la notification');
       
       // ✨ Créer l'objet CourseNotificationData avec timestamp actuel
@@ -128,7 +127,9 @@ class FirebaseMessagingService {
   Future<void> _setupMessageHandlers() async {
     // Messages en premier plan
     FirebaseMessaging.onMessage.listen((message) {
-      print('Message reçu: ${message.data}');
+      print('Message reçu data: ${message.data}');
+      print('Message reçu body: ${message.notification?.body}');
+      print('Message reçu title: ${message.notification?.title}');
       
       // ✨ Nouvelle logique : transmettre les données au service d'événements
       _handleIncomingMessage(message);
@@ -342,6 +343,7 @@ Future<void> setupFlutterNotifications() async {
               presentAlert: true,
               presentBadge: true,
               presentSound: true,
+              
             ),
           ),
         );

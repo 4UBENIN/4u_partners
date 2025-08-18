@@ -3,7 +3,6 @@ import 'package:http/http.dart' as http;
 import 'package:dio/dio.dart';
 import 'package:path/path.dart' as path;
 import 'package:http_parser/http_parser.dart';
-import 'dart:io';
 import 'package:for_u_partners/app/app.router.dart';
 import 'package:for_u_partners/app/app.locator.dart';
 import 'package:for_u_partners/app/api_constant.dart';
@@ -166,13 +165,13 @@ class AuthService {
 
       // Champs du véhicule avec syntaxe vehicule[champ]
       formData.fields.addAll([
-        MapEntry('vehicule[type]', v.type),
-        MapEntry('vehicule[marque]', v.marque),
-        MapEntry('vehicule[modele]', v.modele),
-        MapEntry('vehicule[immatriculation]', v.immatriculation),
+        MapEntry('vehicule[type]', v.type!),
+        MapEntry('vehicule[marque]', v.marque!),
+        MapEntry('vehicule[modele]', v.modele!),
+        MapEntry('vehicule[immatriculation]', v.immatriculation!),
         MapEntry('vehicule[nombre_places]', v.nombrePlaces.toString()),
-        MapEntry('vehicule[couleur]', v.couleur),
-        MapEntry('vehicule[categorie]', v.categorie),
+        MapEntry('vehicule[couleur]', v.couleur!),
+        MapEntry('vehicule[categorie]', v.categorie!),
         MapEntry('vehicule[annee]', v.annee.toString()),
       ]);
 

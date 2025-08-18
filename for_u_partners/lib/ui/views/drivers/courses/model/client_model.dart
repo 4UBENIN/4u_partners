@@ -12,6 +12,11 @@ class ClientData {
   final String? adresseDepart;
   final bool? isNight;
 
+  final int? etaMinutes;
+  final double? destLong;
+  final double? destLat;
+  final double? depLong;
+  final double? depLat;
   ClientData({
     required this.name,
     required this.timeInfo,
@@ -23,6 +28,11 @@ class ClientData {
     this.duree,
     this.adresseDepart,
     this.isNight,
+    this.etaMinutes,
+    this.destLong,
+    this.destLat,
+    this.depLong,
+    this.depLat,
   });
 
   // ✨ Méthodes utiles

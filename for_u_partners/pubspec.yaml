@@ -48,6 +48,8 @@ dev_dependencies:
   path:
   dio: 
   flutter_launcher_icons: ^0.13.1
+  logger: ^2.1.0
+  shimmer: ^2.0.0
 
 flutter_icons:
   android: true

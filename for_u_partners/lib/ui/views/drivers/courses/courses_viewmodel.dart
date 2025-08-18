@@ -1,5 +1,4 @@
 import 'dart:async';
-import 'package:flutter/scheduler.dart';
 import 'package:for_u_partners/app/app.locator.dart';
 import 'package:for_u_partners/services/course_event_service.dart';
 import 'package:for_u_partners/services/course_notificationstorage_service.dart';
@@ -13,6 +12,8 @@ import 'package:for_u_partners/ui/common/enum/bottom_enum.dart';
 import 'package:for_u_partners/ui/views/drivers/courses/model/client_model.dart';
 import 'package:stacked_services/stacked_services.dart';
 import 'dart:io' show Platform;
+import 'package:flutter_polyline_points/flutter_polyline_points.dart';
+import 'package:for_u_partners/services/local_notif_service.dart';
 
 class CoursesViewModel extends BaseViewModel {
   GoogleMapController? _mapController;
@@ -26,6 +27,21 @@ class CoursesViewModel extends BaseViewModel {
 
   final Set<Marker> _markers = <Marker>{};
   Set<Marker> get markers => _markers;
+
+  // Polylines pour les trajets
+  final Set<Polyline> _polylines = <Polyline>{};
+  Set<Polyline> get polylines => _polylines;
+
+  // Course actuellement sélectionnée
+  ClientData? _currentCourse;
+  ClientData? get currentCourse => _currentCourse;
+
+  // État du trajet
+  bool _isGoingToPickup = false;
+  bool get isGoingToPickup => _isGoingToPickup;
+
+  bool _isOnTrip = false;
+  bool get isOnTrip => _isOnTrip;
 
   final CourseEventService _courseEventService = CourseEventService();
   StreamSubscription<CourseNotificationData>? _newCourseSubscription;
@@ -53,6 +69,8 @@ class CoursesViewModel extends BaseViewModel {
 
   final driverservice = locator<DriverService>();
   final navigationService = locator<NavigationService>();
+
+  static const String _googleApiKey = 'AIzaSyAVtrvygnbsdnL6VMEJS_DB0JfEa0piHqM';
 
   CoursesViewModel() {
     _initializeViewModel();
@@ -258,6 +276,10 @@ class CoursesViewModel extends BaseViewModel {
     if (existingIndex == -1) {
       _availableCourses.insert(0, clientData);
       print('✅ Course ajoutée: ${clientData.name}');
+      print('📍 Coordonnées de la course:');
+      print('   - Départ: (${clientData.depLat}, ${clientData.depLong})');
+      print(
+          '   - Destination: (${clientData.destLat}, ${clientData.destLong})');
     } else {
       _availableCourses[existingIndex] = clientData;
       print('🔄 Course mise à jour: ${clientData.name}');
@@ -372,10 +394,29 @@ class CoursesViewModel extends BaseViewModel {
 
     if (courseIndex != -1) {
       final course = _availableCourses[courseIndex];
+      _currentCourse = course;
+      _isGoingToPickup = true;
+      _isOnTrip = false;
+
+      print("acceptCourse appelé: ${course.depLat}, ${course.depLong}");
       print('✅ Course acceptée: ${course.name} (ID: $courseId)');
 
-      // NE PAS supprimer la course immédiatement - la garder pour pickup
-      // _availableCourses.removeAt(courseIndex);
+      // Afficher la notification d'acceptation
+      await LocalNotificationService.showCourseAcceptedNotification(
+        courseId: courseId,
+      );
+
+      // Afficher la notification d'attente de confirmation
+      await LocalNotificationService.showWaitingForClientConfirmation(
+        courseId: courseId,
+      );
+
+      // Tracer la polyligne jusqu'au point de départ
+      if (_currentPosition != null &&
+          course.depLat != null &&
+          course.depLong != null) {
+        await _drawRouteToPickup();
+      }
 
       // Supprimer du storage car course acceptée
       await CourseNotificationStorage.removeNotification(courseId);
@@ -385,8 +426,46 @@ class CoursesViewModel extends BaseViewModel {
     }
   }
 
+  // ✨ Méthode appelée quand le client confirme la course
+  void onClientConfirmedCourse(String courseId) async {
+    if (_currentCourse?.courseId == courseId) {
+      // Mettre à jour l'état si nécessaire
+      _isGoingToPickup = true;
+
+      // Afficher la notification de confirmation
+      await LocalNotificationService.showClientConfirmedNotification(
+        courseId: courseId,
+      );
+
+      notifyListeners();
+    }
+  }
+
+  // ✨ Annuler une course
+  Future<void> cancelCourse(String courseId, {String? reason}) async {
+    if (_currentCourse?.courseId == courseId) {
+      // Afficher la notification d'annulation
+      await LocalNotificationService.showCourseCancelledNotification(
+        courseId: courseId,
+        reason: reason,
+      );
+
+      // Réinitialiser l'état
+      _currentCourse = null;
+      _isGoingToPickup = false;
+      _isOnTrip = false;
+      _polylines.clear();
+      _markers
+          .removeWhere((marker) => marker.markerId.value != 'current_location');
+
+      // TODO: Appeler l'API pour annuler la course
+
+      notifyListeners();
+    }
+  }
+
   // ✨ Refuser une course (et la supprimer du storage)
-  void rejectCourse(String courseId) async {
+  Future<void> rejectCourseById(String courseId) async {
     final courseIndex = _availableCourses.indexWhere(
       (course) => course.courseId == courseId,
     );
@@ -436,15 +515,500 @@ class CoursesViewModel extends BaseViewModel {
       print('❌ Erreur acceptation course: $e');
       canAccept = false;
       CustomToast.showError(context, message: e.toString());
+
+      // En cas d'erreur, réinitialiser l'état
+      _isGoingToPickup = false;
+      _currentCourse = null;
+      _polylines.clear();
+      _markers.clear();
+      _addUserLocationMarker();
     } finally {
       setBusy(false);
       print("🔄 setBusy(false) appelé");
 
-      //(canAccept) ?
-      setBottomSheetType(BottomSheetAppType.pickup);
-      //:
-      //hideBottomSheet();
+      if (canAccept) {
+        setBottomSheetType(BottomSheetAppType.pickup);
+
+        // Recentrer la carte sur le point de ramassage si possible
+        if (_currentCourse != null &&
+            _currentCourse!.depLat != null &&
+            _currentCourse!.depLong != null) {
+          final pickupLatLng =
+              LatLng(_currentCourse!.depLat!, _currentCourse!.depLong!);
+          _mapController?.animateCamera(
+            CameraUpdate.newLatLngZoom(pickupLatLng, 15.0),
+          );
+        }
+      } else {
+        hideBottomSheet();
+      }
     }
+  }
+
+  Future<void> rejectCourseService(int courseId, BuildContext context) async {
+    bool canReject = false;
+    try {
+      setBusy(true);
+      print("🔄 Début refus course...");
+      await driverservice.rejectCourse(courseId);
+      canReject = true;
+      print("✅ Course refusée avec succès");
+    } catch (e) {
+      print('❌ Erreur refus course: $e');
+      canReject = false;
+      CustomToast.showError(context, message: e.toString());
+
+      // En cas d'erreur, réinitialiser l'état
+      _isGoingToPickup = false;
+      _currentCourse = null;
+      _polylines.clear();
+      _markers.clear();
+      _addUserLocationMarker();
+    } finally {
+      setBusy(false);
+      print("🔄 setBusy(false) appelé");
+
+      if (canReject) {
+        hideBottomSheet();
+      }
+    }
+  }
+
+  Future<void> startCourseService(int courseId, BuildContext context) async {
+    bool canStart = false;
+    try {
+      setBusy(true);
+      print("🔄 Début démarrage course...");
+      await driverservice.startCourse(courseId);
+      canStart = true;
+      print("✅ Course démarrée avec succès");
+    } catch (e) {
+      print('❌ Erreur démarrage course: $e');
+      canStart = false;
+      CustomToast.showError(context, message: e.toString());
+
+      // En cas d'erreur, réinitialiser l'état
+      _isGoingToPickup = false;
+      _currentCourse = null;
+      _polylines.clear();
+      _markers.clear();
+      _addUserLocationMarker();
+    } finally {
+      setBusy(false);
+      print("🔄 setBusy(false) appelé");
+
+      if (canStart) {
+        setBottomSheetType(BottomSheetAppType.inprogress);
+      }
+    }
+  }
+
+  Future<void> completeCourseService(int courseId, BuildContext context) async {
+    bool canComplete = false;
+    try {
+      setBusy(true);
+      print("🔄 Début fin course...");
+      await driverservice.completeCourse(courseId);
+      canComplete = true;
+      print("✅ Course terminée avec succès");
+    } catch (e) {
+      print('❌ Erreur fin course: $e');
+      canComplete = false;
+      CustomToast.showError(context, message: e.toString());
+
+      // En cas d'erreur, réinitialiser l'état
+      _isGoingToPickup = false;
+      _currentCourse = null;
+      _polylines.clear();
+      _markers.clear();
+      _addUserLocationMarker();
+    } finally {
+      setBusy(false);
+      print("🔄 setBusy(false) appelé");
+
+      if (canComplete) {
+        setBottomSheetType(BottomSheetAppType.none);
+      }
+    }
+  }
+
+  // ✨ Méthode pour gérer la réception d'une notification push
+  void handlePushNotification(Map<String, dynamic> data) {
+    final type = data['type'];
+    final courseId = data['courseId'];
+
+    switch (type) {
+      case 'client_confirmed':
+        onClientConfirmedCourse(courseId);
+        break;
+      case 'client_cancelled':
+        cancelCourse(courseId, reason: 'Le client a annulé la course');
+        break;
+      // Ajouter d'autres cas selon les besoins
+    }
+  }
+
+  // Tracer la route jusqu'au point de ramassage
+  Future<void> _drawRouteToPickup() async {
+    print(
+        "drawRouteToPickup appelé 1: $_currentPosition, $_currentCourse, ${_currentCourse!.depLat}, ${_currentCourse!.depLong}");
+    if (_currentPosition == null ||
+        _currentCourse == null ||
+        _currentCourse!.depLat == null ||
+        _currentCourse!.depLong == null) {
+      return;
+    }
+
+    print('drawRouteToPickup appelé 2');
+    try {
+      _polylines.clear();
+      _markers.removeWhere((marker) =>
+          marker.markerId.value == 'pickup_point' ||
+          marker.markerId.value == 'destination_point');
+
+      final pickupLatLng =
+          LatLng(_currentCourse!.depLat!, _currentCourse!.depLong!);
+
+      // ✅ Utiliser l'API Google Directions
+      PolylinePoints polylinePoints = PolylinePoints(apiKey: _googleApiKey);
+
+      PolylineResult result = await polylinePoints.getRouteBetweenCoordinates(
+        request: PolylineRequest(
+          origin: PointLatLng(
+              _currentPosition!.latitude, _currentPosition!.longitude),
+          destination:
+              PointLatLng(_currentCourse!.depLat!, _currentCourse!.depLong!),
+          mode: TravelMode.driving,
+        ),
+      );
+
+      if (result.points.isNotEmpty) {
+        List<LatLng> routePoints = result.points
+            .map((point) => LatLng(point.latitude, point.longitude))
+            .toList();
+
+        _polylines.add(
+          Polyline(
+            polylineId: const PolylineId('route_to_pickup'),
+            color: Colors.blue,
+            width: 5,
+            points: routePoints, // ✅ Vrais points de route
+          ),
+        );
+
+        print('✅ Route vers pickup calculée: ${routePoints.length} points');
+      } else {
+        // Fallback vers ligne droite si l'API échoue
+        _polylines.add(
+          Polyline(
+            polylineId: const PolylineId('route_to_pickup'),
+            color: Colors.blue,
+            width: 5,
+            points: [
+              LatLng(_currentPosition!.latitude, _currentPosition!.longitude),
+              pickupLatLng,
+            ],
+          ),
+        );
+        print('⚠️ Fallback: ligne droite vers pickup');
+      }
+
+      // Ajouter marqueur pickup
+      _markers.add(
+        Marker(
+          markerId: const MarkerId('pickup_point'),
+          position: pickupLatLng,
+          icon: BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueBlue),
+          infoWindow: InfoWindow(
+            title: 'Point de ramassage',
+            snippet: _currentCourse!.name,
+          ),
+        ),
+      );
+
+      // Ajuster la caméra
+      if (_mapController != null) {
+        final bounds = _calculateBounds([
+          LatLng(_currentPosition!.latitude, _currentPosition!.longitude),
+          pickupLatLng,
+        ]);
+        _mapController!.animateCamera(
+          CameraUpdate.newLatLngBounds(bounds, 100),
+        );
+      }
+    } catch (e) {
+      print('❌ Erreur calcul route pickup: $e');
+      // Fallback vers ligne droite
+      _polylines.add(
+        Polyline(
+          polylineId: const PolylineId('route_to_pickup'),
+          color: Colors.blue,
+          width: 5,
+          points: [
+            LatLng(_currentPosition!.latitude, _currentPosition!.longitude),
+            LatLng(_currentCourse!.depLat!, _currentCourse!.depLong!),
+          ],
+        ),
+      );
+    }
+
+    notifyListeners();
+  }
+
+  // 4. Méthode corrigée pour tracer la route jusqu'à la destination
+  Future<void> _drawRouteToDestination() async {
+    if (_currentCourse == null ||
+        _currentCourse!.depLat == null ||
+        _currentCourse!.depLong == null ||
+        _currentCourse!.destLat == null ||
+        _currentCourse!.destLong == null) {
+      return;
+    }
+
+    try {
+      _polylines.clear();
+      _markers.removeWhere((marker) =>
+          marker.markerId.value == 'pickup_point' ||
+          marker.markerId.value == 'destination_point');
+
+      final pickupLatLng =
+          LatLng(_currentCourse!.depLat!, _currentCourse!.depLong!);
+      final destinationLatLng =
+          LatLng(_currentCourse!.destLat!, _currentCourse!.destLong!);
+
+      // ✅ Utiliser l'API Google Directions
+      PolylinePoints polylinePoints = PolylinePoints(apiKey: _googleApiKey);
+
+      PolylineResult result = await polylinePoints.getRouteBetweenCoordinates(
+        request: PolylineRequest(
+          origin:
+              PointLatLng(_currentCourse!.depLat!, _currentCourse!.depLong!),
+          destination:
+              PointLatLng(_currentCourse!.destLat!, _currentCourse!.destLong!),
+          mode: TravelMode.driving,
+        ),
+      );
+
+      if (result.points.isNotEmpty) {
+        List<LatLng> routePoints = result.points
+            .map((point) => LatLng(point.latitude, point.longitude))
+            .toList();
+
+        _polylines.add(
+          Polyline(
+            polylineId: const PolylineId('route_to_destination'),
+            color: Colors.green,
+            width: 5,
+            points: routePoints, // ✅ Vrais points de route
+          ),
+        );
+
+        print(
+            '✅ Route vers destination calculée: ${routePoints.length} points');
+      } else {
+        // Fallback vers ligne droite
+        _polylines.add(
+          Polyline(
+            polylineId: const PolylineId('route_to_destination'),
+            color: Colors.green,
+            width: 5,
+            points: [pickupLatLng, destinationLatLng],
+          ),
+        );
+        print('⚠️ Fallback: ligne droite vers destination');
+      }
+
+      // Ajouter les marqueurs
+      _markers.addAll([
+        Marker(
+          markerId: const MarkerId('pickup_point'),
+          position: pickupLatLng,
+          icon: BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueBlue),
+          infoWindow: const InfoWindow(title: 'Point de ramassage'),
+        ),
+        Marker(
+          markerId: const MarkerId('destination_point'),
+          position: destinationLatLng,
+          icon:
+              BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueGreen),
+          infoWindow: const InfoWindow(title: 'Destination'),
+        ),
+      ]);
+
+      // Ajuster la caméra
+      if (_mapController != null) {
+        final bounds = _calculateBounds([pickupLatLng, destinationLatLng]);
+        _mapController!.animateCamera(
+          CameraUpdate.newLatLngBounds(bounds, 100),
+        );
+      }
+    } catch (e) {
+      print('❌ Erreur calcul route destination: $e');
+      // Fallback vers ligne droite
+      final pickupLatLng =
+          LatLng(_currentCourse!.depLat!, _currentCourse!.depLong!);
+      final destinationLatLng =
+          LatLng(_currentCourse!.destLat!, _currentCourse!.destLong!);
+
+      _polylines.add(
+        Polyline(
+          polylineId: const PolylineId('route_to_destination'),
+          color: Colors.green,
+          width: 5,
+          points: [pickupLatLng, destinationLatLng],
+        ),
+      );
+    }
+
+    notifyListeners();
+  }
+
+  // Calculer les limites pour afficher plusieurs points sur la carte
+  LatLngBounds _calculateBounds(List<LatLng> points) {
+    double? minLat, maxLat, minLng, maxLng;
+
+    for (var point in points) {
+      minLat =
+          (minLat == null || point.latitude < minLat) ? point.latitude : minLat;
+      maxLat =
+          (maxLat == null || point.latitude > maxLat) ? point.latitude : maxLat;
+      minLng = (minLng == null || point.longitude < minLng)
+          ? point.longitude
+          : minLng;
+      maxLng = (maxLng == null || point.longitude > maxLng)
+          ? point.longitude
+          : maxLng;
+    }
+
+    // Ajouter une marge autour des points
+    const padding = 0.01;
+    return LatLngBounds(
+      northeast: LatLng((maxLat ?? 0) + padding, (maxLng ?? 0) + padding),
+      southwest: LatLng((minLat ?? 0) - padding, (minLng ?? 0) - padding),
+    );
+  }
+
+  // Méthode à appeler lorsque le chauffeur démarre la course
+  void startTrip() {
+    if (_currentCourse == null) return;
+
+    _isGoingToPickup = false;
+    _isOnTrip = true;
+
+    // Tracer la route jusqu'à la destination
+    _drawRouteToDestination();
+
+    notifyListeners();
+  }
+
+  // Méthode à appeler lorsque la course est terminée
+  void completeTrip() {
+    _isOnTrip = false;
+    _isGoingToPickup = false;
+    _currentCourse = null;
+    _polylines.clear();
+    _markers.clear();
+    _addUserLocationMarker();
+
+    notifyListeners();
+  }
+
+  // ✨ Démarrer une course
+  Future<void> startCourse() async {
+    if (_currentCourse != null) {
+      try {
+        setBusy(true);
+
+        // Mettre à jour l'état
+        _isGoingToPickup = false;
+        _isOnTrip = true;
+
+        // Appeler l'API pour démarrer la course
+        await driverservice.startCourse(int.parse(_currentCourse!.courseId!));
+
+        // Afficher la notification de démarrage
+        await LocalNotificationService.showCourseStartedNotification(
+          courseId: _currentCourse!.courseId!,
+        );
+
+        print('🚗 Course démarrée: ${_currentCourse!.courseId}');
+      } catch (e) {
+        print('❌ Erreur lors du démarrage de la course: $e');
+        // Revenir à l'état précédent en cas d'erreur
+        _isGoingToPickup = true;
+        _isOnTrip = false;
+        rethrow;
+      } finally {
+        setBusy(false);
+        notifyListeners();
+      }
+    }
+  }
+
+  // ✨ Terminer une course
+  Future<void> completeCourse() async {
+    if (_currentCourse != null) {
+      try {
+        setBusy(true);
+
+        // Appeler l'API pour terminer la course
+        final result = await driverservice
+            .completeCourse(int.parse(_currentCourse!.courseId!));
+
+        // Afficher la notification de fin de course
+        await LocalNotificationService.showCourseFinishedNotification(
+          courseId: _currentCourse!.courseId!,
+          amount: _currentCourse!.prix!,
+        );
+
+        // Réinitialiser l'état
+        _resetCourseState();
+      } catch (e) {
+        print('❌ Erreur lors de la fin de la course: $e');
+        rethrow;
+      } finally {
+        setBusy(false);
+        notifyListeners();
+      }
+    }
+  }
+
+  // ✨ Annuler une course
+  Future<void> rejectCourse({String? reason}) async {
+    if (_currentCourse != null) {
+      try {
+        setBusy(true);
+
+        // Appeler l'API pour annuler la course
+        await driverservice.rejectCourse(
+          int.parse(_currentCourse!.courseId!),
+        );
+
+        // Afficher la notification d'annulation
+        await LocalNotificationService.showCourseAbortedNotification(
+          courseId: _currentCourse!.courseId!,
+        );
+
+        // Réinitialiser l'état
+        _resetCourseState();
+      } catch (e) {
+        print('❌ Erreur lors de l\'annulation de la course: $e');
+        rethrow;
+      } finally {
+        setBusy(false);
+        notifyListeners();
+      }
+    }
+  }
+
+  // ✨ Réinitialiser l'état de la course
+  void _resetCourseState() {
+    _currentCourse = null;
+    _isGoingToPickup = false;
+    _isOnTrip = false;
+    _polylines.clear();
+    _markers
+        .removeWhere((marker) => marker.markerId.value != 'current_location');
   }
 
   @override

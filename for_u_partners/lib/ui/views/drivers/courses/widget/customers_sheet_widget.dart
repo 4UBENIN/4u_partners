@@ -218,7 +218,7 @@ class ClientCard extends StatelessWidget {
   }
 }
 
-class AcceptedClientBottomSheet extends StatelessWidget {
+class AcceptedClientBottomSheet extends StatefulWidget {
   final ClientData client;
   final Function() onCancelRide;
   final Function() onStartRide;
@@ -231,6 +231,14 @@ class AcceptedClientBottomSheet extends StatelessWidget {
     required this.onStartRide,
     required this.onCallClients,
   }) : super(key: key);
+
+  @override
+  State<AcceptedClientBottomSheet> createState() =>
+      _AcceptedClientBottomSheetState();
+}
+
+class _AcceptedClientBottomSheetState extends State<AcceptedClientBottomSheet> {
+  bool _clientPickedUp = false; // État du toggle switch
 
   @override
   Widget build(BuildContext context) {
@@ -277,7 +285,7 @@ class AcceptedClientBottomSheet extends StatelessWidget {
                   // Titre
                   const Center(
                     child: Text(
-                      'Clients disponibles',
+                      'Course acceptée',
                       style: TextStyle(
                         fontSize: 18,
                         fontWeight: FontWeight.bold,
@@ -308,7 +316,7 @@ class AcceptedClientBottomSheet extends StatelessWidget {
                           ),
                           child: Center(
                             child: Text(
-                              client.initials,
+                              widget.client.initials,
                               style: const TextStyle(
                                 color: Colors.white,
                                 fontSize: 24,
@@ -323,7 +331,7 @@ class AcceptedClientBottomSheet extends StatelessWidget {
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
                               Text(
-                                client.name,
+                                widget.client.name,
                                 style: const TextStyle(
                                   fontSize: 18,
                                   fontWeight: FontWeight.bold,
@@ -332,7 +340,7 @@ class AcceptedClientBottomSheet extends StatelessWidget {
                               ),
                               const SizedBox(height: 4),
                               Text(
-                                client.timeInfo,
+                                widget.client.timeInfo,
                                 style: TextStyle(
                                   fontSize: 14,
                                   color: Colors.grey[600],
@@ -350,7 +358,7 @@ class AcceptedClientBottomSheet extends StatelessWidget {
                             shape: BoxShape.circle,
                           ),
                           child: IconButton(
-                            onPressed: onCallClients,
+                            onPressed: widget.onCallClients,
                             icon: const Icon(
                               Icons.phone,
                               color: Colors.white,
@@ -386,7 +394,7 @@ class AcceptedClientBottomSheet extends StatelessWidget {
                         ),
                         const SizedBox(height: 8),
                         Text(
-                          client.destination,
+                          widget.client.destination,
                           style: const TextStyle(
                             fontSize: 16,
                             fontWeight: FontWeight.bold,
@@ -399,47 +407,90 @@ class AcceptedClientBottomSheet extends StatelessWidget {
 
                   const SizedBox(height: 30),
 
-                  // Question
-                  const Center(
-                    child: Text(
-                      'Vous avez déjà récupérer le client ?',
-                      style: TextStyle(
-                        fontSize: 16,
-                        color: Colors.black87,
-                        fontWeight: FontWeight.w500,
+                  // Question avec Toggle Switch
+                  Row(
+                    children: [
+                      const Expanded(
+                        child: Text(
+                          'Vous avez déjà récupéré le client ?',
+                          style: TextStyle(
+                            fontSize: 16,
+                            color: Colors.black87,
+                            fontWeight: FontWeight.w500,
+                          ),
+                        ),
                       ),
-                      textAlign: TextAlign.center,
-                    ),
+                      const SizedBox(width: 12),
+                      Transform.scale(
+                        scale: 0.9,
+                        child: Switch(
+                          value: _clientPickedUp,
+                          onChanged: (bool value) {
+                            setState(() {
+                              _clientPickedUp = value;
+                            });
+                          },
+                          activeColor: Colors.white,
+                          activeTrackColor: kcPrimaryColor,
+                          inactiveThumbColor: Colors.white,
+                          inactiveTrackColor: Colors.grey[300],
+                          materialTapTargetSize:
+                              MaterialTapTargetSize.shrinkWrap,
+                        ),
+                      ),
+                    ],
                   ),
 
                   const SizedBox(height: 20),
 
-                  // Boutons
+                  // Bouton Démarrer la course (conditionnel)
                   SizedBox(
                     width: double.infinity,
                     height: 50,
                     child: ElevatedButton(
-                      onPressed: onStartRide,
+                      onPressed: _clientPickedUp ? widget.onStartRide : null,
                       style: ElevatedButton.styleFrom(
-                        backgroundColor: kcPrimaryColor,
+                        backgroundColor:
+                            _clientPickedUp ? kcPrimaryColor : Colors.grey[400],
                         foregroundColor: Colors.white,
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(25),
                         ),
-                        elevation: 0,
+                        elevation: _clientPickedUp ? 2 : 0,
+                        disabledBackgroundColor: Colors.grey[400],
+                        disabledForegroundColor: Colors.grey[600],
                       ),
-                      child: const Text(
-                        'Démarrer la course',
-                        style: TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.w600,
-                        ),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          if (!_clientPickedUp) ...[
+                            Icon(
+                              Icons.lock_outline,
+                              size: 20,
+                              color: Colors.grey[600],
+                            ),
+                            const SizedBox(width: 8),
+                          ],
+                          Text(
+                            _clientPickedUp
+                                ? 'Démarrer la course'
+                                : 'Récupérez d\'abord le client',
+                            style: TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.w600,
+                              color: _clientPickedUp
+                                  ? Colors.white
+                                  : Colors.grey[600],
+                            ),
+                          ),
+                        ],
                       ),
                     ),
                   ),
 
                   const SizedBox(height: 15),
 
+                  // Bouton Annuler
                   SizedBox(
                     width: double.infinity,
                     height: 50,
@@ -476,14 +527,14 @@ class AcceptedClientBottomSheet extends StatelessWidget {
         return AlertDialog(
           title: const Text('Annuler la course'),
           content: Text(
-              'Êtes-vous sûr de vouloir annuler la course avec ${client.name} ?'),
+              'Êtes-vous sûr de vouloir annuler la course avec ${widget.client.name} ?'),
           actions: [
             TextButton(
               onPressed: () => Navigator.of(context).pop(),
               child: const Text('Non'),
             ),
             TextButton(
-              onPressed: onCancelRide,
+              onPressed: widget.onCancelRide,
               child: const Text(
                 'Oui, annuler',
                 style: TextStyle(color: Colors.red),
@@ -496,10 +547,10 @@ class AcceptedClientBottomSheet extends StatelessWidget {
   }
 }
 
-class InProgressRideBottomSheet extends StatelessWidget {
+class InProgressRideBottomSheet extends StatefulWidget {
   final ClientData client;
   final Function() onCancelRide;
-  final Function() onAddPenalily;
+  final Function() onAddPenalty;
   final Function() onCallClients;
   final double price;
 
@@ -507,10 +558,63 @@ class InProgressRideBottomSheet extends StatelessWidget {
     Key? key,
     required this.client,
     required this.onCancelRide,
-    required this.onAddPenalily,
+    required this.onAddPenalty,
     required this.onCallClients,
     required this.price,
   }) : super(key: key);
+
+  @override
+  State<InProgressRideBottomSheet> createState() => _InProgressRideBottomSheetState();
+}
+
+class _InProgressRideBottomSheetState extends State<InProgressRideBottomSheet>
+    with TickerProviderStateMixin {
+  late AnimationController _pulseController;
+  late AnimationController _progressController;
+  late Animation<double> _pulseAnimation;
+  late Animation<double> _progressAnimation;
+
+  @override
+  void initState() {
+    super.initState();
+    
+    // Animation pour le pouls du prix
+    _pulseController = AnimationController(
+      duration: const Duration(milliseconds: 1500),
+      vsync: this,
+    );
+    _pulseAnimation = Tween<double>(
+      begin: 1.0,
+      end: 1.05,
+    ).animate(CurvedAnimation(
+      parent: _pulseController,
+      curve: Curves.easeInOut,
+    ));
+    
+    // Animation pour la barre de progression
+    _progressController = AnimationController(
+      duration: const Duration(milliseconds: 2000),
+      vsync: this,
+    );
+    _progressAnimation = Tween<double>(
+      begin: 0.0,
+      end: 1.0,
+    ).animate(CurvedAnimation(
+      parent: _progressController,
+      curve: Curves.easeInOut,
+    ));
+
+    // Démarrer les animations en boucle
+    _pulseController.repeat(reverse: true);
+    _progressController.repeat();
+  }
+
+  @override
+  void dispose() {
+    _pulseController.dispose();
+    _progressController.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -554,15 +658,50 @@ class InProgressRideBottomSheet extends StatelessWidget {
                     ),
                   ),
 
-                  // Titre
-                  const Center(
-                    child: Text(
-                      'Clients disponibles',
-                      style: TextStyle(
-                        fontSize: 18,
-                        fontWeight: FontWeight.bold,
-                        color: Colors.black87,
-                      ),
+                  // Titre avec indicateur en cours
+                  Center(
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Container(
+                          width: 8,
+                          height: 8,
+                          margin: const EdgeInsets.only(right: 8),
+                          decoration: BoxDecoration(
+                            color: Colors.green,
+                            shape: BoxShape.circle,
+                            boxShadow: [
+                              BoxShadow(
+                                color: Colors.green.withOpacity(0.3),
+                                blurRadius: 4,
+                                spreadRadius: 2,
+                              ),
+                            ],
+                          ),
+                          child: AnimatedBuilder(
+                            animation: _pulseController,
+                            builder: (context, child) {
+                              return Transform.scale(
+                                scale: _pulseAnimation.value,
+                                child: Container(
+                                  decoration: const BoxDecoration(
+                                    color: Colors.green,
+                                    shape: BoxShape.circle,
+                                  ),
+                                ),
+                              );
+                            },
+                          ),
+                        ),
+                        const Text(
+                          'Course en cours',
+                          style: TextStyle(
+                            fontSize: 18,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.black87,
+                          ),
+                        ),
+                      ],
                     ),
                   ),
 
@@ -588,7 +727,7 @@ class InProgressRideBottomSheet extends StatelessWidget {
                           ),
                           child: Center(
                             child: Text(
-                              client.initials,
+                              widget.client.initials,
                               style: const TextStyle(
                                 color: Colors.white,
                                 fontSize: 24,
@@ -603,7 +742,7 @@ class InProgressRideBottomSheet extends StatelessWidget {
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
                               Text(
-                                client.name,
+                                widget.client.name,
                                 style: const TextStyle(
                                   fontSize: 18,
                                   fontWeight: FontWeight.bold,
@@ -612,7 +751,7 @@ class InProgressRideBottomSheet extends StatelessWidget {
                               ),
                               const SizedBox(height: 4),
                               Text(
-                                client.timeInfo,
+                                widget.client.timeInfo,
                                 style: TextStyle(
                                   fontSize: 14,
                                   color: Colors.grey[600],
@@ -630,7 +769,7 @@ class InProgressRideBottomSheet extends StatelessWidget {
                             shape: BoxShape.circle,
                           ),
                           child: IconButton(
-                            onPressed: onCallClients,
+                            onPressed: widget.onCallClients,
                             icon: const Icon(
                               Icons.phone,
                               color: Colors.white,
@@ -666,7 +805,7 @@ class InProgressRideBottomSheet extends StatelessWidget {
                         ),
                         const SizedBox(height: 8),
                         Text(
-                          client.destination,
+                          widget.client.destination,
                           style: const TextStyle(
                             fontSize: 16,
                             fontWeight: FontWeight.bold,
@@ -678,70 +817,162 @@ class InProgressRideBottomSheet extends StatelessWidget {
                   ),
 
                   const SizedBox(height: 20),
+
+                  // OPTION 1: Container avec bordure animée et prix qui pulse
+                  AnimatedBuilder(
+                    animation: _pulseAnimation,
+                    builder: (context, child) {
+                      return Container(
+                        height: 60,
+                        width: double.infinity,
+                        padding: const EdgeInsets.symmetric(horizontal: 16),
+                        decoration: BoxDecoration(
+                          color: Colors.green.withOpacity(0.1),
+                          borderRadius: BorderRadius.circular(12),
+                          border: Border.all(
+                            color: Colors.green.withOpacity(0.3),
+                            width: 2,
+                          ),
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.green.withOpacity(0.1),
+                              blurRadius: 8,
+                              spreadRadius: _pulseAnimation.value * 2,
+                            ),
+                          ],
+                        ),
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            const Row(
+                              children: [
+                                Icon(
+                                  Icons.timer,
+                                  color: Colors.green,
+                                  size: 20,
+                                ),
+                                SizedBox(width: 8),
+                                Text(
+                                  'Course en cours',
+                                  style: TextStyle(
+                                    fontSize: 16,
+                                    color: Colors.green,
+                                    fontWeight: FontWeight.w600,
+                                  ),
+                                ),
+                              ],
+                            ),
+                            Transform.scale(
+                              scale: _pulseAnimation.value,
+                              child: Container(
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 12,
+                                  vertical: 6,
+                                ),
+                                decoration: BoxDecoration(
+                                  color: Colors.green,
+                                  borderRadius: BorderRadius.circular(20),
+                                ),
+                                child: Text(
+                                  '${widget.price.toStringAsFixed(0)} FCFA',
+                                  style: const TextStyle(
+                                    fontSize: 16,
+                                    fontWeight: FontWeight.bold,
+                                    color: Colors.white,
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      );
+                    },
+                  ),
+
+                  const SizedBox(height: 12),
+
+                  // OPTION 2: Barre de progression animée
                   Container(
-                    height: 50,
+                    height: 6,
                     width: double.infinity,
                     decoration: BoxDecoration(
-                      color: const Color(0xFFD9D9D9),
-                      borderRadius: BorderRadius.circular(12),
+                      color: Colors.grey[200],
+                      borderRadius: BorderRadius.circular(3),
                     ),
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        const Text(
-                          'Course en cours:',
-                          style: TextStyle(
-                            fontSize: 14,
-                            color: Color(0xFF757575),
-                            fontWeight: FontWeight.w500,
+                    child: AnimatedBuilder(
+                      animation: _progressAnimation,
+                      builder: (context, child) {
+                        return FractionallySizedBox(
+                          alignment: Alignment.centerLeft,
+                          widthFactor: _progressAnimation.value,
+                          child: Container(
+                            decoration: BoxDecoration(
+                              gradient: const LinearGradient(
+                                colors: [
+                                  kcPrimaryColor,
+                                  Colors.green,
+                                ],
+                              ),
+                              borderRadius: BorderRadius.circular(3),
+                            ),
                           ),
-                        ),
-                        const SizedBox(width: 8),
-                        Text(
-                          '$price CFA',
-                          style: const TextStyle(
-                            fontSize: 16,
-                            fontWeight: FontWeight.bold,
-                            color: Color(0xFF757575),
-                          ),
-                        ),
-                      ],
+                        );
+                      },
                     ),
                   ),
 
                   const SizedBox(height: 20),
 
-                  // Boutons
+                  // Bouton Terminer avec effet de chargement
                   SizedBox(
                     width: double.infinity,
                     height: 50,
                     child: ElevatedButton(
-                      onPressed: onCancelRide,
+                      onPressed: widget.onCancelRide,
                       style: ElevatedButton.styleFrom(
                         backgroundColor: kcPrimaryColor,
                         foregroundColor: Colors.white,
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(25),
                         ),
-                        elevation: 0,
+                        elevation: 2,
                       ),
-                      child: const Text(
-                        'Terminer la course',
-                        style: TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.w600,
-                        ),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          AnimatedBuilder(
+                            animation: _progressController,
+                            builder: (context, child) {
+                              return Transform.rotate(
+                                angle: _progressController.value * 2 * 3.14159,
+                                child: const Icon(
+                                  Icons.check_circle_outline,
+                                  size: 20,
+                                ),
+                              );
+                            },
+                          ),
+                          const SizedBox(width: 8),
+                          const Text(
+                            'Terminer la course',
+                            style: TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                        ],
                       ),
                     ),
                   ),
 
                   const SizedBox(height: 15),
 
+                  // Bouton pénalité
                   SizedBox(
                     width: double.infinity,
                     height: 50,
                     child: TextButton(
-                      onPressed: onAddPenalily,
+                      onPressed: widget.onAddPenalty,
                       style: TextButton.styleFrom(
                         foregroundColor: Colors.red,
                         shape: RoundedRectangleBorder(
