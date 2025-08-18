@@ -1,5 +1,4 @@
 import 'dart:convert';
-import 'package:for_u_partners/ui/common/api_constant.dart';
 import 'package:http/http.dart' as http;
 import 'package:geolocator/geolocator.dart';
 import 'package:geocoding/geocoding.dart';

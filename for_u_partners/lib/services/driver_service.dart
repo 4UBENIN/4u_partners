@@ -1,7 +1,6 @@
 import 'dart:convert';
 import 'package:for_u_partners/app/app.locator.dart';
 import 'package:for_u_partners/services/sharedpreferences_service.dart';
-import 'package:for_u_partners/ui/common/toast.dart';
 import 'package:http/http.dart' as http;
 import 'package:for_u_partners/app/api_constant.dart';
 import 'package:for_u_partners/app/models/course_model.dart';
@@ -23,9 +22,7 @@ class DriverService {
 
     final responseJson = jsonDecode(response.body);
     if (response.statusCode == 200) {
-      
-    }
-    else {
+    } else {
       throw responseJson['error'];
     }
   }
@@ -34,6 +31,7 @@ class DriverService {
     final token = await sharedPreferencesService.getToken();
     final url = Uri.parse(rejectCourseUrl(courseId));
     final response = await http.patch(url, headers: {
+      'Accept': 'application/json',
       'Content-Type': 'application/json',
       'Authorization': 'Bearer $token',
     });
@@ -44,8 +42,13 @@ class DriverService {
   }
 
   Future<void> startCourse(int courseId) async {
+    final token = await sharedPreferencesService.getToken();
     final url = Uri.parse(startCourseUrl(courseId));
-    final response = await http.patch(url, headers: headers);
+    final response = await http.patch(url, headers: {
+      'Accept': 'application/json',
+      'Content-Type': 'application/json',
+      'Authorization': 'Bearer $token',
+    });
 
     if (response.statusCode == 200) {
       final responseJson = jsonDecode(response.body);
@@ -53,8 +56,13 @@ class DriverService {
   }
 
   Future<void> completeCourse(int courseId) async {
+    final token = await sharedPreferencesService.getToken();
     final url = Uri.parse(completeCourseUrl(courseId));
-    final response = await http.patch(url, headers: headers);
+    final response = await http.patch(url, headers: {
+      'Accept': 'application/json',
+      'Content-Type': 'application/json',
+      'Authorization': 'Bearer $token',
+    });
 
     if (response.statusCode == 200) {
       final responseJson = jsonDecode(response.body);
@@ -62,8 +70,17 @@ class DriverService {
   }
 
   Future<FactureCourse> fetchFactureCourse(int courseId) async {
+    final token = await sharedPreferencesService.getToken();
+    final headers = {
+      'Accept': 'application/json',
+      'Content-Type': 'application/json',
+      'Authorization': 'Bearer $token',
+    };
     final url = Uri.parse(factureCourseUrl(courseId));
+    print("url: $url");
     final response = await http.get(url, headers: headers);
+
+    print("facture-body: ${response.body}");
 
     if (response.statusCode == 200) {
       final data = jsonDecode(response.body);
@@ -74,6 +91,12 @@ class DriverService {
   }
 
   Future<List<CoursePendingModel>> fetchCoursesPending() async {
+    final token = await sharedPreferencesService.getToken();
+    final headers = {
+      'Accept': 'application/json',
+      'Content-Type': 'application/json',
+      'Authorization': 'Bearer $token',
+    };
     final url = Uri.parse(coursesPendingUrl);
     final response = await http.get(url, headers: headers);
 
@@ -99,6 +122,12 @@ class DriverService {
   }
 
   Future<CourseDetail> fetchCourseDetail(int courseId) async {
+    final token = await sharedPreferencesService.getToken();
+    final headers = {
+      'Accept': 'application/json',
+      'Content-Type': 'application/json',
+      'Authorization': 'Bearer $token',
+    };
     final url = Uri.parse(coursesDetailsUrl(courseId));
     final response = await http.get(url, headers: headers);
 

@@ -974,13 +974,13 @@ packages:
     source: hosted
     version: "6.0.1"
   logger:
-    dependency: transitive
+    dependency: "direct dev"
     description:
       name: logger
-      sha256: "7ad7215c15420a102ec687bb320a7312afd449bac63bfb1c60d9787c27b9767f"
+      sha256: "55d6c23a6c15db14920e037fe7e0dc32e7cdaf3b64b4b25df2d541b5b6b81c0c"
       url: "https://pub.dev"
     source: hosted
-    version: "1.4.0"
+    version: "2.6.1"
   logging:
     dependency: transitive
     description:
@@ -1289,10 +1289,10 @@ packages:
     dependency: "direct dev"
     description:
       name: rename
-      sha256: b0d9407186d834ad73aba9938da95a20208c4be99f151d9f376ac62a08d08bad
+      sha256: da5f4d67f8c68f066ad04edfd6585495dbe595f2baf3b1999eb6af1805d79539
       url: "https://pub.dev"
     source: hosted
-    version: "2.1.1"
+    version: "3.1.0"
   rxdart:
     dependency: transitive
     description:
@@ -1381,6 +1381,14 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "3.0.0"
+  shimmer:
+    dependency: "direct dev"
+    description:
+      name: shimmer
+      sha256: "1f1009b5845a1f88f1c5630212279540486f97409e9fc3f63883e71070d107bf"
+      url: "https://pub.dev"
+    source: hosted
+    version: "2.0.0"
   sky_engine:
     dependency: transitive
     description: flutter
@@ -1470,10 +1478,10 @@ packages:
     dependency: "direct dev"
     description:
       name: stacked_generator
-      sha256: eaa6447e3fd4d4010b746629b5518364d7fa7f6453ffb6416ad449fd352d1181
+      sha256: "0f2daf05a237111881566177952c897441dbd0124a6276d8cd012b253667e8aa"
       url: "https://pub.dev"
     source: hosted
-    version: "1.6.1"
+    version: "1.6.1-pre.1"
   stacked_services:
     dependency: "direct main"
     description:

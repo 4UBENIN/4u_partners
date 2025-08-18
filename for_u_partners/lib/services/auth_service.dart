@@ -3,7 +3,6 @@ import 'package:http/http.dart' as http;
 import 'package:dio/dio.dart';
 import 'package:path/path.dart' as path;
 import 'package:http_parser/http_parser.dart';
-import 'dart:io';
 import 'package:for_u_partners/app/app.router.dart';
 import 'package:for_u_partners/app/app.locator.dart';
 import 'package:for_u_partners/app/api_constant.dart';
@@ -29,8 +28,14 @@ class AuthService {
     if (response.statusCode == 200) {
       final responseJson = jsonDecode(response.body);
 
+      print("VALEURS");
+      print("role : ${responseJson['data']['role']}");
+      print("name : ${responseJson['data']['nom']}");
+      print("userId : ${responseJson['data']['id']}");
+      print("TOKEN : ${responseJson['token']}");
+
 // Récupération directe des valeurs
-      String role = responseJson['data']['role'];
+      String role = responseJson['type'];
       String name = responseJson['data']['nom'];
       String userId = responseJson['data']['id']
           .toString(); // Si tu veux le garder en String
@@ -52,6 +57,7 @@ class AuthService {
           _navigationService.replaceWithDeliveryNavBarView();
           break;
         case 'pressing':
+          print('role: JE ME SUIS CONNECTEE AU : Pressing');
           _navigationService.replaceWithNavBarPressingView();
           break;
         default:
@@ -166,13 +172,13 @@ class AuthService {
 
       // Champs du véhicule avec syntaxe vehicule[champ]
       formData.fields.addAll([
-        MapEntry('vehicule[type]', v.type),
-        MapEntry('vehicule[marque]', v.marque),
-        MapEntry('vehicule[modele]', v.modele),
-        MapEntry('vehicule[immatriculation]', v.immatriculation),
+        MapEntry('vehicule[type]', v.type!),
+        MapEntry('vehicule[marque]', v.marque!),
+        MapEntry('vehicule[modele]', v.modele!),
+        MapEntry('vehicule[immatriculation]', v.immatriculation!),
         MapEntry('vehicule[nombre_places]', v.nombrePlaces.toString()),
-        MapEntry('vehicule[couleur]', v.couleur),
-        MapEntry('vehicule[categorie]', v.categorie),
+        MapEntry('vehicule[couleur]', v.couleur!),
+        MapEntry('vehicule[categorie]', v.categorie!),
         MapEntry('vehicule[annee]', v.annee.toString()),
       ]);
 
@@ -325,27 +331,43 @@ class AuthService {
             _navigationService.replaceWithNavBarPressingView();
         }
       } else {
+        // LANCER UNE EXCEPTION AU LIEU DE JUSTE IMPRIMER
         print('=== ERREUR SERVEUR ===');
         print('Status Code: ${response.statusCode}');
         print('Response: ${response.data}');
 
-        // Afficher les erreurs de validation si disponibles
-        if (response.data is Map && response.data.containsKey('errors')) {
-          print('Erreurs de validation:');
-          final errors = response.data['errors'] as Map<String, dynamic>;
-          errors.forEach((key, value) {
-            print('  $key: $value');
-          });
+        String errorMessage = "Erreur lors de l'inscription";
+
+        // Extraire le message d'erreur du serveur
+        if (response.data is Map) {
+          if (response.data.containsKey('message')) {
+            errorMessage = response.data['message'];
+          } else if (response.data.containsKey('errors')) {
+            // Si c'est des erreurs de validation
+            final errors = response.data['errors'] as Map<String, dynamic>;
+            if (errors.isNotEmpty) {
+              final firstError = errors.values.first;
+              if (firstError is List && firstError.isNotEmpty) {
+                errorMessage = firstError.first.toString();
+              } else {
+                errorMessage = firstError.toString();
+              }
+            }
+          }
         }
 
-        if (response.data is Map && response.data.containsKey('message')) {
-          print('Message d\'erreur: ${response.data['message']}');
-        }
+        // Lancer l'exception avec le message d'erreur
+        throw DioException(
+          requestOptions: response.requestOptions,
+          response: response,
+          message: errorMessage,
+        );
       }
-    } catch (e, stack) {
+    } catch (e) {
       print('=== EXCEPTION ===');
       print('Erreur pendant l\'envoi de la requête : $e');
 
+      // Si c'est déjà une DioException, la relancer
       if (e is DioException) {
         print('DioException details:');
         print('  Type: ${e.type}');
@@ -353,19 +375,15 @@ class AuthService {
         print('  Response: ${e.response?.data}');
         print('  Status Code: ${e.response?.statusCode}');
 
-        if (e.response?.data is Map) {
-          final responseData = e.response!.data as Map<String, dynamic>;
-          if (responseData.containsKey('errors')) {
-            print('Erreurs de validation:');
-            final errors = responseData['errors'] as Map<String, dynamic>;
-            errors.forEach((key, value) {
-              print('    $key: $value');
-            });
-          }
-        }
+        rethrow; // Relancer l'exception pour qu'elle soit captée dans registerEnding
+      } else {
+        // Pour toute autre exception, la wrapper dans une DioException
+        print('Stack trace : ${StackTrace.current}');
+        throw DioException(
+          requestOptions: RequestOptions(path: url),
+          message: e.toString(),
+        );
       }
-
-      print('Stack trace : $stack');
     }
   }
 

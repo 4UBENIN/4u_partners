@@ -45,6 +45,7 @@ class CoursesView extends StackedView<CoursesViewModel> {
                     ),
                     onTap: viewModel.onMapTapped,
                     markers: viewModel.markers,
+                    polylines: viewModel.polylines,
                     myLocationEnabled: true,
                     myLocationButtonEnabled: false,
                   ),
@@ -176,6 +177,8 @@ class CoursesView extends StackedView<CoursesViewModel> {
                       ],
                     ),
                   ),
+
+                  // Bouton flottant pour démarrer la course (visible uniquement lors du ramassage)
                 ],
               ),
       ),
@@ -211,7 +214,7 @@ class CoursesView extends StackedView<CoursesViewModel> {
             if (viewModel.availableCourses.isNotEmpty) {
               final firstCourse = viewModel.availableCourses.first;
               if (firstCourse.hasValidCourseId) {
-                viewModel.rejectCourse(firstCourse.courseId!);
+                viewModel.rejectCourseById(firstCourse.courseId!);
               }
             }
             // Fermer seulement s'il n'y a plus de courses - PAS de WidgetsBinding ici
@@ -239,12 +242,16 @@ class CoursesView extends StackedView<CoursesViewModel> {
             // Annuler la course acceptée - PAS de WidgetsBinding ici
             if (pickupCourse.hasValidCourseId) {
               viewModel.removeCourse(pickupCourse.courseId!);
+              viewModel.rejectCourseService(
+                  int.tryParse(pickupCourse.courseId!)!, context);
             }
             viewModel.setBottomSheetType(BottomSheetAppType.none);
           },
           onStartRide: () {
             // PAS de WidgetsBinding ici
-            viewModel.setBottomSheetType(BottomSheetAppType.inprogress);
+            viewModel.startTrip();
+            viewModel.startCourseService(
+                int.tryParse(pickupCourse.courseId!)!, context);
           },
           onCallClients: () {
             // Logique d'appel du client
@@ -266,26 +273,14 @@ class CoursesView extends StackedView<CoursesViewModel> {
           key: const ValueKey('inprogress'),
           client: currentCourse,
           onCancelRide: () {
-            // Terminer la course - PAS de WidgetsBinding ici
             viewModel.setBottomSheetType(BottomSheetAppType.none);
-
-            // Naviguer vers le récapitulatif avec les vraies données
             Navigator.push(
               context,
               MaterialPageRoute(
                 builder: (context) => RecapitulatifCoursePage(
-                  pointDepart:
-                      currentCourse.adresseDepart ?? 'Position actuelle',
-                  destination: currentCourse.destination,
-                  nomClient: currentCourse.name,
-                  initialeClient: currentCourse.initials,
-                  distance: currentCourse.distance ?? 0.0,
-                  prix: (currentCourse.prix ?? 0.0).toInt(),
-                  moyenPaiement: 'Mobile Money',
-                  coutParMinute: currentCourse.duree ?? 0.0,
-                  coutDistance: currentCourse.distance ?? 0.0,
+                  viewModel: viewModel,
+                  courseId: int.tryParse(currentCourse.courseId ?? '') ?? 0,
                   onSoumettre: () {
-                    // Supprimer la course terminée
                     if (currentCourse.hasValidCourseId) {
                       viewModel.removeCourse(currentCourse.courseId!);
                     }
@@ -296,13 +291,24 @@ class CoursesView extends StackedView<CoursesViewModel> {
               ),
             );
           },
-          onAddPenalily: () {
+          onAddPenalty: () {
             // Logique pour ajouter une pénalité
+            print('Ajouter une pénalité');
           },
           onCallClients: () {
-            // Appeler le client pendant la course
+            // final phoneNumber = currentCourse.pho ;
+            // if (phoneNumber != null && phoneNumber.isNotEmpty) {
+            //   final url = 'tel:$phoneNumber';
+            //   // launchUrl(Uri.parse(url));
+            //   print('Appel du client: $phoneNumber');
+            // } else {
+            //   ScaffoldMessenger.of(context).showSnackBar(
+            //     const SnackBar(content: Text('Numéro de téléphone non disponible')),
+            //   );
+            // }
           },
-          price: (currentCourse.prix ?? 0.0),
+          price: currentCourse.prix ??
+              0.0, // Assurez-vous que le prix est correctement défini
         );
 
       case BottomSheetAppType.none:

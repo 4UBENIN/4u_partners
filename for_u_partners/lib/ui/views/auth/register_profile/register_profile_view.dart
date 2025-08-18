@@ -117,7 +117,7 @@ class RegisterProfileView extends StackedView<RegisterProfileViewModel>
                   child: SizedBox(
                     height: 70,
                     child: PrimaryButton(
-                        text: "Finaliser l'inscription",
+                        text: "Soumettre",
                         onPressed: () {
                           switch (selectedProfile) {
                             case 'pressing':
@@ -136,6 +136,7 @@ class RegisterProfileView extends StackedView<RegisterProfileViewModel>
                               break;
                             case 'conducteur':
                               if (viewModel.hasVehicle == true) {
+                                print("=== CONDUCTEUR AVEC VEHICULE ===");
                                 VehiculeModel vehiculemodel = VehiculeModel(
                                   type: viewModel.selectedVehicle,
                                   marque: driverCarBrandInputController.text,
@@ -143,12 +144,14 @@ class RegisterProfileView extends StackedView<RegisterProfileViewModel>
                                   immatriculation:
                                       driverImmatriculationCarInputController
                                           .text,
-                                  nombrePlaces: int.parse(
-                                      driverCarPlacesInputController.text),
+                                  nombrePlaces: int.tryParse(
+                                          driverCarPlacesInputController
+                                              .text), 
+                                    
                                   couleur: driverCarColorInputController.text,
                                   categorie: viewModel.selectedCategory,
-                                  annee: int.parse(
-                                      driverCarYearInputController.text),
+                                  annee: int.tryParse(
+                                          driverCarYearInputController.text),
                                   cartegrise: viewModel.driverCarCarteGrise !=
                                           null
                                       ? File(
@@ -167,14 +170,14 @@ class RegisterProfileView extends StackedView<RegisterProfileViewModel>
                                   type: selectedProfile,
                                   telephone: phoneNumber,
                                   email: mail,
-                                  code:"1234", 
+                                  code: "1234",
                                   genre: viewModel.selectedGender,
                                   motDePasse: password,
                                   motDePasseConfirmation: password,
                                   nom: driverNameInputController.text,
                                   prenom: driverSurnameInputController.text,
                                   adresse: driverAdresseInputController.text,
-                                  dateNaissance:"1990-01-15", 
+                                  dateNaissance: "1990-01-15",
                                   numeroPermis: "TEMP_PERMIS",
                                   dateExpirationPermis: "2030-12-31",
                                   documentIdentite:
@@ -198,7 +201,8 @@ class RegisterProfileView extends StackedView<RegisterProfileViewModel>
                                 print("Date naissance: ${model.dateNaissance}");
                                 print("Adresse: ${model.adresse}");
                                 print("Numero permis: ${model.numeroPermis}");
-                                print("Date expiration permis: ${model.dateExpirationPermis}");
+                                print(
+                                    "Date expiration permis: ${model.dateExpirationPermis}");
                                 print(
                                     "Possède véhicule: ${model.possedeVehicule}");
                                 print(
@@ -219,6 +223,7 @@ class RegisterProfileView extends StackedView<RegisterProfileViewModel>
 
                                 viewModel.registerEnding(model);
                               } else {
+                                print("=== CONDUCTEUR SANS VEHICULE ===");
                                 RegistrationModel model = RegistrationModel(
                                   type: selectedProfile,
                                   telephone: phoneNumber,
@@ -240,7 +245,36 @@ class RegisterProfileView extends StackedView<RegisterProfileViewModel>
                                   possedeVehicule: 0,
                                   typeConducteurId: 1, // Dans le curl c'est 2
                                 );
-
+                                print("=== MODEL AVANT ENVOI ===");
+                                print("Type: ${model.type}");
+                                print("Email: ${model.email}");
+                                print("Telephone: ${model.telephone}");
+                                print("Code: ${model.code}");
+                                print("Nom: ${model.nom}");
+                                print("Prenom: ${model.prenom}");
+                                print("Genre: ${model.genre}");
+                                print("Date naissance: ${model.dateNaissance}");
+                                print("Adresse: ${model.adresse}");
+                                print("Numero permis: ${model.numeroPermis}");
+                                print(
+                                    "Date expiration permis: ${model.dateExpirationPermis}");
+                                print(
+                                    "Possède véhicule: ${model.possedeVehicule}");
+                                print(
+                                    "Type conducteur ID: ${model.typeConducteurId}");
+                                print(
+                                    "Document identité: ${model.documentIdentite?.path}");
+                                if (model.vehicule != null) {
+                                  print(
+                                      "Véhicule type: ${model.vehicule!.type}");
+                                  print(
+                                      "Véhicule marque: ${model.vehicule!.marque}");
+                                  print(
+                                      "Véhicule modele: ${model.vehicule!.modele}");
+                                  print(
+                                      "Véhicule immatriculation: ${model.vehicule!.immatriculation}");
+                                }
+                                print("=== FIN MODEL DEBUG ===");
                                 viewModel.registerEnding(model);
                               }
                               break;

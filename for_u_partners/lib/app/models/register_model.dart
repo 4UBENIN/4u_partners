@@ -1,30 +1,30 @@
 import 'dart:io';
 
 class VehiculeModel {
-  final String type;
-  final String marque;
-  final String modele;
-  final String immatriculation;
-  final int nombrePlaces;
-  final String couleur;
-  final String categorie;
+  final String? type;
+  final String? marque;
+  final String? modele;
+  final String? immatriculation;
+  final int? nombrePlaces;
+  final String? couleur;
+  final String? categorie;
   final File? cartegrise;     // fichier image ou PDF
   final File? assurance;     // fichier image ou PDF
   final File? permis;        // fichier image ou PDF
-  final int annee;
+  final int? annee;
 
   VehiculeModel({
-    required this.type,
-    required this.marque,
-    required this.modele,
-    required this.immatriculation,
-    required this.nombrePlaces,
-    required this.couleur,
-    required this.categorie,
+    this.type,
+    this.marque,
+    this.modele,
+    this.immatriculation,
+    this.nombrePlaces,
+    this.couleur,
+    this.categorie,
     this.cartegrise,
     this.assurance,
     this.permis,
-    required this.annee,
+    this.annee,
   });
 
   // Ne pas utiliser toJson() pour envoyer les fichiers
