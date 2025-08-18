@@ -206,42 +206,6 @@ class _DepotDetailContent extends ViewModelWidget<HomePressingViewModel> {
           ),
           const SizedBox(height: 15),
 
-          // Services additionnels
-          _DetailSection(
-            label: "Services additionnels",
-            child: Container(
-              width: double.infinity,
-              padding: const EdgeInsets.all(16),
-              decoration: BoxDecoration(
-                color: const Color(0xFFf8f9fa),
-                borderRadius: BorderRadius.circular(12),
-              ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: currentDepot.servicesAdditionnel.isNotEmpty
-                    ? currentDepot.servicesAdditionnel
-                        .map((service) => Padding(
-                              padding: const EdgeInsets.only(bottom: 8.0),
-                              child: _ServiceItem(
-                                text: service.libelle,
-                                montant: service.montant,
-                                showPrice: isPlanned,
-                              ),
-                            ))
-                        .toList()
-                    : [
-                        const Text(
-                          "Aucun service additionnel",
-                          style: TextStyle(
-                            fontSize: 15,
-                            color: Color(0xFF6b7280),
-                          ),
-                        )
-                      ],
-              ),
-            ),
-          ),
-
           // Vêtements au kilo
           if (currentDepot.details.vetementAuKilo.isNotEmpty)
             _DetailSection(
@@ -307,7 +271,7 @@ class _DepotDetailContent extends ViewModelWidget<HomePressingViewModel> {
                               mainAxisAlignment: MainAxisAlignment.spaceBetween,
                               children: [
                                 Text(
-                                  "${vetement.libelle} x ${vetement.quantiteClient.toStringAsFixed(0)}",
+                                  "${vetement.libelle} x ${vetement.quantiteClient.toStringAsFixed(0)} => ${vetement.montant} FCFA",
                                   style: const TextStyle(
                                     fontSize: 15,
                                     color: Color(0xFF6b7280),
@@ -331,6 +295,42 @@ class _DepotDetailContent extends ViewModelWidget<HomePressingViewModel> {
                 ),
               ),
             ),
+
+          // Services additionnels
+          _DetailSection(
+            label: "Services additionnels",
+            child: Container(
+              width: double.infinity,
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                color: const Color(0xFFf8f9fa),
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: currentDepot.servicesAdditionnel.isNotEmpty
+                    ? currentDepot.servicesAdditionnel
+                        .map((service) => Padding(
+                              padding: const EdgeInsets.only(bottom: 8.0),
+                              child: _ServiceItem(
+                                text: service.libelle,
+                                montant: service.montant,
+                                showPrice: isPlanned,
+                              ),
+                            ))
+                        .toList()
+                    : [
+                        const Text(
+                          "Aucun service additionnel",
+                          style: TextStyle(
+                            fontSize: 15,
+                            color: Color(0xFF6b7280),
+                          ),
+                        )
+                      ],
+              ),
+            ),
+          ),
 
           // Montant total si planifié
           if (isPlanned) ...[
