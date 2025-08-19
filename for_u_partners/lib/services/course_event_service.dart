@@ -6,6 +6,7 @@ import 'package:for_u_partners/ui/views/drivers/courses/model/client_model.dart'
 class CourseNotificationData {
   final String courseId;
   final String clientNom;
+  final String clientId;
   final String clientPrenom;
   final String adresseDepart;
   final String adresseArrivee;
@@ -21,7 +22,7 @@ class CourseNotificationData {
   final double depLat;
   final DateTime timestamp;
 
-  CourseNotificationData({
+  CourseNotificationData(this.clientId, {
     required this.courseId,
     required this.clientNom,
     required this.clientPrenom,
@@ -46,6 +47,7 @@ class CourseNotificationData {
     DateTime? receivedAt, // ✨ Paramètre optionnel pour le timestamp
   }) {
     return CourseNotificationData(
+      data['client_id']?.toString() ?? '', // Adding required clientId parameter
       courseId: data['course_id']?.toString() ?? '',
       clientNom: data['client_nom']?.toString() ?? '',
       clientPrenom: data['client_prenom']?.toString() ?? '',
@@ -69,6 +71,7 @@ class CourseNotificationData {
 
   Map<String, dynamic> toJson() {
     return {
+      'clientId': clientId,
       'courseId': courseId,
       'clientNom': clientNom,
       'clientPrenom': clientPrenom,
@@ -91,6 +94,7 @@ class CourseNotificationData {
   // ✨ Créer depuis JSON
   factory CourseNotificationData.fromJson(Map<String, dynamic> json) {
     return CourseNotificationData(
+      json['clientId']?.toString() ?? '',
       courseId: json['courseId'] ?? '',
       clientNom: json['clientNom'] ?? '',
       clientPrenom: json['clientPrenom'] ?? '',
@@ -126,6 +130,7 @@ class CourseNotificationData {
 
     return ClientData(
       name: '$clientPrenom $clientNom',
+      clientId: clientId,
       timeInfo: timeInfo,
       destination: adresseArrivee,
       initials: initials.isNotEmpty ? initials : 'C',

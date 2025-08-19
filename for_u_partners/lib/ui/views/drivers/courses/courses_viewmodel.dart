@@ -280,6 +280,7 @@ class CoursesViewModel extends BaseViewModel {
       print('   - Départ: (${clientData.depLat}, ${clientData.depLong})');
       print(
           '   - Destination: (${clientData.destLat}, ${clientData.destLong})');
+      print("CLIENT ID : ${clientData.clientId}");
     } else {
       _availableCourses[existingIndex] = clientData;
       print('🔄 Course mise à jour: ${clientData.name}');

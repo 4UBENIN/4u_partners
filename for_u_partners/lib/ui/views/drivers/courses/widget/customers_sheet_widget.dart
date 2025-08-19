@@ -247,73 +247,6 @@ class AcceptedClientBottomSheet extends StatefulWidget {
 
 class _AcceptedClientBottomSheetState extends State<AcceptedClientBottomSheet> {
   bool _clientPickedUp = false; // État du toggle switch
-  final _chatService = locator<ChatService>();
-
-  // Méthode pour ouvrir le chat
-  Future<void> _openChat() async {
-    try {
-      // Vérifier que nous avons l'ID du conducteur
-      if (widget.clientId == null || widget.clientId!.isEmpty) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Impossible d\'ouvrir le chat pour le moment'),
-            backgroundColor: Colors.red,
-          ),
-        );
-        return;
-      }
-
-      // Récupérer les infos de l'utilisateur connecté
-      final currentUserInfo = await _chatService.getCurrentUserInfo();
-      if (currentUserInfo == null) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Erreur: Utilisateur non connecté'),
-            backgroundColor: Colors.red,
-          ),
-        );
-        return;
-      }
-
-      // Créer ou récupérer la conversation
-      final conversationId = await _chatService.createOrGetConversation(
-        currentUserId: currentUserInfo['id'],
-        clientId: widget.clientId!,
-        clientName: widget.client.name,
-        tripId: widget.client.courseId,
-      );
-
-      if (conversationId != null) {
-        // Naviguer vers la page de chat
-        Navigator.push(
-          context,
-          MaterialPageRoute(
-            builder: (context) => ChatPage(
-              receiverUserName: widget.client.name,
-              receiverUserId: widget.clientId!,
-              conversationId: conversationId,
-              currentUserId: currentUserInfo['id'],
-            ),
-          ),
-        );
-      } else {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Erreur lors de l\'ouverture du chat'),
-            backgroundColor: Colors.red,
-          ),
-        );
-      }
-    } catch (e) {
-      print('Erreur ouverture chat: $e');
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Une erreur est survenue'),
-          backgroundColor: Colors.red,
-        ),
-      );
-    }
-  }
 
   @override
   Widget build(BuildContext context) {
@@ -428,7 +361,7 @@ class _AcceptedClientBottomSheetState extends State<AcceptedClientBottomSheet> {
                         Row(
                           children: [
                             GestureDetector(
-                              onTap: _openChat,
+                              onTap: widget.onChatClients,
                               child: Container(
                                 width: 50,
                                 height: 50,

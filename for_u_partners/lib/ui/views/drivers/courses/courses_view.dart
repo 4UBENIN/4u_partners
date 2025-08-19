@@ -1,4 +1,6 @@
+import 'package:for_u_partners/services/chat_service.dart';
 import 'package:for_u_partners/ui/common/app_colors.dart';
+import 'package:for_u_partners/ui/views/drivers/courses/widget/chat_page.dart';
 
 import 'courses_viewmodel.dart';
 import 'package:stacked/stacked.dart';
@@ -234,10 +236,12 @@ class CoursesView extends StackedView<CoursesViewModel> {
         }
 
         final pickupCourse = viewModel.availableCourses.first;
+        final chatService = locator<ChatService>();
 
         return AcceptedClientBottomSheet(
           key: const ValueKey('pickup'),
           client: pickupCourse,
+          clientId: pickupCourse.clientId,
           onCancelRide: () {
             // Annuler la course acceptée - PAS de WidgetsBinding ici
             if (pickupCourse.hasValidCourseId) {
@@ -256,8 +260,72 @@ class CoursesView extends StackedView<CoursesViewModel> {
           onCallClients: () {
             // Logique d'appel du client
           },
-          onChatClients: () {
-            // Logique de chat avec le client
+          onChatClients: () async {
+            print("HEHEEHEHE");
+            try {
+              // Vérifier que nous avons l'ID du conducteur
+              if (pickupCourse.clientId == null ||
+                  pickupCourse.clientId!.isEmpty) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(
+                    content:
+                        Text('Impossible d\'ouvrir le chat pour le moment'),
+                    backgroundColor: Colors.red,
+                  ),
+                );
+                return;
+              }
+
+              // Récupérer les infos de l'utilisateur connecté
+              final currentUserInfo = await chatService.getCurrentUserInfo();
+              if (currentUserInfo == null) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(
+                    content: Text('Erreur: Utilisateur non connecté'),
+                    backgroundColor: Colors.red,
+                  ),
+                );
+                return;
+              }
+
+              // Créer ou récupérer la conversation
+              final conversationId = await chatService.createOrGetConversation(
+                currentUserId: currentUserInfo['id'],
+                clientId: pickupCourse.clientId!,
+                clientName: pickupCourse.name,
+                tripId: pickupCourse.courseId,
+              );
+
+              if (conversationId != null) {
+                // Naviguer vers la page de chat
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => ChatPage(
+                      receiverUserName: pickupCourse.name,
+                      receiverUserId: pickupCourse.clientId!,
+                      conversationId: conversationId,
+                      currentUserId: currentUserInfo['id'],
+                    ),
+                  ),
+                );
+              } else {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(
+                    content: Text('Erreur lors de l\'ouverture du chat'),
+                    backgroundColor: Colors.red,
+                  ),
+                );
+              }
+            } catch (e) {
+              print('Erreur ouverture chat: $e');
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(
+                  content: Text('Une erreur est survenue'),
+                  backgroundColor: Colors.red,
+                ),
+              );
+            }
           },
         );
 
