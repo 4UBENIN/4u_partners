@@ -1,3 +1,5 @@
+import 'package:for_u_partners/app/app.router.dart';
+
 import 'profil_viewmodel.dart';
 import 'package:stacked/stacked.dart';
 import 'package:flutter/material.dart';
@@ -32,9 +34,9 @@ class ProfilView extends StackedView<ProfilViewModel> {
                       colors: [Color(0xFF184E9C), Color(0xFF2A5BB8)],
                     ),
                   ),
-                  child: const Center(
+                  child: Center(
                     child: Text(
-                      'JD',
+                      viewModel.initials,
                       style: TextStyle(
                         fontSize: 48,
                         fontWeight: FontWeight.bold,
@@ -51,15 +53,22 @@ class ProfilView extends StackedView<ProfilViewModel> {
                 child: Row(
                   children: [
                     Expanded(
-                      child: _buildStatCard('127', 'Courses'),
+                      child: _buildStatCard(
+                          viewModel.globalStats?.totalActivities.toString() ??
+                              '0',
+                          'Courses'),
                     ),
                     const SizedBox(width: 15),
                     Expanded(
-                      child: _buildStatCard('4.8', 'Note'),
+                      child: _buildStatCard(
+                          viewModel.globalStats?.totalNotes.toString() ?? '0',
+                          'Note'),
                     ),
                     const SizedBox(width: 15),
                     Expanded(
-                      child: _buildStatCard('8.5k', 'Revenus'),
+                      child: _buildStatCard(
+                          "${viewModel.globalStats?.totalEarnings.toString() ?? '0'} F",
+                          'Revenus'),
                     ),
                   ],
                 ),
@@ -73,13 +82,11 @@ class ProfilView extends StackedView<ProfilViewModel> {
                     _buildMenuItem(
                       icon: _buildUserIcon(),
                       text: 'Mon compte',
-                      onTap: () {},
+                      onTap: () {
+                        viewModel.navigateToEditProfile(context);
+                      },
                     ),
-                    _buildMenuItem(
-                      icon: _buildStatsIcon(),
-                      text: 'Statistiques',
-                      onTap: () {},
-                    ),
+                  
                     _buildMenuItem(
                       icon: _buildWalletIcon(),
                       text: 'Portefeuille',
@@ -88,7 +95,9 @@ class ProfilView extends StackedView<ProfilViewModel> {
                     _buildMenuItem(
                       icon: _buildHistoryIcon(),
                       text: 'Historique',
-                      onTap: () {},
+                      onTap: () {
+                        viewModel.navigationService.navigateToActivityView();
+                      },
                     ),
                     _buildMenuItem(
                       icon: _buildLogoutIcon(),

@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:for_u_partners/ui/common/app_colors.dart';
 
 class WalletWidget extends StatelessWidget {
-  final String balance;
+  final double balance;
   final VoidCallback? onAdd;
   final VoidCallback? onTransfer;
 
@@ -43,7 +43,7 @@ class WalletWidget extends StatelessWidget {
                 ),
                 const SizedBox(height: 4),
                 Text(
-                  balance,
+                 "${balance.toString()} CFA",
                   style: const TextStyle(
                     fontSize: 20,
                     fontWeight: FontWeight.w600,
