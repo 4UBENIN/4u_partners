@@ -41,14 +41,14 @@ class AuthService {
       // Récupération directe des valeurs
       String role = responseJson['type'];
       String name = responseJson['data']['nom'];
-      String userId = responseJson['data']['id'].toString();
+      // String userId = responseJson['data']['id'].toString();
       String token = responseJson['token'];
 
       // Sauvegarde dans SharedPreferences
       await _sharedPreferencesServices.saveToken(token);
       await _sharedPreferencesServices.saveUserName(name);
       await _sharedPreferencesServices.saveUserType(role);
-      await _sharedPreferencesServices.saveUserId(userId);
+      // await _sharedPreferencesServices.saveUserId(userId);
 
       // Synchroniser avec Firestore après connexion réussie
       await _syncUserToFirestore(responseJson['data'], role);

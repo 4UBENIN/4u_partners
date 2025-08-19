@@ -18,10 +18,14 @@ class DriverService {
       'Authorization': 'Bearer $token',
     });
 
-    print("accept-body: ${response.body}");
+    print(
+        "ACEPT-BOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOODY: ${response.body}");
 
     final responseJson = jsonDecode(response.body);
     if (response.statusCode == 200) {
+      // Récupération du conducteur_id dans course
+      final int conducteurId = responseJson['course']['conducteur_id'];
+      await sharedPreferencesService.saveUserId(conducteurId);
     } else {
       throw responseJson['error'];
     }

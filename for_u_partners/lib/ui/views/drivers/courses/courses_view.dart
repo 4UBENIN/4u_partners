@@ -261,7 +261,6 @@ class CoursesView extends StackedView<CoursesViewModel> {
             // Logique d'appel du client
           },
           onChatClients: () async {
-            print("HEHEEHEHE");
             try {
               // Vérifier que nous avons l'ID du conducteur
               if (pickupCourse.clientId == null ||
@@ -295,6 +294,11 @@ class CoursesView extends StackedView<CoursesViewModel> {
                 clientName: pickupCourse.name,
                 tripId: pickupCourse.courseId,
               );
+
+              print(" BB RecEIVER NAME : ${pickupCourse.name} ");
+              print(" BB RecEIVER ID : ${pickupCourse.clientId}");
+              print(" BB CONVERSATION ID : $conversationId");
+              print(" BB CURRENT USER ID : ${currentUserInfo['id']}");
 
               if (conversationId != null) {
                 // Naviguer vers la page de chat

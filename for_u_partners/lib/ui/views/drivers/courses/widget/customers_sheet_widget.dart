@@ -360,29 +360,26 @@ class _AcceptedClientBottomSheetState extends State<AcceptedClientBottomSheet> {
                         // Bouton téléphone et Chat
                         Row(
                           children: [
-                            GestureDetector(
-                              onTap: widget.onChatClients,
-                              child: Container(
-                                width: 50,
-                                height: 50,
-                                decoration: const BoxDecoration(
-                                  color: kcPrimaryColor,
-                                  shape: BoxShape.circle,
-                                ),
-                                child: IconButton(
-                                  onPressed: widget.onCallClients,
-                                  icon: const Icon(
-                                    Icons.message_rounded,
-                                    color: Colors.white,
-                                    size: 24,
-                                  ),
+                            Container(
+                              width: 40,
+                              height: 40,
+                              decoration: const BoxDecoration(
+                                color: kcPrimaryColor,
+                                shape: BoxShape.circle,
+                              ),
+                              child: IconButton(
+                                onPressed: widget.onChatClients,
+                                icon: const Icon(
+                                  Icons.message_rounded,
+                                  color: Colors.white,
+                                  size: 24,
                                 ),
                               ),
                             ),
                             const SizedBox(width: 15),
                             Container(
-                              width: 50,
-                              height: 50,
+                              width: 40,
+                              height: 40,
                               decoration: const BoxDecoration(
                                 color: kcPrimaryColor,
                                 shape: BoxShape.circle,

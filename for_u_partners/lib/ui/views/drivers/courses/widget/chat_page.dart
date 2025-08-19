@@ -36,6 +36,10 @@ class _ChatPageState extends State<ChatPage> {
       conversationId: widget.conversationId,
       currentUserId: widget.currentUserId,
     );
+    print(" RecEIVER NAME : ${widget.receiverUserName}");
+    print(" RecEIVER ID : ${widget.receiverUserId}");
+    print(" CONVERSATION ID : ${widget.conversationId}");
+    print(" CURRENT USER ID : ${widget.currentUserId}");
   }
 
   @override
@@ -89,7 +93,7 @@ class _ChatPageState extends State<ChatPage> {
             CircleAvatar(
               backgroundColor: primaryColor,
               child: Text(
-                widget.receiverUserName.isNotEmpty 
+                widget.receiverUserName.isNotEmpty
                     ? widget.receiverUserName[0].toUpperCase()
                     : 'C',
                 style: const TextStyle(
@@ -109,7 +113,7 @@ class _ChatPageState extends State<ChatPage> {
                     fontweight: FontWeight.w600,
                   ),
                   const TextComponent(
-                    'Conducteur',
+                    'Client',
                     fontsize: 12,
                     textcolor: Colors.grey,
                   ),
@@ -165,8 +169,10 @@ class _ChatPageState extends State<ChatPage> {
                   padding: const EdgeInsets.all(16),
                   itemCount: messages.length,
                   itemBuilder: (context, index) {
-                    final messageData = messages[index].data() as Map<String, dynamic>;
-                    final isCurrentUser = messageData['senderId'] == widget.currentUserId;
+                    final messageData =
+                        messages[index].data() as Map<String, dynamic>;
+                    final isCurrentUser =
+                        messageData['senderId'] == widget.currentUserId;
                     final message = messageData['message'] ?? '';
                     final timestamp = messageData['timestamp'] as Timestamp?;
                     final isRead = messageData['isRead'] ?? false;
@@ -198,7 +204,7 @@ class _ChatPageState extends State<ChatPage> {
     return Padding(
       padding: const EdgeInsets.only(bottom: 12),
       child: Row(
-        mainAxisAlignment: 
+        mainAxisAlignment:
             isCurrentUser ? MainAxisAlignment.end : MainAxisAlignment.start,
         crossAxisAlignment: CrossAxisAlignment.end,
         children: [
@@ -207,7 +213,7 @@ class _ChatPageState extends State<ChatPage> {
               radius: 16,
               backgroundColor: primaryColor,
               child: Text(
-                widget.receiverUserName.isNotEmpty 
+                widget.receiverUserName.isNotEmpty
                     ? widget.receiverUserName[0].toUpperCase()
                     : 'C',
                 style: const TextStyle(
@@ -226,14 +232,12 @@ class _ChatPageState extends State<ChatPage> {
                 vertical: 10,
               ),
               decoration: BoxDecoration(
-                color: isCurrentUser 
-                    ? primaryColor 
-                    : Colors.grey[200],
+                color: isCurrentUser ? primaryColor : Colors.grey[200],
                 borderRadius: BorderRadius.circular(18).copyWith(
-                  bottomLeft: isCurrentUser 
+                  bottomLeft: isCurrentUser
                       ? const Radius.circular(18)
                       : const Radius.circular(4),
-                  bottomRight: isCurrentUser 
+                  bottomRight: isCurrentUser
                       ? const Radius.circular(4)
                       : const Radius.circular(18),
                 ),
@@ -254,9 +258,8 @@ class _ChatPageState extends State<ChatPage> {
                         TextComponent(
                           _formatTime(timestamp),
                           fontsize: 11,
-                          textcolor: isCurrentUser 
-                              ? Colors.white70 
-                              : Colors.grey[600],
+                          textcolor:
+                              isCurrentUser ? Colors.white70 : Colors.grey[600],
                         ),
                         if (isCurrentUser) ...[
                           const SizedBox(width: 4),
