@@ -4,7 +4,7 @@ class SharedpreferencesService {
   static const String _tokenKey = 'user_token';
   static const String _userType = 'user_type';
   static const String _userId = 'user_id';
-  static const String _userName= 'user_name';
+  static const String _userName = 'user_name';
 
   //* USER TOKEN
 

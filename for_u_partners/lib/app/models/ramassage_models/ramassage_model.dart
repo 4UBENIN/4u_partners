@@ -34,8 +34,7 @@ class Ramassage {
   Ramassage.fromJson(Map<String, dynamic> json) {
     id = json['id'];
     numero = json['numero'];
-    client =
-        json['client'] != null ? Client.fromJson(json['client']) : null;
+    client = json['client'] != null ? Client.fromJson(json['client']) : null;
     dateRamassage = json['date_ramassage'];
     statut = json['statut'];
   }

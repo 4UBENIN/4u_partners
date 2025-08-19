@@ -38,7 +38,7 @@ class _RecapitulatifCoursePageState extends State<RecapitulatifCoursePage> {
     try {
       // D'abord on complète le service de course
       await widget.viewModel.completeCourseService(widget.courseId, context);
-      
+
       // Ensuite on récupère la facture
       return await _driverService.fetchFactureCourse(widget.courseId);
     } catch (e) {

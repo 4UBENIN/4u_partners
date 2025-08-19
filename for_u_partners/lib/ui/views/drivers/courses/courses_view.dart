@@ -256,6 +256,9 @@ class CoursesView extends StackedView<CoursesViewModel> {
           onCallClients: () {
             // Logique d'appel du client
           },
+          onChatClients: () {
+            // Logique de chat avec le client
+          },
         );
 
       case BottomSheetAppType.inprogress:

@@ -24,8 +24,6 @@ class LoginModel {
   }
 }
 
-
-
 class LoginResponseModel {
   final UserModel user;
   final String token;

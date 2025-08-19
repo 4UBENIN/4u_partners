@@ -8,9 +8,9 @@ class VehiculeModel {
   final int? nombrePlaces;
   final String? couleur;
   final String? categorie;
-  final File? cartegrise;     // fichier image ou PDF
-  final File? assurance;     // fichier image ou PDF
-  final File? permis;        // fichier image ou PDF
+  final File? cartegrise; // fichier image ou PDF
+  final File? assurance; // fichier image ou PDF
+  final File? permis; // fichier image ou PDF
   final int? annee;
 
   VehiculeModel({

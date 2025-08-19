@@ -7,6 +7,7 @@ import 'package:for_u_partners/services/auth_service.dart';
 import 'package:for_u_partners/services/driver_service.dart';
 import 'package:for_u_partners/services/pressing_service.dart';
 import 'package:for_u_partners/services/wallet_service.dart';
+import 'package:for_u_partners/services/chat_service.dart';
 // @stacked-import
 
 import 'test_helpers.mocks.dart';
@@ -24,6 +25,7 @@ import 'test_helpers.mocks.dart';
     MockSpec<PressingService>(onMissingStub: OnMissingStub.returnDefault),
     MockSpec<RamassageService>(onMissingStub: OnMissingStub.returnDefault),
     MockSpec<WalletService>(onMissingStub: OnMissingStub.returnDefault),
+    MockSpec<ChatService>(onMissingStub: OnMissingStub.returnDefault),
 // @stacked-mock-spec
   ],
 )
@@ -37,6 +39,7 @@ void registerServices() {
   getAndRegisterPressingService();
   getAndRegisterRamassageService();
   getAndRegisterWalletService();
+  getAndRegisterChatService();
 // @stacked-mock-register
 }
 
@@ -126,6 +129,13 @@ MockWalletService getAndRegisterWalletService() {
   _removeRegistrationIfExists<WalletService>();
   final service = MockWalletService();
   locator.registerSingleton<WalletService>(service);
+  return service;
+}
+
+MockChatService getAndRegisterChatService() {
+  _removeRegistrationIfExists<ChatService>();
+  final service = MockChatService();
+  locator.registerSingleton<ChatService>(service);
   return service;
 }
 // @stacked-mock-create

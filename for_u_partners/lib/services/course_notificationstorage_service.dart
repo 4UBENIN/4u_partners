@@ -11,18 +11,18 @@ class CourseNotificationStorage {
   static Future<void> saveNotification(CourseNotificationData course) async {
     try {
       final prefs = await SharedPreferences.getInstance();
-      
+
       // Sauvegarder les données de la course
       final courseKey = '${_keyPrefix}_${course.courseId}';
       await prefs.setString(courseKey, jsonEncode(course.toJson()));
-      
+
       // Mettre à jour la liste des IDs
       final existingIds = prefs.getStringList(_listKey) ?? [];
       if (!existingIds.contains(course.courseId)) {
         existingIds.add(course.courseId);
         await prefs.setStringList(_listKey, existingIds);
       }
-      
+
       print('✅ Notification sauvegardée: ${course.courseId}');
     } catch (e) {
       print('❌ Erreur sauvegarde notification: $e');
@@ -41,13 +41,13 @@ class CourseNotificationStorage {
       for (final id in ids) {
         final courseKey = '${_keyPrefix}_$id';
         final jsonString = prefs.getString(courseKey);
-        
+
         if (jsonString != null) {
           try {
             final course = CourseNotificationData.fromJson(
               jsonDecode(jsonString),
             );
-            
+
             // Vérifier si elle est encore valide
             if (course.isStillValid(maxAge: maxAge)) {
               validNotifications.add(course);
@@ -64,7 +64,7 @@ class CourseNotificationStorage {
 
       // Trier par timestamp (plus récent en premier)
       validNotifications.sort((a, b) => b.timestamp.compareTo(a.timestamp));
-      
+
       print('📱 ${validNotifications.length} notifications valides récupérées');
       return validNotifications;
     } catch (e) {
@@ -74,15 +74,16 @@ class CourseNotificationStorage {
   }
 
   // ✨ Récupérer une notification spécifique
-  static Future<CourseNotificationData?> getNotification(String courseId) async {
+  static Future<CourseNotificationData?> getNotification(
+      String courseId) async {
     try {
       final prefs = await SharedPreferences.getInstance();
       final courseKey = '${_keyPrefix}_$courseId';
       final jsonString = prefs.getString(courseKey);
-      
+
       if (jsonString != null) {
         final course = CourseNotificationData.fromJson(jsonDecode(jsonString));
-        
+
         if (course.isStillValid()) {
           return course;
         } else {
@@ -105,16 +106,16 @@ class CourseNotificationStorage {
   static Future<void> _removeNotification(String courseId) async {
     try {
       final prefs = await SharedPreferences.getInstance();
-      
+
       // Supprimer les données
       final courseKey = '${_keyPrefix}_$courseId';
       await prefs.remove(courseKey);
-      
+
       // Mettre à jour la liste des IDs
       final existingIds = prefs.getStringList(_listKey) ?? [];
       existingIds.remove(courseId);
       await prefs.setStringList(_listKey, existingIds);
-      
+
       print('🗑️ Notification supprimée: $courseId');
     } catch (e) {
       print('❌ Erreur suppression notification: $e');
@@ -133,13 +134,13 @@ class CourseNotificationStorage {
       for (final id in ids) {
         final courseKey = '${_keyPrefix}_$id';
         final jsonString = prefs.getString(courseKey);
-        
+
         if (jsonString != null) {
           try {
             final course = CourseNotificationData.fromJson(
               jsonDecode(jsonString),
             );
-            
+
             if (!course.isStillValid(maxAge: maxAge)) {
               expiredIds.add(id);
             }
@@ -155,7 +156,7 @@ class CourseNotificationStorage {
       for (final id in expiredIds) {
         await _removeNotification(id);
       }
-      
+
       print('🧹 ${expiredIds.length} notifications expirées supprimées');
     } catch (e) {
       print('❌ Erreur nettoyage notifications: $e');
@@ -175,16 +176,16 @@ class CourseNotificationStorage {
     try {
       final prefs = await SharedPreferences.getInstance();
       final ids = prefs.getStringList(_listKey) ?? [];
-      
+
       // Supprimer toutes les données
       for (final id in ids) {
         final courseKey = '${_keyPrefix}_$id';
         await prefs.remove(courseKey);
       }
-      
+
       // Vider la liste des IDs
       await prefs.remove(_listKey);
-      
+
       print('🧹 Toutes les notifications supprimées');
     } catch (e) {
       print('❌ Erreur suppression toutes notifications: $e');

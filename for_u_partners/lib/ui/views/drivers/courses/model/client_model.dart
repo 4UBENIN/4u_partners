@@ -3,7 +3,7 @@ class ClientData {
   final String timeInfo;
   final String destination;
   final String initials;
-  
+
   // ✨ Nouvelles propriétés depuis Firebase
   final String? courseId;
   final double? prix;
@@ -36,11 +36,15 @@ class ClientData {
   });
 
   // ✨ Méthodes utiles
-  String get formattedPrice => prix != null ? '${prix!.toStringAsFixed(0)} FCFA' : 'Prix non défini';
-  
-  String get formattedDistance => distance != null ? '${distance!.toStringAsFixed(1)} km' : 'Distance inconnue';
-  
-  String get formattedDuration => duree != null ? '${duree!.toStringAsFixed(0)} min' : 'Durée inconnue';
+  String get formattedPrice =>
+      prix != null ? '${prix!.toStringAsFixed(0)} FCFA' : 'Prix non défini';
+
+  String get formattedDistance => distance != null
+      ? '${distance!.toStringAsFixed(1)} km'
+      : 'Distance inconnue';
+
+  String get formattedDuration =>
+      duree != null ? '${duree!.toStringAsFixed(0)} min' : 'Durée inconnue';
 
   bool get hasValidCourseId => courseId != null && courseId!.isNotEmpty;
 

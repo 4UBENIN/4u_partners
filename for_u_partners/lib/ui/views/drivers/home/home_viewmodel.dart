@@ -7,7 +7,7 @@ import 'package:for_u_partners/services/tracking_service.dart';
 
 class HomeViewModel extends BaseViewModel {
   final _sharedpreferencesService = locator<SharedpreferencesService>();
-  final trackingService = TrackingService(); 
+  final trackingService = TrackingService();
   String? name;
 
   HomeViewModel() {
@@ -33,17 +33,15 @@ class HomeViewModel extends BaseViewModel {
     setBusy(false);
   }
 
- Future<void> registerDriverToken() async {
- 
+  Future<void> registerDriverToken() async {
+    rebuildUi(); // ou notifyListeners()
 
-  rebuildUi(); // ou notifyListeners()
+    print("=== ENREGISTREMENT TOKEN CONDUCTEUR ===");
+    bool success = await FirebaseMessagingService()
+        .sendCurrentTokenToBackend(ApiConstant.saveFcmTokenDriver);
 
-  print("=== ENREGISTREMENT TOKEN CONDUCTEUR ===");
-  bool success = await FirebaseMessagingService()
-      .sendCurrentTokenToBackend(ApiConstant.saveFcmTokenDriver);
-
-  if (success) {
-    print('Token conducteur enregistré');
+    if (success) {
+      print('Token conducteur enregistré');
+    }
   }
 }
-} 

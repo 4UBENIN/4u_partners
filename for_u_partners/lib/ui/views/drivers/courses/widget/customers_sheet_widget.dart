@@ -1,7 +1,11 @@
 import 'package:flutter/material.dart';
+import 'package:for_u_partners/app/app.locator.dart';
+import 'package:for_u_partners/services/chat_service.dart';
 import 'package:for_u_partners/ui/common/app_colors.dart';
 import 'package:for_u_partners/ui/views/drivers/courses/model/client_model.dart';
+import 'package:for_u_partners/ui/views/drivers/courses/widget/chat_page.dart';
 import 'package:for_u_partners/ui/views/drivers/courses/widget/dialog_widget.dart';
+import 'package:stacked/stacked.dart';
 
 class ClientsBottomSheet extends StatelessWidget {
   final List<ClientData> getClientsList;
@@ -220,9 +224,11 @@ class ClientCard extends StatelessWidget {
 
 class AcceptedClientBottomSheet extends StatefulWidget {
   final ClientData client;
+  final String? clientId;
   final Function() onCancelRide;
   final Function() onStartRide;
   final Function() onCallClients;
+  final Function() onChatClients;
 
   const AcceptedClientBottomSheet({
     Key? key,
@@ -230,6 +236,8 @@ class AcceptedClientBottomSheet extends StatefulWidget {
     required this.onCancelRide,
     required this.onStartRide,
     required this.onCallClients,
+    required this.onChatClients,
+    this.clientId,
   }) : super(key: key);
 
   @override
@@ -239,6 +247,73 @@ class AcceptedClientBottomSheet extends StatefulWidget {
 
 class _AcceptedClientBottomSheetState extends State<AcceptedClientBottomSheet> {
   bool _clientPickedUp = false; // État du toggle switch
+  final _chatService = locator<ChatService>();
+
+  // Méthode pour ouvrir le chat
+  Future<void> _openChat() async {
+    try {
+      // Vérifier que nous avons l'ID du conducteur
+      if (widget.clientId == null || widget.clientId!.isEmpty) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Impossible d\'ouvrir le chat pour le moment'),
+            backgroundColor: Colors.red,
+          ),
+        );
+        return;
+      }
+
+      // Récupérer les infos de l'utilisateur connecté
+      final currentUserInfo = await _chatService.getCurrentUserInfo();
+      if (currentUserInfo == null) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Erreur: Utilisateur non connecté'),
+            backgroundColor: Colors.red,
+          ),
+        );
+        return;
+      }
+
+      // Créer ou récupérer la conversation
+      final conversationId = await _chatService.createOrGetConversation(
+        currentUserId: currentUserInfo['id'],
+        clientId: widget.clientId!,
+        clientName: widget.client.name,
+        tripId: widget.client.courseId,
+      );
+
+      if (conversationId != null) {
+        // Naviguer vers la page de chat
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (context) => ChatPage(
+              receiverUserName: widget.client.name,
+              receiverUserId: widget.clientId!,
+              conversationId: conversationId,
+              currentUserId: currentUserInfo['id'],
+            ),
+          ),
+        );
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Erreur lors de l\'ouverture du chat'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    } catch (e) {
+      print('Erreur ouverture chat: $e');
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Une erreur est survenue'),
+          backgroundColor: Colors.red,
+        ),
+      );
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -349,22 +424,46 @@ class _AcceptedClientBottomSheetState extends State<AcceptedClientBottomSheet> {
                             ],
                           ),
                         ),
-                        // Bouton téléphone
-                        Container(
-                          width: 50,
-                          height: 50,
-                          decoration: const BoxDecoration(
-                            color: kcPrimaryColor,
-                            shape: BoxShape.circle,
-                          ),
-                          child: IconButton(
-                            onPressed: widget.onCallClients,
-                            icon: const Icon(
-                              Icons.phone,
-                              color: Colors.white,
-                              size: 24,
+                        // Bouton téléphone et Chat
+                        Row(
+                          children: [
+                            GestureDetector(
+                              onTap: _openChat,
+                              child: Container(
+                                width: 50,
+                                height: 50,
+                                decoration: const BoxDecoration(
+                                  color: kcPrimaryColor,
+                                  shape: BoxShape.circle,
+                                ),
+                                child: IconButton(
+                                  onPressed: widget.onCallClients,
+                                  icon: const Icon(
+                                    Icons.message_rounded,
+                                    color: Colors.white,
+                                    size: 24,
+                                  ),
+                                ),
+                              ),
                             ),
-                          ),
+                            const SizedBox(width: 15),
+                            Container(
+                              width: 50,
+                              height: 50,
+                              decoration: const BoxDecoration(
+                                color: kcPrimaryColor,
+                                shape: BoxShape.circle,
+                              ),
+                              child: IconButton(
+                                onPressed: widget.onCallClients,
+                                icon: const Icon(
+                                  Icons.phone,
+                                  color: Colors.white,
+                                  size: 24,
+                                ),
+                              ),
+                            ),
+                          ],
                         ),
                       ],
                     ),
@@ -564,7 +663,8 @@ class InProgressRideBottomSheet extends StatefulWidget {
   }) : super(key: key);
 
   @override
-  State<InProgressRideBottomSheet> createState() => _InProgressRideBottomSheetState();
+  State<InProgressRideBottomSheet> createState() =>
+      _InProgressRideBottomSheetState();
 }
 
 class _InProgressRideBottomSheetState extends State<InProgressRideBottomSheet>
@@ -577,7 +677,7 @@ class _InProgressRideBottomSheetState extends State<InProgressRideBottomSheet>
   @override
   void initState() {
     super.initState();
-    
+
     // Animation pour le pouls du prix
     _pulseController = AnimationController(
       duration: const Duration(milliseconds: 1500),
@@ -590,7 +690,7 @@ class _InProgressRideBottomSheetState extends State<InProgressRideBottomSheet>
       parent: _pulseController,
       curve: Curves.easeInOut,
     ));
-    
+
     // Animation pour la barre de progression
     _progressController = AnimationController(
       duration: const Duration(milliseconds: 2000),

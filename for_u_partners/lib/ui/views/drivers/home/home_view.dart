@@ -100,12 +100,10 @@ class HomeView extends StackedView<HomeViewModel> {
                       ),
                     ),
                     const SizedBox(width: 12),
-                   model.isBusy
+                    model.isBusy
                         ? const DotsLoader()
                         : Text(
-                            model.name!.isNotEmpty == true
-                                ? model.name!
-                                : '?',
+                            model.name!.isNotEmpty == true ? model.name! : '?',
                             style: const TextStyle(
                               color: primaryColor,
                               fontWeight: FontWeight.bold,

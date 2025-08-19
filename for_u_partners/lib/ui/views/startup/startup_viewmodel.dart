@@ -12,7 +12,7 @@ class StartupViewModel extends BaseViewModel {
     await Future.delayed(const Duration(seconds: 3));
     final token = await _sharedpreferencesService.getToken();
     final userType = await _sharedpreferencesService.getUserType();
-    
+
     print("=== TOKEN: $token, USER TYPE: $userType ===");
     if (token != null && userType != null) {
       switch (userType) {

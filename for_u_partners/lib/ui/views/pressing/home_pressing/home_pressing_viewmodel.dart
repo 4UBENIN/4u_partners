@@ -248,7 +248,7 @@ class HomePressingViewModel extends FormViewModel {
   }
 
   //! DEPOT PART
-  
+
   //* GET DEPOT LIST
   Future<void> getDepotList() async {
     _isLoadingDepots = true;
@@ -315,19 +315,20 @@ class HomePressingViewModel extends FormViewModel {
     try {
       // Appeler le service pour planifier le dépôt
       plannedDepot = await _pressingService.planifierDepot(depotId);
-      
+
       // Trouver et supprimer le dépôt de la liste des demandes
       _depots.removeWhere((depot) => depot.id == depotId);
-      
+
       // Rafraîchir la liste des dépôts planifiés
       await getPlanifiedDepotList();
-      
+
       // Rafraîchir aussi la liste des demandes pour être sûr
       await getDepotList();
 
       return plannedDepot;
     } catch (e) {
-      _errorMessage = 'Erreur lors de la planification du dépôt: ${e.toString()}';
+      _errorMessage =
+          'Erreur lors de la planification du dépôt: ${e.toString()}';
       print("Erreur planification dépôt: $e");
       return null;
     } finally {
