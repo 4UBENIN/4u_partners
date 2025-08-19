@@ -145,13 +145,11 @@ class RegisterProfileView extends StackedView<RegisterProfileViewModel>
                                       driverImmatriculationCarInputController
                                           .text,
                                   nombrePlaces: int.tryParse(
-                                          driverCarPlacesInputController
-                                              .text), 
-                                    
+                                      driverCarPlacesInputController.text),
                                   couleur: driverCarColorInputController.text,
                                   categorie: viewModel.selectedCategory,
                                   annee: int.tryParse(
-                                          driverCarYearInputController.text),
+                                      driverCarYearInputController.text),
                                   cartegrise: viewModel.driverCarCarteGrise !=
                                           null
                                       ? File(
@@ -278,7 +276,147 @@ class RegisterProfileView extends StackedView<RegisterProfileViewModel>
                                 viewModel.registerEnding(model);
                               }
                               break;
-                            case 'Livreur/Coursier':
+                            //* LIVREUR
+                            case 'livreur':
+                              if (viewModel.hasVehicle == true) {
+                                print("=== LIVREUR AVEC VEHICULE ===");
+                                VehiculeModel vehiculemodel = VehiculeModel(
+                                  type: viewModel.selectedVehicle,
+                                  marque: driverCarBrandInputController.text,
+                                  modele: driverCarModelInputController.text,
+                                  immatriculation:
+                                      driverImmatriculationCarInputController
+                                          .text,
+                                  nombrePlaces: int.tryParse(
+                                      driverCarPlacesInputController.text),
+                                  couleur: driverCarColorInputController.text,
+                                  categorie: viewModel.selectedCategory,
+                                  annee: int.tryParse(
+                                      driverCarYearInputController.text),
+                                  cartegrise: viewModel.driverCarCarteGrise !=
+                                          null
+                                      ? File(
+                                          viewModel.driverCarCarteGrise!.path)
+                                      : null,
+                                  permis: viewModel.driverCarPermis != null
+                                      ? File(viewModel.driverCarPermis!.path)
+                                      : null,
+                                  assurance: viewModel.driverCarAssurance !=
+                                          null
+                                      ? File(viewModel.driverCarAssurance!.path)
+                                      : null,
+                                );
+
+                                RegistrationModel model = RegistrationModel(
+                                  type: selectedProfile,
+                                  telephone: phoneNumber,
+                                  email: mail,
+                                  code: "1234",
+                                  genre: viewModel.selectedGender,
+                                  motDePasse: password,
+                                  motDePasseConfirmation: password,
+                                  nom: driverNameInputController.text,
+                                  prenom: driverSurnameInputController.text,
+                                  adresse: driverAdresseInputController.text,
+                                  dateNaissance: "1990-01-15",
+                                  numeroPermis: "TEMP_PERMIS",
+                                  dateExpirationPermis: "2030-12-31",
+                                  documentIdentite:
+                                      viewModel.driverIdentity != null
+                                          ? File(viewModel.driverIdentity!.path)
+                                          : null,
+                                  possedeVehicule: 1,
+                                  typeConducteurId: 2,
+                                  vehicule: vehiculemodel,
+                                );
+
+                                print("=== MODEL AVANT ENVOI ===");
+                                print("Type: ${model.type}");
+                                print("Email: ${model.email}");
+                                print("Telephone: ${model.telephone}");
+                                print("Code: ${model.code}");
+                                print("Nom: ${model.nom}");
+                                print("Prenom: ${model.prenom}");
+                                print("Genre: ${model.genre}");
+                                print("Date naissance: ${model.dateNaissance}");
+                                print("Adresse: ${model.adresse}");
+                                print("Numero permis: ${model.numeroPermis}");
+                                print(
+                                    "Date expiration permis: ${model.dateExpirationPermis}");
+                                print(
+                                    "Possède véhicule: ${model.possedeVehicule}");
+                                print(
+                                    "Type conducteur ID: ${model.typeConducteurId}");
+                                print(
+                                    "Document identité: ${model.documentIdentite?.path}");
+                                if (model.vehicule != null) {
+                                  print(
+                                      "Véhicule type: ${model.vehicule!.type}");
+                                  print(
+                                      "Véhicule marque: ${model.vehicule!.marque}");
+                                  print(
+                                      "Véhicule modele: ${model.vehicule!.modele}");
+                                  print(
+                                      "Véhicule immatriculation: ${model.vehicule!.immatriculation}");
+                                }
+                                print("=== FIN MODEL DEBUG ===");
+
+                                viewModel.registerEnding(model);
+                              } else {
+                                print("=== LIVREUR SANS VEHICULE ===");
+                                RegistrationModel model = RegistrationModel(
+                                  type: selectedProfile,
+                                  telephone: phoneNumber,
+                                  email: mail,
+                                  code: "1234", // Même remarque pour le code
+                                  genre: viewModel.selectedGender,
+                                  motDePasse: password,
+                                  motDePasseConfirmation: password,
+                                  nom: driverNameInputController.text,
+                                  prenom: driverSurnameInputController.text,
+                                  adresse: driverAdresseInputController.text,
+                                  dateNaissance: "1990-01-15", // À adapter
+                                  numeroPermis: "TEMP_PERMIS",
+                                  dateExpirationPermis: "2030-12-31",
+                                  documentIdentite:
+                                      viewModel.driverIdentity != null
+                                          ? File(viewModel.driverIdentity!.path)
+                                          : null,
+                                  possedeVehicule: 0,
+                                  typeConducteurId: 2,
+                                );
+                                print("=== MODEL AVANT ENVOI ===");
+                                print("Type: ${model.type}");
+                                print("Email: ${model.email}");
+                                print("Telephone: ${model.telephone}");
+                                print("Code: ${model.code}");
+                                print("Nom: ${model.nom}");
+                                print("Prenom: ${model.prenom}");
+                                print("Genre: ${model.genre}");
+                                print("Date naissance: ${model.dateNaissance}");
+                                print("Adresse: ${model.adresse}");
+                                print("Numero permis: ${model.numeroPermis}");
+                                print(
+                                    "Date expiration permis: ${model.dateExpirationPermis}");
+                                print(
+                                    "Possède véhicule: ${model.possedeVehicule}");
+                                print(
+                                    "Type conducteur ID: ${model.typeConducteurId}");
+                                print(
+                                    "Document identité: ${model.documentIdentite?.path}");
+                                if (model.vehicule != null) {
+                                  print(
+                                      "Véhicule type: ${model.vehicule!.type}");
+                                  print(
+                                      "Véhicule marque: ${model.vehicule!.marque}");
+                                  print(
+                                      "Véhicule modele: ${model.vehicule!.modele}");
+                                  print(
+                                      "Véhicule immatriculation: ${model.vehicule!.immatriculation}");
+                                }
+                                print("=== FIN MODEL DEBUG ===");
+                                viewModel.registerEnding(model);
+                              }
                               break;
                             default:
                               break;
@@ -334,7 +472,7 @@ class RegisterProfileView extends StackedView<RegisterProfileViewModel>
         );
 
       //* Livreur/Coursier
-      case 'livreur/Coursier':
+      case 'livreur':
         return Column(
           children: [
             //* Nom du Livreur

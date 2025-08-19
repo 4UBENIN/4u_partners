@@ -43,6 +43,7 @@ class LoginViewModel extends FormViewModel {
 
     try {
       await _authService.login(model, _selectedProfile);
+      // _navigationService.replaceWithDeliveryNavBarView();
     } catch (e) {
       setBusy(false);
     }

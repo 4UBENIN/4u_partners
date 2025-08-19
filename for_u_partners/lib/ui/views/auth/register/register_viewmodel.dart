@@ -9,7 +9,7 @@ class RegisterViewModel extends FormViewModel {
 
   final profiles = [
     "pressing",
-    "livreur/Coursier",
+    "livreur",
     "conducteur",
     "agent d'entretien",
     "garagiste"
