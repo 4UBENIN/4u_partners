@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:for_u_partners/ui/common/app_textInput.dart';
 import 'pressing_depot_detail.form.dart';
 import 'package:for_u_partners/app/models/depot_models/depot_model.dart';
 import 'package:for_u_partners/ui/common/app_button_component.dart';
@@ -331,6 +332,13 @@ class _DepotDetailContent extends ViewModelWidget<HomePressingViewModel> {
               ),
             ),
           ),
+
+          // TextInputField(
+          //   bigLabel: "Poids",
+          //   hintText: "1kg",
+          //   keyboardType: TextInputType.number,
+          // ),
+          // const SizedBox(height: 20),
 
           // Montant total si planifié
           if (isPlanned) ...[

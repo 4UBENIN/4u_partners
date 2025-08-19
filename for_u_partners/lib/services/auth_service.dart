@@ -57,7 +57,6 @@ class AuthService {
           _navigationService.replaceWithDeliveryNavBarView();
           break;
         case 'pressing':
-          print('role: JE ME SUIS CONNECTEE AU : Pressing');
           _navigationService.replaceWithNavBarPressingView();
           break;
         default:

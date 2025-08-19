@@ -5,6 +5,7 @@ plugins {
     id("dev.flutter.flutter-gradle-plugin")
     // ✅ Plugin Google Services pour générer google_services.xml à partir de google-services.json
     id("com.google.gms.google-services")
+    id("com.google.firebase.crashlytics")
 }
 
 android {
