@@ -48,10 +48,16 @@ class SharedpreferencesService {
 
   //* USER ID
 
-  // Enregistre l'ID de l'utilisateur en la convertissant en JSON
+  // Enregistre l'ID de l'utilisateur (gère à la fois String et int)
   Future<void> saveUserId(dynamic id) async {
     final prefs = await SharedPreferences.getInstance();
-    await prefs.setString(_userId, id);
+    if (id is String) {
+      await prefs.setString(_userId, id);
+    } else if (id is int) {
+      await prefs.setString(_userId, id.toString());
+    } else {
+      throw ArgumentError('ID must be either String or int');
+    }
   }
 
   // Récupère l'ID de l'utilisateur (brut ou reconverti en Map, selon besoin)

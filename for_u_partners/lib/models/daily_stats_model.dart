@@ -16,10 +16,19 @@ class DailyStats {
   });
 
   factory DailyStats.fromJson(Map<String, dynamic> json) {
+    // Helper function to safely parse numeric values
+    num? parseNumber(dynamic value) {
+      if (value == null) return null;
+      if (value is num) return value;
+      if (value is String) return num.tryParse(value);
+      return null;
+    }
+
     return DailyStats(
-      porteFeuille: (json['porte_feuille'] as num?)?.toDouble() ?? 0.0,
-      totalActiviteToday: (json['total_activite_today'] as num?)?.toInt() ?? 0,
-      montantGainToday: (json['montant_gain_today'] as num?)?.toInt() ?? 0,
+      porteFeuille: parseNumber(json['porte_feuille'])?.toDouble() ?? 0.0,
+      totalActiviteToday:
+          parseNumber(json['total_activite_today'])?.toInt() ?? 0,
+      montantGainToday: parseNumber(json['montant_gain_today'])?.toInt() ?? 0,
       activiteEnCours: json['activite_en_cours'] != null
           ? ActiviteEnCours.fromJson(
               json['activite_en_cours'] as Map<String, dynamic>)
@@ -76,13 +85,21 @@ class ActiviteRecenteTerminee {
   });
 
   factory ActiviteRecenteTerminee.fromJson(Map<String, dynamic> json) {
+    // Helper function to safely parse numeric values
+    num? parseNumber(dynamic value) {
+      if (value == null) return null;
+      if (value is num) return value;
+      if (value is String) return num.tryParse(value);
+      return null;
+    }
+
     return ActiviteRecenteTerminee(
       adresseDepart: json['adresse_depart'] as String? ?? '',
       adresseArrivee: json['adresse_arrivee'] as String? ?? '',
       heureArrivee: json['heure_arrivee'] != null
           ? DateTime.tryParse(json['heure_arrivee'] as String)
           : null,
-      montant: (json['montant'] as num?)?.toInt() ?? 0,
+      montant: parseNumber(json['montant'])?.toInt() ?? 0,
     );
   }
 }
