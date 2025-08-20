@@ -106,13 +106,17 @@ class AuthService {
     final formData = FormData();
 
     print("=== CONSTRUCTION FORMDATA SELON API ===");
+    print("Type d'utilisateur: ${model.type}");
+    print("Téléphone: ${model.telephone}");
+    print("Email: ${model.email}");
+    print("Véhicule présent: ${model.vehicule != null}");
 
     // Champs obligatoires de base
     formData.fields.addAll([
       MapEntry('type', model.type),
       MapEntry('telephone', model.telephone),
       MapEntry('email', model.email),
-      MapEntry('code', model.code), // L'API l'attend (voir curl)
+      MapEntry('code', model.code),
       MapEntry('mot_de_passe', model.motDePasse),
       MapEntry('mot_de_passe_confirmation', model.motDePasseConfirmation),
       MapEntry('nom', model.nom),

@@ -24,6 +24,8 @@ import 'test_helpers.mocks.dart';
     MockSpec<PressingService>(onMissingStub: OnMissingStub.returnDefault),
     MockSpec<RamassageService>(onMissingStub: OnMissingStub.returnDefault),
     MockSpec<WalletService>(onMissingStub: OnMissingStub.returnDefault),
+    MockSpec<ActiveRideService>(onMissingStub: OnMissingStub.returnDefault),
+    MockSpec<ActiveRideService>(onMissingStub: OnMissingStub.returnDefault),
 // @stacked-mock-spec
   ],
 )
@@ -37,6 +39,8 @@ void registerServices() {
   getAndRegisterPressingService();
   getAndRegisterRamassageService();
   getAndRegisterWalletService();
+  getAndRegisterActiveRideService();
+  getAndRegisterActiveRideService();
 // @stacked-mock-register
 }
 
@@ -128,6 +132,8 @@ MockWalletService getAndRegisterWalletService() {
   locator.registerSingleton<WalletService>(service);
   return service;
 }
+
+
 // @stacked-mock-create
 
 void _removeRegistrationIfExists<T extends Object>() {

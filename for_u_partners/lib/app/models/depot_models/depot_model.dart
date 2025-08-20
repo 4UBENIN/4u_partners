@@ -35,8 +35,7 @@ class Depot {
     numero = json['numero'];
     dateRdv = json['date_rdv'];
     statut = json['statut'];
-    client =
-        json['client'] != null ? Client.fromJson(json['client']) : null;
+    client = json['client'] != null ? Client.fromJson(json['client']) : null;
   }
 
   Map<String, dynamic> toJson() {

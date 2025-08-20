@@ -564,7 +564,8 @@ class InProgressRideBottomSheet extends StatefulWidget {
   }) : super(key: key);
 
   @override
-  State<InProgressRideBottomSheet> createState() => _InProgressRideBottomSheetState();
+  State<InProgressRideBottomSheet> createState() =>
+      _InProgressRideBottomSheetState();
 }
 
 class _InProgressRideBottomSheetState extends State<InProgressRideBottomSheet>
@@ -577,7 +578,7 @@ class _InProgressRideBottomSheetState extends State<InProgressRideBottomSheet>
   @override
   void initState() {
     super.initState();
-    
+
     // Animation pour le pouls du prix
     _pulseController = AnimationController(
       duration: const Duration(milliseconds: 1500),
@@ -590,7 +591,7 @@ class _InProgressRideBottomSheetState extends State<InProgressRideBottomSheet>
       parent: _pulseController,
       curve: Curves.easeInOut,
     ));
-    
+
     // Animation pour la barre de progression
     _progressController = AnimationController(
       duration: const Duration(milliseconds: 2000),

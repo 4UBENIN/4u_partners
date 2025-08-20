@@ -115,13 +115,13 @@ class ProfilViewModel extends BaseViewModel {
     }
   }
 
-void navigateToEditProfile(BuildContext context) {
-  if (user != null) {
-    Navigator.of(context).push(
-      MaterialPageRoute(
-        builder: (context) => EditProfileView(user: user!, viewModel: this),
-      ),
-    );
+  void navigateToEditProfile(BuildContext context) {
+    if (user != null) {
+      Navigator.of(context).push(
+        MaterialPageRoute(
+          builder: (context) => EditProfileView(user: user!, viewModel: this),
+        ),
+      );
+    }
   }
-}
 }

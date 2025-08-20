@@ -7,10 +7,10 @@ import 'package:intl/intl.dart';
 class EditProfileView extends StatefulWidget {
   final UserModel user;
   final ProfilViewModel viewModel;
-  
+
   const EditProfileView({
-    Key? key, 
-    required this.user, 
+    Key? key,
+    required this.user,
     required this.viewModel,
   }) : super(key: key);
 
@@ -44,9 +44,10 @@ class _EditProfileViewState extends State<EditProfileView> {
     _telephoneController = TextEditingController(text: widget.user.telephone);
     _adresseController = TextEditingController(text: widget.user.adresse ?? '');
     _dateNaissanceController = TextEditingController(
-      text: widget.user.dateNaissance != null
-          ? DateFormat('yyyy-MM-dd').format(DateTime.parse(widget.user.dateNaissance!))
-          : '');
+        text: widget.user.dateNaissance != null
+            ? DateFormat('yyyy-MM-dd')
+                .format(DateTime.parse(widget.user.dateNaissance!))
+            : '');
     _selectedGenre = widget.user.genre;
   }
 
@@ -127,11 +128,8 @@ class _EditProfileViewState extends State<EditProfileView> {
                               color: kcPrimaryColor.withValues(alpha: 0.4),
                               shape: BoxShape.circle,
                             ),
-                            child: Icon(
-                              Icons.person,
-                              size: 40,
-                              color: kcPrimaryColor
-                            ),
+                            child: const Icon(Icons.person,
+                                size: 40, color: kcPrimaryColor),
                           ),
                           const SizedBox(height: 12),
                           Text(
@@ -153,94 +151,96 @@ class _EditProfileViewState extends State<EditProfileView> {
                         ],
                       ),
                     ),
-                    
+
                     const SizedBox(height: 24),
-                    
+
                     // Section Informations personnelles
                     _buildSectionTitle('Informations personnelles'),
                     const SizedBox(height: 16),
-                    
+
                     _buildTextField(
                       controller: _nomController,
                       label: 'Nom',
-  
                       validator: (value) =>
                           value?.isEmpty ?? true ? 'Le nom est requis' : null,
                     ),
                     const SizedBox(height: 16),
-                    
+
                     _buildTextField(
                       controller: _prenomController,
                       label: 'Prénom',
-
-                      validator: (value) =>
-                          value?.isEmpty ?? true ? 'Le prénom est requis' : null,
+                      validator: (value) => value?.isEmpty ?? true
+                          ? 'Le prénom est requis'
+                          : null,
                     ),
                     const SizedBox(height: 16),
-                    
+
                     _buildTextField(
                       controller: _emailController,
                       label: 'Email',
-
                       keyboardType: TextInputType.emailAddress,
                       validator: (value) {
-                        if (value?.isEmpty ?? true) return 'L\'email est requis';
-                        if (!RegExp(r'^[^@]+@[^\s]+\.[^\s]+$').hasMatch(value!)) {
+                        if (value?.isEmpty ?? true)
+                          return 'L\'email est requis';
+                        if (!RegExp(r'^[^@]+@[^\s]+\.[^\s]+$')
+                            .hasMatch(value!)) {
                           return 'Veuillez entrer un email valide';
                         }
                         return null;
                       },
                     ),
                     const SizedBox(height: 16),
-                    
+
                     _buildTextField(
                       controller: _telephoneController,
                       label: 'Téléphone',
                       keyboardType: TextInputType.phone,
-                      validator: (value) =>
-                          value?.isEmpty ?? true ? 'Le téléphone est requis' : null,
+                      validator: (value) => value?.isEmpty ?? true
+                          ? 'Le téléphone est requis'
+                          : null,
                     ),
                     const SizedBox(height: 24),
-                    
+
                     // Section Informations supplémentaires
                     _buildSectionTitle('Informations supplémentaires'),
                     const SizedBox(height: 16),
-                    
+
                     _buildTextField(
                       controller: _adresseController,
                       label: 'Adresse',
-
                     ),
                     const SizedBox(height: 16),
-                    
+
                     _buildDateField(
                       context: context,
                       controller: _dateNaissanceController,
                       label: 'Date de naissance',
                     ),
                     const SizedBox(height: 16),
-                    
+
                     _buildDropdownField(
                       value: _selectedGenre,
                       items: const [
-                        DropdownMenuItem(value: 'masculin', child: Text('Masculin')),
-                        DropdownMenuItem(value: 'feminin', child: Text('Féminin')),
+                        DropdownMenuItem(
+                            value: 'masculin', child: Text('Masculin')),
+                        DropdownMenuItem(
+                            value: 'feminin', child: Text('Féminin')),
                       ],
                       onChanged: (value) {
                         setState(() {
-                          _selectedGenre = value as String?;
+                          _selectedGenre = value;
                         });
                       },
                       label: 'Genre',
                     ),
-                    
+
                     const SizedBox(height: 32),
                   ],
                 ),
               ),
             ),
           ),
-          
+
           // Bouton de validation fixe en bas
           Container(
             padding: const EdgeInsets.all(20),
@@ -275,7 +275,8 @@ class _EditProfileViewState extends State<EditProfileView> {
                           height: 20,
                           child: CircularProgressIndicator(
                             strokeWidth: 2,
-                            valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                            valueColor:
+                                AlwaysStoppedAnimation<Color>(Colors.white),
                           ),
                         )
                       : const Text(
@@ -343,7 +344,6 @@ class _EditProfileViewState extends State<EditProfileView> {
   Widget _buildTextField({
     required TextEditingController controller,
     required String label,
-
     String? Function(String?)? validator,
     TextInputType? keyboardType,
   }) {
@@ -363,7 +363,6 @@ class _EditProfileViewState extends State<EditProfileView> {
         controller: controller,
         decoration: InputDecoration(
           labelText: label,
-         
           border: OutlineInputBorder(
             borderRadius: BorderRadius.circular(12),
             borderSide: BorderSide.none,
@@ -386,7 +385,8 @@ class _EditProfileViewState extends State<EditProfileView> {
           ),
           filled: true,
           fillColor: Colors.white,
-          contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+          contentPadding:
+              const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
         ),
         keyboardType: keyboardType,
         validator: validator,
@@ -430,7 +430,8 @@ class _EditProfileViewState extends State<EditProfileView> {
           ),
           filled: true,
           fillColor: Colors.white,
-          contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+          contentPadding:
+              const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
         ),
         readOnly: true,
         onTap: () async {
@@ -472,7 +473,6 @@ class _EditProfileViewState extends State<EditProfileView> {
       child: InputDecorator(
         decoration: InputDecoration(
           labelText: label,
-
           border: OutlineInputBorder(
             borderRadius: BorderRadius.circular(12),
             borderSide: BorderSide.none,
@@ -487,7 +487,8 @@ class _EditProfileViewState extends State<EditProfileView> {
           ),
           filled: true,
           fillColor: Colors.white,
-          contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+          contentPadding:
+              const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
         ),
         child: DropdownButtonHideUnderline(
           child: DropdownButton<String>(

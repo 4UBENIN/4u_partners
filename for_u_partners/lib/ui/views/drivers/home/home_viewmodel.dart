@@ -14,7 +14,7 @@ class HomeViewModel extends BaseViewModel {
 
   // Données utilisateur
   String? name;
-  int solde = 0;
+  double solde = 0;
 
   // Statistiques quotidiennes
   DailyStats? dailyStats;
@@ -47,12 +47,7 @@ class HomeViewModel extends BaseViewModel {
   Future<void> getDailyStats() async {
     try {
       final stats = await driverService.fetchDailyStats();
-      if (stats != null) {
-        dailyStats = stats;
-      } else {
-        errorMessage =
-            "Impossible de charger les statistiques. Veuillez réessayer plus tard.";
-      }
+      dailyStats = stats;
       notifyListeners();
     } catch (e) {
       errorMessage = 'Erreur lors de la récupération des statistiques';
@@ -101,10 +96,10 @@ class HomeViewModel extends BaseViewModel {
   bool get hasActiveRide => dailyStats?.activiteEnCours != null;
   String get activeRideClientName =>
       dailyStats?.activiteEnCours?.clientNom ?? 'Client';
-  // String get activeRideDestination =>
-  //     dailyStats?.activiteEnCours?.adresseArrivee ?? 'Destination inconnue';
+  String get activeRideDestination =>
+      dailyStats?.activiteEnCours?.destinationClient ?? 'Destination inconnue';
   double get activeRideDistance =>
       dailyStats?.activiteEnCours?.distanceKm ?? 0.0;
   bool get hasRecentActivity => dailyStats?.activiteRecenteTerminee != null;
-  bool get hasRatings => (dailyStats?.dernieresEvaluations?.length ?? 0) > 0;
+  bool get hasRatings => (dailyStats?.dernieresEvaluations.length ?? 0) > 0;
 }

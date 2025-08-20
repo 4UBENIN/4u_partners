@@ -43,7 +43,7 @@ class WalletWidget extends StatelessWidget {
                 ),
                 const SizedBox(height: 4),
                 Text(
-                 "${balance.toString()} CFA",
+                  "${balance.toString()} CFA",
                   style: const TextStyle(
                     fontSize: 20,
                     fontWeight: FontWeight.w600,

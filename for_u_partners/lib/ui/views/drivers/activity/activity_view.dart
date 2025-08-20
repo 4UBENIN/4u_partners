@@ -1,3 +1,6 @@
+import 'package:for_u_partners/ui/common/app_colors.dart';
+import 'package:loading_animation_widget/loading_animation_widget.dart';
+
 import 'activity_viewmodel.dart';
 import 'package:stacked/stacked.dart';
 import 'package:flutter/material.dart';
@@ -41,7 +44,9 @@ class ActivityView extends StackedView<ActivityViewModel> {
 
   Widget _buildBody(ActivityViewModel viewModel) {
     if (viewModel.isLoading && viewModel.activities.isEmpty) {
-      return const Center(child: CircularProgressIndicator());
+      return Center(
+          child: LoadingAnimationWidget.fourRotatingDots(
+              color: kcPrimaryColor, size: 50));
     }
 
     if (viewModel.errorMessage != null) {

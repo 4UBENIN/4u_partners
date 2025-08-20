@@ -40,7 +40,7 @@ class HomeView extends StackedView<HomeViewModel> {
                   if (viewModel.hasActiveRide)
                     CurrentRideWidget(
                       clientName: viewModel.activeRideClientName,
-                      destination: "Manchester",
+                      destination: viewModel.activeRideDestination,
                       timeRemaining:
                           '15 min', // À remplacer par la valeur réelle si disponible
                       distanceKm: viewModel.activeRideDistance,

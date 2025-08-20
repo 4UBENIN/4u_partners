@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'package:flutter/foundation.dart';
 import 'package:for_u_partners/app/app.locator.dart';
 import 'package:for_u_partners/services/sharedpreferences_service.dart';
 import 'package:http/http.dart' as http;
@@ -11,67 +12,135 @@ import '../models/user_model.dart';
 class DriverService {
   final sharedPreferencesService = locator<SharedpreferencesService>();
 
+  // Accepter une course
   Future<void> acceptCourse(int courseId) async {
     final token = await sharedPreferencesService.getToken();
     final url = Uri.parse(acceptCourseUrl(courseId));
-    print(url);
-    final response = await http.patch(url, headers: {
-      'Accept': 'application/json',
-      'Content-Type': 'application/json',
-      'Authorization': 'Bearer $token',
-    });
 
-    print("accept-body: ${response.body}");
+    try {
+      final response = await http.patch(
+        url,
+        headers: {
+          'Accept': 'application/json',
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer $token',
+        },
+      );
 
-    final responseJson = jsonDecode(response.body);
-    if (response.statusCode == 200) {
-    } else {
-      throw responseJson['error'];
+      if (response.statusCode == 200) {
+        // La course a été acceptée avec succès
+        return jsonDecode(response.body);
+      } else {
+        throw Exception('Échec de l\'acceptation de la course');
+      }
+    } catch (e) {
+      debugPrint('Erreur lors de l\'acceptation de la course: $e');
+      rethrow;
     }
   }
 
+  // Rejeter une course
   Future<void> rejectCourse(int courseId) async {
     final token = await sharedPreferencesService.getToken();
     final url = Uri.parse(rejectCourseUrl(courseId));
-    final response = await http.patch(url, headers: {
-      'Accept': 'application/json',
-      'Content-Type': 'application/json',
-      'Authorization': 'Bearer $token',
-    });
 
-    if (response.statusCode == 200) {
-      final responseJson = jsonDecode(response.body);
+    try {
+      final response = await http.patch(
+        url,
+        headers: {
+          'Accept': 'application/json',
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer $token',
+        },
+      );
+
+      if (response.statusCode != 200) {
+        throw Exception('Échec du rejet de la course');
+      }
+    } catch (e) {
+      debugPrint('Erreur lors du rejet de la course: $e');
+      rethrow;
     }
   }
 
+  // Démarrer une course
   Future<void> startCourse(int courseId) async {
     final token = await sharedPreferencesService.getToken();
     final url = Uri.parse(startCourseUrl(courseId));
-    final response = await http.patch(url, headers: {
-      'Accept': 'application/json',
-      'Content-Type': 'application/json',
-      'Authorization': 'Bearer $token',
-    });
 
-    if (response.statusCode == 200) {
-      final responseJson = jsonDecode(response.body);
+    try {
+      final response = await http.patch(
+        url,
+        headers: {
+          'Accept': 'application/json',
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer $token',
+        },
+      );
+
+      if (response.statusCode != 200) {
+        throw Exception('Échec du démarrage de la course');
+      }
+    } catch (e) {
+      debugPrint('Erreur lors du démarrage de la course: $e');
+      rethrow;
     }
   }
 
+  // Terminer une course
   Future<void> completeCourse(int courseId) async {
     final token = await sharedPreferencesService.getToken();
     final url = Uri.parse(completeCourseUrl(courseId));
-    final response = await http.patch(url, headers: {
-      'Accept': 'application/json',
-      'Content-Type': 'application/json',
-      'Authorization': 'Bearer $token',
-    });
 
-    if (response.statusCode == 200) {
-      final responseJson = jsonDecode(response.body);
+    try {
+      final response = await http.patch(
+        url,
+        headers: {
+          'Accept': 'application/json',
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer $token',
+        },
+      );
+
+      if (response.statusCode != 200) {
+        throw Exception('Échec de la finalisation de la course');
+      }
+    } catch (e) {
+      debugPrint('Erreur lors de la finalisation de la course: $e');
+      rethrow;
     }
   }
 
+  // Récupérer les détails d'une course
+  Future<Map<String, dynamic>> getRideDetails(int courseId) async {
+    final token = await sharedPreferencesService.getToken();
+    final url = Uri.parse('$baseUrl/conducteur/courses/$courseId/detail');
+
+    try {
+      final response = await http.get(
+        url,
+        headers: {
+          'Accept': 'application/json',
+          'Authorization': 'Bearer $token',
+        },
+      );
+
+      debugPrint(
+          'Get ride details response: ${response.statusCode} - ${response.body}');
+
+      if (response.statusCode == 200) {
+        return jsonDecode(response.body);
+      } else {
+        final error = jsonDecode(response.body)['error'] ?? 'Erreur inconnue';
+        throw Exception('Échec de la récupération des détails: $error');
+      }
+    } catch (e) {
+      debugPrint('Error getting ride details: $e');
+      rethrow;
+    }
+  }
+
+  // Récupérer la facture d'une course
   Future<FactureCourse> fetchFactureCourse(int courseId) async {
     final token = await sharedPreferencesService.getToken();
     final headers = {
@@ -93,6 +162,7 @@ class DriverService {
     }
   }
 
+  // Récupérer les courses en attente
   Future<List<CoursePendingModel>> fetchCoursesPending() async {
     final token = await sharedPreferencesService.getToken();
     final headers = {
@@ -113,6 +183,7 @@ class DriverService {
     }
   }
 
+  // Récupérer les courses assignées
   Future<List<CourseAssignedItem>> fetchCourses() async {
     final url = Uri.parse(assignedCourseUrl);
     final response = await http.get(url, headers: headers);
@@ -124,6 +195,7 @@ class DriverService {
     }
   }
 
+  // Récupérer les détails d'une course
   Future<CourseDetail> fetchCourseDetail(int courseId) async {
     final token = await sharedPreferencesService.getToken();
     final headers = {
@@ -142,7 +214,8 @@ class DriverService {
     }
   }
 
-  Future<int> fetchWalletSold() async {
+  // Récupérer le solde du portefeuille
+  Future<double> fetchWalletSold() async {
     final token = await sharedPreferencesService.getToken();
     final headers = {
       'Accept': 'application/json',
@@ -154,12 +227,13 @@ class DriverService {
     print("wallet-body: ${response.body}");
     if (response.statusCode == 200) {
       final data = jsonDecode(response.body);
-      return data['solde'] as int;
+      return data['solde'] as double;
     } else {
       throw Exception("Erreur ${response.body}");
     }
   }
 
+  // Récupérer les statistiques quotidiennes
   Future<DailyStats> fetchDailyStats() async {
     final token = await sharedPreferencesService.getToken();
     final headers = {
@@ -187,6 +261,7 @@ class DriverService {
     }
   }
 
+  // Récupérer les statistiques globales
   Future<GlobalStats> fetchGlobalStats() async {
     final token = await sharedPreferencesService.getToken();
     final url = Uri.parse(getGlobalStats);
@@ -209,6 +284,7 @@ class DriverService {
     }
   }
 
+  // Récupérer le profil de l'utilisateur
   Future<UserModel> getUserProfile() async {
     final token = await sharedPreferencesService.getToken();
     final url = Uri.parse('$baseUrl/user/profile');
@@ -230,6 +306,7 @@ class DriverService {
     }
   }
 
+  // Mettre à jour le profil de l'utilisateur
   Future<UserModel> updateUserProfile({
     required String nom,
     required String prenom,
@@ -272,7 +349,7 @@ class DriverService {
     }
   }
 
-  // Récupère la liste des courses du conducteur
+  // Récupérer la liste des courses du conducteur
   Future<List<Map<String, dynamic>>> getCoursesList() async {
     final token = await sharedPreferencesService.getToken();
     final url = Uri.parse('$baseUrl/conducteur/courses_list');
@@ -293,7 +370,7 @@ class DriverService {
     }
   }
 
-  // Récupère les détails d'une course spécifique
+  // Récupérer les détails d'une course spécifique
   Future<Map<String, dynamic>> getCourseDetails(int courseId) async {
     final token = await sharedPreferencesService.getToken();
     final url = Uri.parse('$baseUrl/conducteur/courses/$courseId/detail');

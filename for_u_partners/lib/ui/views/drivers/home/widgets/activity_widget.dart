@@ -157,8 +157,8 @@ class ActivityWidget extends StatelessWidget {
         children: [
           Container(
             padding: const EdgeInsets.all(16),
-            decoration: BoxDecoration(
-              color: const Color(0xFFF8F9FF),
+            decoration: const BoxDecoration(
+              color: Color(0xFFF8F9FF),
               shape: BoxShape.circle,
             ),
             child: const Icon(
