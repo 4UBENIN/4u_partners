@@ -6,10 +6,10 @@ class ChatService {
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
   final _sharedPreferencesServices = locator<SharedpreferencesService>();
 
-  // Récupérer les infos de l'utilisateur connecté (client)
+  // Récupérer les infos de l'utilisateur, le conducteur connecté
   Future<Map<String, dynamic>?> getCurrentUserInfo() async {
     try {
-      final userId = await _sharedPreferencesServices.getUserId();
+      final userId = await _sharedPreferencesServices.getUserTypeId();
       if (userId == null) return null;
 
       final userDoc =

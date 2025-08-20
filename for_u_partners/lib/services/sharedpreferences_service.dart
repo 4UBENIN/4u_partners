@@ -3,6 +3,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 class SharedpreferencesService {
   static const String _tokenKey = 'user_token';
   static const String _userType = 'user_type';
+  static const String _userTypeId = 'user_type_id';
   static const String _userId = 'user_id';
   static const String _userName = 'user_name';
 
@@ -64,6 +65,26 @@ class SharedpreferencesService {
   Future<void> removeUserId() async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.remove(_userId);
+  }
+
+  //* USER TYPE ID
+
+    // Enregistre l'ID de l'utilisateur en la convertissant en JSON
+  Future<void> saveUserTypeId(dynamic id) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString(_userTypeId, id);
+  }
+
+  // Récupère l'ID de l'utilisateur (brut ou reconverti en Map, selon besoin)
+  Future<String?> getUserTypeId() async {
+    final prefs = await SharedPreferences.getInstance();
+    return prefs.getString(_userTypeId);
+  }
+
+  // Supprimer l'ID de l'utilisateur
+  Future<void> removeUserTypeId() async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.remove(_userTypeId);
   }
 
   //* USER NAME

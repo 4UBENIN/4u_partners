@@ -3,7 +3,7 @@ import 'package:for_u_partners/app/app.locator.dart';
 import 'package:for_u_partners/services/chat_service.dart';
 import 'package:for_u_partners/ui/common/app_colors.dart';
 import 'package:for_u_partners/ui/views/drivers/courses/model/client_model.dart';
-import 'package:for_u_partners/ui/views/drivers/courses/widget/chat_page.dart';
+import 'package:for_u_partners/ui/views/drivers/courses/chat_page.dart';
 import 'package:for_u_partners/ui/views/drivers/courses/widget/dialog_widget.dart';
 import 'package:stacked/stacked.dart';
 

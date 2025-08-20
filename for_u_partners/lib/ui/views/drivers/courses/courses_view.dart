@@ -1,6 +1,6 @@
 import 'package:for_u_partners/services/chat_service.dart';
 import 'package:for_u_partners/ui/common/app_colors.dart';
-import 'package:for_u_partners/ui/views/drivers/courses/widget/chat_page.dart';
+import 'package:for_u_partners/ui/views/drivers/courses/chat_page.dart';
 
 import 'courses_viewmodel.dart';
 import 'package:stacked/stacked.dart';
@@ -262,7 +262,7 @@ class CoursesView extends StackedView<CoursesViewModel> {
           },
           onChatClients: () async {
             try {
-              // Vérifier que nous avons l'ID du conducteur
+              // Vérifier que nous avons l'ID du client
               if (pickupCourse.clientId == null ||
                   pickupCourse.clientId!.isEmpty) {
                 ScaffoldMessenger.of(context).showSnackBar(

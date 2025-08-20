@@ -17,7 +17,7 @@ class AuthService {
   final _navigationService = locator<NavigationService>();
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
 
-  //* LOGIN FUNCTION avec synchronisation Firestore
+  //* LOGIN FUNCTION avec synchronisation Firestore - CORRIGÉE
   Future<void> login(LoginModel loginModel, String type) async {
     final url =
         Uri.parse("https://foryou.cilassocies.com/api/partenaire/login");
@@ -36,38 +36,63 @@ class AuthService {
       print("role : ${responseJson['data']['role']}");
       print("name : ${responseJson['data']['nom']}");
       print("userId : ${responseJson['data']['id']}");
+      if (responseJson['data']['conducteur'] != null) {
+        print("conducteurId : ${responseJson['data']['conducteur']['id']}");
+      }
       print("TOKEN : ${responseJson['token']}");
 
-      // Récupération directe des valeurs
-      String role = responseJson['type'];
+      // ✅ CORRECTION : Récupérer le rôle depuis data.role au lieu de type
+      String role = responseJson['data']['role'];
       String name = responseJson['data']['nom'];
-      // String userId = responseJson['data']['id'].toString();
+      String userId = responseJson['data']['id'].toString();
       String token = responseJson['token'];
 
       // Sauvegarde dans SharedPreferences
       await _sharedPreferencesServices.saveToken(token);
       await _sharedPreferencesServices.saveUserName(name);
       await _sharedPreferencesServices.saveUserType(role);
-      // await _sharedPreferencesServices.saveUserId(userId);
+      await _sharedPreferencesServices.saveUserId(userId);
 
-      // Synchroniser avec Firestore après connexion réussie
-      await _syncUserToFirestore(responseJson['data'], role);
+      // ✅ LOGIQUE CORRIGÉE : Déterminer l'ID à utiliser pour Firestore
+      String firestoreUserId;
+      if (responseJson['data']['conducteur'] != null) {
+        // Si c'est un conducteur/livreur, utiliser l'ID du conducteur
+        final conducteurId =
+            responseJson['data']['conducteur']['id'].toString();
+        await _sharedPreferencesServices.saveUserTypeId(conducteurId);
+        firestoreUserId = conducteurId;
+        print(
+            "Utilisateur partenaire détecté - ID Firestore: $firestoreUserId");
+      } else {
+        // Si c'est un client, utiliser l'ID utilisateur normal
+        firestoreUserId = userId;
+        print("Client détecté - ID Firestore: $firestoreUserId");
+      }
+
+      // Synchroniser avec Firestore en passant le bon ID
+      await _syncUserToFirestore(responseJson['data'], role, firestoreUserId);
 
       // Navigation selon le rôle
+      print("Navigation pour le rôle: $role");
       switch (role) {
         case 'livreur':
+          print("Navigation vers DeliveryNavBarView");
           _navigationService.replaceWithDeliveryNavBarView();
           break;
         case 'conducteur':
+          print("Navigation vers HomemainView");
           _navigationService.replaceWithHomemainView();
           break;
         case 'coursier':
+          print("Navigation vers DeliveryNavBarView (coursier)");
           _navigationService.replaceWithDeliveryNavBarView();
           break;
         case 'pressing':
+          print("Navigation vers NavBarPressingView");
           _navigationService.replaceWithNavBarPressingView();
           break;
         default:
+          print("Navigation par défaut vers NavBarPressingView");
           _navigationService.replaceWithNavBarPressingView();
       }
     } else {
@@ -75,12 +100,12 @@ class AuthService {
     }
   }
 
-  //* Synchroniser l'utilisateur avec Firestore
-  Future<void> _syncUserToFirestore(
-      Map<String, dynamic> userData, String type) async {
+  //* Synchroniser l'utilisateur avec Firestore - CORRIGÉE
+  Future<void> _syncUserToFirestore(Map<String, dynamic> userData, String type,
+      String firestoreUserId) async {
     try {
-      final userId = userData['id'].toString();
-      final userDoc = _firestore.collection('users').doc(userId);
+      // ✅ UTILISER L'ID PASSÉ EN PARAMÈTRE
+      final userDoc = _firestore.collection('users').doc(firestoreUserId);
 
       // Vérifier si le document existe déjà
       final docSnapshot = await userDoc.get();
@@ -90,7 +115,7 @@ class AuthService {
 
       // Données de base communes à tous les utilisateurs
       Map<String, dynamic> baseUserData = {
-        'id': userData['id'],
+        'id': userData['id'], // ✅ GARDER L'ID ORIGINAL POUR RÉFÉRENCE
         'nom': userData['nom'] ?? '',
         'prenom': userData['prenom'] ?? '',
         'email': userData['email'] ?? '',
@@ -100,6 +125,11 @@ class AuthService {
         'lastSeen': FieldValue.serverTimestamp(),
       };
 
+      // ✅ AJOUTER L'ID CONDUCTEUR SI DISPONIBLE
+      if (userData['conducteur'] != null) {
+        baseUserData['conducteurId'] = userData['conducteur']['id'];
+      }
+
       if (!docSnapshot.exists) {
         // Créer un nouveau document avec les données complètes
         baseUserData['createdAt'] = FieldValue.serverTimestamp();
@@ -107,13 +137,11 @@ class AuthService {
         // Ajouter les informations spécifiques selon le rôle
         if (unifiedRole == 'driver') {
           baseUserData['driverInfo'] = _createDriverInfo(userData);
-        } else if (unifiedRole == 'delivery') {
-          baseUserData['deliveryInfo'] = _createDeliveryInfo(userData, type);
         }
 
         await userDoc.set(baseUserData);
         print(
-            '✅ Nouvel utilisateur créé dans Firestore: $userId ($unifiedRole)');
+            '✅ Nouvel utilisateur créé dans Firestore: $firestoreUserId ($unifiedRole)');
       } else {
         // Mettre à jour les données existantes
         Map<String, dynamic> updateData = {
@@ -130,7 +158,7 @@ class AuthService {
 
         await userDoc.update(updateData);
         print(
-            '🔄 Utilisateur mis à jour dans Firestore: $userId ($unifiedRole)');
+            '🔄 Utilisateur mis à jour dans Firestore: $firestoreUserId ($unifiedRole)');
       }
     } catch (e) {
       print('❌ Erreur lors de la synchronisation Firestore: $e');
@@ -138,73 +166,7 @@ class AuthService {
     }
   }
 
-  //* Mapper les types de partenaires vers les rôles unifiés
-  String _mapPartnerTypeToRole(String partnerType) {
-    switch (partnerType.toLowerCase()) {
-      case 'conducteur':
-        return 'driver';
-      case 'livreur':
-        return 'delivery';
-      case 'pressing':
-        return 'pressing'; // Ou 'service' selon votre structure
-      default:
-        return 'driver'; // Rôle générique pour les partenaires
-    }
-  }
-
-  //* Créer les informations spécifiques au conducteur
-  Map<String, dynamic> _createDriverInfo(Map<String, dynamic> userData) {
-    return {
-      'vehicleType': 'car', // Par défaut, à adapter selon vos données
-      'vehicleModel': '', // À compléter avec les données du véhicule
-      'licensePlate': '',
-      'licenseNumber': userData['numero_permis'] ?? '',
-      'rating': 5.0,
-      'totalRides': 0,
-      'isOnline': false,
-      'currentLocation': null,
-      'lastLocationUpdate': null,
-      'dateExpirationPermis': userData['date_expiration_permis'],
-      'possedeVehicule': userData['possedevehicule'] ?? false,
-    };
-  }
-
-  //* Créer les informations spécifiques au livreur
-  Map<String, dynamic> _createDeliveryInfo(
-      Map<String, dynamic> userData, String type) {
-    String vehicleType = 'motorcycle'; // Par défaut
-    if (type == 'coursier') vehicleType = 'bicycle';
-
-    return {
-      'vehicleType': vehicleType,
-      'rating': 5.0,
-      'totalDeliveries': 0,
-      'isOnline': false,
-      'currentLocation': null,
-      'lastLocationUpdate': null,
-      'deliveryZones': <String>[],
-    };
-  }
-
-  //* GET TOKEN HEADERS (inchangé)
-  Future<Map<String, String>> getAuthenticatedHeaders() async {
-    final token = await _sharedPreferencesServices.getToken();
-
-    // Créer une copie des headers de base et ajouter le token
-    final authenticatedHeaders = Map<String, String>.from(headers);
-
-    if (token != null && token.isNotEmpty) {
-      // Remove any existing quotes from the token
-      final cleanToken = token.replaceAll('"', '').trim();
-      authenticatedHeaders['Authorization'] = 'Bearer $cleanToken';
-    }
-    print("AUTH HEADERS : ");
-    print(authenticatedHeaders);
-
-    return authenticatedHeaders;
-  }
-
-  //* REGISTER FUNCTION avec synchronisation Firestore
+  //* REGISTER FUNCTION avec synchronisation Firestore - CORRIGÉE
   Future<void> register(RegistrationModel registrationModel) async {
     final dio = Dio();
     const url = 'https://foryou.cilassocies.com/api/partenaire/register';
@@ -276,17 +238,35 @@ class AuthService {
 
       if (response.statusCode == 201) {
         final responseJson = response.data;
-        final registerType = responseJson['type'];
+
+        // ✅ CORRECTION : Utiliser 'data.role' au lieu de 'type'
+        final registerType = responseJson['data']['role'];
 
         await _sharedPreferencesServices.saveToken(responseJson['token']);
-        await _sharedPreferencesServices.saveUserId(responseJson['data']['id']);
+        await _sharedPreferencesServices
+            .saveUserId(responseJson['data']['id'].toString());
         await _sharedPreferencesServices.saveUserType(registerType);
         await _sharedPreferencesServices
             .saveUserName(responseJson['data']['nom']);
 
+        // ✅ LOGIQUE CORRIGÉE : Même logique que pour login
+        String firestoreUserId;
+        if (responseJson['data']['conducteur'] != null) {
+          // Si c'est un conducteur/livreur, utiliser l'ID du conducteur
+          final conducteurId =
+              responseJson['data']['conducteur']['id'].toString();
+          await _sharedPreferencesServices.saveUserTypeId(conducteurId);
+          firestoreUserId = conducteurId;
+          print("Partenaire inscrit - ID Firestore: $firestoreUserId");
+        } else {
+          // Si c'est un client, utiliser l'ID utilisateur normal
+          firestoreUserId = responseJson['data']['id'].toString();
+          print("Client inscrit - ID Firestore: $firestoreUserId");
+        }
+
         // Synchroniser avec Firestore après inscription réussie
-        await _syncRegisteredUserToFirestore(
-            responseJson['data'], registerType, registrationModel);
+        await _syncRegisteredUserToFirestore(responseJson['data'], registerType,
+            registrationModel, firestoreUserId);
 
         print('Inscription réussie pour le type: $registerType');
 
@@ -363,21 +343,22 @@ class AuthService {
     }
   }
 
-  //* Synchroniser l'utilisateur inscrit avec Firestore
+  //* Synchroniser l'utilisateur inscrit avec Firestore - CORRIGÉE
   Future<void> _syncRegisteredUserToFirestore(
     Map<String, dynamic> userData,
     String type,
     RegistrationModel registrationModel,
+    String firestoreUserId, // ✅ NOUVEAU PARAMÈTRE
   ) async {
     try {
-      final userId = userData['id'].toString();
-      final userDoc = _firestore.collection('users').doc(userId);
+      // ✅ UTILISER L'ID PASSÉ EN PARAMÈTRE
+      final userDoc = _firestore.collection('users').doc(firestoreUserId);
 
       String unifiedRole = _mapPartnerTypeToRole(type);
 
       // Données de base communes à tous les utilisateurs
       Map<String, dynamic> baseUserData = {
-        'id': userData['id'],
+        'id': userData['id'], // ✅ GARDER L'ID ORIGINAL POUR RÉFÉRENCE
         'nom': registrationModel.nom,
         'prenom': registrationModel.prenom ?? '',
         'email': registrationModel.email,
@@ -391,6 +372,11 @@ class AuthService {
         'dateNaissance': registrationModel.dateNaissance,
       };
 
+      // ✅ AJOUTER L'ID CONDUCTEUR SI DISPONIBLE
+      if (userData['conducteur'] != null) {
+        baseUserData['conducteurId'] = userData['conducteur']['id'];
+      }
+
       // Ajouter les informations spécifiques selon le rôle
       if (unifiedRole == 'driver') {
         baseUserData['driverInfo'] =
@@ -402,11 +388,91 @@ class AuthService {
 
       await userDoc.set(baseUserData);
       print(
-          '✅ Nouvel utilisateur inscrit créé dans Firestore: $userId ($unifiedRole)');
+          '✅ Nouvel utilisateur inscrit créé dans Firestore: $firestoreUserId ($unifiedRole)');
     } catch (e) {
       print('❌ Erreur lors de la synchronisation Firestore (inscription): $e');
       // Ne pas bloquer l'inscription si Firestore échoue
     }
+  }
+
+  //* LOGOUT FUNCTION - CORRIGÉE
+  Future<void> logOut() async {
+    // ✅ CORRECTION : Récupérer le bon ID pour Firestore
+    String? firestoreUserId = await _sharedPreferencesServices.getUserTypeId();
+    firestoreUserId ??= await _sharedPreferencesServices.getUserId();
+
+    // Supprimer toutes les données locales
+    await _sharedPreferencesServices.removeToken();
+    await _sharedPreferencesServices.removeUserId();
+    await _sharedPreferencesServices.removeUserTypeId();
+    await _sharedPreferencesServices.removeUserType();
+
+    // ✅ CORRECTION : Mettre à jour le statut dans Firestore avec le bon ID
+    if (firestoreUserId != null) {
+      try {
+        await _firestore.collection('users').doc(firestoreUserId).update({
+          'lastSeen': FieldValue.serverTimestamp(),
+          'status': 'offline',
+          'driverInfo.isOnline': false,
+          'deliveryInfo.isOnline': false,
+        });
+        print(
+            '✅ Statut utilisateur mis à jour lors du logout: $firestoreUserId');
+      } catch (e) {
+        print("❌ Erreur mise à jour statut lors du logout: $e");
+      }
+    }
+
+    // Rediriger vers l'écran de connexion
+    _navigationService.clearStackAndShow(Routes.loginView);
+  }
+
+  //* Mapper les types de partenaires vers les rôles unifiés
+  String _mapPartnerTypeToRole(String partnerType) {
+    switch (partnerType.toLowerCase()) {
+      case 'conducteur':
+        return 'driver';
+      case 'livreur':
+        return 'delivery';
+      case 'pressing':
+        return 'pressing'; // Ou 'service' selon votre structure
+      default:
+        return 'driver'; // Rôle générique pour les partenaires
+    }
+  }
+
+  //* Créer les informations spécifiques au conducteur
+  Map<String, dynamic> _createDriverInfo(Map<String, dynamic> userData) {
+    return {
+      'vehicleType': 'car', // Par défaut, à adapter selon vos données
+      'vehicleModel': '', // À compléter avec les données du véhicule
+      'licensePlate': '',
+      'licenseNumber': userData['numero_permis'] ?? '',
+      'rating': 5.0,
+      'totalRides': 0,
+      'isOnline': false,
+      'currentLocation': null,
+      'lastLocationUpdate': null,
+      'dateExpirationPermis': userData['date_expiration_permis'],
+      'possedeVehicule': userData['possedevehicule'] ?? false,
+    };
+  }
+
+  //* Créer les informations spécifiques au livreur
+  Map<String, dynamic> _createDeliveryInfo(
+      Map<String, dynamic> userData, String type) {
+    String vehicleType = 'motorcycle'; // Par défaut
+    if (type == 'coursier') vehicleType = 'bicycle';
+
+    return {
+      'vehicleType': vehicleType,
+      'rating': 5.0,
+      'totalDeliveries': 0,
+      'isOnline': false,
+      'currentLocation': null,
+      'lastLocationUpdate': null,
+      'deliveryZones': <String>[],
+    };
   }
 
   //* Créer les informations détaillées du conducteur lors de l'inscription
@@ -494,7 +560,23 @@ class AuthService {
     }
   }
 
-  // Vos autres méthodes existantes (registrationModelToFormData, getMediaTypeFromFileName, logOut)...
+  //* GET TOKEN HEADERS (inchangé)
+  Future<Map<String, String>> getAuthenticatedHeaders() async {
+    final token = await _sharedPreferencesServices.getToken();
+
+    // Créer une copie des headers de base et ajouter le token
+    final authenticatedHeaders = Map<String, String>.from(headers);
+
+    if (token != null && token.isNotEmpty) {
+      // Remove any existing quotes from the token
+      final cleanToken = token.replaceAll('"', '').trim();
+      authenticatedHeaders['Authorization'] = 'Bearer $cleanToken';
+    }
+    print("AUTH HEADERS : ");
+    print(authenticatedHeaders);
+
+    return authenticatedHeaders;
+  }
 
   MediaType getMediaTypeFromFileName(String filePath) {
     final ext = path.extension(filePath).toLowerCase();
@@ -640,29 +722,5 @@ class AuthService {
 
     print("=== FIN CONSTRUCTION FORMDATA ===");
     return formData;
-  }
-
-  Future<void> logOut() async {
-    // Supprimer toutes les données locales
-    await _sharedPreferencesServices.removeToken();
-    await _sharedPreferencesServices.removeUserId();
-    await _sharedPreferencesServices.removeUserType();
-
-    // Optionnel: Mettre à jour le statut dans Firestore
-    try {
-      final userId = await _sharedPreferencesServices.getUserId();
-      if (userId != null) {
-        await _firestore.collection('users').doc(userId).update({
-          'lastSeen': FieldValue.serverTimestamp(),
-          'driverInfo.isOnline': false, // Si c'est un conducteur
-          'deliveryInfo.isOnline': false, // Si c'est un livreur
-        });
-      }
-    } catch (e) {
-      print("Erreur mise à jour statut lors du logout: $e");
-    }
-
-    // Rediriger vers l'écran de connexion
-    _navigationService.clearStackAndShow(Routes.loginView);
   }
 }
