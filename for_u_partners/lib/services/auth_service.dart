@@ -310,7 +310,10 @@ class AuthService {
 
       if (response.statusCode == 201) {
         final responseJson = response.data;
-        final registerType = responseJson['type'];
+        String registerType = responseJson['type'];
+        if (registerType == "conducteur") {
+          registerType = responseJson['conducteur_type'];
+        }
 
         await _sharedPreferencesServices.saveToken(responseJson['token']);
         await _sharedPreferencesServices.saveUserId(responseJson['data']['id']);
