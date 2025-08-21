@@ -473,7 +473,7 @@ class RegisterProfileView extends StackedView<RegisterProfileViewModel>
 
       //* Livreur/Coursier
       case 'livreur':
-       return Column(
+        return Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             //* Nom du conducteur
@@ -596,7 +596,7 @@ class RegisterProfileView extends StackedView<RegisterProfileViewModel>
                               (file) => viewModel.driverMotoAssurance = file),
                           const SizedBox(height: 20),
 
-                           TextInputField(
+                          TextInputField(
                             bigLabel: "Modèle du véhicule",
                             hintText: "Ex: Toyota Yaris",
                             controller: driverCarModelInputController,
@@ -627,7 +627,6 @@ class RegisterProfileView extends StackedView<RegisterProfileViewModel>
                           ),
                           const SizedBox(height: 20),
 
-                         
                           const SizedBox(height: 20),
                         ],
 
@@ -882,7 +881,7 @@ class RegisterProfileView extends StackedView<RegisterProfileViewModel>
                               (file) => viewModel.driverMotoAssurance = file),
                           const SizedBox(height: 20),
 
-                           TextInputField(
+                          TextInputField(
                             bigLabel: "Modèle du véhicule",
                             hintText: "Ex: Toyota Yaris",
                             controller: driverCarModelInputController,
@@ -913,7 +912,6 @@ class RegisterProfileView extends StackedView<RegisterProfileViewModel>
                           ),
                           const SizedBox(height: 20),
 
-                         
                           const SizedBox(height: 20),
                         ],
 

@@ -36,6 +36,9 @@ class AuthService {
 
 // Récupération directe des valeurs
       String role = responseJson['type'];
+      if (role == "conducteur") {
+        role = responseJson['conducteur_type'];
+      }
       String name = responseJson['data']['nom'];
       String userId = responseJson['data']['id']
           .toString(); // Si tu veux le garder en String
@@ -53,8 +56,8 @@ class AuthService {
         case 'conducteur':
           _navigationService.replaceWithHomemainView();
           break;
-        case 'coursier':
-          _navigationService.replaceWithDeliveryNavBarView();
+        case 'ramasseur':
+          _navigationService.replaceWithPickerNavBarView();
           break;
         case 'pressing':
           _navigationService.replaceWithNavBarPressingView();

@@ -133,7 +133,6 @@ MockWalletService getAndRegisterWalletService() {
   return service;
 }
 
-
 // @stacked-mock-create
 
 void _removeRegistrationIfExists<T extends Object>() {

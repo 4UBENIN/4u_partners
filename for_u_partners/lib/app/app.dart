@@ -30,6 +30,12 @@ import 'package:for_u_partners/services/driver_service.dart';
 import 'package:for_u_partners/services/pressing_service.dart';
 import 'package:for_u_partners/ui/views/pressing/compte_pressing/profil_pressing/profil_pressing_view.dart';
 import 'package:for_u_partners/services/wallet_service.dart';
+import 'package:for_u_partners/ui/views/pickers/picker_nav_bar/picker_nav_bar_view.dart';
+import 'package:for_u_partners/ui/views/pickers/picker_home/picker_home_view.dart';
+import 'package:for_u_partners/ui/views/pickers/picker_activities/picker_activities_view.dart';
+import 'package:for_u_partners/ui/views/pickers/picker_account/picker_account_view.dart';
+import 'package:for_u_partners/ui/views/pickers/picker_notifications/picker_notifications_view.dart';
+import 'package:for_u_partners/ui/views/pickers/picker_courses/picker_courses_view.dart';
 // @stacked-import
 
 @StackedApp(
@@ -57,6 +63,12 @@ import 'package:for_u_partners/services/wallet_service.dart';
     MaterialRoute(page: ActivitiesDeliveryView),
     MaterialRoute(page: CoursesDeliveryView),
     MaterialRoute(page: ProfilPressingView),
+    MaterialRoute(page: PickerNavBarView),
+    MaterialRoute(page: PickerHomeView),
+    MaterialRoute(page: PickerActivitiesView),
+    MaterialRoute(page: PickerAccountView),
+    MaterialRoute(page: PickerNotificationsView),
+    MaterialRoute(page: PickerCoursesView),
 // @stacked-route
   ],
   dependencies: [
