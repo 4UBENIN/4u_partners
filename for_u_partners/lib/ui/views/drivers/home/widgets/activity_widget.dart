@@ -81,57 +81,95 @@ class ActivityWidget extends StatelessWidget {
   ) {
     return GestureDetector(
       onTap: onTap,
-      child: Padding(
+      child: Container(
+        width: double.infinity,
         padding: const EdgeInsets.all(16.0),
         child: Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
+            // Icon container
             Container(
               width: 36,
               height: 36,
+              margin: const EdgeInsets.only(right: 12),
               decoration: BoxDecoration(
                 color: bgColor,
                 shape: BoxShape.circle,
               ),
               child: Center(
-                child: Text(icon,
-                    style: TextStyle(fontSize: 16, color: iconColor)),
+                child: Text(
+                  icon,
+                  style: TextStyle(fontSize: 16, color: iconColor),
+                ),
               ),
             ),
-            const SizedBox(width: 12),
+            
+            // Main content - FIX: Ajout d'Expanded pour éviter l'overflow
             Expanded(
-              child: Column(
+              child: Row(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(
-                    title,
-                    style: const TextStyle(
-                      fontSize: 14,
-                      fontWeight: FontWeight.w500,
-                      color: Color(0xFF333333),
+                  // Content column
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        // Title
+                        Text(
+                          title,
+                          style: const TextStyle(
+                            fontSize: 14,
+                            fontWeight: FontWeight.w500,
+                            color: Color(0xFF333333),
+                            height: 1.2,
+                          ),
+                          overflow: TextOverflow.ellipsis,
+                          maxLines: 1,
+                        ),
+                        
+                        const SizedBox(height: 4),
+                        
+                        // Subtitle - FIX: Meilleure gestion du texte long
+                        Text(
+                          subtitle,
+                          style: const TextStyle(
+                            fontSize: 12,
+                            color: Color(0xFF666666),
+                            height: 1.3,
+                          ),
+                          overflow: TextOverflow.ellipsis,
+                          maxLines: 2,
+                        ),
+                      ],
                     ),
                   ),
-                  const SizedBox(height: 2),
-                  Text(
-                    subtitle,
-                    style: const TextStyle(
-                      fontSize: 12,
-                      color: Color(0xFF666666),
+                  
+                  // Value (if exists) - FIX: Mieux positionné à droite
+                  if (value != null) ...[
+                    const SizedBox(width: 8),
+                    Container(
+                      constraints: const BoxConstraints(maxWidth: 80),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.end,
+                        children: [
+                          Text(
+                            value,
+                            style: const TextStyle(
+                              fontSize: 12,
+                              fontWeight: FontWeight.w600,
+                              color: Color(0xFF4CAF50),
+                            ),
+                            overflow: TextOverflow.ellipsis,
+                            maxLines: 1,
+                            textAlign: TextAlign.end,
+                          ),
+                        ],
+                      ),
                     ),
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                  ),
+                  ],
                 ],
               ),
             ),
-            if (value != null)
-              Text(
-                value,
-                style: const TextStyle(
-                  fontSize: 14,
-                  fontWeight: FontWeight.w600,
-                  color: Color(0xFF4CAF50),
-                ),
-              ),
           ],
         ),
       ),
@@ -205,3 +243,82 @@ class ActivityWidget extends StatelessWidget {
   Widget _buildDivider() =>
       Container(height: 1, color: const Color(0xFFF8F9FA));
 }
+
+// ALTERNATIVE PLUS COMPACTE - Si vous voulez une version plus simple
+// Remplacez juste la méthode _buildActivityItem par celle-ci :
+
+/* 
+Widget _buildActivityItemCompact(
+  String icon,
+  String title,
+  String subtitle,
+  String? value,
+  Color bgColor,
+  Color iconColor,
+  VoidCallback? onTap,
+) {
+  return InkWell(
+    onTap: onTap,
+    borderRadius: BorderRadius.circular(12),
+    child: Padding(
+      padding: const EdgeInsets.all(16.0),
+      child: Row(
+        children: [
+          // Icon
+          CircleAvatar(
+            radius: 18,
+            backgroundColor: bgColor,
+            child: Text(icon, style: TextStyle(fontSize: 16)),
+          ),
+          
+          const SizedBox(width: 12),
+          
+          // Content
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  title,
+                  style: const TextStyle(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w500,
+                  ),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
+                const SizedBox(height: 2),
+                Text(
+                  subtitle,
+                  style: TextStyle(
+                    fontSize: 12,
+                    color: Colors.grey[600],
+                  ),
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ],
+            ),
+          ),
+          
+          // Value
+          if (value != null)
+            Padding(
+              padding: const EdgeInsets.only(left: 8),
+              child: Text(
+                value,
+                style: const TextStyle(
+                  fontSize: 12,
+                  fontWeight: FontWeight.w600,
+                  color: Color(0xFF4CAF50),
+                ),
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+              ),
+            ),
+        ],
+      ),
+    ),
+  );
+}
+*/

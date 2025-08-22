@@ -1,5 +1,5 @@
 import 'package:for_u_partners/ui/common/app_colors.dart';
-
+import 'package:for_u_partners/ui/views/drivers/homemain/homemain_viewmodel_export.dart';
 import 'courses_viewmodel.dart';
 import 'package:stacked/stacked.dart';
 import 'package:flutter/material.dart';
@@ -318,5 +318,10 @@ class CoursesView extends StackedView<CoursesViewModel> {
   }
 
   @override
-  CoursesViewModel viewModelBuilder(BuildContext context) => CoursesViewModel();
+  CoursesViewModel viewModelBuilder(BuildContext context) {
+    final homeMainViewModel = getParentViewModel<HomemainViewModel>(context);
+    final viewModel = CoursesViewModel();
+    viewModel.setHomeMainViewModel(homeMainViewModel);
+    return viewModel;
+  }
 }

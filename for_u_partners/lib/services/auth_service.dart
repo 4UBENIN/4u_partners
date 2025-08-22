@@ -1,4 +1,6 @@
 import 'dart:convert';
+import 'package:flutter/material.dart';
+import 'package:for_u_partners/ui/common/profil_validation_page.dart';
 import 'package:http/http.dart' as http;
 import 'package:dio/dio.dart';
 import 'package:path/path.dart' as path;
@@ -53,7 +55,7 @@ class AuthService {
         case 'livreur':
           _navigationService.replaceWithDeliveryNavBarView();
           break;
-        case 'conducteur':
+        case 'chauffeur':
           _navigationService.replaceWithHomemainView();
           break;
         case 'ramasseur':
@@ -63,7 +65,7 @@ class AuthService {
           _navigationService.replaceWithNavBarPressingView();
           break;
         default:
-          _navigationService.replaceWithNavBarPressingView();
+          null;
       }
     } else {
       throw Exception('Something went wrong');
@@ -239,7 +241,8 @@ class AuthService {
     return formData;
   }
 
-  Future<void> register(RegistrationModel registrationModel) async {
+  Future<void> register(
+      RegistrationModel registrationModel, BuildContext context) async {
     final dio = Dio();
     const url = 'https://foryou.cilassocies.com/api/partenaire/register';
 
@@ -311,6 +314,7 @@ class AuthService {
       if (response.statusCode == 201) {
         final responseJson = response.data;
         String registerType = responseJson['type'];
+        String profilStatuts = responseJson['data']['statut_validation'];
         if (registerType == "conducteur") {
           registerType = responseJson['conducteur_type'];
         }
@@ -320,24 +324,34 @@ class AuthService {
         await _sharedPreferencesServices.saveUserType(registerType);
         await _sharedPreferencesServices
             .saveUserName(responseJson['data']['nom']);
+        await _sharedPreferencesServices.saveProfilStatuts(profilStatuts);
 
         print('Inscription réussie pour le type: $registerType');
 
         switch (registerType) {
           case 'livreur':
-            _navigationService.replaceWithDeliveryNavBarView();
+            Navigator.push(
+                context,
+                MaterialPageRoute(
+                    builder: (context) => const ProfileValidationPage()));
             break;
-          case 'conducteur':
-            _navigationService.replaceWithHomemainView();
+          case 'chauffeur':
+            Navigator.push(
+                context,
+                MaterialPageRoute(
+                    builder: (context) => const ProfileValidationPage()));
             break;
-          case 'coursier':
-            _navigationService.replaceWithDeliveryNavBarView();
+          case 'ramasseur':
+            Navigator.push(
+                context,
+                MaterialPageRoute(
+                    builder: (context) => const ProfileValidationPage()));
             break;
           case 'pressing':
             _navigationService.replaceWithNavBarPressingView();
             break;
           default:
-            _navigationService.replaceWithNavBarPressingView();
+            null;
         }
       } else {
         // LANCER UNE EXCEPTION AU LIEU DE JUSTE IMPRIMER

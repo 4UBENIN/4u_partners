@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'package:for_u_partners/app/app.locator.dart';
+import 'package:for_u_partners/models/ride_state.dart';
 import 'package:for_u_partners/services/course_event_service.dart';
 import 'package:for_u_partners/services/course_notificationstorage_service.dart';
 import 'package:for_u_partners/services/driver_service.dart';
@@ -14,6 +15,8 @@ import 'package:stacked_services/stacked_services.dart';
 import 'dart:io' show Platform;
 import 'package:flutter_polyline_points/flutter_polyline_points.dart';
 import 'package:for_u_partners/services/local_notif_service.dart';
+import 'package:for_u_partners/services/ride/ride_persistence_service.dart';
+import 'package:for_u_partners/ui/views/drivers/homemain/homemain_viewmodel.dart';
 
 class CoursesViewModel extends BaseViewModel {
   GoogleMapController? _mapController;
@@ -35,6 +38,9 @@ class CoursesViewModel extends BaseViewModel {
   // Course actuellement sélectionnée
   ClientData? _currentCourse;
   ClientData? get currentCourse => _currentCourse;
+  
+  // Current user location
+  LatLng? _currentLocation;
 
   // État du trajet
   bool _isGoingToPickup = false;
@@ -42,6 +48,8 @@ class CoursesViewModel extends BaseViewModel {
 
   bool _isOnTrip = false;
   bool get isOnTrip => _isOnTrip;
+  
+  String? _destinationName;
 
   final CourseEventService _courseEventService = CourseEventService();
   StreamSubscription<CourseNotificationData>? _newCourseSubscription;
@@ -49,7 +57,25 @@ class CoursesViewModel extends BaseViewModel {
 
   // Liste des courses disponibles
   final List<ClientData> _availableCourses = [];
-  List<ClientData> get availableCourses => List.unmodifiable(_availableCourses);
+  List<ClientData> get availableCourses => _availableCourses;
+  
+  // Current location name
+  String? _currentLocationName;
+  
+  // Référence au ViewModel principal
+  HomemainViewModel? _homeMainViewModel;
+  
+  // Définir la référence au ViewModel principal
+  void setHomeMainViewModel(HomemainViewModel viewModel) {
+    _homeMainViewModel = viewModel;
+  }
+  
+  // Mettre à jour le compteur de courses en attente
+  void _updatePendingCoursesCount() {
+    if (_homeMainViewModel != null) {
+      _homeMainViewModel!.updatePendingCoursesCount(_availableCourses.length);
+    }
+  }
 
   bool _isLoadingLocation = true;
   bool get isLoadingLocation => _isLoadingLocation;
@@ -57,6 +83,10 @@ class CoursesViewModel extends BaseViewModel {
   // ✨ État de chargement des notifications
   bool _isLoadingCourses = true;
   bool get isLoadingCourses => _isLoadingCourses;
+  
+  // Loading state for general operations
+  bool _isLoading = false;
+  bool get isLoading => _isLoading;
 
   Position? _currentPosition;
   Position? get currentPosiction => _currentPosition;
@@ -71,6 +101,8 @@ class CoursesViewModel extends BaseViewModel {
   final navigationService = locator<NavigationService>();
 
   static const String _googleApiKey = 'AIzaSyAVtrvygnbsdnL6VMEJS_DB0JfEa0piHqM';
+
+  String? _error;
 
   CoursesViewModel() {
     _initializeViewModel();
@@ -121,6 +153,7 @@ class CoursesViewModel extends BaseViewModel {
         if (existingIndex == -1) {
           _availableCourses.add(clientData);
           print('✅ Course chargée depuis storage: ${clientData.name}');
+          _updatePendingCoursesCount();
         }
       }
 
@@ -130,6 +163,9 @@ class CoursesViewModel extends BaseViewModel {
         // Sinon, tu peux trier par courseId ou autre critère
         return b.courseId!.compareTo(a.courseId!);
       });
+      
+      // Mettre à jour le compteur de courses en attente
+      _updatePendingCoursesCount();
 
       _isLoadingCourses = false;
       notifyListeners();
@@ -289,6 +325,9 @@ class CoursesViewModel extends BaseViewModel {
       setBottomSheetType(BottomSheetAppType.clients);
     }
 
+    // Mettre à jour le compteur de courses en attente
+    _updatePendingCoursesCount();
+    
     notifyListeners();
   }
 
@@ -299,6 +338,7 @@ class CoursesViewModel extends BaseViewModel {
 
     if (existingIndex != -1) {
       _availableCourses[existingIndex] = courseData.toClientData();
+      _updatePendingCoursesCount();
       notifyListeners();
       print('🔄 Course ${courseData.courseId} mise à jour');
     }
@@ -311,6 +351,9 @@ class CoursesViewModel extends BaseViewModel {
     // ✨ Supprimer aussi du storage
     await CourseNotificationStorage.removeNotification(courseId);
 
+    // Mettre à jour le compteur de courses en attente
+    _updatePendingCoursesCount();
+
     if (_availableCourses.isEmpty) {
       hideBottomSheet();
     }
@@ -319,7 +362,12 @@ class CoursesViewModel extends BaseViewModel {
   }
 
   void setBottomSheetType(BottomSheetAppType type) {
+    print('📝 [BottomSheet] Changement d\'état: ${_currentBottomSheetType?.toString() ?? 'null'} -> $type');
     _currentBottomSheetType = type;
+    // Sauvegarder l'état si nécessaire
+    if (_currentCourse != null) {
+      _saveRideState(type.toString());
+    }
     notifyListeners();
   }
 
@@ -423,6 +471,9 @@ class CoursesViewModel extends BaseViewModel {
 
       // Appeler le service
       await acceptCourseService(int.parse(courseId), context);
+      
+      // Sauvegarder l'état de la course
+      await _saveRideState('accepted');
     }
   }
 
@@ -475,6 +526,7 @@ class CoursesViewModel extends BaseViewModel {
       print('❌ Course refusée: ${course.name} (ID: $courseId)');
 
       _availableCourses.removeAt(courseIndex);
+      _updatePendingCoursesCount();
 
       // ✨ Supprimer du storage car course refusée
       await CourseNotificationStorage.removeNotification(courseId);
@@ -889,11 +941,14 @@ class CoursesViewModel extends BaseViewModel {
   }
 
   // Méthode à appeler lorsque le chauffeur démarre la course
-  void startTrip() {
+  Future<void> startTrip() async {
     if (_currentCourse == null) return;
 
     _isGoingToPickup = false;
     _isOnTrip = true;
+    
+    // Sauvegarder l'état de la course
+    await _saveRideState('picked_up');
 
     // Tracer la route jusqu'à la destination
     _drawRouteToDestination();
@@ -902,14 +957,27 @@ class CoursesViewModel extends BaseViewModel {
   }
 
   // Méthode à appeler lorsque la course est terminée
-  void completeTrip() {
+  Future<void> completeTrip() async {
+    if (_currentCourse == null) return;
+    
     _isOnTrip = false;
     _isGoingToPickup = false;
+    
+    // Sauvegarder l'état de la course
+    await _saveRideState('completed');
+    
+    // Nettoyer l'état de la course
     _currentCourse = null;
     _polylines.clear();
     _markers.clear();
     _addUserLocationMarker();
-
+    
+    // Nettoyer le stockage local
+    await _clearRideState();
+    
+    // Cacher le bottom sheet
+    hideBottomSheet();
+    
     notifyListeners();
   }
 
@@ -922,6 +990,9 @@ class CoursesViewModel extends BaseViewModel {
         // Mettre à jour l'état
         _isGoingToPickup = false;
         _isOnTrip = true;
+
+        // Sauvegarder l'état de la course
+        await _saveRideState('in_progress');
 
         // Appeler l'API pour démarrer la course
         await driverservice.startCourse(int.parse(_currentCourse!.courseId!));
@@ -961,8 +1032,11 @@ class CoursesViewModel extends BaseViewModel {
           amount: _currentCourse!.prix!,
         );
 
+        // Sauvegarder l'état de la course comme terminée
+        await _saveRideState('completed');
+        
         // Réinitialiser l'état
-        _resetCourseState();
+        await _resetCourseState();
       } catch (e) {
         print('❌ Erreur lors de la fin de la course: $e');
         rethrow;
@@ -989,8 +1063,11 @@ class CoursesViewModel extends BaseViewModel {
           courseId: _currentCourse!.courseId!,
         );
 
+        // Sauvegarder l'état de la course comme rejetée
+        await _saveRideState('rejected');
+        
         // Réinitialiser l'état
-        _resetCourseState();
+        await _resetCourseState();
       } catch (e) {
         print('❌ Erreur lors de l\'annulation de la course: $e');
         rethrow;
@@ -1002,13 +1079,30 @@ class CoursesViewModel extends BaseViewModel {
   }
 
   // ✨ Réinitialiser l'état de la course
-  void _resetCourseState() {
+  Future<void> _resetCourseState() async {
     _currentCourse = null;
     _isGoingToPickup = false;
     _isOnTrip = false;
+    _isLoadingLocation = false;
+    _isLoading = false;
+    _error = null;
+    _isLoadingCourses = false;
+    _availableCourses.clear();
+    _markers.clear();
     _polylines.clear();
-    _markers
-        .removeWhere((marker) => marker.markerId.value != 'current_location');
+    _currentLocation = null;
+    _currentLocationName = null;
+    _destinationName = null;
+    _currentBottomSheetType = BottomSheetAppType.none;
+    _isLoadingLocation = false;
+    _isLoading = false;
+    _error = null;
+
+    // Mettre à jour le compteur de courses en attente
+    _updatePendingCoursesCount();
+    
+    // Réinitialiser l'état de la course dans le stockage
+    await RidePersistenceService.clearRideState();
   }
 
   @override
@@ -1016,5 +1110,67 @@ class CoursesViewModel extends BaseViewModel {
     _newCourseSubscription?.cancel();
     _courseUpdateSubscription?.cancel();
     super.dispose();
+  }
+
+  // Vérifier et restaurer l'état de la course au démarrage
+  Future<void> checkAndRestoreRideState() async {
+    try {
+      print('🔄 Vérification de l\'état de la course...');
+      final rideState = await RidePersistenceService.getRideState();
+      if (rideState != null) {
+        print('📦 État de la course restauré: $rideState');
+      }
+      final status = await RidePersistenceService.getRideStatus();
+      
+      if (rideState != null && status != null) {
+        // Restaurer les données de la course
+        _currentCourse = ClientData.fromJson(rideState);
+        
+        // Restaurer l'état de la course
+        switch (status) {
+          case 'accepted':
+            // Afficher le bottom sheet d'acceptation
+            _isGoingToPickup = true;
+            _isOnTrip = false;
+            setBottomSheetType(BottomSheetAppType.pickup);
+            break;
+          case 'picked_up':
+            _isGoingToPickup = true;
+            _isOnTrip = true;
+            setBottomSheetType(BottomSheetAppType.inprogress);
+            break;
+          case 'in_progress':
+            _isOnTrip = true;
+            _isGoingToPickup = false;
+            setBottomSheetType(BottomSheetAppType.inprogress);
+            break;
+          case 'completed':
+            hideBottomSheet();
+            await _clearRideState();
+            break;
+        }
+        
+        notifyListeners();
+      }
+    } catch (e) {
+      print('❌ Erreur lors de la vérification de l\'état de la course: $e');
+    }
+  }
+  
+  // Méthode pour sauvegarder l'état de la course
+  Future<void> _saveRideState(String status) async {
+    final rideState = RideState(
+      courseId: int.parse(_currentCourse!.courseId!),
+      status: status,
+      timestamp: DateTime.now().toIso8601String(),
+    );
+    final rideStateMap = rideState.toJson();
+    print('💾 Sauvegarde de l\'état de la course: $rideStateMap');
+    await RidePersistenceService.saveRideState(rideStateMap, status);
+  }
+  
+  // Méthode pour effacer l'état de la course
+  Future<void> _clearRideState() async {
+    await RidePersistenceService.clearRideState();
   }
 }

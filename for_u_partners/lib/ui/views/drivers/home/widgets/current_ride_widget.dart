@@ -78,15 +78,23 @@ class CurrentRideWidget extends StatelessWidget {
             ),
             const SizedBox(height: 12),
             Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const Icon(Icons.location_on,
-                    color: Color(0xFF6b7280), size: 16),
+                const Padding(
+                  padding: EdgeInsets.only(top: 2.0),
+                  child: Icon(Icons.location_on, color: Color(0xFF6b7280), size: 16),
+                ),
                 const SizedBox(width: 8),
-                Text(
-                  destination,
-                  style: const TextStyle(
-                    color: Color(0xFF6b7280),
-                    fontSize: 14,
+                Expanded(
+                  child: Text(
+                    destination,
+                    style: const TextStyle(
+                      color: Color(0xFF6b7280),
+                      fontSize: 14,
+                      height: 1.2,
+                    ),
+                    overflow: TextOverflow.ellipsis,
+                    maxLines: 2,
                   ),
                 ),
               ],

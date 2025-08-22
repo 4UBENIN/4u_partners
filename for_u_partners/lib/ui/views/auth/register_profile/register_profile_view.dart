@@ -71,9 +71,9 @@ class RegisterProfileView extends StackedView<RegisterProfileViewModel>
       appBar: AppBar(
         title: const Text('Move4u'),
         centerTitle: true,
-        backgroundColor: Theme.of(context).colorScheme.surface,
+        backgroundColor: Colors.white,
       ),
-      backgroundColor: Theme.of(context).colorScheme.surface,
+      backgroundColor: Colors.white,
       body: SingleChildScrollView(
         child: Padding(
           padding: const EdgeInsets.symmetric(horizontal: 20),
@@ -132,7 +132,7 @@ class RegisterProfileView extends StackedView<RegisterProfileViewModel>
                                   nom: pressingNameInputController.text,
                                   adresse:
                                       pressingLocalisationInputController.text);
-                              viewModel.registerEnding(model);
+                              viewModel.registerEnding(model, context);
                               break;
                             case 'conducteur':
                               if (viewModel.hasVehicle == true) {
@@ -219,7 +219,7 @@ class RegisterProfileView extends StackedView<RegisterProfileViewModel>
                                 }
                                 print("=== FIN MODEL DEBUG ===");
 
-                                viewModel.registerEnding(model);
+                                viewModel.registerEnding(model, context);
                               } else {
                                 print("=== CONDUCTEUR SANS VEHICULE ===");
                                 RegistrationModel model = RegistrationModel(
@@ -273,7 +273,7 @@ class RegisterProfileView extends StackedView<RegisterProfileViewModel>
                                       "Véhicule immatriculation: ${model.vehicule!.immatriculation}");
                                 }
                                 print("=== FIN MODEL DEBUG ===");
-                                viewModel.registerEnding(model);
+                                viewModel.registerEnding(model, context);
                               }
                               break;
                             //* LIVREUR
@@ -361,7 +361,7 @@ class RegisterProfileView extends StackedView<RegisterProfileViewModel>
                                 }
                                 print("=== FIN MODEL DEBUG ===");
 
-                                viewModel.registerEnding(model);
+                                viewModel.registerEnding(model, context);
                               } else {
                                 print("=== LIVREUR SANS VEHICULE ===");
                                 RegistrationModel model = RegistrationModel(
@@ -415,7 +415,7 @@ class RegisterProfileView extends StackedView<RegisterProfileViewModel>
                                       "Véhicule immatriculation: ${model.vehicule!.immatriculation}");
                                 }
                                 print("=== FIN MODEL DEBUG ===");
-                                viewModel.registerEnding(model);
+                                viewModel.registerEnding(model, context);
                               }
                               break;
                             default:

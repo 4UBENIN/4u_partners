@@ -138,7 +138,7 @@ class CoursesDeliveryViewModel extends BaseViewModel {
           height: 80.0,
           point:
               LatLng(_currentPosition!.latitude, _currentPosition!.longitude),
-          builder: (ctx) => Container(
+          child: Container(
             decoration: BoxDecoration(
               color: Colors.blue,
               shape: BoxShape.circle,
@@ -192,7 +192,7 @@ class CoursesDeliveryViewModel extends BaseViewModel {
       width: 80.0,
       height: 80.0,
       point: position,
-      builder: (ctx) => Container(
+      child: Container(
         child: const Icon(
           Icons.place,
           color: Colors.blue,
