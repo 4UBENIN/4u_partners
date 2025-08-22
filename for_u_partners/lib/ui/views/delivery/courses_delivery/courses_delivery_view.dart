@@ -225,13 +225,70 @@ class CoursesDeliveryView extends StackedView<CoursesDeliveryViewModel> {
   Widget _buildBottomSheet(CoursesDeliveryViewModel viewModel, BuildContext context) {
     switch (viewModel.currentBottomSheetType) {
       case BottomSheetAppType.clients:
-        // Afficher uniquement s'il y a des livraisons disponibles
+        // Afficher le message si aucune livraison disponible
         if (viewModel.availableDeliveries.isEmpty) {
-          // UTILISER WidgetsBinding seulement ici car c'est pendant le build
-          WidgetsBinding.instance.addPostFrameCallback((_) {
-            viewModel.setBottomSheetType(BottomSheetAppType.none);
-          });
-          return const SizedBox.shrink(key: ValueKey('empty'));
+          return Container(
+            padding: const EdgeInsets.all(16),
+            decoration: const BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black12,
+                  blurRadius: 10,
+                  offset: Offset(0, -2),
+                ),
+              ],
+            ),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Container(
+                  height: 4,
+                  width: 40,
+                  margin: const EdgeInsets.only(bottom: 16),
+                  decoration: BoxDecoration(
+                    color: Colors.grey[300],
+                    borderRadius: BorderRadius.circular(2),
+                  ),
+                ),
+                const Text(
+                  'Aucune demande pour l\'instant',
+                  style: TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+                const SizedBox(height: 8),
+                const Text(
+                  'Les nouvelles demandes de livraison apparaîtront ici',
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                    color: Colors.grey,
+                    fontSize: 14,
+                  ),
+                ),
+                const SizedBox(height: 16),
+                ElevatedButton(
+                  onPressed: () {
+                    viewModel.refreshDeliveries();
+                  },
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Theme.of(context).primaryColor,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                  ),
+                  child: const Text(
+                    'Actualiser',
+                    style: TextStyle(color: Colors.white),
+                  ),
+                ),
+                const SizedBox(height: 16),
+              ],
+            ),
+          );
         }
 
         return DeliveryClientsBottomSheet(
@@ -363,6 +420,10 @@ class CoursesDeliveryView extends StackedView<CoursesDeliveryViewModel> {
   CoursesDeliveryViewModel viewModelBuilder(BuildContext context) {
     final viewModel = CoursesDeliveryViewModel();
     viewModel.setContext(context);
+    // Démarrer l'initialisation après avoir défini le contexte
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      viewModel.initialize();
+    });
     return viewModel;
   }
 }

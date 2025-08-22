@@ -18,9 +18,12 @@ class CoursesDeliveryViewModel extends BaseViewModel {
   // Contrôleur de carte
   final MapController _mapController = MapController();
   MapController get mapController => _mapController;
+  final deliveryService = locator<DeliveryService>();
+  final navigationService = locator<NavigationService>();
 
   // Position initiale de la carte
-  LatLng _mapCenter = const LatLng(6.3586, 2.3912); // Position par défaut (Cotonou)
+  LatLng _mapCenter =
+      const LatLng(6.3586, 2.3912); // Position par défaut (Cotonou)
   LatLng get mapCenter => _mapCenter;
 
   // Niveau de zoom initial
@@ -33,7 +36,8 @@ class CoursesDeliveryViewModel extends BaseViewModel {
 
   // Liste des demandes de livraison disponibles
   final List<DeliveryRequestData> _availableDeliveries = [];
-  List<DeliveryRequestData> get availableDeliveries => List.unmodifiable(_availableDeliveries);
+  List<DeliveryRequestData> get availableDeliveries =>
+      List.unmodifiable(_availableDeliveries);
 
   // Demande de livraison actuellement sélectionnée
   DeliveryRequestData? _currentDelivery;
@@ -61,27 +65,24 @@ class CoursesDeliveryViewModel extends BaseViewModel {
   bool _isOnDelivery = false;
   bool get isOnDelivery => _isOnDelivery;
 
-  // Services
-  final deliveryService = locator<DeliveryService>(); // Assure-toi que ce service existe
-  final navigationService = locator<NavigationService>();
-
   // Platform checks
   bool get isAndroid => Platform.isAndroid;
   bool get isIOS => Platform.isIOS;
 
-  CoursesDeliveryViewModel() {
-    _initializeViewModel();
-  }
+  CoursesDeliveryViewModel();
 
   // ✨ Initialisation complète du ViewModel
-  Future<void> _initializeViewModel() async {
+  Future<void> initialize() async {
+    // Attendre que le contexte soit défini
+    while (_currentContext == null) {
+      await Future.delayed(const Duration(milliseconds: 100));
+    }
+
     // Lancer les tâches en parallèle
     await Future.wait([
       _getCurrentLocation(),
       _loadAvailableDeliveries(),
     ]);
-
-    // Afficher le bottom sheet s'il y a des demandes
     if (_availableDeliveries.isNotEmpty) {
       setBottomSheetType(BottomSheetAppType.clients);
     }
@@ -97,7 +98,7 @@ class CoursesDeliveryViewModel extends BaseViewModel {
       print('⚠️ Context is not set. Call setContext() first.');
       return;
     }
-    
+
     try {
       _isLoadingDeliveries = true;
       notifyListeners();
@@ -105,20 +106,23 @@ class CoursesDeliveryViewModel extends BaseViewModel {
       print('📦 Chargement des demandes de livraison...');
 
       // Appeler l'API pour récupérer les demandes de livraison
-      final response = await deliveryService.getAvailableDeliveries(_currentContext!);
-      
+      final response =
+          await deliveryService.getAvailableDeliveries(_currentContext!);
+
       // Parser la réponse
       final deliveryResponse = DeliveryRequestResponse.fromJson(response);
-      
+
       // Vider la liste actuelle et ajouter les nouvelles demandes
       _availableDeliveries.clear();
       _availableDeliveries.addAll(deliveryResponse.data);
 
       print('✅ ${_availableDeliveries.length} demandes de livraison chargées');
 
+      // Toujours afficher le bottom sheet, même s'il n'y a pas de livraisons
+      setBottomSheetType(BottomSheetAppType.clients);
+
       _isLoadingDeliveries = false;
       notifyListeners();
-
     } catch (e) {
       print('❌ Erreur chargement demandes de livraison: $e');
       _isLoadingDeliveries = false;
@@ -172,7 +176,8 @@ class CoursesDeliveryViewModel extends BaseViewModel {
         desiredAccuracy: LocationAccuracy.high,
       );
 
-      _mapCenter = LatLng(_currentPosition!.latitude, _currentPosition!.longitude);
+      _mapCenter =
+          LatLng(_currentPosition!.latitude, _currentPosition!.longitude);
       _mapController.move(_mapCenter, _mapZoom);
       _addUserLocationMarker();
 
@@ -187,15 +192,18 @@ class CoursesDeliveryViewModel extends BaseViewModel {
 
   // Ajouter un marqueur pour la position actuelle de l'utilisateur
   void _addUserLocationMarker() {
-    _markers.removeWhere((marker) => marker.point == LatLng(_currentPosition!.latitude, _currentPosition!.longitude));
+    _markers.removeWhere((marker) =>
+        marker.point ==
+        LatLng(_currentPosition!.latitude, _currentPosition!.longitude));
 
     if (_currentPosition != null) {
       _markers.add(
         Marker(
           width: 80.0,
           height: 80.0,
-          point: LatLng(_currentPosition!.latitude, _currentPosition!.longitude),
-          child:  Container(
+          point:
+              LatLng(_currentPosition!.latitude, _currentPosition!.longitude),
+          child: Container(
             decoration: BoxDecoration(
               color: Colors.blue,
               shape: BoxShape.circle,
@@ -214,7 +222,9 @@ class CoursesDeliveryViewModel extends BaseViewModel {
 
   // ✨ Convertir DeliveryRequestData en DeliveryClientData pour l'affichage
   List<DeliveryClientData> getClientsList() {
-    return _availableDeliveries.map((delivery) => delivery.toDeliveryClientData()).toList();
+    return _availableDeliveries
+        .map((delivery) => delivery.toDeliveryClientData())
+        .toList();
   }
 
   // ✨ Accepter une demande de livraison
@@ -270,7 +280,8 @@ class CoursesDeliveryViewModel extends BaseViewModel {
 
   // ✨ Supprimer une livraison de la liste
   void removeDelivery(String deliveryId) {
-    _availableDeliveries.removeWhere((delivery) => delivery.livraisonId == deliveryId);
+    _availableDeliveries
+        .removeWhere((delivery) => delivery.livraisonId == deliveryId);
 
     if (_availableDeliveries.isEmpty) {
       hideBottomSheet();
@@ -280,15 +291,16 @@ class CoursesDeliveryViewModel extends BaseViewModel {
   }
 
   // Services API calls
-  Future<void> acceptDeliveryService(int deliveryId, BuildContext context) async {
+  Future<void> acceptDeliveryService(
+      int deliveryId, BuildContext context) async {
     bool canAccept = false;
     try {
       setBusy(true);
       print("🔄 Début acceptation livraison...");
-      
+
       // TODO: Remplace par la vraie méthode de ton service
       // await deliveryService.acceptDelivery(deliveryId);
-      
+
       canAccept = true;
       print("✅ Livraison acceptée avec succès");
     } catch (e) {
@@ -311,7 +323,8 @@ class CoursesDeliveryViewModel extends BaseViewModel {
         if (_currentDelivery != null &&
             _currentDelivery!.departLat != null &&
             _currentDelivery!.departLng != null) {
-          final pickupLatLng = LatLng(_currentDelivery!.departLat!, _currentDelivery!.departLng!);
+          final pickupLatLng = LatLng(
+              _currentDelivery!.departLat!, _currentDelivery!.departLng!);
           _mapController.move(pickupLatLng, 15.0);
         }
       } else {
@@ -320,15 +333,16 @@ class CoursesDeliveryViewModel extends BaseViewModel {
     }
   }
 
-  Future<void> startDeliveryService(int deliveryId, BuildContext context) async {
+  Future<void> startDeliveryService(
+      int deliveryId, BuildContext context) async {
     bool canStart = false;
     try {
       setBusy(true);
       print("🔄 Début démarrage livraison...");
-      
+
       // TODO: Appeler ton service de livraison
       // await deliveryService.startDelivery(deliveryId);
-      
+
       canStart = true;
       print("✅ Livraison démarrée avec succès");
     } catch (e) {
@@ -354,7 +368,8 @@ class CoursesDeliveryViewModel extends BaseViewModel {
     }
 
     try {
-      final pickupLatLng = LatLng(_currentDelivery!.departLat!, _currentDelivery!.departLng!);
+      final pickupLatLng =
+          LatLng(_currentDelivery!.departLat!, _currentDelivery!.departLng!);
 
       // Ajouter marqueur pickup
       _markers.add(
@@ -394,10 +409,14 @@ class CoursesDeliveryViewModel extends BaseViewModel {
   // ✨ Ajuster la caméra pour afficher plusieurs points
   void _adjustCameraToShowBothPoints(LatLng point1, LatLng point2) {
     // Calculer les limites
-    final minLat = [point1.latitude, point2.latitude].reduce((a, b) => a < b ? a : b);
-    final maxLat = [point1.latitude, point2.latitude].reduce((a, b) => a > b ? a : b);
-    final minLng = [point1.longitude, point2.longitude].reduce((a, b) => a < b ? a : b);
-    final maxLng = [point1.longitude, point2.longitude].reduce((a, b) => a > b ? a : b);
+    final minLat =
+        [point1.latitude, point2.latitude].reduce((a, b) => a < b ? a : b);
+    final maxLat =
+        [point1.latitude, point2.latitude].reduce((a, b) => a > b ? a : b);
+    final minLng =
+        [point1.longitude, point2.longitude].reduce((a, b) => a < b ? a : b);
+    final maxLng =
+        [point1.longitude, point2.longitude].reduce((a, b) => a > b ? a : b);
 
     // Calculer le centre et le zoom approprié
     final centerLat = (minLat + maxLat) / 2;
@@ -406,14 +425,18 @@ class CoursesDeliveryViewModel extends BaseViewModel {
 
     // Calculer la distance pour ajuster le zoom
     final distance = Geolocator.distanceBetween(
-      point1.latitude, point1.longitude,
-      point2.latitude, point2.longitude,
+      point1.latitude,
+      point1.longitude,
+      point2.latitude,
+      point2.longitude,
     );
 
     // Ajuster le zoom selon la distance
     double zoom = 15.0;
-    if (distance > 5000) zoom = 12.0;
-    else if (distance > 2000) zoom = 13.0;
+    if (distance > 5000)
+      zoom = 12.0;
+    else if (distance > 2000)
+      zoom = 13.0;
     else if (distance > 1000) zoom = 14.0;
 
     _mapController.move(center, zoom);
