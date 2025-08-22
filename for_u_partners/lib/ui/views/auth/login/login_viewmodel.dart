@@ -42,7 +42,7 @@ class LoginViewModel extends FormViewModel {
     setBusy(true);
 
     try {
-      await _authService.login(model, _selectedProfile);
+      await _authService.login(model);
       // _navigationService.replaceWithPickerNavBarView();
     } catch (e) {
       setBusy(false);

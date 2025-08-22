@@ -1,75 +1,142 @@
+import 'dart:async';
+import 'package:for_u_partners/app/models/deliveryModels/delivery_request.dart';
 import 'package:stacked/stacked.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:flutter/material.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:flutter_map/flutter_map.dart';
+import 'package:for_u_partners/app/app.locator.dart';
+import 'package:for_u_partners/services/delivery_service.dart'; // Assure-toi que ce service existe
 import 'package:for_u_partners/ui/common/enum/bottom_enum.dart';
 import 'package:for_u_partners/ui/views/delivery/courses_delivery/model/client_model.dart';
+import 'package:stacked_services/stacked_services.dart';
+import 'package:for_u_partners/ui/common/toast.dart';
+import 'dart:io' show Platform;
 
 class CoursesDeliveryViewModel extends BaseViewModel {
+  BuildContext? _currentContext;
   // Contrôleur de carte
   final MapController _mapController = MapController();
   MapController get mapController => _mapController;
 
-  // Position initiale de la carte (sera mise à jour avec la position utilisateur)
-  LatLng _mapCenter = const LatLng(48.8566, 2.3522); // Position par défaut
+  // Position initiale de la carte
+  LatLng _mapCenter = const LatLng(6.3586, 2.3912); // Position par défaut (Cotonou)
   LatLng get mapCenter => _mapCenter;
 
   // Niveau de zoom initial
-  double _mapZoom = 15.0; // Zoom plus proche pour la position utilisateur
+  double _mapZoom = 15.0;
   double get mapZoom => _mapZoom;
 
   // Liste des marqueurs
   final List<Marker> _markers = [];
   List<Marker> get markers => _markers;
 
-  // État du chargement de la position
+  // Liste des demandes de livraison disponibles
+  final List<DeliveryRequestData> _availableDeliveries = [];
+  List<DeliveryRequestData> get availableDeliveries => List.unmodifiable(_availableDeliveries);
+
+  // Demande de livraison actuellement sélectionnée
+  DeliveryRequestData? _currentDelivery;
+  DeliveryRequestData? get currentDelivery => _currentDelivery;
+
+  // États de chargement
   bool _isLoadingLocation = true;
   bool get isLoadingLocation => _isLoadingLocation;
+
+  bool _isLoadingDeliveries = true;
+  bool get isLoadingDeliveries => _isLoadingDeliveries;
 
   // Position actuelle de l'utilisateur
   Position? _currentPosition;
   Position? get currentPosition => _currentPosition;
 
+  // État du bottom sheet
   BottomSheetAppType _currentBottomSheetType = BottomSheetAppType.none;
-
   BottomSheetAppType get currentBottomSheetType => _currentBottomSheetType;
 
-  List<DeliveryClientData> getClientsList() {
-    return [
-      DeliveryClientData(
-        name: 'Teddy TOSSOU',
-        timeInfo: 'A 5 minute de vous',
-        position: "Place de l'amazone",
-        destination: 'Erevan Cotonou',
-        details: ["Tshirt x5", "Jeans x2", "Short x2"],
-        initials: 'T',
-        type: 'Ramassage',
-      ),
-      DeliveryClientData(
-        name: 'Montana BOSSA',
-        timeInfo: 'A 3 minute de vous',
-        position: 'Carefour ITA',
-        destination: 'Pressing 4U',
-        details: ["Tshirt x5", "Jeans x2", "Short x2"],
-        initials: 'M',
-        type: 'Ramassage',
-      ),
-      DeliveryClientData(
-        name: 'Fifa DOVONOU',
-        timeInfo: 'A 7 minute de vous',
-        position: 'Etoile Rouge',
-        destination: 'Erevan Cotonou',
-        details: ["Tshirt x5", "Jeans x2", "Short x2"],
-        initials: 'F',
-        type: 'Livraison',
-      ),
-    ];
-  }
+  // États du trajet
+  bool _isGoingToPickup = false;
+  bool get isGoingToPickup => _isGoingToPickup;
+
+  bool _isOnDelivery = false;
+  bool get isOnDelivery => _isOnDelivery;
+
+  // Services
+  final deliveryService = locator<DeliveryService>(); // Assure-toi que ce service existe
+  final navigationService = locator<NavigationService>();
+
+  // Platform checks
+  bool get isAndroid => Platform.isAndroid;
+  bool get isIOS => Platform.isIOS;
 
   CoursesDeliveryViewModel() {
-    _getCurrentLocation();
-    onNewClientRequest();
+    _initializeViewModel();
+  }
+
+  // ✨ Initialisation complète du ViewModel
+  Future<void> _initializeViewModel() async {
+    // Lancer les tâches en parallèle
+    await Future.wait([
+      _getCurrentLocation(),
+      _loadAvailableDeliveries(),
+    ]);
+
+    // Afficher le bottom sheet s'il y a des demandes
+    if (_availableDeliveries.isNotEmpty) {
+      setBottomSheetType(BottomSheetAppType.clients);
+    }
+  }
+
+  // ✨ Charger les demandes de livraison depuis l'API
+  void setContext(BuildContext context) {
+    _currentContext = context;
+  }
+
+  Future<void> _loadAvailableDeliveries() async {
+    if (_currentContext == null) {
+      print('⚠️ Context is not set. Call setContext() first.');
+      return;
+    }
+    
+    try {
+      _isLoadingDeliveries = true;
+      notifyListeners();
+
+      print('📦 Chargement des demandes de livraison...');
+
+      // Appeler l'API pour récupérer les demandes de livraison
+      final response = await deliveryService.getAvailableDeliveries(_currentContext!);
+      
+      // Parser la réponse
+      final deliveryResponse = DeliveryRequestResponse.fromJson(response);
+      
+      // Vider la liste actuelle et ajouter les nouvelles demandes
+      _availableDeliveries.clear();
+      _availableDeliveries.addAll(deliveryResponse.data);
+
+      print('✅ ${_availableDeliveries.length} demandes de livraison chargées');
+
+      _isLoadingDeliveries = false;
+      notifyListeners();
+
+    } catch (e) {
+      print('❌ Erreur chargement demandes de livraison: $e');
+      _isLoadingDeliveries = false;
+      notifyListeners();
+    }
+  }
+
+  // ✨ Rafraîchir les demandes de livraison
+  Future<void> refreshDeliveries() async {
+    await _loadAvailableDeliveries();
+
+    // Réafficher le bottom sheet si nécessaire
+    if (_availableDeliveries.isNotEmpty &&
+        _currentBottomSheetType == BottomSheetAppType.none) {
+      setBottomSheetType(BottomSheetAppType.clients);
+    } else if (_availableDeliveries.isEmpty) {
+      hideBottomSheet();
+    }
   }
 
   // Obtenir la position actuelle de l'utilisateur
@@ -78,7 +145,6 @@ class CoursesDeliveryViewModel extends BaseViewModel {
       _isLoadingLocation = true;
       notifyListeners();
 
-      // Vérifier si les services de localisation sont activés
       bool serviceEnabled = await Geolocator.isLocationServiceEnabled();
       if (!serviceEnabled) {
         _isLoadingLocation = false;
@@ -86,7 +152,6 @@ class CoursesDeliveryViewModel extends BaseViewModel {
         return;
       }
 
-      // Vérifier les permissions
       LocationPermission permission = await Geolocator.checkPermission();
       if (permission == LocationPermission.denied) {
         permission = await Geolocator.requestPermission();
@@ -103,19 +168,12 @@ class CoursesDeliveryViewModel extends BaseViewModel {
         return;
       }
 
-      // Obtenir la position actuelle
       _currentPosition = await Geolocator.getCurrentPosition(
         desiredAccuracy: LocationAccuracy.high,
       );
 
-      // Mettre à jour la position de la carte
-      _mapCenter =
-          LatLng(_currentPosition!.latitude, _currentPosition!.longitude);
-
-      // Déplacer la carte vers la position actuelle
+      _mapCenter = LatLng(_currentPosition!.latitude, _currentPosition!.longitude);
       _mapController.move(_mapCenter, _mapZoom);
-
-      // Ajouter un marqueur pour la position actuelle
       _addUserLocationMarker();
 
       _isLoadingLocation = false;
@@ -129,16 +187,15 @@ class CoursesDeliveryViewModel extends BaseViewModel {
 
   // Ajouter un marqueur pour la position actuelle de l'utilisateur
   void _addUserLocationMarker() {
-    _markers.clear(); // Supprimer les anciens marqueurs
+    _markers.removeWhere((marker) => marker.point == LatLng(_currentPosition!.latitude, _currentPosition!.longitude));
 
     if (_currentPosition != null) {
       _markers.add(
         Marker(
           width: 80.0,
           height: 80.0,
-          point:
-              LatLng(_currentPosition!.latitude, _currentPosition!.longitude),
-          child: Container(
+          point: LatLng(_currentPosition!.latitude, _currentPosition!.longitude),
+          child:  Container(
             decoration: BoxDecoration(
               color: Colors.blue,
               shape: BoxShape.circle,
@@ -155,34 +212,264 @@ class CoursesDeliveryViewModel extends BaseViewModel {
     }
   }
 
+  // ✨ Convertir DeliveryRequestData en DeliveryClientData pour l'affichage
+  List<DeliveryClientData> getClientsList() {
+    return _availableDeliveries.map((delivery) => delivery.toDeliveryClientData()).toList();
+  }
+
+  // ✨ Accepter une demande de livraison
+  Future<void> acceptDelivery(String deliveryId, BuildContext context) async {
+    final deliveryIndex = _availableDeliveries.indexWhere(
+      (delivery) => delivery.livraisonId == deliveryId,
+    );
+
+    if (deliveryIndex != -1) {
+      final delivery = _availableDeliveries[deliveryIndex];
+      _currentDelivery = delivery;
+      _isGoingToPickup = true;
+      _isOnDelivery = false;
+
+      print('✅ Livraison acceptée: ${delivery.fullName} (ID: $deliveryId)');
+
+      // Tracer la route vers le point de départ si possible
+      if (_currentPosition != null &&
+          delivery.departLat != null &&
+          delivery.departLng != null) {
+        await _drawRouteToPickup();
+      }
+
+      // Supprimer de la liste des demandes disponibles
+      _availableDeliveries.removeAt(deliveryIndex);
+
+      // Appeler le service
+      await acceptDeliveryService(int.parse(deliveryId), context);
+    }
+  }
+
+  // ✨ Refuser une demande de livraison
+  Future<void> rejectDeliveryById(String deliveryId) async {
+    final deliveryIndex = _availableDeliveries.indexWhere(
+      (delivery) => delivery.livraisonId == deliveryId,
+    );
+
+    if (deliveryIndex != -1) {
+      final delivery = _availableDeliveries[deliveryIndex];
+      print('❌ Livraison refusée: ${delivery.fullName} (ID: $deliveryId)');
+
+      _availableDeliveries.removeAt(deliveryIndex);
+
+      // TODO: Appeler l'API pour envoyer le refus
+
+      if (_availableDeliveries.isEmpty) {
+        hideBottomSheet();
+      }
+
+      notifyListeners();
+    }
+  }
+
+  // ✨ Supprimer une livraison de la liste
+  void removeDelivery(String deliveryId) {
+    _availableDeliveries.removeWhere((delivery) => delivery.livraisonId == deliveryId);
+
+    if (_availableDeliveries.isEmpty) {
+      hideBottomSheet();
+    }
+
+    notifyListeners();
+  }
+
+  // Services API calls
+  Future<void> acceptDeliveryService(int deliveryId, BuildContext context) async {
+    bool canAccept = false;
+    try {
+      setBusy(true);
+      print("🔄 Début acceptation livraison...");
+      
+      // TODO: Remplace par la vraie méthode de ton service
+      // await deliveryService.acceptDelivery(deliveryId);
+      
+      canAccept = true;
+      print("✅ Livraison acceptée avec succès");
+    } catch (e) {
+      print('❌ Erreur acceptation livraison: $e');
+      canAccept = false;
+      CustomToast.showError(context, message: e.toString());
+
+      // Réinitialiser en cas d'erreur
+      _isGoingToPickup = false;
+      _currentDelivery = null;
+      _markers.clear();
+      _addUserLocationMarker();
+    } finally {
+      setBusy(false);
+
+      if (canAccept) {
+        setBottomSheetType(BottomSheetAppType.pickup);
+
+        // Recentrer sur le point de ramassage
+        if (_currentDelivery != null &&
+            _currentDelivery!.departLat != null &&
+            _currentDelivery!.departLng != null) {
+          final pickupLatLng = LatLng(_currentDelivery!.departLat!, _currentDelivery!.departLng!);
+          _mapController.move(pickupLatLng, 15.0);
+        }
+      } else {
+        hideBottomSheet();
+      }
+    }
+  }
+
+  Future<void> startDeliveryService(int deliveryId, BuildContext context) async {
+    bool canStart = false;
+    try {
+      setBusy(true);
+      print("🔄 Début démarrage livraison...");
+      
+      // TODO: Appeler ton service de livraison
+      // await deliveryService.startDelivery(deliveryId);
+      
+      canStart = true;
+      print("✅ Livraison démarrée avec succès");
+    } catch (e) {
+      print('❌ Erreur démarrage livraison: $e');
+      canStart = false;
+      CustomToast.showError(context, message: e.toString());
+    } finally {
+      setBusy(false);
+
+      if (canStart) {
+        setBottomSheetType(BottomSheetAppType.inprogress);
+      }
+    }
+  }
+
+  // ✨ Tracer la route vers le point de ramassage
+  Future<void> _drawRouteToPickup() async {
+    if (_currentPosition == null ||
+        _currentDelivery == null ||
+        _currentDelivery!.departLat == null ||
+        _currentDelivery!.departLng == null) {
+      return;
+    }
+
+    try {
+      final pickupLatLng = LatLng(_currentDelivery!.departLat!, _currentDelivery!.departLng!);
+
+      // Ajouter marqueur pickup
+      _markers.add(
+        Marker(
+          width: 80.0,
+          height: 80.0,
+          point: pickupLatLng,
+          child: Container(
+            decoration: BoxDecoration(
+              color: Colors.green,
+              shape: BoxShape.circle,
+              border: Border.all(color: Colors.white, width: 3),
+            ),
+            child: const Icon(
+              Icons.local_shipping,
+              color: Colors.white,
+              size: 30,
+            ),
+          ),
+        ),
+      );
+
+      // Ajuster la caméra pour voir les deux points
+      _adjustCameraToShowBothPoints(
+        LatLng(_currentPosition!.latitude, _currentPosition!.longitude),
+        pickupLatLng,
+      );
+
+      print('✅ Route vers pickup ajoutée');
+    } catch (e) {
+      print('❌ Erreur calcul route pickup: $e');
+    }
+
+    notifyListeners();
+  }
+
+  // ✨ Ajuster la caméra pour afficher plusieurs points
+  void _adjustCameraToShowBothPoints(LatLng point1, LatLng point2) {
+    // Calculer les limites
+    final minLat = [point1.latitude, point2.latitude].reduce((a, b) => a < b ? a : b);
+    final maxLat = [point1.latitude, point2.latitude].reduce((a, b) => a > b ? a : b);
+    final minLng = [point1.longitude, point2.longitude].reduce((a, b) => a < b ? a : b);
+    final maxLng = [point1.longitude, point2.longitude].reduce((a, b) => a > b ? a : b);
+
+    // Calculer le centre et le zoom approprié
+    final centerLat = (minLat + maxLat) / 2;
+    final centerLng = (minLng + maxLng) / 2;
+    final center = LatLng(centerLat, centerLng);
+
+    // Calculer la distance pour ajuster le zoom
+    final distance = Geolocator.distanceBetween(
+      point1.latitude, point1.longitude,
+      point2.latitude, point2.longitude,
+    );
+
+    // Ajuster le zoom selon la distance
+    double zoom = 15.0;
+    if (distance > 5000) zoom = 12.0;
+    else if (distance > 2000) zoom = 13.0;
+    else if (distance > 1000) zoom = 14.0;
+
+    _mapController.move(center, zoom);
+  }
+
+  // Gestion des bottom sheets
   void setBottomSheetType(BottomSheetAppType type) {
     _currentBottomSheetType = type;
     notifyListeners();
   }
 
-  void onNewClientRequest() {
+  void onNewDeliveryRequest() {
     setBottomSheetType(BottomSheetAppType.clients);
   }
 
-  // Exemple : fermer tous les bottom sheets
   void hideBottomSheet() {
     setBottomSheetType(BottomSheetAppType.none);
+  }
+
+  // Démarrer la livraison
+  void startDelivery() {
+    if (_currentDelivery == null) return;
+
+    _isGoingToPickup = false;
+    _isOnDelivery = true;
+
+    // TODO: Tracer la route vers la destination si tu as cette info
+    // _drawRouteToDestination();
+
+    notifyListeners();
+  }
+
+  // Terminer la livraison
+  void completeDelivery() {
+    _isOnDelivery = false;
+    _isGoingToPickup = false;
+    _currentDelivery = null;
+    _markers.clear();
+    _addUserLocationMarker();
+
+    notifyListeners();
   }
 
   // Recentrer sur la position actuelle
   Future<void> recenterOnUserLocation() async {
     if (_currentPosition != null) {
       _mapController.move(
-          LatLng(_currentPosition!.latitude, _currentPosition!.longitude),
-          _mapZoom);
+        LatLng(_currentPosition!.latitude, _currentPosition!.longitude),
+        _mapZoom,
+      );
     } else {
-      // Si pas de position actuelle, essayer de l'obtenir
       await _getCurrentLocation();
     }
   }
 
   void onMapTapped(LatLng point) {
-    // Ajouter un nouveau marqueur à la position tappée
     addMarker(point);
   }
 
@@ -195,7 +482,7 @@ class CoursesDeliveryViewModel extends BaseViewModel {
       child: Container(
         child: const Icon(
           Icons.place,
-          color: Colors.blue,
+          color: Colors.red,
           size: 40,
         ),
       ),
@@ -219,10 +506,8 @@ class CoursesDeliveryViewModel extends BaseViewModel {
     notifyListeners();
   }
 
-  // Nettoyer les ressources
   @override
   void dispose() {
-    // Nettoyer le contrôleur si nécessaire
     super.dispose();
   }
 }

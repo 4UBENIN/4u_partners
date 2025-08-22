@@ -122,11 +122,12 @@ class LoginView extends StackedView<LoginViewModel> with $LoginView {
                               text: "Se connecter",
                               onPressed: () async {
                                 LoginModel model = LoginModel(
-                                  telephone:
-                                      "+229${phoneNumberInputController.text}",
-                                  motDePasse: passwordInputController.text,
-                                  type: viewModel.selectedProfile,
-                                );
+                                    telephone:
+                                        "+229${phoneNumberInputController.text}",
+                                    motDePasse: passwordInputController.text,
+                                    type: viewModel.selectedProfile == "livreur"
+                                        ? "conducteur"
+                                        : viewModel.selectedProfile);
                                 print("=== MODEL: ${model.toJson()} ===");
                                 viewModel.login(model);
                               }),

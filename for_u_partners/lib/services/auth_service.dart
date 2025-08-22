@@ -19,7 +19,7 @@ class AuthService {
 
   //* LOGIN FUNCTION
 
-  Future<void> login(LoginModel loginModel, String type) async {
+  Future<void> login(LoginModel loginModel) async {
     final url =
         Uri.parse("https://foryou.cilassocies.com/api/partenaire/login");
 
