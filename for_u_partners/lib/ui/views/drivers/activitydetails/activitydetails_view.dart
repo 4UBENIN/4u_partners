@@ -336,6 +336,14 @@ class ActivitydetailsView extends StackedView<ActivitydetailsViewModel> {
   }
 
   Widget _buildClientInfoCard() {
+    // Récupération du nom du client depuis les données de l'activité
+    final clientName = activity?.client?['nom'] != null && activity?.client?['prenom'] != null
+        ? '${activity!.client!['prenom']} ${activity!.client!['nom']}'
+        : 'Client inconnu';
+    
+    // Première lettre pour l'avatar
+    final avatarLetter = clientName.isNotEmpty ? clientName[0].toUpperCase() : '?';
+
     return Container(
       decoration: BoxDecoration(
         color: Colors.white,
@@ -384,24 +392,24 @@ class ActivitydetailsView extends StackedView<ActivitydetailsViewModel> {
               ),
               borderRadius: BorderRadius.circular(12),
             ),
-            child: const Row(
+            child: Row(
               children: [
                 CircleAvatar(
                   radius: 28,
-                  backgroundColor: Color(0xFF184E9C),
+                  backgroundColor: const Color(0xFF184E9C),
                   child: Text(
-                    'E',
-                    style: TextStyle(
+                    avatarLetter,
+                    style: const TextStyle(
                       color: Colors.white,
                       fontSize: 20,
                       fontWeight: FontWeight.w700,
                     ),
                   ),
                 ),
-                SizedBox(width: 16),
+                const SizedBox(width: 16),
                 Text(
-                  'Enora Amadou',
-                  style: TextStyle(
+                  clientName,
+                  style: const TextStyle(
                     fontSize: 18,
                     fontWeight: FontWeight.w700,
                     color: Color(0xFF1E293B),
