@@ -1,8 +1,8 @@
-import 'package:for_u_partners/app/models/depot_models/depot_detail_model.dart';
-import 'package:for_u_partners/app/models/depot_models/depot_model.dart';
-import 'package:for_u_partners/app/models/depot_models/planned_depot_model.dart';
-import 'package:for_u_partners/app/models/ramassage_models/ramassage_detail_model.dart';
-import 'package:for_u_partners/app/models/ramassage_models/ramassage_statut_model.dart';
+import 'package:for_u_partners/app/models/pressing_depot_models/depot_detail_model.dart';
+import 'package:for_u_partners/app/models/pressing_depot_models/depot_model.dart';
+import 'package:for_u_partners/app/models/pressing_depot_models/planned_depot_model.dart';
+import 'package:for_u_partners/app/models/pressing_ramassage_models/ramassage_detail_model.dart';
+import 'package:for_u_partners/app/models/pressing_ramassage_models/ramassage_statut_model.dart';
 import 'package:for_u_partners/services/wallet_service.dart';
 import 'package:for_u_partners/ui/common/api_constant.dart';
 import 'package:for_u_partners/ui/common/get_fcm_token.dart';
@@ -11,7 +11,7 @@ import 'package:for_u_partners/app/models/pressing_model.dart';
 import 'package:for_u_partners/services/pressing_service.dart';
 import 'package:stacked/stacked.dart';
 import 'package:for_u_partners/app/app.locator.dart';
-import 'package:for_u_partners/app/models/ramassage_models/ramassage_model.dart';
+import 'package:for_u_partners/app/models/pressing_ramassage_models/ramassage_model.dart';
 import 'package:stacked_services/stacked_services.dart';
 
 class HomePressingViewModel extends FormViewModel {
