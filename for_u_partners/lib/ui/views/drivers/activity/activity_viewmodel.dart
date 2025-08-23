@@ -1,153 +1,137 @@
 import 'package:stacked/stacked.dart';
 import 'package:for_u_partners/app/app.locator.dart';
 import 'package:stacked_services/stacked_services.dart';
+import 'package:for_u_partners/services/driver_service.dart';
 import 'package:for_u_partners/ui/views/drivers/activity/models/activity_model.dart';
 
 class ActivityViewModel extends BaseViewModel {
   List<ActivityModel> _activities = [];
   List<ActivityModel> get activities => _activities;
-  final navigationService = locator<NavigationService>();
+  bool _isLoading = false;
+  bool get isLoading => _isLoading;
+  String? _errorMessage;
+  String? get errorMessage => _errorMessage;
+
+  final _driverService = locator<DriverService>();
+  final _navigationService = locator<NavigationService>();
+
   ActivityViewModel() {
     _initializeActivities();
   }
 
-  void _initializeActivities() {
-    // Données d'exemple basées sur le HTML
-    _activities = [
-      ActivityModel(
-          type: 'Course standard',
-          route: 'Cotonou → Porto-Novo',
-          status: ActivityStatus.inprogress,
-          timeAgo: 'Il y a 2h',
-          distance: '28 km',
-          earning: '4,500 CFA',
-          totalTime: '2h',
-          tarifkm: '161'),
-      ActivityModel(
-          type: 'Course express',
-          route: 'Akpakpa → Ganhi',
-          status: ActivityStatus.completed,
-          timeAgo: 'Il y a 3h',
-          distance: '12 km',
-          earning: '2,200 CFA',
-          totalTime: '2h',
-          tarifkm: '161'),
-      ActivityModel(
-          type: 'Course longue',
-          route: 'Cotonou → Abomey-Calavi',
-          status: ActivityStatus.completed,
-          timeAgo: 'Il y a 5h',
-          distance: '18 km',
-          earning: '3,800 CFA',
-          totalTime: '2h',
-          tarifkm: '161'),
-      ActivityModel(
-          type: 'Course standard',
-          route: 'Godomey → Calavi',
-          status: ActivityStatus.cancelled,
-          timeAgo: 'Il y a 6h',
-          distance: '8 km',
-          earning: '0 CFA',
-          totalTime: '2h',
-          tarifkm: '161'),
-      ActivityModel(
-          type: 'Course premium',
-          route: 'Fidjrossè → Aéroport',
-          status: ActivityStatus.completed,
-          timeAgo: 'Hier',
-          distance: '15 km',
-          earning: '6,200 CFA',
-          totalTime: '2h',
-          tarifkm: '161'),
-      ActivityModel(
-          type: 'Course standard',
-          route: 'Godomey → Calavi',
-          status: ActivityStatus.inprogress,
-          timeAgo: 'Il y a 6h',
-          distance: '8 km',
-          earning: '0 CFA',
-          totalTime: '2h',
-          tarifkm: '161'),
-    ];
-    notifyListeners();
+  Future<void> _initializeActivities() async {
+    await loadActivities();
   }
 
-  // Fonction pour ajouter une nouvelle activité terminée
-  void addCompletedActivity({
-    required String type,
-    required String route,
-    required DateTime endTime,
-    required String distance,
-    required String earning,
-  }) {
-    final newActivity = ActivityModel(
-      type: type,
-      route: route,
-      status: ActivityStatus.completed,
-      timeAgo: ActivityModel.getTimeAgo(endTime),
-      distance: distance,
-      earning: earning,
-    );
+  // Charger les activités depuis l'API de manière optimisée
+  Future<void> loadActivities() async {
+    try {
+      _isLoading = true;
+      _errorMessage = null;
+      notifyListeners();
 
-    _activities.insert(0, newActivity); // Ajouter en premier
-    notifyListeners();
+      print('⏳ Début du chargement des activités...');
+      final startTime = DateTime.now();
+
+      // 1. Récupérer la liste des courses
+      final coursesList = await _driverService.getCoursesList();
+      print('✅ ${coursesList.length} cours récupérés en ${DateTime.now().difference(startTime).inMilliseconds}ms');
+
+      // 2. Préparer les appels API en parallèle
+      final List<Future<ActivityModel>> futures = [];
+      
+      for (var course in coursesList) {
+        futures.add(_loadCourseWithDetails(course));
+      }
+
+      // 3. Exécuter tous les appels en parallèle
+      final loadedActivities = await Future.wait(futures);
+      
+      // 4. Trier par date de création (les plus récentes en premier)
+      loadedActivities.sort((a, b) => b.dateCreation.compareTo(a.dateCreation));
+
+      _activities = loadedActivities;
+      print('✨ ${_activities.length} activités chargées en ${DateTime.now().difference(startTime).inMilliseconds}ms');
+    } catch (e) {
+      _errorMessage = 'Erreur lors du chargement des activités: $e';
+      print('❌ $_errorMessage');
+    } finally {
+      _isLoading = false;
+      notifyListeners();
+    }
   }
 
-  // Fonction pour ajouter une activité annulée
-  void addCancelledActivity({
-    required String type,
-    required String route,
-    required DateTime endTime,
-    required String distance,
-  }) {
-    final newActivity = ActivityModel(
-      type: type,
-      route: route,
-      status: ActivityStatus.cancelled,
-      timeAgo: ActivityModel.getTimeAgo(endTime),
-      distance: distance,
-      earning: '0 CFA',
-    );
-
-    _activities.insert(0, newActivity); // Ajouter en premier
-    notifyListeners();
+  // Méthode privée pour charger les détails d'une course
+  Future<ActivityModel> _loadCourseWithDetails(Map<String, dynamic> course) async {
+    try {
+      // Si c'est une course terminée ou annulée, on a besoin des détails complets
+      if (course['statut'] == 'termine' || course['statut'] == 'annule') {
+        final details = await _driverService.getCourseDetails(course['id']);
+        return ActivityModel.fromApiData({
+          ...course,
+          ...details, // Fusionner les données de base avec les détails
+        });
+      } else {
+        // Pour les courses en cours ou en attente, on utilise les données de base
+        return ActivityModel.fromApiData(course);
+      }
+    } catch (e) {
+      print('⚠️ Erreur détails de la course ${course['id']}: $e');
+      // En cas d'erreur, retourner les données de base
+      return ActivityModel.fromApiData(course);
+    }
   }
 
-  // Fonction pour mettre à jour les temps d'activité
-  void updateActivityTimes() {
-    // Cette fonction peut être appelée périodiquement pour mettre à jour
-    // les temps affichés (ex: "Il y a 2h" devient "Il y a 3h")
-    // Pour cela, vous devriez stocker les DateTime réels dans le modèle
-    notifyListeners();
+  // Rafraîchir la liste des activités
+  Future<void> refreshActivities() async {
+    await loadActivities();
   }
 
-  // Fonction pour vider la liste
-  void clearActivities() {
-    _activities.clear();
-    notifyListeners();
+  // Obtenir une activité par son ID
+  ActivityModel? getActivityById(int id) {
+    try {
+      return _activities.firstWhere((activity) => activity.id == id);
+    } catch (e) {
+      return null;
+    }
+  }
+
+  // Mettre à jour le statut d'une activité
+  void updateActivityStatus(int activityId, String newStatus) {
+    final index =
+        _activities.indexWhere((activity) => activity.id == activityId);
+    if (index != -1) {
+      final updatedActivity = _activities[index];
+      // Mettre à jour le statut (cette partie peut être adaptée selon vos besoins)
+      _activities[index] = ActivityModel.fromApiData({
+        ...updatedActivity.toJson(),
+        'statut': newStatus,
+      });
+      notifyListeners();
+    }
   }
 }
 
-// Extension du modèle ActivityModel si vous voulez stocker les vraies dates
-class ActivityModelWithDate extends ActivityModel {
-  final DateTime endTime;
-
-  ActivityModelWithDate({
-    required String type,
-    required String route,
-    required ActivityStatus status,
-    required this.endTime,
-    required String distance,
-    required String earning,
-  }) : super(
-          type: type,
-          route: route,
-          status: status,
-          timeAgo: ActivityModel.getTimeAgo(endTime),
-          distance: distance,
-          earning: earning,
-        );
-
-  // Méthode pour mettre à jour le timeAgo basé sur l'heure actuelle
-  String get currentTimeAgo => ActivityModel.getTimeAgo(endTime);
+// Extension pour convertir un ActivityModel en Map (utile pour les mises à jour)
+extension ActivityModelExtension on ActivityModel {
+  Map<String, dynamic> toJson() {
+    return {
+      'id': id,
+      'course_id': id,
+      'numero': numero,
+      'adresse_depart': adresseDepart,
+      'adresse_arrivee': adresseArrivee,
+      'statut': status.toString().split('.').last,
+      'créée_le': dateCreation.toIso8601String(),
+      'distance_km': double.tryParse(distance.replaceAll(' km', '')) ?? 0,
+      'montant':
+          double.tryParse(earning.replaceAll(' CFA', '').replaceAll(' ', '')) ??
+              0,
+      'mode_paiement': modePaiement,
+      'vehicule': vehicule,
+      'client': client,
+      'point_depart': pointDepart,
+      'point_arrivee': pointArrivee,
+    };
+  }
 }

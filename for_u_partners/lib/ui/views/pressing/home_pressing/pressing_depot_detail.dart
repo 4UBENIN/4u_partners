@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:for_u_partners/ui/common/app_textInput.dart';
-// import 'pressing_depot_detail.form.dart';
 import 'package:for_u_partners/app/models/depot_models/depot_model.dart';
 import 'package:for_u_partners/ui/common/app_button_component.dart';
 import 'package:for_u_partners/ui/common/app_colors.dart';
@@ -271,7 +270,7 @@ class _DepotDetailContent extends ViewModelWidget<HomePressingViewModel> {
                               mainAxisAlignment: MainAxisAlignment.spaceBetween,
                               children: [
                                 Text(
-                                  "${vetement.libelle} x ${vetement.quantiteClient.toStringAsFixed(0)} => ${vetement.montant} FCFA",
+                                  "${vetement.libelle} x ${vetement.quantiteClient.toStringAsFixed(0)}",
                                   style: const TextStyle(
                                     fontSize: 15,
                                     color: Color(0xFF6b7280),

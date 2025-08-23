@@ -1,7 +1,20 @@
 import 'package:flutter/material.dart';
 
 class CurrentRideWidget extends StatelessWidget {
-  const CurrentRideWidget({super.key});
+  final String clientName;
+  final String destination;
+  final String timeRemaining;
+  final double distanceKm;
+  final VoidCallback? onTap;
+
+  const CurrentRideWidget({
+    super.key,
+    required this.clientName,
+    required this.destination,
+    this.timeRemaining = '15 min', // Valeur par défaut
+    this.distanceKm = 0.0, // Valeur par défaut
+    this.onTap,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -47,16 +60,16 @@ class CurrentRideWidget extends StatelessWidget {
               ],
             ),
             const SizedBox(height: 16),
-            const Row(
+            Row(
               children: [
-                CircleAvatar(
+                const CircleAvatar(
                   backgroundColor: Color(0xFFf3f4f6),
                   child: Icon(Icons.person, color: Color(0xFF6b7280)),
                 ),
-                SizedBox(width: 12),
+                const SizedBox(width: 12),
                 Text(
-                  'Ronald Richards',
-                  style: TextStyle(
+                  clientName,
+                  style: const TextStyle(
                     fontWeight: FontWeight.w500,
                     color: Color(0xFF1a1a1a),
                   ),
@@ -64,15 +77,24 @@ class CurrentRideWidget extends StatelessWidget {
               ],
             ),
             const SizedBox(height: 12),
-            const Row(
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Icon(Icons.location_on, color: Color(0xFF6b7280), size: 16),
-                SizedBox(width: 8),
-                Text(
-                  'Manchester Airport',
-                  style: TextStyle(
-                    color: Color(0xFF6b7280),
-                    fontSize: 14,
+                const Padding(
+                  padding: EdgeInsets.only(top: 2.0),
+                  child: Icon(Icons.location_on, color: Color(0xFF6b7280), size: 16),
+                ),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: Text(
+                    destination,
+                    style: const TextStyle(
+                      color: Color(0xFF6b7280),
+                      fontSize: 14,
+                      height: 1.2,
+                    ),
+                    overflow: TextOverflow.ellipsis,
+                    maxLines: 2,
                   ),
                 ),
               ],
@@ -81,8 +103,8 @@ class CurrentRideWidget extends StatelessWidget {
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                _infoColumn('12 min', 'Temps restant'),
-                _infoColumn('3.2 km', 'Distance'),
+                _infoColumn(timeRemaining, 'Temps restant'),
+                _infoColumn(distanceKm.toString(), 'Distance'),
               ],
             ),
           ],

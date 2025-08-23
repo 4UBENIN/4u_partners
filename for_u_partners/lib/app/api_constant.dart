@@ -15,6 +15,9 @@ String factureCourseUrl(int courseId) =>
 String coursesDetailsUrl(int courseId) =>
     "$baseUrl/conducteur/courses/$courseId/details";
 String assignedCourseUrl = "$baseUrl/conducteur/courses_list";
+String walletSoldUrl = "$baseUrl/wallet_solde";
+String getDailyStats = "$baseUrl/conducteur/stats/daily";
+String getGlobalStats = "$baseUrl/conducteur/stats/global";
 Map<String, String> headers = {
   'Content-Type': 'application/json',
   'Accept': 'application/json'

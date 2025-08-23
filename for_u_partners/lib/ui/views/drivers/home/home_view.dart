@@ -1,4 +1,5 @@
 import 'package:for_u_partners/ui/views/pressing/widgets/animated_dot.dart';
+import 'package:loading_animation_widget/loading_animation_widget.dart';
 
 import 'home_viewmodel.dart';
 import 'widgets/wallet_widget.dart';
@@ -18,38 +19,74 @@ class HomeView extends StackedView<HomeViewModel> {
     HomeViewModel viewModel,
     Widget? child,
   ) {
-    return Scaffold(
-      backgroundColor: kcWhiteColors,
-      appBar: _buildCustomAppBar(viewModel),
-      body: const SingleChildScrollView(
-        child: Padding(
-          padding: EdgeInsets.all(25.0),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              WalletWidget(balance: '67,500 FCFA'),
-              SizedBox(height: 24),
-              SummaryWidget(
-                todayCourses: 8,
-                todayEarnings: '32,500 FCFA',
+    return Stack(
+      children: [
+        Scaffold(
+          backgroundColor: kcWhiteColors,
+          appBar: _buildCustomAppBar(viewModel),
+          body: SingleChildScrollView(
+            child: Padding(
+              padding: const EdgeInsets.all(25.0),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  WalletWidget(balance: viewModel.solde.toDouble()),
+                  const SizedBox(height: 24),
+                  SummaryWidget(
+                    todayCourses: viewModel.todayCourses,
+                    todayEarnings: viewModel.todayEarnings,
+                  ),
+                  const SizedBox(height: 24),
+                  if (viewModel.hasActiveRide)
+                    CurrentRideWidget(
+                      clientName: viewModel.activeRideClientName,
+                      destination: viewModel.activeRideDestination,
+                      timeRemaining:
+                          '15 min', // À remplacer par la valeur réelle si disponible
+                      distanceKm: viewModel.activeRideDistance,
+                      onTap: () {
+                        // Navigation vers l'écran de détail de la course
+                      },
+                    ),
+                  if (viewModel.hasActiveRide) const SizedBox(height: 24),
+                  const Text(
+                    'Activité récente',
+                    style: TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.w600,
+                      color: Color(0xFF333333),
+                    ),
+                  ),
+                  const SizedBox(height: 15),
+                  ActivityWidget(
+                    recentActivities:
+                        viewModel.dailyStats?.activiteRecenteTerminee != null
+                            ? [viewModel.dailyStats!.activiteRecenteTerminee!]
+                            : null,
+                    evaluations: viewModel.dailyStats?.dernieresEvaluations,
+                    onActivityTap: () {
+                      // Navigation vers le détail de l'activité
+                    },
+                    onRatingTap: () {
+                      // Navigation vers les évaluations
+                    },
+                  ),
+                ],
               ),
-              SizedBox(height: 24),
-              CurrentRideWidget(),
-              SizedBox(height: 30),
-              Text(
-                'Activité récente',
-                style: TextStyle(
-                  fontSize: 16,
-                  fontWeight: FontWeight.w600,
-                  color: Color(0xFF333333),
-                ),
-              ),
-              SizedBox(height: 15),
-              ActivityWidget(),
-            ],
+            ),
           ),
         ),
-      ),
+        if (viewModel.isBusy)
+          Container(
+            color: Colors.black.withValues(alpha: 0.5),
+            child: Center(
+              child: LoadingAnimationWidget.fourRotatingDots(
+                color: kcPrimaryColor,
+                size: 50,
+              ),
+            ),
+          ),
+      ],
     );
   }
 

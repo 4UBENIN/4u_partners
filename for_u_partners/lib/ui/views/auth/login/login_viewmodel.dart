@@ -14,7 +14,7 @@ class LoginViewModel extends FormViewModel {
   bool obscurePassword = true;
   final profiles = [
     "pressing",
-    "coursier",
+    "livreur",
     "conducteur",
     "agent d'entretien",
     "garagiste"
@@ -42,8 +42,8 @@ class LoginViewModel extends FormViewModel {
     setBusy(true);
 
     try {
-      await _authService.login(model, _selectedProfile);
-      // _navigationService.replaceWithDeliveryNavBarView();
+      await _authService.login(model);
+      // _navigationService.replaceWithPickerNavBarView();
     } catch (e) {
       setBusy(false);
     }

@@ -1,3 +1,6 @@
+import 'package:for_u_partners/ui/common/app_colors.dart';
+import 'package:loading_animation_widget/loading_animation_widget.dart';
+
 import 'activity_viewmodel.dart';
 import 'package:stacked/stacked.dart';
 import 'package:flutter/material.dart';
@@ -5,6 +8,7 @@ import 'package:for_u_partners/app/app.locator.dart';
 import 'package:stacked_services/stacked_services.dart';
 import 'package:for_u_partners/ui/views/drivers/activity/models/activity_model.dart';
 import 'package:for_u_partners/ui/views/drivers/activitydetails/activitydetails_view.dart';
+import 'package:pull_to_refresh/pull_to_refresh.dart';
 
 class ActivityView extends StackedView<ActivityViewModel> {
   const ActivityView({Key? key}) : super(key: key);
@@ -19,7 +23,6 @@ class ActivityView extends StackedView<ActivityViewModel> {
       backgroundColor: const Color(0xFFF8F9FA),
       appBar: AppBar(
         scrolledUnderElevation: 0,
-        automaticallyImplyLeading: false,
         backgroundColor: const Color(0xFFF8F9FA),
         elevation: 0,
         title: const Text(
@@ -34,14 +37,59 @@ class ActivityView extends StackedView<ActivityViewModel> {
       ),
       body: Container(
         padding: const EdgeInsets.only(left: 16.0, right: 16.0, top: 16.0),
+        child: _buildBody(viewModel),
+      ),
+    );
+  }
+
+  Widget _buildBody(ActivityViewModel viewModel) {
+    if (viewModel.isLoading && viewModel.activities.isEmpty) {
+      return Center(
+          child: LoadingAnimationWidget.fourRotatingDots(
+              color: kcPrimaryColor, size: 50));
+    }
+
+    if (viewModel.errorMessage != null) {
+      return Center(
         child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Expanded(
-              child: _buildActivitiesList(viewModel.activities),
+            const Icon(Icons.error_outline, color: Colors.red, size: 48),
+            const SizedBox(height: 16),
+            Text(
+              'Erreur de chargement des activités',
+              style: TextStyle(
+                fontSize: 16,
+                color: Colors.grey[800],
+                fontWeight: FontWeight.w500,
+              ),
+            ),
+            const SizedBox(height: 8),
+            Text(
+              viewModel.errorMessage!,
+              textAlign: TextAlign.center,
+              style: TextStyle(color: Colors.grey[600]),
+            ),
+            const SizedBox(height: 16),
+            ElevatedButton(
+              onPressed: viewModel.loadActivities,
+              child: const Text('Réessayer'),
             ),
           ],
         ),
+      );
+    }
+
+    return SmartRefresher(
+      enablePullDown: true,
+      enablePullUp: false,
+      header: const WaterDropHeader(
+        waterDropColor: Color(0xFF184E9C),
+        complete: Text('Rafraîchissement terminé'),
       ),
+      onRefresh: viewModel.refreshActivities,
+      controller: RefreshController(),
+      child: _buildActivitiesList(viewModel.activities),
     );
   }
 
@@ -90,98 +138,124 @@ class ActivityView extends StackedView<ActivityViewModel> {
                 offset: const Offset(0, 2),
               ),
             ],
-            border: const Border(
+            border: Border(
               left: BorderSide(
-                color: Color(0xFF184E9C),
+                color: _getStatusColor(activity.status),
                 width: 3,
               ),
             ),
           ),
           child: Material(
             color: Colors.transparent,
-            child: InkWell(
-              onTap: () => _onActivityTap(activity),
-              borderRadius: BorderRadius.circular(12),
-              child: Padding(
-                padding: const EdgeInsets.all(16.0),
-                child: Column(
-                  children: [
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                activity.type,
-                                style: const TextStyle(
-                                  fontSize: 14,
-                                  fontWeight: FontWeight.w600,
-                                  color: Color(0xFF1A1A1A),
-                                ),
-                              ),
-                              const SizedBox(height: 2),
-                              Text(
-                                activity.route,
-                                style: const TextStyle(
-                                  fontSize: 13,
-                                  color: Color(0xFF64748B),
-                                  height: 1.3,
-                                ),
-                              ),
-                            ],
-                          ),
+            child: Padding(
+              padding: const EdgeInsets.all(16.0),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Text(
+                        'Course #${activity.numero}',
+                        style: const TextStyle(
+                          fontSize: 14,
+                          fontWeight: FontWeight.w600,
+                          color: Color(0xFF1A1A1A),
                         ),
-                        _buildStatusBadge(activity.status),
-                      ],
-                    ),
-                    const SizedBox(height: 8),
-                    Container(
-                      height: 1,
-                      color: const Color(0xFFF1F5F9),
-                    ),
-                    const SizedBox(height: 8),
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        Text(
-                          activity.timeAgo,
-                          style: const TextStyle(
-                            fontSize: 12,
-                            color: Color(0xFF94A3B8),
-                          ),
+                      ),
+                      _buildStatusBadge(activity.status),
+                    ],
+                  ),
+                  const SizedBox(height: 12),
+                  Row(
+                    children: [
+                      Container(
+                        width: 4,
+                        height: 4,
+                        decoration: const BoxDecoration(
+                          color: Color(0xFF184E9C),
+                          shape: BoxShape.circle,
                         ),
-                        Container(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 6,
-                            vertical: 2,
-                          ),
-                          decoration: BoxDecoration(
-                            color: const Color(0xFFF1F5F9),
-                            borderRadius: BorderRadius.circular(4),
-                          ),
-                          child: Text(
-                            activity.distance,
-                            style: const TextStyle(
-                              fontSize: 12,
-                              color: Color(0xFF64748B),
-                            ),
-                          ),
-                        ),
-                        Text(
-                          activity.earning,
+                      ),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: Text(
+                          activity.adresseDepart,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
                           style: const TextStyle(
                             fontSize: 14,
-                            fontWeight: FontWeight.w600,
-                            color: Color(0xFF184E9C),
+                            color: Color(0xFF1A1A1A),
                           ),
                         ),
-                      ],
-                    ),
-                  ],
-                ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 8),
+                  Row(
+                    children: [
+                      Container(
+                        width: 4,
+                        height: 4,
+                        margin: const EdgeInsets.only(left: 2, right: 10),
+                        decoration: const BoxDecoration(
+                          color: Color(0xFFE11D48),
+                          shape: BoxShape.circle,
+                        ),
+                      ),
+                      const SizedBox(width: 0),
+                      Expanded(
+                        child: Text(
+                          activity.adresseArrivee,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: const TextStyle(
+                            fontSize: 14,
+                            color: Color(0xFF1A1A1A),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 16),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Text(
+                        activity.timeAgo,
+                        style: const TextStyle(
+                          fontSize: 12,
+                          color: Color(0xFF94A3B8),
+                        ),
+                      ),
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 8,
+                          vertical: 4,
+                        ),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFFF1F5F9),
+                          borderRadius: BorderRadius.circular(4),
+                        ),
+                        child: Text(
+                          activity.distance,
+                          style: const TextStyle(
+                            fontSize: 12,
+                            color: Color(0xFF64748B),
+                          ),
+                        ),
+                      ),
+                      Text(
+                        activity.earning,
+                        style: const TextStyle(
+                          fontSize: 14,
+                          fontWeight: FontWeight.w600,
+                          color: Color(0xFF184E9C),
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
               ),
             ),
           ),
@@ -190,22 +264,35 @@ class ActivityView extends StackedView<ActivityViewModel> {
     );
   }
 
+  Color _getStatusColor(ActivityStatus status) {
+    switch (status) {
+      case ActivityStatus.completed:
+        return const Color(0xFF059669);
+      case ActivityStatus.cancelled:
+        return const Color(0xFFDC2626);
+      case ActivityStatus.inprogress:
+        return Colors.orange;
+      case ActivityStatus.pending:
+        return Colors.blue;
+    }
+  }
+
   Widget _buildStatusBadge(ActivityStatus status) {
-    Color color;
+    Color color = _getStatusColor(status);
     String text;
 
     switch (status) {
       case ActivityStatus.completed:
-        color = const Color(0xFF059669);
         text = 'Terminée';
         break;
       case ActivityStatus.cancelled:
-        color = const Color(0xFFDC2626);
         text = 'Annulée';
         break;
       case ActivityStatus.inprogress:
-        color = Colors.orange;
         text = 'En cours';
+        break;
+      case ActivityStatus.pending:
+        text = 'En attente';
         break;
     }
 
@@ -289,7 +376,6 @@ class ActivityView extends StackedView<ActivityViewModel> {
 
   void _onActivityTap(ActivityModel activity) {
     final navigationService = locator<NavigationService>();
-    print('Clic sur: ${activity.type} - ${activity.route}');
     navigationService.navigateToView(ActivitydetailsView(activity: activity));
   }
 

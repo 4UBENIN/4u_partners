@@ -96,10 +96,12 @@ class RegisterProfileViewModel extends FormViewModel {
     rebuildUi();
   }
 
-  Future<void> registerEnding(RegistrationModel model) async {
+
+  Future<void> registerEnding(RegistrationModel model, BuildContext context) async {
     setBusy(true);
     try {
-      await _authService.register(model);
+      await _authService.register(model, context);
+
       // Succès - le setBusy(false) sera appelé dans finally
     } catch (e) {
       // Gérer l'erreur

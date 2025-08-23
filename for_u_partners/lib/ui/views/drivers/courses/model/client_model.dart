@@ -52,6 +52,47 @@ class ClientData {
 
   bool get hasValidCourseId => courseId != null && courseId!.isNotEmpty;
 
+  // Ajout des méthodes de sérialisation/désérialisation
+  Map<String, dynamic> toJson() {
+    return {
+      'name': name,
+      'timeInfo': timeInfo,
+      'destination': destination,
+      'initials': initials,
+      'courseId': courseId,
+      'prix': prix,
+      'distance': distance,
+      'duree': duree,
+      'adresseDepart': adresseDepart,
+      'isNight': isNight,
+      'etaMinutes': etaMinutes,
+      'destLong': destLong,
+      'destLat': destLat,
+      'depLong': depLong,
+      'depLat': depLat,
+    };
+  }
+
+  factory ClientData.fromJson(Map<String, dynamic> json) {
+    return ClientData(
+      name: json['name'] as String,
+      timeInfo: json['timeInfo'] as String,
+      destination: json['destination'] as String,
+      initials: json['initials'] as String,
+      courseId: json['courseId'] as String?,
+      prix: json['prix']?.toDouble(),
+      distance: json['distance']?.toDouble(),
+      duree: json['duree']?.toDouble(),
+      adresseDepart: json['adresseDepart'] as String?,
+      isNight: json['isNight'] as bool?,
+      etaMinutes: json['etaMinutes'] as int?,
+      destLong: json['destLong']?.toDouble(),
+      destLat: json['destLat']?.toDouble(),
+      depLong: json['depLong']?.toDouble(),
+      depLat: json['depLat']?.toDouble(),
+    );
+  }
+
   @override
   String toString() {
     return 'ClientData(name: $name, courseId: $courseId, prix: $prix)';

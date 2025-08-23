@@ -6,6 +6,8 @@ class SharedpreferencesService {
   static const String _userTypeId = 'user_type_id';
   static const String _userId = 'user_id';
   static const String _userName = 'user_name';
+  static const String _profilStatuts = 'profil_statuts';
+
 
   //* USER TOKEN
 
@@ -49,10 +51,16 @@ class SharedpreferencesService {
 
   //* USER ID
 
-  // Enregistre l'ID de l'utilisateur en la convertissant en JSON
+  // Enregistre l'ID de l'utilisateur (gère à la fois String et int)
   Future<void> saveUserId(dynamic id) async {
     final prefs = await SharedPreferences.getInstance();
-    await prefs.setString(_userId, id);
+    if (id is String) {
+      await prefs.setString(_userId, id);
+    } else if (id is int) {
+      await prefs.setString(_userId, id.toString());
+    } else {
+      throw ArgumentError('ID must be either String or int');
+    }
   }
 
   // Récupère l'ID de l'utilisateur (brut ou reconverti en Map, selon besoin)
@@ -105,5 +113,25 @@ class SharedpreferencesService {
   Future<void> removeUserName() async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.remove(_userName);
+  }
+
+  //* PROFIL STATUTS
+
+  // Enregistre le statut du profil en la convertissant en JSON
+  Future<void> saveProfilStatuts(dynamic statuts) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString(_profilStatuts, statuts);
+  }
+
+  // Récupère le statut du profil (brut ou reconverti en Map, selon besoin)
+  Future<String?> getProfilStatuts() async {
+    final prefs = await SharedPreferences.getInstance();
+    return prefs.getString(_profilStatuts);
+  }
+
+  // Supprimer le statut du profil
+  Future<void> removeProfilStatuts() async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.remove(_profilStatuts);
   }
 }

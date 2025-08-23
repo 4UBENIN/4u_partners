@@ -108,12 +108,16 @@ class ActivitydetailsView extends StackedView<ActivitydetailsViewModel> {
                           size: 24,
                         ),
                         const SizedBox(width: 12),
-                        Text(
-                          'Course ${activity!.type.split(' ')[1]}',
-                          style: const TextStyle(
-                            color: Colors.white,
-                            fontSize: 20,
-                            fontWeight: FontWeight.w700,
+                        Expanded(
+                          child: Text(
+                            'Course ${activity!.type.split(' ').length > 1 ? activity!.type.split(' ')[1] : activity!.type}',
+                            style: const TextStyle(
+                              color: Colors.white,
+                              fontSize: 20,
+                              fontWeight: FontWeight.w700,
+                            ),
+                            overflow: TextOverflow.ellipsis,
+                            maxLines: 1,
                           ),
                         ),
                       ],
@@ -121,17 +125,24 @@ class ActivitydetailsView extends StackedView<ActivitydetailsViewModel> {
                     const SizedBox(height: 8),
                     Row(
                       children: [
-                        const Icon(
-                          Icons.location_on,
-                          color: Colors.white70,
-                          size: 16,
+                        const Padding(
+                          padding: EdgeInsets.only(top: 2.0),
+                          child: Icon(
+                            Icons.location_on,
+                            color: Colors.white70,
+                            size: 16,
+                          ),
                         ),
                         const SizedBox(width: 8),
-                        Text(
-                          activity!.route,
-                          style: const TextStyle(
-                            color: Colors.white70,
-                            fontSize: 16,
+                        Expanded(
+                          child: Text(
+                            activity!.route,
+                            style: const TextStyle(
+                              color: Colors.white70,
+                              fontSize: 14,
+                            ),
+                            overflow: TextOverflow.ellipsis,
+                            maxLines: 2,
                           ),
                         ),
                       ],
@@ -239,7 +250,9 @@ class ActivitydetailsView extends StackedView<ActivitydetailsViewModel> {
               _buildInfoItem(
                 icon: Icons.local_offer_outlined,
                 label: 'Type',
-                value: activity!.type.split(' ')[1],
+                value: activity!.type.split(' ').length > 1
+                    ? activity!.type.split(' ')[1]
+                    : activity!.type,
               ),
               _buildInfoItem(
                 icon: Icons.route_outlined,
@@ -257,6 +270,13 @@ class ActivitydetailsView extends StackedView<ActivitydetailsViewModel> {
                   icon: Icons.monetization_on_outlined,
                   label: 'Tarif/km',
                   value: '${activity!.tarifkm!} CFA',
+                ),
+              if (activity!.modePaiement != null &&
+                  activity!.modePaiement!.isNotEmpty)
+                _buildInfoItem(
+                  icon: _getPaymentMethodIcon(activity!.modePaiement!),
+                  label: 'Paiement',
+                  value: _formatPaymentMethod(activity!.modePaiement!),
                 ),
             ],
           ),
@@ -398,11 +418,13 @@ class ActivitydetailsView extends StackedView<ActivitydetailsViewModel> {
   Color _getStatusColor(ActivityStatus status) {
     switch (status) {
       case ActivityStatus.completed:
-        return const Color(0xFF10B981);
+        return const Color(0xFF10B981); // Green
       case ActivityStatus.cancelled:
-        return const Color(0xFFEF4444);
+        return const Color(0xFFEF4444); // Red
       case ActivityStatus.inprogress:
-        return const Color(0xFFF59E0B);
+        return const Color(0xFFF59E0B); // Amber
+      case ActivityStatus.pending:
+        return const Color(0xFF3B82F6); // Blue
     }
   }
 
@@ -414,6 +436,8 @@ class ActivitydetailsView extends StackedView<ActivitydetailsViewModel> {
         return Icons.cancel;
       case ActivityStatus.inprogress:
         return Icons.access_time;
+      case ActivityStatus.pending:
+        return Icons.pending;
     }
   }
 
@@ -425,6 +449,38 @@ class ActivitydetailsView extends StackedView<ActivitydetailsViewModel> {
         return 'Annulée';
       case ActivityStatus.inprogress:
         return 'En cours';
+      case ActivityStatus.pending:
+        return 'En attente';
+    }
+  }
+
+  IconData _getPaymentMethodIcon(String method) {
+    switch (method.toLowerCase()) {
+      case 'espece':
+      case 'espèces':
+        return Icons.money;
+      case 'carte':
+      case 'carte bancaire':
+        return Icons.credit_card;
+      case 'mobile money':
+      case 'mobile':
+        return Icons.phone_android;
+      default:
+        return Icons.payment;
+    }
+  }
+
+  String _formatPaymentMethod(String method) {
+    switch (method.toLowerCase()) {
+      case 'espece':
+        return 'Espèces';
+      case 'carte':
+        return 'Carte bancaire';
+      case 'mobile_money':
+        return 'Mobile Money';
+      default:
+        // Mettre en majuscule la première lettre
+        return method[0].toUpperCase() + method.substring(1).toLowerCase();
     }
   }
 
