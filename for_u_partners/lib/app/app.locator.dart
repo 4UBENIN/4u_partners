@@ -16,6 +16,7 @@ import '../services/driver_service.dart';
 import '../services/pressing_service.dart';
 import '../services/sharedpreferences_service.dart';
 import '../services/wallet_service.dart';
+import '../ui/views/drivers/homemain/homemain_viewmodel.dart';
 
 final locator = StackedLocator.instance;
 
@@ -36,4 +37,5 @@ Future<void> setupLocator({
   locator.registerLazySingleton(() => DriverService());
   locator.registerLazySingleton(() => PressingService());
   locator.registerLazySingleton(() => WalletService());
+  locator.registerLazySingleton(() => HomemainViewModel());
 }
