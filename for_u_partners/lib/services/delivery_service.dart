@@ -27,12 +27,23 @@ class DeliveryService {
         print('✅ Demandes de livraison récupérées avec succès');
         return data;
       } else {
-        CustomToast.showError(
-          context,
-          message: response.body
-        );
-        throw Exception(
-            'Erreur API: ${response.statusCode} - ${response.body}');
+        try {
+          final errorData = json.decode(response.body) as Map<String, dynamic>;
+          final errorMessage = errorData['error'] ?? response.body;
+          
+          CustomToast.showError(
+            context,
+            message: errorMessage.toString(),
+          );
+          throw Exception('Erreur API: ${response.statusCode} - $errorMessage');
+        } catch (e) {
+          // En cas d'erreur de parsing du JSON, afficher la réponse brute
+          CustomToast.showError(
+            context,
+            message: response.body,
+          );
+          throw Exception('Erreur API: ${response.statusCode} - ${response.body}');
+        }
       }
     } catch (e) {
       print('❌ Erreur lors de la récupération des livraisons: $e');
