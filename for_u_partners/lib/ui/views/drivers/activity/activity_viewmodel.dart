@@ -23,50 +23,62 @@ class ActivityViewModel extends BaseViewModel {
     await loadActivities();
   }
 
-  // Charger les activités depuis l'API
+  // Charger les activités depuis l'API de manière optimisée
   Future<void> loadActivities() async {
     try {
       _isLoading = true;
       _errorMessage = null;
       notifyListeners();
 
-      // Récupérer la liste des courses
+      print('⏳ Début du chargement des activités...');
+      final startTime = DateTime.now();
+
+      // 1. Récupérer la liste des courses
       final coursesList = await _driverService.getCoursesList();
+      print('✅ ${coursesList.length} cours récupérés en ${DateTime.now().difference(startTime).inMilliseconds}ms');
 
-      // Pour chaque course, récupérer les détails et créer un ActivityModel
-      final List<ActivityModel> loadedActivities = [];
-
+      // 2. Préparer les appels API en parallèle
+      final List<Future<ActivityModel>> futures = [];
+      
       for (var course in coursesList) {
-        try {
-          // Si c'est une course terminée ou annulée, on a besoin des détails complets
-          if (course['statut'] == 'termine' || course['statut'] == 'annule') {
-            final details = await _driverService.getCourseDetails(course['id']);
-            loadedActivities.add(ActivityModel.fromApiData({
-              ...course,
-              ...details, // Fusionner les données de base avec les détails
-            }));
-          } else {
-            // Pour les courses en cours ou en attente, on utilise les données de base
-            loadedActivities.add(ActivityModel.fromApiData(course));
-          }
-        } catch (e) {
-          print(
-              'Erreur lors du chargement des détails de la course ${course['id']}: $e');
-          // Ajouter quand même la course avec les données de base en cas d'erreur
-          loadedActivities.add(ActivityModel.fromApiData(course));
-        }
+        futures.add(_loadCourseWithDetails(course));
       }
 
-      // Trier par date de création (les plus récentes en premier)
+      // 3. Exécuter tous les appels en parallèle
+      final loadedActivities = await Future.wait(futures);
+      
+      // 4. Trier par date de création (les plus récentes en premier)
       loadedActivities.sort((a, b) => b.dateCreation.compareTo(a.dateCreation));
 
       _activities = loadedActivities;
+      print('✨ ${_activities.length} activités chargées en ${DateTime.now().difference(startTime).inMilliseconds}ms');
     } catch (e) {
       _errorMessage = 'Erreur lors du chargement des activités: $e';
-      print(_errorMessage);
+      print('❌ $_errorMessage');
     } finally {
       _isLoading = false;
       notifyListeners();
+    }
+  }
+
+  // Méthode privée pour charger les détails d'une course
+  Future<ActivityModel> _loadCourseWithDetails(Map<String, dynamic> course) async {
+    try {
+      // Si c'est une course terminée ou annulée, on a besoin des détails complets
+      if (course['statut'] == 'termine' || course['statut'] == 'annule') {
+        final details = await _driverService.getCourseDetails(course['id']);
+        return ActivityModel.fromApiData({
+          ...course,
+          ...details, // Fusionner les données de base avec les détails
+        });
+      } else {
+        // Pour les courses en cours ou en attente, on utilise les données de base
+        return ActivityModel.fromApiData(course);
+      }
+    } catch (e) {
+      print('⚠️ Erreur détails de la course ${course['id']}: $e');
+      // En cas d'erreur, retourner les données de base
+      return ActivityModel.fromApiData(course);
     }
   }
 

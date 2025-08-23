@@ -1,6 +1,5 @@
 import 'dart:async';
 import 'package:for_u_partners/app/app.locator.dart';
-import 'package:for_u_partners/models/ride_state.dart';
 import 'package:for_u_partners/services/course_event_service.dart';
 import 'package:for_u_partners/services/course_notificationstorage_service.dart';
 import 'package:for_u_partners/services/driver_service.dart';
@@ -38,6 +37,7 @@ class CoursesViewModel extends BaseViewModel {
   // Course actuellement sélectionnée
   ClientData? _currentCourse;
   ClientData? get currentCourse => _currentCourse;
+  set currentCourse(ClientData? course) => _currentCourse = course;
   
   // Current user location
   LatLng? _currentLocation;
@@ -66,6 +66,11 @@ class CoursesViewModel extends BaseViewModel {
   HomemainViewModel? _homeMainViewModel;
   
   // Définir la référence au ViewModel principal
+  Future<void> onModelReady() async {
+    await checkAndRestoreRideState();
+    print("currentBottomSheetType: $_currentBottomSheetType");
+  }
+
   void setHomeMainViewModel(HomemainViewModel viewModel) {
     _homeMainViewModel = viewModel;
   }
@@ -87,6 +92,10 @@ class CoursesViewModel extends BaseViewModel {
   // Loading state for general operations
   bool _isLoading = false;
   bool get isLoading => _isLoading;
+  
+  // État de restauration
+  bool _isRestoringState = false;
+  bool get isRestoringState => _isRestoringState;
 
   Position? _currentPosition;
   Position? get currentPosiction => _currentPosition;
@@ -119,9 +128,13 @@ class CoursesViewModel extends BaseViewModel {
     _setupCourseListeners();
 
     // Afficher le bottom sheet s'il y a des courses
+    print('🔍 État après _loadStoredNotifications - availableCourses: ${_availableCourses.length}');
+    print('🔍 Contenu de availableCourses: ${_availableCourses.map((c) => '${c.courseId}: ${c.name}').toList()}');
+    
     if (_availableCourses.isNotEmpty) {
       setBottomSheetType(BottomSheetAppType.clients);
     }
+    print("currentBottomSheetType: $_currentBottomSheetType");
   }
 
   // ✨ Charger les notifications stockées au démarrage
@@ -135,7 +148,7 @@ class CoursesViewModel extends BaseViewModel {
       // Récupérer les notifications valides des dernières 24h (ou ajuste selon tes besoins)
       final storedNotifications =
           await CourseNotificationStorage.getValidNotifications(
-        maxAge: const Duration(hours: 24),
+        maxAge: const Duration(minutes: 3),
       );
 
       print(
@@ -362,13 +375,14 @@ class CoursesViewModel extends BaseViewModel {
   }
 
   void setBottomSheetType(BottomSheetAppType type) {
-    print('📝 [BottomSheet] Changement d\'état: ${_currentBottomSheetType?.toString() ?? 'null'} -> $type');
+    print('[BottomSheet] Changement d\'état: $_currentBottomSheetType -> $type');
     _currentBottomSheetType = type;
-    // Sauvegarder l'état si nécessaire
-    if (_currentCourse != null) {
-      _saveRideState(type.toString());
-    }
     notifyListeners();
+    
+    // Ne pas sauvegarder l'état si c'est 'none' ou si on n'a pas de course en cours
+    if (type != BottomSheetAppType.none && _currentCourse != null) {
+      _saveRideState(type.toString().split('.').last);
+    }
   }
 
   void _scheduleBottomSheetChange(BottomSheetAppType type) {
@@ -383,7 +397,9 @@ class CoursesViewModel extends BaseViewModel {
   }
 
   void hideBottomSheet() {
-    setBottomSheetType(BottomSheetAppType.none);
+    print('[BottomSheet] Masquage de la feuille sans sauvegarder l\'état');
+    _currentBottomSheetType = BottomSheetAppType.none;
+    notifyListeners();
   }
 
   Future<void> recenterOnUserLocation() async {
@@ -1115,58 +1131,134 @@ class CoursesViewModel extends BaseViewModel {
   // Vérifier et restaurer l'état de la course au démarrage
   Future<void> checkAndRestoreRideState() async {
     try {
+      _isRestoringState = true;
+      notifyListeners();
       print('🔄 Vérification de l\'état de la course...');
       final rideState = await RidePersistenceService.getRideState();
-      if (rideState != null) {
-        print('📦 État de la course restauré: $rideState');
-      }
       final status = await RidePersistenceService.getRideStatus();
       
       if (rideState != null && status != null) {
-        // Restaurer les données de la course
-        _currentCourse = ClientData.fromJson(rideState);
+        print('🔍 Tentative de restauration de la course avec le statut: $status');
         
-        // Restaurer l'état de la course
-        switch (status) {
-          case 'accepted':
-            // Afficher le bottom sheet d'acceptation
-            _isGoingToPickup = true;
-            _isOnTrip = false;
-            setBottomSheetType(BottomSheetAppType.pickup);
-            break;
-          case 'picked_up':
-            _isGoingToPickup = true;
-            _isOnTrip = true;
-            setBottomSheetType(BottomSheetAppType.inprogress);
-            break;
-          case 'in_progress':
-            _isOnTrip = true;
-            _isGoingToPickup = false;
-            setBottomSheetType(BottomSheetAppType.inprogress);
-            break;
-          case 'completed':
-            hideBottomSheet();
-            await _clearRideState();
-            break;
+        // Créer un ClientData avec les données sauvegardées
+        _currentCourse = ClientData(
+          name: rideState['name']?.toString() ?? 'Client inconnu',
+          timeInfo: rideState['timeInfo']?.toString() ?? 'Maintenant',
+          destination: rideState['destination']?.toString() ?? 'Destination inconnue',
+          initials: rideState['initials']?.toString() ?? 'CI',
+          courseId: rideState['courseId']?.toString(),
+          prix: rideState['prix'] is double ? rideState['prix'] : (rideState['prix'] is int ? (rideState['prix'] as int).toDouble() : null),
+          distance: rideState['distance'] is double ? rideState['distance'] : (rideState['distance'] is int ? (rideState['distance'] as int).toDouble() : null),
+          duree: rideState['duree'] is double ? rideState['duree'] : (rideState['duree'] is int ? (rideState['duree'] as int).toDouble() : null),
+          adresseDepart: rideState['adresseDepart']?.toString(),
+          isNight: rideState['isNight'] as bool?,
+          etaMinutes: rideState['etaMinutes'] is int ? rideState['etaMinutes'] : (rideState['etaMinutes'] is double ? (rideState['etaMinutes'] as double).toInt() : null),
+          destLong: rideState['destLong'] is double ? rideState['destLong'] : (rideState['destLong'] is int ? (rideState['destLong'] as int).toDouble() : null),
+          destLat: rideState['destLat'] is double ? rideState['destLat'] : (rideState['destLat'] is int ? (rideState['destLat'] as int).toDouble() : null),
+          depLong: rideState['depLong'] is double ? rideState['depLong'] : (rideState['depLong'] is int ? (rideState['depLong'] as int).toDouble() : null),
+          depLat: rideState['depLat'] is double ? rideState['depLat'] : (rideState['depLat'] is int ? (rideState['depLat'] as int).toDouble() : null),
+        );
+        
+        // Mettre à jour l'état en fonction du statut
+        _updateRideStateFromStatus(status);
+        
+        // Si la course est en cours ou acceptée, on la retire de availableCourses
+        if (status == 'in_progress' || status == 'picked_up' || status == 'accepted') {
+          _availableCourses.removeWhere((course) => course.courseId == _currentCourse?.courseId);
+          _updatePendingCoursesCount();
+          print('✅ Course retirée de availableCourses car son statut est: $status');
+        } else if (!_availableCourses.any((course) => course.courseId == _currentCourse?.courseId)) {
+          // Sinon, on l'ajoute si elle n'existe pas déjà
+          _availableCourses.add(_currentCourse!);
+          _updatePendingCoursesCount();
+          print('✅ Course ajoutée à availableCourses avec statut: $status');
         }
         
+        // Rafraîchir l'interface
         notifyListeners();
+        
+        // Ajouter un délai pour s'assurer que l'UI est prête
+        await Future.delayed(Duration(milliseconds: 500));
+      } else {
+        print('ℹ️ Aucun état de course à restaurer ou statut manquant');
       }
     } catch (e) {
       print('❌ Erreur lors de la vérification de l\'état de la course: $e');
+    } finally {
+      _isRestoringState = false;
+      notifyListeners();
     }
+  }
+  
+  // Méthode utilitaire pour mettre à jour l'état en fonction du statut
+  void _updateRideStateFromStatus(String status) {
+    // Normaliser le statut
+    status = status.toLowerCase().trim();
+    
+    print('🔄 Mise à jour de l\'état avec le statut: $status');
+    
+    switch (status) {
+      case 'pickup':
+      case 'accepted':
+        _isGoingToPickup = true;
+        _isOnTrip = false;
+        _currentBottomSheetType = BottomSheetAppType.pickup;
+        break;
+        
+      case 'picked_up':
+      case 'inprogress':  // Gestion des deux formats possibles
+      case 'in_progress':
+        _isGoingToPickup = false;
+        _isOnTrip = true;
+        _currentBottomSheetType = BottomSheetAppType.inprogress;
+        break;
+        
+      case 'completed':
+      case 'rejected':
+      case 'cancelled':
+        _isGoingToPickup = false;
+        _isOnTrip = false;
+        _currentBottomSheetType = BottomSheetAppType.none;
+        break;
+        
+      default:
+        print('⚠️ Statut inconnu lors de la restauration: $status');
+        _currentBottomSheetType = BottomSheetAppType.none;
+    }
+    
+    print('🔍 État mis à jour - '
+          'isGoingToPickup: $_isGoingToPickup, '
+          'isOnTrip: $_isOnTrip, '
+          'bottomSheetType: $_currentBottomSheetType');
   }
   
   // Méthode pour sauvegarder l'état de la course
   Future<void> _saveRideState(String status) async {
-    final rideState = RideState(
-      courseId: int.parse(_currentCourse!.courseId!),
-      status: status,
-      timestamp: DateTime.now().toIso8601String(),
-    );
-    final rideStateMap = rideState.toJson();
-    print('💾 Sauvegarde de l\'état de la course: $rideStateMap');
-    await RidePersistenceService.saveRideState(rideStateMap, status);
+    if (_currentCourse == null) return;
+    
+    // Créer un Map avec toutes les propriétés de la course
+    final rideData = {
+      'courseId': _currentCourse!.courseId,
+      'name': _currentCourse!.name,
+      'timeInfo': _currentCourse!.timeInfo,
+      'destination': _currentCourse!.destination,
+      'initials': _currentCourse!.initials,
+      'prix': _currentCourse!.prix,
+      'distance': _currentCourse!.distance,
+      'duree': _currentCourse!.duree,
+      'adresseDepart': _currentCourse!.adresseDepart,
+      'isNight': _currentCourse!.isNight,
+      'etaMinutes': _currentCourse!.etaMinutes,
+      'destLong': _currentCourse!.destLong,
+      'destLat': _currentCourse!.destLat,
+      'depLong': _currentCourse!.depLong,
+      'depLat': _currentCourse!.depLat,
+      'status': status,
+      'timestamp': DateTime.now().toIso8601String(),
+    };
+    
+    print('💾 Sauvegarde de l\'état de la course: $rideData');
+    await RidePersistenceService.saveRideState(rideData, status);
   }
   
   // Méthode pour effacer l'état de la course
