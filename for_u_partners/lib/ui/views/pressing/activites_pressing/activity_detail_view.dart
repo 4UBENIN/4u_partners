@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:for_u_partners/app/models/depot_models/depot_detail_model.dart';
-import 'package:for_u_partners/app/models/ramassage_models/ramassage_detail_model.dart';
+import 'package:for_u_partners/app/models/pressing_depot_models/depot_detail_model.dart';
+import 'package:for_u_partners/app/models/pressing_ramassage_models/ramassage_detail_model.dart';
 import 'package:for_u_partners/services/pressing_service.dart';
 import 'package:for_u_partners/ui/common/app_colors.dart';
 import 'package:for_u_partners/ui/common/text_component.dart';
