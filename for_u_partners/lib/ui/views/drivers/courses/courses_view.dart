@@ -15,6 +15,7 @@ import 'package:for_u_partners/ui/views/drivers/courses/widget/customers_sheet_w
 
 class CoursesView extends StackedView<CoursesViewModel> {
   const CoursesView({Key? key}) : super(key: key);
+  static bool _isChatLoading = false;
 
   @override
   Widget builder(
@@ -92,6 +93,47 @@ class CoursesView extends StackedView<CoursesViewModel> {
                                     SizedBox(height: 16),
                                     Text(
                                       'Acceptation en cours...',
+                                      style: TextStyle(
+                                        fontSize: 16,
+                                        fontWeight: FontWeight.w500,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ),
+                          ),
+                        )
+                      : const SizedBox.shrink(),
+
+                  _isChatLoading
+                      ? Positioned.fill(
+                          child: Container(
+                            color: Colors.black.withOpacity(0.3),
+                            child: Center(
+                              child: Container(
+                                padding: const EdgeInsets.all(20),
+                                decoration: BoxDecoration(
+                                  color: Colors.white,
+                                  borderRadius: BorderRadius.circular(12),
+                                  boxShadow: [
+                                    BoxShadow(
+                                      color: Colors.black.withOpacity(0.1),
+                                      blurRadius: 10,
+                                      offset: const Offset(0, 4),
+                                    ),
+                                  ],
+                                ),
+                                child: const Column(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    CircularProgressIndicator(
+                                      valueColor: AlwaysStoppedAnimation<Color>(
+                                          kcPrimaryColor),
+                                    ),
+                                    SizedBox(height: 16),
+                                    Text(
+                                      'Ouverture du chat...',
                                       style: TextStyle(
                                         fontSize: 16,
                                         fontWeight: FontWeight.w500,
@@ -183,6 +225,88 @@ class CoursesView extends StackedView<CoursesViewModel> {
               ),
       ),
     );
+  }
+
+  static Future<void> _openChatWithLoading({
+    required BuildContext context,
+    required String clientId,
+    required String clientName,
+    required String? courseId,
+    required ChatService chatService,
+  }) async {
+    // Empêcher les clics multiples
+    if (_isChatLoading) return;
+
+    // Activer l'indicateur de chargement
+    _isChatLoading = true;
+    // Force rebuild pour afficher le loading
+    if (context.mounted) {
+      (context as Element).markNeedsBuild();
+    }
+
+    try {
+      // Récupérer les infos de l'utilisateur connecté
+      final currentUserInfo = await chatService.getCurrentUserInfo();
+      if (currentUserInfo == null) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Erreur: Utilisateur non connecté'),
+            backgroundColor: Colors.red,
+          ),
+        );
+        return;
+      }
+
+      // Créer ou récupérer la conversation
+      final conversationId = await chatService.createOrGetConversation(
+        currentUserId: currentUserInfo['id'],
+        clientId: clientId,
+        clientName: clientName,
+        tripId: courseId,
+      );
+
+      print(" BB RecEIVER NAME : $clientName ");
+      print(" BB RecEIVER ID : $clientId");
+      print(" BB CONVERSATION ID : $conversationId");
+      print(" BB CURRENT USER ID : ${currentUserInfo['id']}");
+
+      if (conversationId != null) {
+        // Naviguer vers la page de chat
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (context) => ChatPage(
+              receiverUserName: clientName,
+              receiverUserId: clientId,
+              conversationId: conversationId,
+              currentUserId: currentUserInfo['id'],
+            ),
+          ),
+        );
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Erreur lors de l\'ouverture du chat'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    } catch (e) {
+      print('Erreur ouverture chat: $e');
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Une erreur est survenue'),
+          backgroundColor: Colors.red,
+        ),
+      );
+    } finally {
+      // Désactiver l'indicateur de chargement
+      _isChatLoading = false;
+      // Force rebuild pour cacher le loading
+      if (context.mounted) {
+        (context as Element).markNeedsBuild();
+      }
+    }
   }
 
   Future<Widget> _buildBottomSheet(
@@ -277,76 +401,25 @@ class CoursesView extends StackedView<CoursesViewModel> {
               // Logique d'appel du client
             },
             onChatClients: () async {
-              try {
-                // Vérifier que nous avons l'ID du client
-                if (pickupCourse.clientId == null ||
-                    pickupCourse.clientId!.isEmpty) {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(
-                      content:
-                          Text('Impossible d\'ouvrir le chat pour le moment'),
-                      backgroundColor: Colors.red,
-                    ),
-                  );
-                  return;
-                }
-
-                // Récupérer les infos de l'utilisateur connecté
-                final currentUserInfo = await chatService.getCurrentUserInfo();
-                if (currentUserInfo == null) {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(
-                      content: Text('Erreur: Utilisateur non connecté'),
-                      backgroundColor: Colors.red,
-                    ),
-                  );
-                  return;
-                }
-
-                // Créer ou récupérer la conversation
-                final conversationId =
-                    await chatService.createOrGetConversation(
-                  currentUserId: currentUserInfo['id'],
-                  clientId: pickupCourse.clientId!,
-                  clientName: pickupCourse.name,
-                  tripId: pickupCourse.courseId,
-                );
-
-                print(" BB RecEIVER NAME : ${pickupCourse.name} ");
-                print(" BB RecEIVER ID : ${pickupCourse.clientId}");
-                print(" BB CONVERSATION ID : $conversationId");
-                print(" BB CURRENT USER ID : ${currentUserInfo['id']}");
-
-                if (conversationId != null) {
-                  // Naviguer vers la page de chat
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (context) => ChatPage(
-                        receiverUserName: pickupCourse.name,
-                        receiverUserId: pickupCourse.clientId!,
-                        conversationId: conversationId,
-                        currentUserId: currentUserInfo['id'],
-                      ),
-                    ),
-                  );
-                } else {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(
-                      content: Text('Erreur lors de l\'ouverture du chat'),
-                      backgroundColor: Colors.red,
-                    ),
-                  );
-                }
-              } catch (e) {
-                print('Erreur ouverture chat: $e');
+              if (pickupCourse.clientId == null ||
+                  pickupCourse.clientId!.isEmpty) {
                 ScaffoldMessenger.of(context).showSnackBar(
                   const SnackBar(
-                    content: Text('Une erreur est survenue'),
+                    content:
+                        Text('Impossible d\'ouvrir le chat pour le moment'),
                     backgroundColor: Colors.red,
                   ),
                 );
+                return;
               }
+
+              await _openChatWithLoading(
+                context: context,
+                clientId: pickupCourse.clientId!,
+                clientName: pickupCourse.name,
+                courseId: pickupCourse.courseId,
+                chatService: chatService,
+              );
             });
 
       case BottomSheetAppType.inprogress:
