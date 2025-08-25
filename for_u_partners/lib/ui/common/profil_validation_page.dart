@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'dart:io';
 import 'package:flutter/services.dart';
+import 'package:for_u_partners/app/app.router.dart';
+import 'package:stacked_services/stacked_services.dart';
 
 class ProfileValidationPage extends StatefulWidget {
   const ProfileValidationPage({Key? key}) : super(key: key);
@@ -162,31 +164,36 @@ class _ProfileValidationPageState extends State<ProfileValidationPage>
                                   
                                   const SizedBox(height: 24),
                                   
-                                  // Bouton J'ai compris
-                                  ElevatedButton(
-                                    onPressed: () {
-                                      if (Platform.isAndroid) {
-                                        SystemNavigator.pop();
-                                      } else if (Platform.isIOS) {
-                                        exit(0);
-                                      }
-                                    },
-                                    style: ElevatedButton.styleFrom(
-                                      backgroundColor: const Color(0xFF184E9C),
-                                      foregroundColor: Colors.white,
-                                      padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 16),
-                                      shape: RoundedRectangleBorder(
-                                        borderRadius: BorderRadius.circular(30),
+                                  // Boutons en ligne
+                                  Row(
+                                    mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                                    children: [
+                                      // Bouton Se connecter
+                                   
+                                      
+                                      // Bouton J'ai compris
+                                      ElevatedButton(
+                                        onPressed: () {
+                                        NavigationService().navigateToLoginView();
+                                        },
+                                        style: ElevatedButton.styleFrom(
+                                          backgroundColor: const Color(0xFF184E9C),
+                                          foregroundColor: Colors.white,
+                                          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
+                                          shape: RoundedRectangleBorder(
+                                            borderRadius: BorderRadius.circular(30),
+                                          ),
+                                          elevation: 4,
+                                        ),
+                                        child: const Text(
+                                          'Se connecter',
+                                          style: TextStyle(
+                                            fontSize: 16,
+                                            fontWeight: FontWeight.w600,
+                                          ),
+                                        ),
                                       ),
-                                      elevation: 4,
-                                    ),
-                                    child: const Text(
-                                      'J\'ai compris',
-                                      style: TextStyle(
-                                        fontSize: 16,
-                                        fontWeight: FontWeight.w600,
-                                      ),
-                                    ),
+                                    ],
                                   ),
                                 ],
                               ),

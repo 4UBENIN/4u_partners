@@ -47,7 +47,7 @@ class AuthService {
       String token = responseJson['token'];
 
 // Sauvegarde dans SharedPreferences
-      await _sharedPreferencesServices.saveToken(token);
+     await _sharedPreferencesServices.saveToken(token);
       await _sharedPreferencesServices.saveUserName(name);
       await _sharedPreferencesServices.saveUserType(role);
       await _sharedPreferencesServices.saveUserId(userId);
@@ -62,6 +62,7 @@ class AuthService {
           _navigationService.replaceWithPickerNavBarView();
           break;
         case 'pressing':
+          await _sharedPreferencesServices.saveToken(token);
           _navigationService.replaceWithNavBarPressingView();
           break;
         default:

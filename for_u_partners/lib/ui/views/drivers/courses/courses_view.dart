@@ -1,5 +1,8 @@
+import 'package:for_u_partners/app/app.router.dart';
 import 'package:for_u_partners/ui/common/app_colors.dart';
+import 'package:for_u_partners/ui/views/drivers/courses/recap_view.dart';
 import 'package:for_u_partners/ui/views/drivers/homemain/homemain_viewmodel_export.dart';
+import 'package:stacked_services/stacked_services.dart';
 import 'courses_viewmodel.dart';
 import 'package:stacked/stacked.dart';
 import 'package:flutter/material.dart';
@@ -288,8 +291,22 @@ class CoursesView extends StackedView<CoursesViewModel> {
           key: const ValueKey('inprogress'),
           client: viewModel.currentCourse!,
           onCancelRide: () {
-            viewModel.currentCourse = null;
-            viewModel.setBottomSheetType(BottomSheetAppType.none);
+           Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (context) => RecapitulatifCoursePage(
+                  viewModel: viewModel,
+                  courseId: int.tryParse(viewModel.currentCourse!.courseId ?? '') ?? 0,
+                  onSoumettre: () {
+                    if (viewModel.currentCourse!.hasValidCourseId) {
+                      viewModel.removeCourse(viewModel.currentCourse!.courseId!);
+                    }
+                    final navigationService = locator<NavigationService>();
+                    navigationService.navigateToHomemainView();
+                  },
+                ),
+              ),
+            );
           },
           onAddPenalty: () {
             // Logique pour ajouter une pénalité
