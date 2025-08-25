@@ -35,23 +35,25 @@ class ActivityViewModel extends BaseViewModel {
 
       // 1. Récupérer la liste des courses
       final coursesList = await _driverService.getCoursesList();
-      print('✅ ${coursesList.length} cours récupérés en ${DateTime.now().difference(startTime).inMilliseconds}ms');
+      print(
+          '✅ ${coursesList.length} cours récupérés en ${DateTime.now().difference(startTime).inMilliseconds}ms');
 
       // 2. Préparer les appels API en parallèle
       final List<Future<ActivityModel>> futures = [];
-      
+
       for (var course in coursesList) {
         futures.add(_loadCourseWithDetails(course));
       }
 
       // 3. Exécuter tous les appels en parallèle
       final loadedActivities = await Future.wait(futures);
-      
+
       // 4. Trier par date de création (les plus récentes en premier)
       loadedActivities.sort((a, b) => b.dateCreation.compareTo(a.dateCreation));
 
       _activities = loadedActivities;
-      print('✨ ${_activities.length} activités chargées en ${DateTime.now().difference(startTime).inMilliseconds}ms');
+      print(
+          '✨ ${_activities.length} activités chargées en ${DateTime.now().difference(startTime).inMilliseconds}ms');
     } catch (e) {
       _errorMessage = 'Erreur lors du chargement des activités: $e';
       print('❌ $_errorMessage');
@@ -62,7 +64,8 @@ class ActivityViewModel extends BaseViewModel {
   }
 
   // Méthode privée pour charger les détails d'une course
-  Future<ActivityModel> _loadCourseWithDetails(Map<String, dynamic> course) async {
+  Future<ActivityModel> _loadCourseWithDetails(
+      Map<String, dynamic> course) async {
     try {
       // Si c'est une course terminée ou annulée, on a besoin des détails complets
       if (course['statut'] == 'termine' || course['statut'] == 'annule') {

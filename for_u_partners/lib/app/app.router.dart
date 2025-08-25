@@ -38,12 +38,12 @@ import 'package:for_u_partners/ui/views/drivers/homemain/homemain_view.dart'
 import 'package:for_u_partners/ui/views/drivers/notifications/notifications_view.dart'
     as _i6;
 import 'package:for_u_partners/ui/views/drivers/profil/profil_view.dart' as _i7;
-import 'package:for_u_partners/ui/views/pickers/picker_courses/picker_courses_view.dart'
-    as _i30;
 import 'package:for_u_partners/ui/views/pickers/picker_account/picker_account_view.dart'
     as _i28;
 import 'package:for_u_partners/ui/views/pickers/picker_activities/picker_activities_view.dart'
     as _i27;
+import 'package:for_u_partners/ui/views/pickers/picker_courses/picker_courses_view.dart'
+    as _i30;
 import 'package:for_u_partners/ui/views/pickers/picker_home/picker_home_view.dart'
     as _i26;
 import 'package:for_u_partners/ui/views/pickers/picker_nav_bar/picker_nav_bar_view.dart'

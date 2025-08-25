@@ -528,5 +528,4 @@ class CoursesDeliveryViewModel extends BaseViewModel {
     _mapController.move(_mapCenter, newZoom);
     notifyListeners();
   }
-
 }

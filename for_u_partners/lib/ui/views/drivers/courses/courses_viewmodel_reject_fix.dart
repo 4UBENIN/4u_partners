@@ -26,7 +26,7 @@ Future<void> rejectCourse({
     // The following methods should be called by the parent viewmodel:
     // - _saveRideState('rejected')
     // - _resetCourseState()
-    
+
     return;
   } catch (e) {
     print('❌ Erreur lors de l\'annulation de la course: $e');

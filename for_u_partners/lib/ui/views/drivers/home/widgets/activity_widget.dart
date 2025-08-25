@@ -103,7 +103,7 @@ class ActivityWidget extends StatelessWidget {
                 ),
               ),
             ),
-            
+
             // Main content - FIX: Ajout d'Expanded pour éviter l'overflow
             Expanded(
               child: Row(
@@ -126,9 +126,9 @@ class ActivityWidget extends StatelessWidget {
                           overflow: TextOverflow.ellipsis,
                           maxLines: 1,
                         ),
-                        
+
                         const SizedBox(height: 4),
-                        
+
                         // Subtitle - FIX: Meilleure gestion du texte long
                         Text(
                           subtitle,
@@ -143,7 +143,7 @@ class ActivityWidget extends StatelessWidget {
                       ],
                     ),
                   ),
-                  
+
                   // Value (if exists) - FIX: Mieux positionné à droite
                   if (value != null) ...[
                     const SizedBox(width: 8),

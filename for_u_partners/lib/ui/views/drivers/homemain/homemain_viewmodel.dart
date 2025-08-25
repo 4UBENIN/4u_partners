@@ -10,14 +10,15 @@ import 'package:for_u_partners/ui/views/drivers/notifications/notifications_view
 class HomemainViewModel extends IndexTrackingViewModel {
   // Compteur de courses en attente
   int _pendingCoursesCount = 0;
-  
+
   int get pendingCoursesCount => _pendingCoursesCount;
-  
+
   // Mettre à jour le compteur de courses en attente
   void updatePendingCoursesCount(int count) {
     _pendingCoursesCount = count;
     notifyListeners();
   }
+
   getViewFromIndex(int index) {
     switch (index) {
       case 0:

@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:for_u_partners/ui/common/profil_validation_page.dart';
 import 'package:http/http.dart' as http;
@@ -16,6 +17,7 @@ import 'package:for_u_partners/services/sharedpreferences_service.dart';
 class AuthService {
   final _sharedPreferencesServices = locator<SharedpreferencesService>();
   final _navigationService = locator<NavigationService>();
+  final FirebaseFirestore _firestore = FirebaseFirestore.instance;
 
   //* LOGIN FUNCTION
 
@@ -34,6 +36,9 @@ class AuthService {
       print("role : ${responseJson['data']['role']}");
       print("name : ${responseJson['data']['nom']}");
       print("userId : ${responseJson['data']['id']}");
+      if (responseJson['data']['conducteur'] != null) {
+        print("conducteurId : ${responseJson['data']['conducteur']['id']}");
+      }
       print("TOKEN : ${responseJson['token']}");
 
 // Récupération directe des valeurs
@@ -47,10 +52,31 @@ class AuthService {
       String token = responseJson['token'];
 
 // Sauvegarde dans SharedPreferences
-     await _sharedPreferencesServices.saveToken(token);
+      await _sharedPreferencesServices.saveToken(token);
       await _sharedPreferencesServices.saveUserName(name);
       await _sharedPreferencesServices.saveUserType(role);
       await _sharedPreferencesServices.saveUserId(userId);
+
+      // Determiner quel ID utiliser pour la base de données Firestore
+      String firestoreUserId;
+      if (responseJson['data']['conducteur'] != null) {
+        // Si c'est un conducteur/livreur, utiliser l'ID du conducteur
+        final conducteurId =
+            responseJson['data']['conducteur']['id'].toString();
+        await _sharedPreferencesServices.saveUserTypeId(conducteurId);
+        firestoreUserId = conducteurId;
+        print(
+            "Utilisateur partenaire détecté - ID Firestore: $firestoreUserId");
+      } else {
+        // Si c'est un autre partenaire, utiliser l'ID utilisateur normal
+        firestoreUserId = userId;
+        print("Autre partenaire détecté - ID Firestore: $firestoreUserId");
+      }
+
+      // Synchroniser avec Firestore en passant le bon ID
+      await _syncUserToFirestore(responseJson['data'], role, firestoreUserId);
+
+      // redirection
       switch (role) {
         case 'livreur':
           _navigationService.replaceWithDeliveryNavBarView();
@@ -73,8 +99,55 @@ class AuthService {
     }
   }
 
-  //* GET TOKEN HEADERS
+  //* Synchroniser l'utilisateur avec Firestore
+  Future<void> _syncUserToFirestore(Map<String, dynamic> userData, String type,
+      String firestoreUserId) async {
+    try {
+      // ✅ UTILISER L'ID PASSÉ EN PARAMÈTRE
+      final userDoc = _firestore.collection('users').doc(firestoreUserId);
 
+      // Vérifier si le document existe déjà
+      final docSnapshot = await userDoc.get();
+
+      // Données de base communes à tous les utilisateurs
+      Map<String, dynamic> baseUserData = {
+        'id': userData['id'], // ✅ GARDER L'ID ORIGINAL POUR RÉFÉRENCE
+        'nom': userData['nom'] ?? '',
+        'prenom': userData['prenom'] ?? '',
+        'email': userData['email'] ?? '',
+        'telephone': userData['telephone'] ?? '',
+        'role': type,
+        'status': 'active',
+        'lastSeen': FieldValue.serverTimestamp(),
+      };
+
+      // ✅ AJOUTER L'ID CONDUCTEUR SI DISPONIBLE
+      if (userData['conducteur'] != null) {
+        baseUserData['conducteurId'] = userData['conducteur']['id'];
+      }
+
+      if (!docSnapshot.exists) {
+        // Créer un nouveau document avec les données complètes
+        baseUserData['createdAt'] = FieldValue.serverTimestamp();
+
+        await userDoc.set(baseUserData);
+        print('✅ Nouvel utilisateur créé dans Firestore: $firestoreUserId');
+      } else {
+        // Mettre à jour les données existantes
+        Map<String, dynamic> updateData = {
+          'lastSeen': FieldValue.serverTimestamp(),
+          'status': 'active',
+        };
+
+        await userDoc.update(updateData);
+        print('🔄 Utilisateur mis à jour dans Firestore: $firestoreUserId');
+      }
+    } catch (e) {
+      print('❌ Erreur lors de la synchronisation Firestore: $e');
+    }
+  }
+
+  //* GET TOKEN HEADERS
   Future<Map<String, String>> getAuthenticatedHeaders() async {
     final token = await _sharedPreferencesServices.getToken();
 
@@ -327,6 +400,24 @@ class AuthService {
             .saveUserName(responseJson['data']['nom']);
         await _sharedPreferencesServices.saveProfilStatuts(profilStatuts);
 
+        String firestoreUserId;
+        if (responseJson['data']['conducteur'] != null) {
+          // Si c'est un conducteur/livreur, utiliser l'ID du conducteur
+          final conducteurId =
+              responseJson['data']['conducteur']['id'].toString();
+          await _sharedPreferencesServices.saveUserTypeId(conducteurId);
+          firestoreUserId = conducteurId;
+          print("Partenaire inscrit - ID Firestore: $firestoreUserId");
+        } else {
+          // Si c'est un client, utiliser l'ID utilisateur normal
+          firestoreUserId = responseJson['data']['id'].toString();
+          print("Client inscrit - ID Firestore: $firestoreUserId");
+        }
+
+        // Synchroniser avec Firestore après inscription réussie
+        await _syncRegisteredUserToFirestore(responseJson['data'], registerType,
+            registrationModel, firestoreUserId);
+
         print('Inscription réussie pour le type: $registerType');
 
         switch (registerType) {
@@ -411,24 +502,51 @@ class AuthService {
     }
   }
 
+  Future<void> _syncRegisteredUserToFirestore(
+    Map<String, dynamic> userData,
+    String type,
+    RegistrationModel registrationModel,
+    String firestoreUserId,
+  ) async {
+    try {
+      // ✅ UTILISER L'ID PASSÉ EN PARAMÈTRE
+      final userDoc = _firestore.collection('users').doc(firestoreUserId);
+
+      // Données de base communes à tous les utilisateurs
+      Map<String, dynamic> baseUserData = {
+        'id': userData['id'],
+        'nom': registrationModel.nom,
+        'prenom': registrationModel.prenom ?? '',
+        'email': registrationModel.email,
+        'telephone': registrationModel.telephone,
+        'role': type,
+        'status': 'active',
+        'createdAt': FieldValue.serverTimestamp(),
+        'lastSeen': FieldValue.serverTimestamp(),
+        'adresse': registrationModel.adresse,
+        'genre': registrationModel.genre,
+        'dateNaissance': registrationModel.dateNaissance,
+      };
+
+      // ✅ AJOUTER L'ID CONDUCTEUR SI DISPONIBLE
+      if (userData['conducteur'] != null) {
+        baseUserData['conducteurId'] = userData['conducteur']['id'];
+      }
+
+      await userDoc.set(baseUserData);
+      print(
+          '✅ Nouvel utilisateur inscrit créé dans Firestore: $firestoreUserId');
+    } catch (e) {
+      print('❌ Erreur lors de la synchronisation Firestore (inscription): $e');
+    }
+  }
+
   Future<void> logOut() async {
-    // try {
-    // Optionnel: appeler l'API de déconnexion
-    //   final url =
-    //       Uri.parse("https://foryou.cilassocies.com/api/partenaire/logout");
-
-    //   await http.post(
-    //     url,
-    //     headers: await getAuthenticatedHeaders(),
-    //   );
-    // } catch (e) {
-    //   print("Erreur lors du logout API: $e");
-    // } finally {
-
     // Supprimer toutes les données locales
     await _sharedPreferencesServices.removeToken();
     await _sharedPreferencesServices.removeUserId();
     await _sharedPreferencesServices.removeUserType();
+    await _sharedPreferencesServices.removeUserTypeId();
 
     // Rediriger vers l'écran de connexion
     _navigationService.clearStackAndShow(Routes.loginView);

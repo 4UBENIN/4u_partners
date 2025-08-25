@@ -28,7 +28,7 @@ class _SummaryWidgetState extends State<SummaryWidget>
   @override
   void didUpdateWidget(SummaryWidget oldWidget) {
     super.didUpdateWidget(oldWidget);
-    if (oldWidget.todayCourses != widget.todayCourses || 
+    if (oldWidget.todayCourses != widget.todayCourses ||
         oldWidget.todayEarnings != widget.todayEarnings) {
       _updateAnimations();
       _startAnimations();
@@ -58,7 +58,7 @@ class _SummaryWidgetState extends State<SummaryWidget>
   void _startAnimations() {
     _coursesController.reset();
     _earningsController.reset();
-    
+
     Future.delayed(const Duration(milliseconds: 200), () {
       if (mounted) _coursesController.forward();
     });
@@ -91,7 +91,6 @@ class _SummaryWidgetState extends State<SummaryWidget>
       parent: _earningsController,
       curve: Curves.easeOut,
     ));
-
   }
 
   String _formatEarnings(double value) {

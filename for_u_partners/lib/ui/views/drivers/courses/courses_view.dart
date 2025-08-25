@@ -1,5 +1,7 @@
 import 'package:for_u_partners/app/app.router.dart';
+import 'package:for_u_partners/services/chat_service.dart';
 import 'package:for_u_partners/ui/common/app_colors.dart';
+import 'package:for_u_partners/ui/views/drivers/courses/chat_page.dart';
 import 'package:for_u_partners/ui/views/drivers/courses/recap_view.dart';
 import 'package:for_u_partners/ui/views/drivers/homemain/homemain_viewmodel_export.dart';
 import 'package:stacked_services/stacked_services.dart';
@@ -183,24 +185,26 @@ class CoursesView extends StackedView<CoursesViewModel> {
     );
   }
 
-  Future<Widget> _buildBottomSheet(CoursesViewModel viewModel, BuildContext context) async {
+  Future<Widget> _buildBottomSheet(
+      CoursesViewModel viewModel, BuildContext context) async {
     // Ne pas afficher si le type est none
     if (viewModel.currentBottomSheetType == BottomSheetAppType.none) {
       return const SizedBox.shrink(key: ValueKey('none'));
     }
-    
+
     // Vérifier si on a une course en cours
-    final hasActiveRide = viewModel.currentCourse != null && 
-                         (viewModel.isGoingToPickup || viewModel.isOnTrip);
-    
+    final hasActiveRide = viewModel.currentCourse != null &&
+        (viewModel.isGoingToPickup || viewModel.isOnTrip);
+
     // Si on a une course en cours mais pas de bottom sheet actif, forcer l'affichage
-    if (hasActiveRide && viewModel.currentBottomSheetType == BottomSheetAppType.none) {
+    if (hasActiveRide &&
+        viewModel.currentBottomSheetType == BottomSheetAppType.none) {
       Future.delayed(Duration.zero, () {
         viewModel.setBottomSheetType(BottomSheetAppType.pickup);
       });
       return const SizedBox.shrink(key: ValueKey('delayed-show'));
     }
-    
+
     switch (viewModel.currentBottomSheetType) {
       case BottomSheetAppType.clients:
         // Afficher uniquement s'il y a des courses disponibles
@@ -236,70 +240,152 @@ class CoursesView extends StackedView<CoursesViewModel> {
         );
 
       case BottomSheetAppType.pickup:
-        print('🔄 BottomSheetAppType.pickup - availableCourses: ${viewModel.availableCourses.length}');
-        print('🔄 Contenu de availableCourses: ${viewModel.availableCourses.map((c) => '${c.courseId}: ${c.name}').toList()}');
+        print(
+            '🔄 BottomSheetAppType.pickup - availableCourses: ${viewModel.availableCourses.length}');
+        print(
+            '🔄 Contenu de availableCourses: ${viewModel.availableCourses.map((c) => '${c.courseId}: ${c.name}').toList()}');
         print('🔄 Current course: ${viewModel.currentCourse?.courseId}');
         if (viewModel.availableCourses.isEmpty) {
-          print('❌ Aucune course disponible pour afficher le bottom sheet pickup');
+          print(
+              '❌ Aucune course disponible pour afficher le bottom sheet pickup');
           return const SizedBox.shrink(key: ValueKey('no-pickup'));
         }
 
         final pickupCourse = viewModel.availableCourses.first;
+        final chatService = locator<ChatService>();
 
         return AcceptedClientBottomSheet(
-          key: const ValueKey('pickup'),
-          client: pickupCourse,
-          onCancelRide: () {
-            // Annuler la course acceptée - PAS de WidgetsBinding ici
-            if (pickupCourse.hasValidCourseId) {
-              viewModel.removeCourse(pickupCourse.courseId!);
-              viewModel.rejectCourseService(
+            key: const ValueKey('pickup'),
+            client: pickupCourse,
+            clientId: pickupCourse.clientId,
+            onCancelRide: () {
+              // Annuler la course acceptée - PAS de WidgetsBinding ici
+              if (pickupCourse.hasValidCourseId) {
+                viewModel.removeCourse(pickupCourse.courseId!);
+                viewModel.rejectCourseService(
+                    int.tryParse(pickupCourse.courseId!)!, context);
+              }
+              viewModel.setBottomSheetType(BottomSheetAppType.none);
+            },
+            onStartRide: () {
+              // PAS de WidgetsBinding ici
+              viewModel.startTrip();
+              viewModel.startCourseService(
                   int.tryParse(pickupCourse.courseId!)!, context);
-            }
-            viewModel.setBottomSheetType(BottomSheetAppType.none);
-          },
-          onStartRide: () {
-            // PAS de WidgetsBinding ici
-            viewModel.startTrip();
-            viewModel.startCourseService(
-                int.tryParse(pickupCourse.courseId!)!, context);
-          },
-          onCallClients: () {
-            // Logique d'appel du client
-          },
-        );
+            },
+            onCallClients: () {
+              // Logique d'appel du client
+            },
+            onChatClients: () async {
+              try {
+                // Vérifier que nous avons l'ID du client
+                if (pickupCourse.clientId == null ||
+                    pickupCourse.clientId!.isEmpty) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(
+                      content:
+                          Text('Impossible d\'ouvrir le chat pour le moment'),
+                      backgroundColor: Colors.red,
+                    ),
+                  );
+                  return;
+                }
+
+                // Récupérer les infos de l'utilisateur connecté
+                final currentUserInfo = await chatService.getCurrentUserInfo();
+                if (currentUserInfo == null) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(
+                      content: Text('Erreur: Utilisateur non connecté'),
+                      backgroundColor: Colors.red,
+                    ),
+                  );
+                  return;
+                }
+
+                // Créer ou récupérer la conversation
+                final conversationId =
+                    await chatService.createOrGetConversation(
+                  currentUserId: currentUserInfo['id'],
+                  clientId: pickupCourse.clientId!,
+                  clientName: pickupCourse.name,
+                  tripId: pickupCourse.courseId,
+                );
+
+                print(" BB RecEIVER NAME : ${pickupCourse.name} ");
+                print(" BB RecEIVER ID : ${pickupCourse.clientId}");
+                print(" BB CONVERSATION ID : $conversationId");
+                print(" BB CURRENT USER ID : ${currentUserInfo['id']}");
+
+                if (conversationId != null) {
+                  // Naviguer vers la page de chat
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => ChatPage(
+                        receiverUserName: pickupCourse.name,
+                        receiverUserId: pickupCourse.clientId!,
+                        conversationId: conversationId,
+                        currentUserId: currentUserInfo['id'],
+                      ),
+                    ),
+                  );
+                } else {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(
+                      content: Text('Erreur lors de l\'ouverture du chat'),
+                      backgroundColor: Colors.red,
+                    ),
+                  );
+                }
+              } catch (e) {
+                print('Erreur ouverture chat: $e');
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(
+                    content: Text('Une erreur est survenue'),
+                    backgroundColor: Colors.red,
+                  ),
+                );
+              }
+            });
 
       case BottomSheetAppType.inprogress:
         // Vérifier d'abord si on a une course en cours
         if (viewModel.currentCourse == null) {
           // Essayer de restaurer l'état de la course
           await viewModel.checkAndRestoreRideState();
-          
+
           // Si toujours pas de course, vérifier availableCourses en dernier recours
-          if (viewModel.currentCourse == null && viewModel.availableCourses.isNotEmpty) {
+          if (viewModel.currentCourse == null &&
+              viewModel.availableCourses.isNotEmpty) {
             viewModel.currentCourse = viewModel.availableCourses.first;
-            print('ℹ️ Course récupérée depuis availableCourses: ${viewModel.currentCourse?.courseId}');
+            print(
+                'ℹ️ Course récupérée depuis availableCourses: ${viewModel.currentCourse?.courseId}');
           } else if (viewModel.currentCourse == null) {
             print('ℹ️ Aucune course en cours à afficher');
             return const SizedBox.shrink(key: ValueKey('no-inprogress'));
           }
         } else {
-          print('ℹ️ Course courante déjà définie: ${viewModel.currentCourse?.courseId}');
+          print(
+              'ℹ️ Course courante déjà définie: ${viewModel.currentCourse?.courseId}');
         }
 
         return InProgressRideBottomSheet(
           key: const ValueKey('inprogress'),
           client: viewModel.currentCourse!,
           onCancelRide: () {
-           Navigator.push(
+            Navigator.push(
               context,
               MaterialPageRoute(
                 builder: (context) => RecapitulatifCoursePage(
                   viewModel: viewModel,
-                  courseId: int.tryParse(viewModel.currentCourse!.courseId ?? '') ?? 0,
+                  courseId:
+                      int.tryParse(viewModel.currentCourse!.courseId ?? '') ??
+                          0,
                   onSoumettre: () {
                     if (viewModel.currentCourse!.hasValidCourseId) {
-                      viewModel.removeCourse(viewModel.currentCourse!.courseId!);
+                      viewModel
+                          .removeCourse(viewModel.currentCourse!.courseId!);
                     }
                     final navigationService = locator<NavigationService>();
                     navigationService.navigateToHomemainView();

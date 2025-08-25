@@ -227,7 +227,7 @@ class DriverService {
     print("wallet-body: ${response.body}");
     if (response.statusCode == 200) {
       final data = jsonDecode(response.body);
-     return (data['solde'] as num).toDouble();
+      return (data['solde'] as num).toDouble();
     } else {
       throw Exception("Erreur ${response.body}");
     }

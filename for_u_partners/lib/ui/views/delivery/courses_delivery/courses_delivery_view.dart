@@ -222,7 +222,8 @@ class CoursesDeliveryView extends StackedView<CoursesDeliveryViewModel> {
     );
   }
 
-  Widget _buildBottomSheet(CoursesDeliveryViewModel viewModel, BuildContext context) {
+  Widget _buildBottomSheet(
+      CoursesDeliveryViewModel viewModel, BuildContext context) {
     switch (viewModel.currentBottomSheetType) {
       case BottomSheetAppType.clients:
         // Afficher le message si aucune livraison disponible
@@ -278,7 +279,8 @@ class CoursesDeliveryView extends StackedView<CoursesDeliveryViewModel> {
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(8),
                     ),
-                    padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 24, vertical: 12),
                   ),
                   child: const Text(
                     'Actualiser',
@@ -319,7 +321,8 @@ class CoursesDeliveryView extends StackedView<CoursesDeliveryViewModel> {
         );
 
       case BottomSheetAppType.pickup:
-        if (viewModel.availableDeliveries.isEmpty && viewModel.currentDelivery == null) {
+        if (viewModel.availableDeliveries.isEmpty &&
+            viewModel.currentDelivery == null) {
           // UTILISER WidgetsBinding seulement ici car c'est pendant le build
           WidgetsBinding.instance.addPostFrameCallback((_) {
             viewModel.setBottomSheetType(BottomSheetAppType.none);
@@ -328,8 +331,10 @@ class CoursesDeliveryView extends StackedView<CoursesDeliveryViewModel> {
         }
 
         // Utiliser la livraison actuelle ou la première disponible
-        final pickupDelivery = viewModel.currentDelivery ?? 
-            (viewModel.availableDeliveries.isNotEmpty ? viewModel.availableDeliveries.first : null);
+        final pickupDelivery = viewModel.currentDelivery ??
+            (viewModel.availableDeliveries.isNotEmpty
+                ? viewModel.availableDeliveries.first
+                : null);
 
         if (pickupDelivery == null) {
           return const SizedBox.shrink(key: ValueKey('no-delivery-data'));
@@ -363,7 +368,7 @@ class CoursesDeliveryView extends StackedView<CoursesDeliveryViewModel> {
 
       case BottomSheetAppType.inprogress:
         final currentDelivery = viewModel.currentDelivery;
-        
+
         if (currentDelivery == null) {
           // UTILISER WidgetsBinding seulement ici car c'est pendant le build
           WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -382,8 +387,10 @@ class CoursesDeliveryView extends StackedView<CoursesDeliveryViewModel> {
               MaterialPageRoute(
                 builder: (context) => DeliveryRecapitulatifCoursePage(
                   demandType: 'Livraison',
-                  pointDepart: currentDelivery.adresseDepart ?? 'Adresse inconnue',
-                  destination: 'Destination à définir', // À adapter selon tes besoins
+                  pointDepart:
+                      currentDelivery.adresseDepart ?? 'Adresse inconnue',
+                  destination:
+                      'Destination à définir', // À adapter selon tes besoins
                   nomClient: currentDelivery.fullName,
                   type: 'Livraison',
                   initialeClient: currentDelivery.initials,

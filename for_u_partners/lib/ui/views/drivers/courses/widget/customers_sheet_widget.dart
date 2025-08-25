@@ -220,9 +220,11 @@ class ClientCard extends StatelessWidget {
 
 class AcceptedClientBottomSheet extends StatefulWidget {
   final ClientData client;
+  final String? clientId;
   final Function() onCancelRide;
   final Function() onStartRide;
   final Function() onCallClients;
+  final Function() onChatClients;
 
   const AcceptedClientBottomSheet({
     Key? key,
@@ -230,6 +232,8 @@ class AcceptedClientBottomSheet extends StatefulWidget {
     required this.onCancelRide,
     required this.onStartRide,
     required this.onCallClients,
+    required this.onChatClients,
+    this.clientId,
   }) : super(key: key);
 
   @override
@@ -349,22 +353,45 @@ class _AcceptedClientBottomSheetState extends State<AcceptedClientBottomSheet> {
                             ],
                           ),
                         ),
-                        // Bouton téléphone
-                        Container(
-                          width: 50,
-                          height: 50,
-                          decoration: const BoxDecoration(
-                            color: kcPrimaryColor,
-                            shape: BoxShape.circle,
-                          ),
-                          child: IconButton(
-                            onPressed: widget.onCallClients,
-                            icon: const Icon(
-                              Icons.phone,
-                              color: Colors.white,
-                              size: 24,
+                        // Bouton téléphone et chat
+                        Row(
+                          children: [
+                            Container(
+                              width: 40,
+                              height: 40,
+                              decoration: const BoxDecoration(
+                                color: kcPrimaryColor,
+                                shape: BoxShape.circle,
+                              ),
+                              child: IconButton(
+                                onPressed: widget.onChatClients,
+                                icon: const Icon(
+                                  Icons.message_rounded,
+                                  color: Colors.white,
+                                  size: 24,
+                                ),
+                              ),
                             ),
-                          ),
+                            const SizedBox(
+                              width: 15,
+                            ),
+                            Container(
+                              width: 40,
+                              height: 40,
+                              decoration: const BoxDecoration(
+                                color: kcPrimaryColor,
+                                shape: BoxShape.circle,
+                              ),
+                              child: IconButton(
+                                onPressed: widget.onCallClients,
+                                icon: const Icon(
+                                  Icons.phone,
+                                  color: Colors.white,
+                                  size: 24,
+                                ),
+                              ),
+                            ),
+                          ],
                         ),
                       ],
                     ),

@@ -30,12 +30,11 @@ class CustomDropdown extends StatelessWidget {
           padding: const EdgeInsets.symmetric(horizontal: 12),
           decoration: BoxDecoration(
             // color: AppColors.bgColor,
-          color: Colors.white,
+            color: Colors.white,
             border: Border.all(color: greybutton),
             borderRadius: BorderRadius.circular(12),
           ),
           child: DropdownButtonHideUnderline(
-            
             child: DropdownButton<String>(
               focusColor: Colors.white,
               isExpanded: true,
@@ -43,7 +42,8 @@ class CustomDropdown extends StatelessWidget {
               value: value,
               dropdownColor: Colors.white,
               style: const TextStyle(color: Colors.black),
-              icon: const Icon(Icons.keyboard_arrow_down_rounded, color: Colors.black),
+              icon: const Icon(Icons.keyboard_arrow_down_rounded,
+                  color: Colors.black),
               items: items
                   .map(
                     (item) => DropdownMenuItem(
