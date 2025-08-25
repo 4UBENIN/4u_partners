@@ -21,12 +21,55 @@ class _SummaryWidgetState extends State<SummaryWidget>
   @override
   void initState() {
     super.initState();
+    _initAnimations();
+    _startAnimations();
+  }
 
-    // Animation pour les courses
+  @override
+  void didUpdateWidget(SummaryWidget oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.todayCourses != widget.todayCourses || 
+        oldWidget.todayEarnings != widget.todayEarnings) {
+      _updateAnimations();
+      _startAnimations();
+    }
+  }
+
+  @override
+  void dispose() {
+    _coursesController.dispose();
+    _earningsController.dispose();
+    super.dispose();
+  }
+
+  void _initAnimations() {
+    // Initialize controllers
     _coursesController = AnimationController(
       duration: const Duration(milliseconds: 1000),
       vsync: this,
     );
+    _earningsController = AnimationController(
+      duration: const Duration(milliseconds: 1500),
+      vsync: this,
+    );
+    _updateAnimations();
+  }
+
+  void _startAnimations() {
+    _coursesController.reset();
+    _earningsController.reset();
+    
+    Future.delayed(const Duration(milliseconds: 200), () {
+      if (mounted) _coursesController.forward();
+    });
+
+    Future.delayed(const Duration(milliseconds: 400), () {
+      if (mounted) _earningsController.forward();
+    });
+  }
+
+  void _updateAnimations() {
+    // Update courses animation
     _coursesAnimation = IntTween(
       begin: 0,
       end: widget.todayCourses,
@@ -35,16 +78,12 @@ class _SummaryWidgetState extends State<SummaryWidget>
       curve: Curves.easeOut,
     ));
 
-    // Animation pour les gains (extraire le montant numérique)
+    // Update earnings animation
     final earningsValue = double.tryParse(widget.todayEarnings
             .replaceAll(RegExp(r'[^\d,.]'), '')
             .replaceAll(',', '')) ??
         0.0;
 
-    _earningsController = AnimationController(
-      duration: const Duration(milliseconds: 1500),
-      vsync: this,
-    );
     _earningsAnimation = Tween<double>(
       begin: 0.0,
       end: earningsValue,
@@ -53,21 +92,6 @@ class _SummaryWidgetState extends State<SummaryWidget>
       curve: Curves.easeOut,
     ));
 
-    // Démarrer les animations
-    Future.delayed(const Duration(milliseconds: 200), () {
-      _coursesController.forward();
-    });
-
-    Future.delayed(const Duration(milliseconds: 400), () {
-      _earningsController.forward();
-    });
-  }
-
-  @override
-  void dispose() {
-    _coursesController.dispose();
-    _earningsController.dispose();
-    super.dispose();
   }
 
   String _formatEarnings(double value) {

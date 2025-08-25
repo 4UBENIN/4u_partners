@@ -180,8 +180,9 @@ class _EditProfileViewState extends State<EditProfileView> {
                       label: 'Email',
                       keyboardType: TextInputType.emailAddress,
                       validator: (value) {
-                        if (value?.isEmpty ?? true)
+                        if (value?.isEmpty ?? true) {
                           return 'L\'email est requis';
+                        }
                         if (!RegExp(r'^[^@]+@[^\s]+\.[^\s]+$')
                             .hasMatch(value!)) {
                           return 'Veuillez entrer un email valide';

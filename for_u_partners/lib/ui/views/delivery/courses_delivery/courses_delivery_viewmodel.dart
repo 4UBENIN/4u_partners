@@ -433,9 +433,9 @@ class CoursesDeliveryViewModel extends BaseViewModel {
 
     // Ajuster le zoom selon la distance
     double zoom = 15.0;
-    if (distance > 5000)
+    if (distance > 5000) {
       zoom = 12.0;
-    else if (distance > 2000)
+    } else if (distance > 2000)
       zoom = 13.0;
     else if (distance > 1000) zoom = 14.0;
 
@@ -529,8 +529,4 @@ class CoursesDeliveryViewModel extends BaseViewModel {
     notifyListeners();
   }
 
-  @override
-  void dispose() {
-    super.dispose();
-  }
 }

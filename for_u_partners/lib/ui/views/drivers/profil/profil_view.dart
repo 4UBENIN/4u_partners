@@ -81,7 +81,7 @@ class ProfilView extends StackedView<ProfilViewModel> {
                           Expanded(
                             child: _buildStatCard(
                               _formatAmount(viewModel.globalStats?.totalEarnings
-                                      ?.toDouble() ??
+                                      .toDouble() ??
                                   0),
                               'Revenus',
                             ),
