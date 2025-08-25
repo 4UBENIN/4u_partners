@@ -39,7 +39,8 @@ class HomemainView extends StackedView<HomemainViewModel> {
                       position: badges.BadgePosition.topEnd(top: -10, end: -10),
                       badgeContent: Text(
                         '${viewModel.pendingCoursesCount}',
-                        style: const TextStyle(color: Colors.white, fontSize: 10),
+                        style:
+                            const TextStyle(color: Colors.white, fontSize: 10),
                       ),
                       child: const Icon(Icons.map_outlined, color: kcLightGrey),
                     )
@@ -50,9 +51,11 @@ class HomemainView extends StackedView<HomemainViewModel> {
                       position: badges.BadgePosition.topEnd(top: -10, end: -10),
                       badgeContent: Text(
                         '${viewModel.pendingCoursesCount}',
-                        style: const TextStyle(color: Colors.white, fontSize: 10),
+                        style:
+                            const TextStyle(color: Colors.white, fontSize: 10),
                       ),
-                      child: const Icon(Icons.map_outlined, color: kcPrimaryColor),
+                      child:
+                          const Icon(Icons.map_outlined, color: kcPrimaryColor),
                     )
                   : const Icon(Icons.map_outlined, color: kcPrimaryColor),
             ),

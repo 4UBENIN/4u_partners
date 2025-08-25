@@ -42,4 +42,3 @@ class StartupViewModel extends BaseViewModel {
     }
   }
 }
-

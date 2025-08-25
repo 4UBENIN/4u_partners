@@ -36,6 +36,7 @@ import 'package:for_u_partners/ui/views/pickers/picker_activities/picker_activit
 import 'package:for_u_partners/ui/views/pickers/picker_account/picker_account_view.dart';
 import 'package:for_u_partners/ui/views/pickers/picker_notifications/picker_notifications_view.dart';
 import 'package:for_u_partners/ui/views/pickers/picker_courses/picker_courses_view.dart';
+import 'package:for_u_partners/services/chat_service.dart';
 // @stacked-import
 
 @StackedApp(
@@ -80,6 +81,7 @@ import 'package:for_u_partners/ui/views/pickers/picker_courses/picker_courses_vi
     LazySingleton(classType: DriverService),
     LazySingleton(classType: PressingService),
     LazySingleton(classType: WalletService),
+    LazySingleton(classType: ChatService),
 // @stacked-service
   ],
   bottomsheets: [

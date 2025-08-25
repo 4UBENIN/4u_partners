@@ -10,7 +10,8 @@ class DeliveryService {
   final _authService = locator<AuthService>();
 
   /// Récupérer les demandes de livraison disponibles
-  Future<Map<String, dynamic>> getAvailableDeliveries(BuildContext context) async {
+  Future<Map<String, dynamic>> getAvailableDeliveries(
+      BuildContext context) async {
     try {
       print('📦 Récupération des demandes de livraison...');
 
@@ -30,7 +31,7 @@ class DeliveryService {
         try {
           final errorData = json.decode(response.body) as Map<String, dynamic>;
           final errorMessage = errorData['error'] ?? response.body;
-          
+
           CustomToast.showError(
             context,
             message: errorMessage.toString(),
@@ -42,7 +43,8 @@ class DeliveryService {
             context,
             message: response.body,
           );
-          throw Exception('Erreur API: ${response.statusCode} - ${response.body}');
+          throw Exception(
+              'Erreur API: ${response.statusCode} - ${response.body}');
         }
       }
     } catch (e) {

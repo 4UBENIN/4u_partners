@@ -38,7 +38,7 @@ class CoursesViewModel extends BaseViewModel {
   ClientData? _currentCourse;
   ClientData? get currentCourse => _currentCourse;
   set currentCourse(ClientData? course) => _currentCourse = course;
-  
+
   // Current user location
   LatLng? _currentLocation;
 
@@ -48,7 +48,7 @@ class CoursesViewModel extends BaseViewModel {
 
   bool _isOnTrip = false;
   bool get isOnTrip => _isOnTrip;
-  
+
   String? _destinationName;
 
   final CourseEventService _courseEventService = CourseEventService();
@@ -58,13 +58,13 @@ class CoursesViewModel extends BaseViewModel {
   // Liste des courses disponibles
   final List<ClientData> _availableCourses = [];
   List<ClientData> get availableCourses => _availableCourses;
-  
+
   // Current location name
   String? _currentLocationName;
-  
+
   // Référence au ViewModel principal
   HomemainViewModel? _homeMainViewModel;
-  
+
   // Définir la référence au ViewModel principal
   Future<void> onModelReady() async {
     await checkAndRestoreRideState();
@@ -74,7 +74,7 @@ class CoursesViewModel extends BaseViewModel {
   void setHomeMainViewModel(HomemainViewModel viewModel) {
     _homeMainViewModel = viewModel;
   }
-  
+
   // Mettre à jour le compteur de courses en attente
   void _updatePendingCoursesCount() {
     if (_homeMainViewModel != null) {
@@ -88,11 +88,11 @@ class CoursesViewModel extends BaseViewModel {
   // ✨ État de chargement des notifications
   bool _isLoadingCourses = true;
   bool get isLoadingCourses => _isLoadingCourses;
-  
+
   // Loading state for general operations
   bool _isLoading = false;
   bool get isLoading => _isLoading;
-  
+
   // État de restauration
   bool _isRestoringState = false;
   bool get isRestoringState => _isRestoringState;
@@ -128,9 +128,11 @@ class CoursesViewModel extends BaseViewModel {
     _setupCourseListeners();
 
     // Afficher le bottom sheet s'il y a des courses
-    print('🔍 État après _loadStoredNotifications - availableCourses: ${_availableCourses.length}');
-    print('🔍 Contenu de availableCourses: ${_availableCourses.map((c) => '${c.courseId}: ${c.name}').toList()}');
-    
+    print(
+        '🔍 État après _loadStoredNotifications - availableCourses: ${_availableCourses.length}');
+    print(
+        '🔍 Contenu de availableCourses: ${_availableCourses.map((c) => '${c.courseId}: ${c.name}').toList()}');
+
     if (_availableCourses.isNotEmpty) {
       setBottomSheetType(BottomSheetAppType.clients);
     }
@@ -176,7 +178,7 @@ class CoursesViewModel extends BaseViewModel {
         // Sinon, tu peux trier par courseId ou autre critère
         return b.courseId!.compareTo(a.courseId!);
       });
-      
+
       // Mettre à jour le compteur de courses en attente
       _updatePendingCoursesCount();
 
@@ -340,7 +342,7 @@ class CoursesViewModel extends BaseViewModel {
 
     // Mettre à jour le compteur de courses en attente
     _updatePendingCoursesCount();
-    
+
     notifyListeners();
   }
 
@@ -375,10 +377,11 @@ class CoursesViewModel extends BaseViewModel {
   }
 
   void setBottomSheetType(BottomSheetAppType type) {
-    print('[BottomSheet] Changement d\'état: $_currentBottomSheetType -> $type');
+    print(
+        '[BottomSheet] Changement d\'état: $_currentBottomSheetType -> $type');
     _currentBottomSheetType = type;
     notifyListeners();
-    
+
     // Ne pas sauvegarder l'état si c'est 'none' ou si on n'a pas de course en cours
     if (type != BottomSheetAppType.none && _currentCourse != null) {
       _saveRideState(type.toString().split('.').last);
@@ -487,7 +490,7 @@ class CoursesViewModel extends BaseViewModel {
 
       // Appeler le service
       await acceptCourseService(int.parse(courseId), context);
-      
+
       // Sauvegarder l'état de la course
       await _saveRideState('accepted');
     }
@@ -962,7 +965,7 @@ class CoursesViewModel extends BaseViewModel {
 
     _isGoingToPickup = false;
     _isOnTrip = true;
-    
+
     // Sauvegarder l'état de la course
     await _saveRideState('picked_up');
 
@@ -975,25 +978,25 @@ class CoursesViewModel extends BaseViewModel {
   // Méthode à appeler lorsque la course est terminée
   Future<void> completeTrip() async {
     if (_currentCourse == null) return;
-    
+
     _isOnTrip = false;
     _isGoingToPickup = false;
-    
+
     // Sauvegarder l'état de la course
     await _saveRideState('completed');
-    
+
     // Nettoyer l'état de la course
     _currentCourse = null;
     _polylines.clear();
     _markers.clear();
     _addUserLocationMarker();
-    
+
     // Nettoyer le stockage local
     await _clearRideState();
-    
+
     // Cacher le bottom sheet
     hideBottomSheet();
-    
+
     notifyListeners();
   }
 
@@ -1050,7 +1053,7 @@ class CoursesViewModel extends BaseViewModel {
 
         // Sauvegarder l'état de la course comme terminée
         await _saveRideState('completed');
-        
+
         // Réinitialiser l'état
         await _resetCourseState();
       } catch (e) {
@@ -1081,7 +1084,7 @@ class CoursesViewModel extends BaseViewModel {
 
         // Sauvegarder l'état de la course comme rejetée
         await _saveRideState('rejected');
-        
+
         // Réinitialiser l'état
         await _resetCourseState();
       } catch (e) {
@@ -1116,7 +1119,7 @@ class CoursesViewModel extends BaseViewModel {
 
     // Mettre à jour le compteur de courses en attente
     _updatePendingCoursesCount();
-    
+
     // Réinitialiser l'état de la course dans le stockage
     await RidePersistenceService.clearRideState();
   }
@@ -1136,47 +1139,86 @@ class CoursesViewModel extends BaseViewModel {
       print('🔄 Vérification de l\'état de la course...');
       final rideState = await RidePersistenceService.getRideState();
       final status = await RidePersistenceService.getRideStatus();
-      
+
       if (rideState != null && status != null) {
-        print('🔍 Tentative de restauration de la course avec le statut: $status');
-        
+        print(
+            '🔍 Tentative de restauration de la course avec le statut: $status');
+
         // Créer un ClientData avec les données sauvegardées
         _currentCourse = ClientData(
           name: rideState['name']?.toString() ?? 'Client inconnu',
           timeInfo: rideState['timeInfo']?.toString() ?? 'Maintenant',
-          destination: rideState['destination']?.toString() ?? 'Destination inconnue',
+          destination:
+              rideState['destination']?.toString() ?? 'Destination inconnue',
           initials: rideState['initials']?.toString() ?? 'CI',
           courseId: rideState['courseId']?.toString(),
-          prix: rideState['prix'] is double ? rideState['prix'] : (rideState['prix'] is int ? (rideState['prix'] as int).toDouble() : null),
-          distance: rideState['distance'] is double ? rideState['distance'] : (rideState['distance'] is int ? (rideState['distance'] as int).toDouble() : null),
-          duree: rideState['duree'] is double ? rideState['duree'] : (rideState['duree'] is int ? (rideState['duree'] as int).toDouble() : null),
+          prix: rideState['prix'] is double
+              ? rideState['prix']
+              : (rideState['prix'] is int
+                  ? (rideState['prix'] as int).toDouble()
+                  : null),
+          distance: rideState['distance'] is double
+              ? rideState['distance']
+              : (rideState['distance'] is int
+                  ? (rideState['distance'] as int).toDouble()
+                  : null),
+          duree: rideState['duree'] is double
+              ? rideState['duree']
+              : (rideState['duree'] is int
+                  ? (rideState['duree'] as int).toDouble()
+                  : null),
           adresseDepart: rideState['adresseDepart']?.toString(),
           isNight: rideState['isNight'] as bool?,
-          etaMinutes: rideState['etaMinutes'] is int ? rideState['etaMinutes'] : (rideState['etaMinutes'] is double ? (rideState['etaMinutes'] as double).toInt() : null),
-          destLong: rideState['destLong'] is double ? rideState['destLong'] : (rideState['destLong'] is int ? (rideState['destLong'] as int).toDouble() : null),
-          destLat: rideState['destLat'] is double ? rideState['destLat'] : (rideState['destLat'] is int ? (rideState['destLat'] as int).toDouble() : null),
-          depLong: rideState['depLong'] is double ? rideState['depLong'] : (rideState['depLong'] is int ? (rideState['depLong'] as int).toDouble() : null),
-          depLat: rideState['depLat'] is double ? rideState['depLat'] : (rideState['depLat'] is int ? (rideState['depLat'] as int).toDouble() : null),
+          etaMinutes: rideState['etaMinutes'] is int
+              ? rideState['etaMinutes']
+              : (rideState['etaMinutes'] is double
+                  ? (rideState['etaMinutes'] as double).toInt()
+                  : null),
+          destLong: rideState['destLong'] is double
+              ? rideState['destLong']
+              : (rideState['destLong'] is int
+                  ? (rideState['destLong'] as int).toDouble()
+                  : null),
+          destLat: rideState['destLat'] is double
+              ? rideState['destLat']
+              : (rideState['destLat'] is int
+                  ? (rideState['destLat'] as int).toDouble()
+                  : null),
+          depLong: rideState['depLong'] is double
+              ? rideState['depLong']
+              : (rideState['depLong'] is int
+                  ? (rideState['depLong'] as int).toDouble()
+                  : null),
+          depLat: rideState['depLat'] is double
+              ? rideState['depLat']
+              : (rideState['depLat'] is int
+                  ? (rideState['depLat'] as int).toDouble()
+                  : null),
         );
-        
+
         // Mettre à jour l'état en fonction du statut
         _updateRideStateFromStatus(status);
-        
+
         // Si la course est en cours ou acceptée, on la retire de availableCourses
-        if (status == 'in_progress' || status == 'picked_up' || status == 'accepted') {
-          _availableCourses.removeWhere((course) => course.courseId == _currentCourse?.courseId);
+        if (status == 'in_progress' ||
+            status == 'picked_up' ||
+            status == 'accepted') {
+          _availableCourses.removeWhere(
+              (course) => course.courseId == _currentCourse?.courseId);
           _updatePendingCoursesCount();
-          print('✅ Course retirée de availableCourses car son statut est: $status');
-        } else if (!_availableCourses.any((course) => course.courseId == _currentCourse?.courseId)) {
+          print(
+              '✅ Course retirée de availableCourses car son statut est: $status');
+        } else if (!_availableCourses
+            .any((course) => course.courseId == _currentCourse?.courseId)) {
           // Sinon, on l'ajoute si elle n'existe pas déjà
           _availableCourses.add(_currentCourse!);
           _updatePendingCoursesCount();
           print('✅ Course ajoutée à availableCourses avec statut: $status');
         }
-        
+
         // Rafraîchir l'interface
         notifyListeners();
-        
+
         // Ajouter un délai pour s'assurer que l'UI est prête
         await Future.delayed(const Duration(milliseconds: 500));
       } else {
@@ -1189,14 +1231,14 @@ class CoursesViewModel extends BaseViewModel {
       notifyListeners();
     }
   }
-  
+
   // Méthode utilitaire pour mettre à jour l'état en fonction du statut
   void _updateRideStateFromStatus(String status) {
     // Normaliser le statut
     status = status.toLowerCase().trim();
-    
+
     print('🔄 Mise à jour de l\'état avec le statut: $status');
-    
+
     switch (status) {
       case 'pickup':
       case 'accepted':
@@ -1204,15 +1246,15 @@ class CoursesViewModel extends BaseViewModel {
         _isOnTrip = false;
         _currentBottomSheetType = BottomSheetAppType.pickup;
         break;
-        
+
       case 'picked_up':
-      case 'inprogress':  // Gestion des deux formats possibles
+      case 'inprogress': // Gestion des deux formats possibles
       case 'in_progress':
         _isGoingToPickup = false;
         _isOnTrip = true;
         _currentBottomSheetType = BottomSheetAppType.inprogress;
         break;
-        
+
       case 'completed':
       case 'rejected':
       case 'cancelled':
@@ -1220,22 +1262,22 @@ class CoursesViewModel extends BaseViewModel {
         _isOnTrip = false;
         _currentBottomSheetType = BottomSheetAppType.none;
         break;
-        
+
       default:
         print('⚠️ Statut inconnu lors de la restauration: $status');
         _currentBottomSheetType = BottomSheetAppType.none;
     }
-    
+
     print('🔍 État mis à jour - '
-          'isGoingToPickup: $_isGoingToPickup, '
-          'isOnTrip: $_isOnTrip, '
-          'bottomSheetType: $_currentBottomSheetType');
+        'isGoingToPickup: $_isGoingToPickup, '
+        'isOnTrip: $_isOnTrip, '
+        'bottomSheetType: $_currentBottomSheetType');
   }
-  
+
   // Méthode pour sauvegarder l'état de la course
   Future<void> _saveRideState(String status) async {
     if (_currentCourse == null) return;
-    
+
     // Créer un Map avec toutes les propriétés de la course
     final rideData = {
       'courseId': _currentCourse!.courseId,
@@ -1256,11 +1298,11 @@ class CoursesViewModel extends BaseViewModel {
       'status': status,
       'timestamp': DateTime.now().toIso8601String(),
     };
-    
+
     print('💾 Sauvegarde de l\'état de la course: $rideData');
     await RidePersistenceService.saveRideState(rideData, status);
   }
-  
+
   // Méthode pour effacer l'état de la course
   Future<void> _clearRideState() async {
     await RidePersistenceService.clearRideState();

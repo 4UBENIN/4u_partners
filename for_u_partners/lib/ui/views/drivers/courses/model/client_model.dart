@@ -6,6 +6,7 @@ class ClientData {
 
   // ✨ Nouvelles propriétés depuis Firebase
   final String? courseId;
+  final String? clientId;
   final double? prix;
   final double? distance;
   final double? duree;
@@ -22,6 +23,7 @@ class ClientData {
     required this.timeInfo,
     required this.destination,
     required this.initials,
+    this.clientId,
     this.courseId,
     this.prix,
     this.distance,

@@ -82,7 +82,8 @@ class CurrentRideWidget extends StatelessWidget {
               children: [
                 const Padding(
                   padding: EdgeInsets.only(top: 2.0),
-                  child: Icon(Icons.location_on, color: Color(0xFF6b7280), size: 16),
+                  child: Icon(Icons.location_on,
+                      color: Color(0xFF6b7280), size: 16),
                 ),
                 const SizedBox(width: 8),
                 Expanded(

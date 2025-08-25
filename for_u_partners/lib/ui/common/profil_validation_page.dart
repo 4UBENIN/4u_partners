@@ -15,7 +15,7 @@ class _ProfileValidationPageState extends State<ProfileValidationPage>
   late AnimationController _dotsController;
   late AnimationController _slideController;
   late AnimationController _shineController;
-  
+
   late Animation<double> _pulseAnimation;
   late Animation<double> _slideAnimation;
   late Animation<double> _shineAnimation;
@@ -23,43 +23,43 @@ class _ProfileValidationPageState extends State<ProfileValidationPage>
   @override
   void initState() {
     super.initState();
-    
+
     // Animation pour l'icône pulsante
     _pulseController = AnimationController(
       duration: const Duration(seconds: 2),
       vsync: this,
     )..repeat();
-    
+
     // Animation pour les points de chargement
     _dotsController = AnimationController(
       duration: const Duration(milliseconds: 1400),
       vsync: this,
     )..repeat();
-    
+
     // Animation d'entrée
     _slideController = AnimationController(
       duration: const Duration(milliseconds: 800),
       vsync: this,
     );
-    
+
     // Animation de brillance
     _shineController = AnimationController(
       duration: const Duration(seconds: 3),
       vsync: this,
     )..repeat();
-    
+
     _pulseAnimation = Tween<double>(begin: 1.0, end: 1.05).animate(
       CurvedAnimation(parent: _pulseController, curve: Curves.easeInOut),
     );
-    
+
     _slideAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
       CurvedAnimation(parent: _slideController, curve: Curves.easeOut),
     );
-    
+
     _shineAnimation = Tween<double>(begin: -1.0, end: 2.0).animate(
       CurvedAnimation(parent: _shineController, curve: Curves.easeInOut),
     );
-    
+
     // Démarrer l'animation d'entrée
     Future.delayed(const Duration(milliseconds: 100), () {
       _slideController.forward();
@@ -80,9 +80,7 @@ class _ProfileValidationPageState extends State<ProfileValidationPage>
     return Scaffold(
       backgroundColor: Colors.white,
       body: Container(
-        decoration: const BoxDecoration(
-          
-        ),
+        decoration: const BoxDecoration(),
         child: SafeArea(
           child: Center(
             child: AnimatedBuilder(
@@ -98,24 +96,23 @@ class _ProfileValidationPageState extends State<ProfileValidationPage>
                       decoration: BoxDecoration(
                         color: Colors.white,
                         borderRadius: BorderRadius.circular(24),
-                      
                       ),
                       child: SingleChildScrollView(
                         child: Column(
                           //mainAxisSize: MainAxisSize.min,
                           children: [
                             // Barre de progression animée
-                           
-                            
+
                             Padding(
-                              padding: const EdgeInsets.fromLTRB(30, 40, 30, 40),
+                              padding:
+                                  const EdgeInsets.fromLTRB(30, 40, 30, 40),
                               child: Column(
                                 children: [
                                   // Icône animée
                                   _buildAnimatedIcon(),
-                                  
+
                                   const SizedBox(height: 30),
-                                  
+
                                   // Titre
                                   const Text(
                                     'Profil Créé avec Succès !',
@@ -126,14 +123,14 @@ class _ProfileValidationPageState extends State<ProfileValidationPage>
                                     ),
                                     textAlign: TextAlign.center,
                                   ),
-                                  
+
                                   const SizedBox(height: 16),
-                                  
+
                                   // Sous-titre avec points animés
                                   _buildSubtitleWithDots(),
-                                  
+
                                   const SizedBox(height: 24),
-                                  
+
                                   // Message principal
                                   const Text(
                                     'Félicitations ! Votre profil a été créé avec succès. Pour finaliser l\'activation de votre compte, une validation en agence est requise.',
@@ -144,42 +141,46 @@ class _ProfileValidationPageState extends State<ProfileValidationPage>
                                     ),
                                     textAlign: TextAlign.center,
                                   ),
-                                  
+
                                   const SizedBox(height: 32),
-                                  
+
                                   // Étapes
                                   _buildStepsSection(),
-                                  
+
                                   const SizedBox(height: 32),
-                                  
+
                                   // Boîte d'information
                                   _buildInfoBox(),
-                                  
+
                                   const SizedBox(height: 16),
-                                  
+
                                   // Message final
                                   _buildFinalMessage(),
-                                  
+
                                   const SizedBox(height: 24),
-                                  
+
                                   // Boutons en ligne
                                   Row(
-                                    mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                                    mainAxisAlignment:
+                                        MainAxisAlignment.spaceEvenly,
                                     children: [
                                       // Bouton Se connecter
-                                   
-                                      
+
                                       // Bouton J'ai compris
                                       ElevatedButton(
                                         onPressed: () {
-                                        NavigationService().navigateToLoginView();
+                                          NavigationService()
+                                              .navigateToLoginView();
                                         },
                                         style: ElevatedButton.styleFrom(
-                                          backgroundColor: const Color(0xFF184E9C),
+                                          backgroundColor:
+                                              const Color(0xFF184E9C),
                                           foregroundColor: Colors.white,
-                                          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
+                                          padding: const EdgeInsets.symmetric(
+                                              horizontal: 24, vertical: 16),
                                           shape: RoundedRectangleBorder(
-                                            borderRadius: BorderRadius.circular(30),
+                                            borderRadius:
+                                                BorderRadius.circular(30),
                                           ),
                                           elevation: 4,
                                         ),
@@ -270,12 +271,19 @@ class _ProfileValidationPageState extends State<ProfileValidationPage>
         return Row(
           mainAxisSize: MainAxisSize.min,
           children: List.generate(3, (index) {
-            final animationValue = (_dotsController.value - (index * 0.16)) % 1.0;
-            final opacity = animationValue < 0.4 ? (animationValue / 0.4) : 
-                           animationValue > 0.8 ? (1.0 - (animationValue - 0.8) / 0.2) : 1.0;
-            final scale = animationValue < 0.4 ? 0.8 + (0.2 * (animationValue / 0.4)) : 
-                         animationValue > 0.8 ? 1.0 - (0.2 * (animationValue - 0.8) / 0.2) : 1.0;
-            
+            final animationValue =
+                (_dotsController.value - (index * 0.16)) % 1.0;
+            final opacity = animationValue < 0.4
+                ? (animationValue / 0.4)
+                : animationValue > 0.8
+                    ? (1.0 - (animationValue - 0.8) / 0.2)
+                    : 1.0;
+            final scale = animationValue < 0.4
+                ? 0.8 + (0.2 * (animationValue / 0.4))
+                : animationValue > 0.8
+                    ? 1.0 - (0.2 * (animationValue - 0.8) / 0.2)
+                    : 1.0;
+
             return Container(
               margin: const EdgeInsets.only(right: 4),
               child: Transform.scale(
@@ -314,11 +322,14 @@ class _ProfileValidationPageState extends State<ProfileValidationPage>
             ),
           ),
           const SizedBox(height: 16),
-          _buildStep(1, 'Rendez-vous dans l\'une de nos agences avec une pièce d\'identité valide'),
+          _buildStep(1,
+              'Rendez-vous dans l\'une de nos agences avec une pièce d\'identité valide'),
           const SizedBox(height: 12),
-          _buildStep(2, 'Présentez-vous au guichet et mentionnez votre demande de validation de compte'),
+          _buildStep(2,
+              'Présentez-vous au guichet et mentionnez votre demande de validation de compte'),
           const SizedBox(height: 12),
-          _buildStep(3, 'Votre compte sera activé immédiatement après vérification'),
+          _buildStep(
+              3, 'Votre compte sera activé immédiatement après vérification'),
         ],
       ),
     );
@@ -440,7 +451,10 @@ class _ProfileValidationPageState extends State<ProfileValidationPage>
                 child: ClipRRect(
                   borderRadius: BorderRadius.circular(14),
                   child: Transform.translate(
-                    offset: Offset(MediaQuery.of(context).size.width * _shineAnimation.value, 0),
+                    offset: Offset(
+                        MediaQuery.of(context).size.width *
+                            _shineAnimation.value,
+                        0),
                     child: Container(
                       width: MediaQuery.of(context).size.width,
                       decoration: BoxDecoration(
@@ -458,7 +472,7 @@ class _ProfileValidationPageState extends State<ProfileValidationPage>
                   ),
                 ),
               ),
-              
+
               Padding(
                 padding: const EdgeInsets.all(28),
                 child: Column(
@@ -487,9 +501,7 @@ class _ProfileValidationPageState extends State<ProfileValidationPage>
                         size: 32,
                       ),
                     ),
-                    
                     const SizedBox(height: 20),
-                    
                     const Text(
                       'Une fois votre profil validé',
                       style: TextStyle(
@@ -499,9 +511,7 @@ class _ProfileValidationPageState extends State<ProfileValidationPage>
                       ),
                       textAlign: TextAlign.center,
                     ),
-                    
                     const SizedBox(height: 12),
-                    
                     const Text(
                       'Revenez sur l\'application pour profiter de tous nos services. Vous pourrez alors accéder à votre compte complet et utiliser toutes les fonctionnalités.',
                       style: TextStyle(

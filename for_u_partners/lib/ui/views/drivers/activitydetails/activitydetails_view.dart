@@ -337,12 +337,14 @@ class ActivitydetailsView extends StackedView<ActivitydetailsViewModel> {
 
   Widget _buildClientInfoCard() {
     // Récupération du nom du client depuis les données de l'activité
-    final clientName = activity?.client?['nom'] != null && activity?.client?['prenom'] != null
-        ? '${activity!.client!['prenom']} ${activity!.client!['nom']}'
-        : 'Client inconnu';
-    
+    final clientName =
+        activity?.client?['nom'] != null && activity?.client?['prenom'] != null
+            ? '${activity!.client!['prenom']} ${activity!.client!['nom']}'
+            : 'Client inconnu';
+
     // Première lettre pour l'avatar
-    final avatarLetter = clientName.isNotEmpty ? clientName[0].toUpperCase() : '?';
+    final avatarLetter =
+        clientName.isNotEmpty ? clientName[0].toUpperCase() : '?';
 
     return Container(
       decoration: BoxDecoration(

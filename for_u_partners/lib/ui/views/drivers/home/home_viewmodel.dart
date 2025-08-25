@@ -23,7 +23,6 @@ class HomeViewModel extends BaseViewModel {
 
   HomeViewModel() {
     initialise();
-
   }
 
   Future<void> initialise() async {
