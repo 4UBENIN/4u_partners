@@ -1178,7 +1178,7 @@ class CoursesViewModel extends BaseViewModel {
         notifyListeners();
         
         // Ajouter un délai pour s'assurer que l'UI est prête
-        await Future.delayed(Duration(milliseconds: 500));
+        await Future.delayed(const Duration(milliseconds: 500));
       } else {
         print('ℹ️ Aucun état de course à restaurer ou statut manquant');
       }

@@ -11,7 +11,8 @@ class HomeViewModel extends BaseViewModel {
   final _sharedpreferencesService = locator<SharedpreferencesService>();
   final trackingService = TrackingService();
   final driverService = locator<DriverService>();
-
+  int todayCourses = 0;
+  double montantGainToday = 0.0;
   // Données utilisateur
   String? name;
   double solde = 0;
@@ -22,6 +23,7 @@ class HomeViewModel extends BaseViewModel {
 
   HomeViewModel() {
     initialise();
+
   }
 
   Future<void> initialise() async {
@@ -48,6 +50,10 @@ class HomeViewModel extends BaseViewModel {
     try {
       final stats = await driverService.fetchDailyStats();
       dailyStats = stats;
+      todayCourses = dailyStats?.totalActiviteToday ?? 0;
+      montantGainToday = (dailyStats?.montantGainToday ?? 0).toDouble();
+      print("MONTANT GAIN TODAY: $montantGainToday");
+      print("TOTAL ACTIVITE TODAY: ${dailyStats?.totalActiviteToday}");
       notifyListeners();
     } catch (e) {
       errorMessage = 'Erreur lors de la récupération des statistiques';
@@ -91,8 +97,6 @@ class HomeViewModel extends BaseViewModel {
   }
 
   // Méthodes utilitaires pour accéder facilement aux données
-  int get todayCourses => dailyStats?.totalActiviteToday ?? 0;
-  String get todayEarnings => '${dailyStats?.montantGainToday ?? 0} FCFA';
   bool get hasActiveRide => dailyStats?.activiteEnCours != null;
   String get activeRideClientName =>
       dailyStats?.activiteEnCours?.clientNom ?? 'Client';

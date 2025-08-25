@@ -34,7 +34,7 @@ class HomeView extends StackedView<HomeViewModel> {
                   const SizedBox(height: 24),
                   SummaryWidget(
                     todayCourses: viewModel.todayCourses,
-                    todayEarnings: viewModel.todayEarnings,
+                    todayEarnings: viewModel.montantGainToday.toString(),
                   ),
                   const SizedBox(height: 24),
                   if (viewModel.hasActiveRide)

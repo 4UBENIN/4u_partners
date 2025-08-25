@@ -250,6 +250,7 @@ class DriverService {
 
       if (response.statusCode == 200) {
         final Map<String, dynamic> responseData = jsonDecode(response.body);
+        print("daily-stats-response: ${DailyStats.fromJson(responseData)}");
         return DailyStats.fromJson(responseData);
       } else {
         throw Exception(

@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:for_u_partners/ui/common/app_textInput.dart';
 import 'package:for_u_partners/app/models/pressing_depot_models/depot_model.dart';
 import 'package:for_u_partners/ui/common/app_button_component.dart';
 import 'package:for_u_partners/ui/common/app_colors.dart';
