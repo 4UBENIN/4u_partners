@@ -393,7 +393,7 @@ class AuthService {
           registerType = responseJson['conducteur_type'];
         }
 
-        await _sharedPreferencesServices.saveToken(responseJson['token']);
+        //await _sharedPreferencesServices.saveToken(responseJson['token']);
         await _sharedPreferencesServices.saveUserId(responseJson['data']['id']);
         await _sharedPreferencesServices.saveUserType(registerType);
         await _sharedPreferencesServices
@@ -440,6 +440,7 @@ class AuthService {
                     builder: (context) => const ProfileValidationPage()));
             break;
           case 'pressing':
+            await _sharedPreferencesServices.saveToken(responseJson['token']);
             _navigationService.replaceWithNavBarPressingView();
             break;
           default:
