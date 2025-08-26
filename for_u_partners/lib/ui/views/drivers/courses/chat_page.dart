@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:for_u_partners/app/app.locator.dart';
@@ -25,8 +27,10 @@ class ChatPage extends StatefulWidget {
 
 class _ChatPageState extends State<ChatPage> {
   final TextEditingController _messageController = TextEditingController();
-  final _chatService = locator<ChatService>();
+  final ChatService _chatService = ChatService();
   final ScrollController _scrollController = ScrollController();
+  Timer? _typingDebounceTimer;
+  bool _isTyping = false;
 
   @override
   void initState() {
@@ -36,6 +40,10 @@ class _ChatPageState extends State<ChatPage> {
       conversationId: widget.conversationId,
       currentUserId: widget.currentUserId,
     );
+
+    // Écouter les changements dans le champ de texte
+    _messageController.addListener(_onTextChanged);
+
     print(" RecEIVER NAME : ${widget.receiverUserName}");
     print(" RecEIVER ID : ${widget.receiverUserId}");
     print(" CONVERSATION ID : ${widget.conversationId}");
@@ -44,9 +52,64 @@ class _ChatPageState extends State<ChatPage> {
 
   @override
   void dispose() {
+    // Arrêter le statut typing avant de quitter
+    if (_isTyping) {
+      _chatService.stopTyping(
+        conversationId: widget.conversationId,
+        userId: widget.currentUserId,
+      );
+    }
+
+    _typingDebounceTimer?.cancel();
+    _messageController.removeListener(_onTextChanged);
     _messageController.dispose();
     _scrollController.dispose();
+    _chatService.dispose();
     super.dispose();
+  }
+
+  void _onTextChanged() {
+    final text = _messageController.text.trim();
+
+    if (text.isNotEmpty && !_isTyping) {
+      // Commencer à indiquer qu'on est en train de taper
+      _startTyping();
+    }
+
+    // Annuler le timer précédent
+    _typingDebounceTimer?.cancel();
+
+    // Créer un nouveau timer qui arrêtera le typing après 1 seconde d'inactivité
+    _typingDebounceTimer = Timer(const Duration(seconds: 1), () {
+      if (_isTyping) {
+        _stopTyping();
+      }
+    });
+
+    // Si le champ est vide, arrêter immédiatement le typing
+    if (text.isEmpty && _isTyping) {
+      _stopTyping();
+    }
+  }
+
+  void _startTyping() {
+    setState(() {
+      _isTyping = true;
+    });
+    _chatService.startTyping(
+      conversationId: widget.conversationId,
+      userId: widget.currentUserId,
+    );
+  }
+
+  void _stopTyping() {
+    setState(() {
+      _isTyping = false;
+    });
+    _chatService.stopTyping(
+      conversationId: widget.conversationId,
+      userId: widget.currentUserId,
+    );
   }
 
   void _sendMessage() async {
@@ -54,6 +117,7 @@ class _ChatPageState extends State<ChatPage> {
     if (message.isEmpty) return;
 
     try {
+      // Le service se charge d'arrêter le typing automatiquement
       await _chatService.sendMessage(
         conversationId: widget.conversationId,
         senderId: widget.currentUserId,
@@ -62,6 +126,9 @@ class _ChatPageState extends State<ChatPage> {
       );
 
       _messageController.clear();
+      setState(() {
+        _isTyping = false;
+      });
       _scrollToBottom();
     } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -112,10 +179,34 @@ class _ChatPageState extends State<ChatPage> {
                     fontsize: 16,
                     fontweight: FontWeight.w600,
                   ),
-                  const TextComponent(
-                    'Client',
-                    fontsize: 12,
-                    textcolor: Colors.grey,
+                  // Indicateur de statut avec typing status
+                  StreamBuilder<DocumentSnapshot>(
+                    stream: _chatService.getTypingStatus(widget.conversationId),
+                    builder: (context, snapshot) {
+                      if (snapshot.hasData && snapshot.data!.exists) {
+                        final data =
+                            snapshot.data!.data() as Map<String, dynamic>;
+                        final isOtherTyping = _chatService.isOtherUserTyping(
+                          conversationData: data,
+                          currentUserId: widget.currentUserId,
+                        );
+
+                        if (isOtherTyping) {
+                          return const TextComponent(
+                            'écrit...',
+                            fontsize: 12,
+                            textcolor: Colors.green,
+                            fontweight: FontWeight.w500,
+                          );
+                        }
+                      }
+
+                      return const TextComponent(
+                        'Client',
+                        fontsize: 12,
+                        textcolor: Colors.grey,
+                      );
+                    },
                   ),
                 ],
               ),
@@ -188,6 +279,91 @@ class _ChatPageState extends State<ChatPage> {
               },
             ),
           ),
+
+          // Indicateur "is typing" en bas de la liste des messages
+          StreamBuilder<DocumentSnapshot>(
+            stream: _chatService.getTypingStatus(widget.conversationId),
+            builder: (context, snapshot) {
+              if (snapshot.hasData && snapshot.data!.exists) {
+                final data = snapshot.data!.data() as Map<String, dynamic>;
+                final isOtherTyping = _chatService.isOtherUserTyping(
+                  conversationData: data,
+                  currentUserId: widget.currentUserId,
+                );
+
+                if (isOtherTyping) {
+                  return Container(
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                    child: Row(
+                      children: [
+                        CircleAvatar(
+                          radius: 12,
+                          backgroundColor: primaryColor,
+                          child: Text(
+                            widget.receiverUserName.isNotEmpty
+                                ? widget.receiverUserName[0].toUpperCase()
+                                : 'C',
+                            style: const TextStyle(
+                              color: Colors.white,
+                              fontSize: 10,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                        ),
+                        const SizedBox(width: 8),
+                        Container(
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 12, vertical: 6),
+                          decoration: BoxDecoration(
+                            color: Colors.grey[200],
+                            borderRadius: BorderRadius.circular(15),
+                          ),
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              const TextComponent(
+                                'écrit',
+                                fontsize: 13,
+                                textcolor: Colors.grey,
+                              ),
+                              const SizedBox(width: 4),
+                              // Animation de points
+                              SizedBox(
+                                width: 20,
+                                child: Row(
+                                  children: List.generate(3, (index) {
+                                    return AnimatedContainer(
+                                      duration: Duration(
+                                          milliseconds: 600 + (index * 200)),
+                                      curve: Curves.easeInOut,
+                                      margin: const EdgeInsets.symmetric(
+                                          horizontal: 1),
+                                      child: Container(
+                                        width: 4,
+                                        height: 4,
+                                        decoration: BoxDecoration(
+                                          color: Colors.grey[400],
+                                          shape: BoxShape.circle,
+                                        ),
+                                      ),
+                                    );
+                                  }),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
+                  );
+                }
+              }
+
+              return const SizedBox.shrink();
+            },
+          ),
+
           // Zone de saisie
           _buildMessageInput(),
         ],
@@ -227,10 +403,7 @@ class _ChatPageState extends State<ChatPage> {
           ],
           Flexible(
             child: Container(
-              padding: const EdgeInsets.symmetric(
-                horizontal: 16,
-                vertical: 10,
-              ),
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
               decoration: BoxDecoration(
                 color: isCurrentUser ? primaryColor : Colors.grey[200],
                 borderRadius: BorderRadius.circular(18).copyWith(
@@ -281,11 +454,7 @@ class _ChatPageState extends State<ChatPage> {
             CircleAvatar(
               radius: 16,
               backgroundColor: Colors.grey[300],
-              child: const Icon(
-                Icons.person,
-                size: 16,
-                color: Colors.grey,
-              ),
+              child: const Icon(Icons.person, size: 16, color: Colors.grey),
             ),
           ],
         ],
@@ -340,11 +509,7 @@ class _ChatPageState extends State<ChatPage> {
                   color: primaryColor,
                   borderRadius: BorderRadius.circular(24),
                 ),
-                child: const Icon(
-                  Icons.send,
-                  color: Colors.white,
-                  size: 20,
-                ),
+                child: const Icon(Icons.send, color: Colors.white, size: 20),
               ),
             ),
           ],

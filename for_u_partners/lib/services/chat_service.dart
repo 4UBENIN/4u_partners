@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:for_u_partners/app/app.locator.dart';
 import 'package:for_u_partners/services/sharedpreferences_service.dart';
@@ -5,21 +7,23 @@ import 'package:for_u_partners/services/sharedpreferences_service.dart';
 class ChatService {
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
   final _sharedPreferencesServices = locator<SharedpreferencesService>();
+  Timer? _typingTimer;
 
   // Récupérer les infos de l'utilisateur connecté (client)
   Future<Map<String, dynamic>?> getCurrentUserInfo() async {
     try {
-      final userId = await _sharedPreferencesServices.getUserTypeId();
+      final userId = await _sharedPreferencesServices.getUserId();
       if (userId == null) return null;
 
-      final userDoc =
-          await _firestore.collection('users').doc(userId.toString()).get();
+      final userDoc = await _firestore
+          .collection('users')
+          .doc(userId.toString())
+          .get();
 
       if (userDoc.exists) {
         return {
           'id': userId.toString(),
-          'name':
-              '${userDoc.data()?['prenom'] ?? ''} ${userDoc.data()?['nom'] ?? ''}',
+          'name': '${userDoc.data()?['prenom'] ?? ''} ${userDoc.data()?['nom'] ?? ''}',
           'email': userDoc.data()?['email'] ?? '',
           'telephone': userDoc.data()?['telephone'] ?? '',
           'role': userDoc.data()?['role'] ?? '',
@@ -45,8 +49,9 @@ class ChatService {
       participants.sort(); // Trier pour avoir toujours le même ordre
       final String conversationId = '${participants[0]}_${participants[1]}';
 
-      final conversationRef =
-          _firestore.collection('conversations').doc(conversationId);
+      final conversationRef = _firestore
+          .collection('conversations')
+          .doc(conversationId);
 
       final conversationDoc = await conversationRef.get();
 
@@ -62,7 +67,19 @@ class ChatService {
           'lastMessageTime': FieldValue.serverTimestamp(),
           'createdAt': FieldValue.serverTimestamp(),
           'tripId': tripId, // Optionnel : lier à un trajet spécifique
+          // Nouveaux champs pour le typing status
+          'typingUsers': <String>[],
+          'typingTimestamps': <String, dynamic>{},
         });
+      } else {
+        // Si la conversation existe déjà mais n'a pas les champs typing, les ajouter
+        final data = conversationDoc.data() as Map<String, dynamic>?;
+        if (data != null && !data.containsKey('typingUsers')) {
+          await conversationRef.update({
+            'typingUsers': <String>[],
+            'typingTimestamps': <String, dynamic>{},
+          });
+        }
       }
 
       return conversationId;
@@ -75,7 +92,10 @@ class ChatService {
   // Méthode helper pour récupérer le nom de l'utilisateur actuel
   Future<String> _getCurrentUserName(String userId) async {
     try {
-      final userDoc = await _firestore.collection('users').doc(userId).get();
+      final userDoc = await _firestore
+          .collection('users')
+          .doc(userId)
+          .get();
 
       if (userDoc.exists) {
         final data = userDoc.data();
@@ -96,6 +116,9 @@ class ChatService {
     String messageType = 'text',
   }) async {
     try {
+      // D'abord, arrêter le statut typing
+      await stopTyping(conversationId: conversationId, userId: senderId);
+
       // Ajouter le message à la sous-collection 'messages'
       await _firestore
           .collection('conversations')
@@ -111,7 +134,10 @@ class ChatService {
       });
 
       // Mettre à jour la conversation avec le dernier message
-      await _firestore.collection('conversations').doc(conversationId).update({
+      await _firestore
+          .collection('conversations')
+          .doc(conversationId)
+          .update({
         'lastMessage': message,
         'lastMessageTime': FieldValue.serverTimestamp(),
       });
@@ -153,5 +179,166 @@ class ChatService {
     } catch (e) {
       print('Erreur marquage messages lus: $e');
     }
+  }
+
+  // ==================== FONCTIONNALITÉS TYPING ====================
+
+  // Indiquer que l'utilisateur est en train d'écrire
+  Future<void> startTyping({
+    required String conversationId,
+    required String userId,
+  }) async {
+    try {
+      final conversationRef = _firestore
+          .collection('conversations')
+          .doc(conversationId);
+
+      await _firestore.runTransaction((transaction) async {
+        final conversationDoc = await transaction.get(conversationRef);
+        
+        if (conversationDoc.exists) {
+          final data = conversationDoc.data() as Map<String, dynamic>;
+          final List<String> typingUsers = List<String>.from(data['typingUsers'] ?? []);
+          final Map<String, dynamic> typingTimestamps = Map<String, dynamic>.from(data['typingTimestamps'] ?? {});
+          
+          // Ajouter l'utilisateur à la liste des utilisateurs qui tapent
+          if (!typingUsers.contains(userId)) {
+            typingUsers.add(userId);
+          }
+          
+          // Mettre à jour le timestamp
+          typingTimestamps[userId] = FieldValue.serverTimestamp();
+          
+          transaction.update(conversationRef, {
+            'typingUsers': typingUsers,
+            'typingTimestamps': typingTimestamps,
+          });
+        }
+      });
+
+      // Programmer l'arrêt automatique du typing après 3 secondes
+      _typingTimer?.cancel();
+      _typingTimer = Timer(const Duration(seconds: 3), () {
+        stopTyping(conversationId: conversationId, userId: userId);
+      });
+
+    } catch (e) {
+      print('Erreur start typing: $e');
+    }
+  }
+
+  // Arrêter d'indiquer que l'utilisateur est en train d'écrire
+  Future<void> stopTyping({
+    required String conversationId,
+    required String userId,
+  }) async {
+    try {
+      _typingTimer?.cancel();
+
+      final conversationRef = _firestore
+          .collection('conversations')
+          .doc(conversationId);
+
+      await _firestore.runTransaction((transaction) async {
+        final conversationDoc = await transaction.get(conversationRef);
+        
+        if (conversationDoc.exists) {
+          final data = conversationDoc.data() as Map<String, dynamic>;
+          final List<String> typingUsers = List<String>.from(data['typingUsers'] ?? []);
+          final Map<String, dynamic> typingTimestamps = Map<String, dynamic>.from(data['typingTimestamps'] ?? {});
+          
+          // Retirer l'utilisateur de la liste
+          typingUsers.remove(userId);
+          typingTimestamps.remove(userId);
+          
+          transaction.update(conversationRef, {
+            'typingUsers': typingUsers,
+            'typingTimestamps': typingTimestamps,
+          });
+        }
+      });
+    } catch (e) {
+      print('Erreur stop typing: $e');
+    }
+  }
+
+  // Écouter le statut typing d'une conversation
+  Stream<DocumentSnapshot> getTypingStatus(String conversationId) {
+    return _firestore
+        .collection('conversations')
+        .doc(conversationId)
+        .snapshots();
+  }
+
+  // Vérifier si quelqu'un d'autre que l'utilisateur actuel est en train d'écrire
+  bool isOtherUserTyping({
+    required Map<String, dynamic> conversationData,
+    required String currentUserId,
+  }) {
+    final List<String> typingUsers = List<String>.from(conversationData['typingUsers'] ?? []);
+    final Map<String, dynamic> typingTimestamps = Map<String, dynamic>.from(conversationData['typingTimestamps'] ?? {});
+    
+    // Filtrer les utilisateurs qui tapent (exclure l'utilisateur actuel)
+    final otherTypingUsers = typingUsers.where((userId) => userId != currentUserId).toList();
+    
+    // Vérifier si les timestamps sont récents (moins de 5 secondes)
+    final now = DateTime.now();
+    final validTypingUsers = otherTypingUsers.where((userId) {
+      final timestamp = typingTimestamps[userId];
+      if (timestamp is Timestamp) {
+        final typingTime = timestamp.toDate();
+        return now.difference(typingTime).inSeconds < 5;
+      }
+      return false;
+    }).toList();
+    
+    return validTypingUsers.isNotEmpty;
+  }
+
+  // Nettoyer les anciens statuts typing (à appeler périodiquement)
+  Future<void> cleanupOldTypingStatus(String conversationId) async {
+    try {
+      final conversationRef = _firestore
+          .collection('conversations')
+          .doc(conversationId);
+
+      await _firestore.runTransaction((transaction) async {
+        final conversationDoc = await transaction.get(conversationRef);
+        
+        if (conversationDoc.exists) {
+          final data = conversationDoc.data() as Map<String, dynamic>;
+          final List<String> typingUsers = List<String>.from(data['typingUsers'] ?? []);
+          final Map<String, dynamic> typingTimestamps = Map<String, dynamic>.from(data['typingTimestamps'] ?? {});
+          
+          final now = DateTime.now();
+          final List<String> validUsers = [];
+          final Map<String, dynamic> validTimestamps = {};
+          
+          // Garder seulement les utilisateurs avec des timestamps récents
+          for (final userId in typingUsers) {
+            final timestamp = typingTimestamps[userId];
+            if (timestamp is Timestamp) {
+              final typingTime = timestamp.toDate();
+              if (now.difference(typingTime).inSeconds < 5) {
+                validUsers.add(userId);
+                validTimestamps[userId] = timestamp;
+              }
+            }
+          }
+          
+          transaction.update(conversationRef, {
+            'typingUsers': validUsers,
+            'typingTimestamps': validTimestamps,
+          });
+        }
+      });
+    } catch (e) {
+      print('Erreur cleanup typing: $e');
+    }
+  }
+
+  // Dispose method pour nettoyer les timers
+  void dispose() {
+    _typingTimer?.cancel();
   }
 }
