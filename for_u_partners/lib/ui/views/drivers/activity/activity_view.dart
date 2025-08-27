@@ -48,37 +48,129 @@ class ActivityView extends StackedView<ActivityViewModel> {
           child: LoadingAnimationWidget.fourRotatingDots(
               color: kcPrimaryColor, size: 50));
     }
-
-    if (viewModel.errorMessage != null) {
-      return Center(
+if (viewModel.errorMessage != null) {
+  return Container(
+   
+    child: Center(
+      child: Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 24.0),
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            const Icon(Icons.error_outline, color: Colors.red, size: 48),
-            const SizedBox(height: 16),
-            Text(
-              'Erreur de chargement des activités',
-              style: TextStyle(
-                fontSize: 16,
-                color: Colors.grey[800],
-                fontWeight: FontWeight.w500,
+            // Icône avec animation subtile
+            Container(
+              padding: const EdgeInsets.all(24),
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                color: const Color(0xFF184E9C).withOpacity(0.1),
+                boxShadow: [
+                  BoxShadow(
+                    color: const Color(0xFF184E9C).withOpacity(0.2),
+                    blurRadius: 20,
+                    spreadRadius: 5,
+                  ),
+                ],
+              ),
+              child: const Icon(
+                Icons.access_time_rounded,
+                color: Color(0xFF184E9C),
+                size: 56,
               ),
             ),
-            const SizedBox(height: 8),
-            Text(
-              viewModel.errorMessage!,
+            
+            const SizedBox(height: 32),
+            
+            // Titre principal
+            const Text(
+              'Compte en cours de validation',
               textAlign: TextAlign.center,
-              style: TextStyle(color: Colors.grey[600]),
+              style: TextStyle(
+                fontSize: 24,
+                fontWeight: FontWeight.bold,
+                color: Color(0xFF184E9C),
+                height: 1.2,
+              ),
             ),
+            
             const SizedBox(height: 16),
-            ElevatedButton(
-              onPressed: viewModel.loadActivities,
-              child: const Text('Réessayer'),
+            
+            // Message descriptif
+            Container(
+              padding: const EdgeInsets.all(20),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(16),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withOpacity(0.08),
+                    blurRadius: 10,
+                    offset: const Offset(0, 4),
+                  ),
+                ],
+              ),
+              child: Column(
+                children: [
+                  Text(
+                    'Votre demande d\'inscription a été reçue avec succès !',
+                    textAlign: TextAlign.center,
+                    style: TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.w600,
+                      color: Colors.grey[800],
+                      height: 1.4,
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  Text(
+                    'Notre équipe examine actuellement votre dossier. Vous recevrez une notification par email dès que votre compte sera activé.',
+                    textAlign: TextAlign.center,
+                    style: TextStyle(
+                      fontSize: 14,
+                      color: Colors.grey[600],
+                      height: 1.5,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            
+            const SizedBox(height: 32),
+            
+            // Indicateur de progression
+            Column(
+              children: [
+                Text(
+                  'Temps de traitement habituel',
+                  style: TextStyle(
+                    fontSize: 12,
+                    color: Colors.grey[500],
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+                const SizedBox(height: 8),
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFF184E9C).withOpacity(0.1),
+                    borderRadius: BorderRadius.circular(20),
+                  ),
+                  child: const Text(
+                    '24-48 heures',
+                    style: TextStyle(
+                      fontSize: 14,
+                      color: Color(0xFF184E9C),
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ),
+              ],
             ),
           ],
         ),
-      );
-    }
+      ),
+    ),
+  );
+}
 
     return SmartRefresher(
       enablePullDown: true,

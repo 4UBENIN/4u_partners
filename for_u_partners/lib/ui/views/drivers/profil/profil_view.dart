@@ -117,10 +117,10 @@ class ProfilView extends StackedView<ProfilViewModel> {
                           ),
                           _buildMenuItem(
                             icon: _buildLogoutIcon(),
-                            text: 'Log Out',
+                            text: 'Déconnexion',
                             isLogout: true,
                             onTap: () {
-                              viewModel.logOut();
+                              viewModel.showLogoutConfirmationDialog(context);
                             },
                           ),
                         ],

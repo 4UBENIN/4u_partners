@@ -517,27 +517,27 @@ class _AcceptedClientBottomSheetState extends State<AcceptedClientBottomSheet> {
 
                   const SizedBox(height: 15),
 
-                  // Bouton Annuler
-                  SizedBox(
-                    width: double.infinity,
-                    height: 50,
-                    child: TextButton(
-                      onPressed: () => _showCancelDialog(context),
-                      style: TextButton.styleFrom(
-                        foregroundColor: Colors.red,
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(25),
-                        ),
-                      ),
-                      child: const Text(
-                        'Annuler la course',
-                        style: TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
-                    ),
-                  ),
+                  // // Bouton Annuler
+                  // SizedBox(
+                  //   width: double.infinity,
+                  //   height: 50,
+                  //   child: TextButton(
+                  //     onPressed: () => _showCancelDialog(context),
+                  //     style: TextButton.styleFrom(
+                  //       foregroundColor: Colors.red,
+                  //       shape: RoundedRectangleBorder(
+                  //         borderRadius: BorderRadius.circular(25),
+                  //       ),
+                  //     ),
+                  //     child: const Text(
+                  //       'Annuler la course',
+                  //       style: TextStyle(
+                  //         fontSize: 16,
+                  //         fontWeight: FontWeight.w600,
+                  //       ),
+                  //     ),
+                  //   ),
+                  // ),
                 ],
               ),
             ),
@@ -552,13 +552,14 @@ class _AcceptedClientBottomSheetState extends State<AcceptedClientBottomSheet> {
       context: context,
       builder: (BuildContext context) {
         return AlertDialog(
+          backgroundColor: Colors.white,
           title: const Text('Annuler la course'),
           content: Text(
               'Êtes-vous sûr de vouloir annuler la course avec ${widget.client.name} ?'),
           actions: [
             TextButton(
               onPressed: () => Navigator.of(context).pop(),
-              child: const Text('Non'),
+              child: const Text('Non', style: TextStyle(color: Colors.black)),
             ),
             TextButton(
               onPressed: widget.onCancelRide,

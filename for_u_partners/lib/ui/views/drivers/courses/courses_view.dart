@@ -1,5 +1,6 @@
 import 'package:for_u_partners/app/app.router.dart';
 import 'package:for_u_partners/services/chat_service.dart';
+import 'package:for_u_partners/services/sharedpreferences_service.dart';
 import 'package:for_u_partners/ui/common/app_colors.dart';
 import 'package:for_u_partners/ui/views/drivers/courses/chat_page.dart';
 import 'package:for_u_partners/ui/views/drivers/courses/recap_view.dart';
@@ -247,6 +248,9 @@ class CoursesView extends StackedView<CoursesViewModel> {
     try {
       // Récupérer les infos de l'utilisateur connecté
       final currentUserInfo = await chatService.getCurrentUserInfo();
+      print(" BB CURRENT USER INFO : $currentUserInfo");
+      final a = await locator<SharedpreferencesService>().getUserTypeId();
+      print(" BB CURRENT USER ID : $a");
       if (currentUserInfo == null) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
@@ -385,9 +389,9 @@ class CoursesView extends StackedView<CoursesViewModel> {
             onCancelRide: () {
               // Annuler la course acceptée - PAS de WidgetsBinding ici
               if (pickupCourse.hasValidCourseId) {
-                viewModel.removeCourse(pickupCourse.courseId!);
                 viewModel.rejectCourseService(
                     int.tryParse(pickupCourse.courseId!)!, context);
+                viewModel.removeCourse(pickupCourse.courseId!);
               }
               viewModel.setBottomSheetType(BottomSheetAppType.none);
             },

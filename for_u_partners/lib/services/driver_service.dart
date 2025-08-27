@@ -43,6 +43,7 @@ class DriverService {
   Future<void> rejectCourse(int courseId) async {
     final token = await sharedPreferencesService.getToken();
     final url = Uri.parse(rejectCourseUrl(courseId));
+    print("reject-course-url: $url");
 
     try {
       final response = await http.patch(
@@ -53,6 +54,7 @@ class DriverService {
           'Authorization': 'Bearer $token',
         },
       );
+      print("reject-course-response: ${response.body}");
 
       if (response.statusCode != 200) {
         throw Exception('Échec du rejet de la course');
@@ -67,7 +69,7 @@ class DriverService {
   Future<void> startCourse(int courseId) async {
     final token = await sharedPreferencesService.getToken();
     final url = Uri.parse(startCourseUrl(courseId));
-
+    print("start-course-url: $url");
     try {
       final response = await http.patch(
         url,
@@ -77,6 +79,8 @@ class DriverService {
           'Authorization': 'Bearer $token',
         },
       );
+
+      print("start-course-response: ${response.body}");
 
       if (response.statusCode != 200) {
         throw Exception('Échec du démarrage de la course');
@@ -89,8 +93,10 @@ class DriverService {
 
   // Terminer une course
   Future<void> completeCourse(int courseId) async {
+    print("Debut de la fin de la course dans le service");
     final token = await sharedPreferencesService.getToken();
     final url = Uri.parse(completeCourseUrl(courseId));
+    print("complete-course-url: $url");
 
     try {
       final response = await http.patch(
@@ -101,6 +107,7 @@ class DriverService {
           'Authorization': 'Bearer $token',
         },
       );
+      print("complete-course-response: ${response.body}");
 
       if (response.statusCode != 200) {
         throw Exception('Échec de la finalisation de la course');

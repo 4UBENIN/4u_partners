@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:for_u_partners/ui/common/profil_validation_page.dart';
+import 'package:for_u_partners/ui/common/toast.dart';
 import 'package:http/http.dart' as http;
 import 'package:dio/dio.dart';
 import 'package:path/path.dart' as path;
@@ -21,7 +22,7 @@ class AuthService {
 
   //* LOGIN FUNCTION
 
-  Future<void> login(LoginModel loginModel) async {
+  Future<void> login(LoginModel loginModel, BuildContext context) async {
     final url =
         Uri.parse("https://foryou.cilassocies.com/api/partenaire/login");
 
@@ -29,9 +30,8 @@ class AuthService {
         headers: headers, body: jsonEncode(loginModel.toJson()));
 
     print("=== RESPONSE: ${response.body} ===");
+    final responseJson = jsonDecode(response.body);
     if (response.statusCode == 200) {
-      final responseJson = jsonDecode(response.body);
-
       print("VALEURS");
       print("role : ${responseJson['data']['role']}");
       print("name : ${responseJson['data']['nom']}");
@@ -50,7 +50,7 @@ class AuthService {
       String userId = responseJson['data']['id']
           .toString(); // Si tu veux le garder en String
       String token = responseJson['token'];
-
+      String message = responseJson['message'];
 // Sauvegarde dans SharedPreferences
       await _sharedPreferencesServices.saveToken(token);
       await _sharedPreferencesServices.saveUserName(name);
@@ -77,6 +77,7 @@ class AuthService {
       await _syncUserToFirestore(responseJson['data'], role, firestoreUserId);
 
       // redirection
+      CustomToast.showSuccess(context, message: message);
       switch (role) {
         case 'livreur':
           _navigationService.replaceWithDeliveryNavBarView();
@@ -88,13 +89,15 @@ class AuthService {
           _navigationService.replaceWithPickerNavBarView();
           break;
         case 'pressing':
-          await _sharedPreferencesServices.saveToken(token);
+          //await _sharedPreferencesServices.saveToken(token);
           _navigationService.replaceWithNavBarPressingView();
           break;
         default:
           null;
       }
     } else {
+      String message = responseJson['error'];
+      CustomToast.showError(context, message: message);
       throw Exception('Something went wrong');
     }
   }
@@ -385,31 +388,45 @@ class AuthService {
       print("Status Code: ${response.statusCode}");
       print("Response Data: ${response.data}");
 
+      final responseJson = response.data;
+      print("Response JSON: $responseJson");
+      String token = responseJson['token'];
       if (response.statusCode == 201) {
-        final responseJson = response.data;
         String registerType = responseJson['type'];
-        String profilStatuts = responseJson['data']['statut_validation'];
-        if (registerType == "conducteur") {
-          registerType = responseJson['conducteur_type'];
+        print("Type: $registerType");
+        CustomToast.showSuccess(context, message: responseJson['message']);
+
+        // Vérification du token
+        if (token == null) {
+          throw Exception("Token manquant dans la réponse du serveur");
         }
 
-        //await _sharedPreferencesServices.saveToken(responseJson['token']);
+        // Gérer statut_validation qui peut être null pour certains types (comme pressing)
+        final String? profilStatuts = responseJson['data']['statut_validation'];
+
+        if (registerType == "conducteur") {
+          final String? conducteurType = responseJson['conducteur_type'];
+          if (conducteurType != null) {
+            registerType = conducteurType;
+          }
+        }
+
+        // Sauvegarder les données de base
         await _sharedPreferencesServices.saveUserId(responseJson['data']['id']);
         await _sharedPreferencesServices.saveUserType(registerType);
         await _sharedPreferencesServices
             .saveUserName(responseJson['data']['nom']);
-        await _sharedPreferencesServices.saveProfilStatuts(profilStatuts);
 
         String firestoreUserId;
         if (responseJson['data']['conducteur'] != null) {
-          // Si c'est un conducteur/livreur, utiliser l'ID du conducteur
+          print(
+              "Conducteur inscrit - ID Firestore: ${responseJson['data']['conducteur']['id']}");
           final conducteurId =
               responseJson['data']['conducteur']['id'].toString();
           await _sharedPreferencesServices.saveUserTypeId(conducteurId);
           firestoreUserId = conducteurId;
           print("Partenaire inscrit - ID Firestore: $firestoreUserId");
         } else {
-          // Si c'est un client, utiliser l'ID utilisateur normal
           firestoreUserId = responseJson['data']['id'].toString();
           print("Client inscrit - ID Firestore: $firestoreUserId");
         }
@@ -422,35 +439,54 @@ class AuthService {
 
         switch (registerType) {
           case 'livreur':
+            // Sauvegarder le statut seulement s'il existe
+            if (profilStatuts != null) {
+              await _sharedPreferencesServices.saveProfilStatuts(profilStatuts);
+            }
             Navigator.push(
                 context,
                 MaterialPageRoute(
                     builder: (context) => const ProfileValidationPage()));
             break;
+
           case 'chauffeur':
+            // Sauvegarder le statut seulement s'il existe
+            if (profilStatuts != null) {
+              await _sharedPreferencesServices.saveProfilStatuts(profilStatuts);
+            }
             Navigator.push(
                 context,
                 MaterialPageRoute(
                     builder: (context) => const ProfileValidationPage()));
             break;
+
           case 'ramasseur':
+            // Sauvegarder le statut seulement s'il existe
+            if (profilStatuts != null) {
+              await _sharedPreferencesServices.saveProfilStatuts(profilStatuts);
+            }
             Navigator.push(
                 context,
                 MaterialPageRoute(
                     builder: (context) => const ProfileValidationPage()));
             break;
+
           case 'pressing':
-            await _sharedPreferencesServices.saveToken(responseJson['token']);
+            // Pour pressing, pas besoin de statut_validation
+            await _sharedPreferencesServices.saveToken(token);
+            print("Token sauvegardé, redirection vers la vue pressing...");
             _navigationService.replaceWithNavBarPressingView();
             break;
+
           default:
-            null;
+            print('Type non géré: $registerType');
+            break;
         }
       } else {
         // LANCER UNE EXCEPTION AU LIEU DE JUSTE IMPRIMER
         print('=== ERREUR SERVEUR ===');
         print('Status Code: ${response.statusCode}');
-        print('Response: ${response.data}');
+        print('Response: ${responseJson['error']}');
 
         String errorMessage = "Erreur lors de l'inscription";
 
@@ -496,7 +532,8 @@ class AuthService {
         // Pour toute autre exception, la wrapper dans une DioException
         print('Stack trace : ${StackTrace.current}');
         throw DioException(
-          requestOptions: RequestOptions(path: url),
+          requestOptions: RequestOptions(
+              path: 'https://foryou.cilassocies.com/api/partenaire/register'),
           message: e.toString(),
         );
       }

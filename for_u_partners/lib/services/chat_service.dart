@@ -12,7 +12,8 @@ class ChatService {
   // Récupérer les infos de l'utilisateur connecté (client)
   Future<Map<String, dynamic>?> getCurrentUserInfo() async {
     try {
-      final userId = await _sharedPreferencesServices.getUserId();
+      final userId = await _sharedPreferencesServices.getUserTypeId();
+      print(" BB CURRENT USER ID chat Service : $userId");
       if (userId == null) return null;
 
       final userDoc = await _firestore

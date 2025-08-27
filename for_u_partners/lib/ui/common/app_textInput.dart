@@ -88,6 +88,15 @@ class _TextInputFieldState extends State<TextInputField> {
   }
 
   @override
+  void dispose() {
+    // Only dispose the focus node if it was created by this widget
+    if (widget.focusNode == null) {
+      focusNode.dispose();
+    }
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
     final inputBorder = OutlineInputBorder(
       borderRadius: BorderRadius.circular(16.0),
@@ -274,9 +283,16 @@ class _CountryPhoneSelectorState extends State<CountryPhoneSelector>
     // Ne pas disposer du contrôleur s'il a été fourni par le widget parent
     if (widget.controller == null) {
       _textController.dispose();
+    } else {
+      // Remove any listeners to prevent callbacks after disposal
+      _textController.removeListener(() {});
     }
+    
+    // Dispose focus node and animation controller
     _focusNode.dispose();
     _animationController.dispose();
+    
+    // Call super last
     super.dispose();
   }
 

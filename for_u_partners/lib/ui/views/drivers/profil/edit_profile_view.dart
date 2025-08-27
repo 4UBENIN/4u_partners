@@ -262,7 +262,7 @@ class _EditProfileViewState extends State<EditProfileView> {
                 child: ElevatedButton(
                   onPressed: widget.viewModel.isLoading ? null : _submitForm,
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.blue,
+                    backgroundColor: kcPrimaryColor,
                     foregroundColor: Colors.white,
                     elevation: 0,
                     shadowColor: Colors.transparent,

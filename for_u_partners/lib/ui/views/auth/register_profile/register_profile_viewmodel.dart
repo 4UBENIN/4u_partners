@@ -1,6 +1,7 @@
 import 'dart:io';
 import 'package:for_u_partners/app/models/register_model.dart';
 import 'package:for_u_partners/services/auth_service.dart';
+import 'package:for_u_partners/ui/common/toast.dart';
 import 'package:stacked/stacked.dart';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
@@ -100,6 +101,7 @@ class RegisterProfileViewModel extends FormViewModel {
       RegistrationModel model, BuildContext context) async {
     setBusy(true);
     try {
+      CustomToast.showSuccess(context, message: "Inscription reussie");
       await _authService.register(model, context);
       // Succès - le setBusy(false) sera appelé dans finally
     } catch (e) {
