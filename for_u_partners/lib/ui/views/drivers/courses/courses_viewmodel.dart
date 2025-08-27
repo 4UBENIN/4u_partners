@@ -147,10 +147,15 @@ class CoursesViewModel extends BaseViewModel {
 
       print('📱 Chargement des notifications stockées...');
 
-      // Récupérer les notifications valides des dernières 24h (ou ajuste selon tes besoins)
+      // Nettoyer d'abord les notifications expirées
+      await CourseNotificationStorage.cleanExpiredNotifications(
+        maxAge: const Duration(minutes: 1), // Réduit à 1 minute
+      );
+
+      // Récupérer uniquement les notifications valides des dernières minutes
       final storedNotifications =
           await CourseNotificationStorage.getValidNotifications(
-        maxAge: const Duration(minutes: 3),
+        maxAge: const Duration(minutes: 1), // Réduit à 1 minute
       );
 
       print(
@@ -536,26 +541,48 @@ class CoursesViewModel extends BaseViewModel {
 
   // ✨ Refuser une course (et la supprimer du storage)
   Future<void> rejectCourseById(String courseId) async {
-    final courseIndex = _availableCourses.indexWhere(
-      (course) => course.courseId == courseId,
-    );
-
-    if (courseIndex != -1) {
-      final course = _availableCourses[courseIndex];
-      print('❌ Course refusée: ${course.name} (ID: $courseId)');
-
-      _availableCourses.removeAt(courseIndex);
-      _updatePendingCoursesCount();
-
-      // ✨ Supprimer du storage car course refusée
+    try {
+      print('🔄 Tentative de refus de la course: $courseId');
+      
+      // 1. Supprimer du stockage d'abord
       await CourseNotificationStorage.removeNotification(courseId);
+      print('✅ Notification supprimée du stockage pour la course: $courseId');
+      
+      // 2. Supprimer de la liste des courses disponibles
+      final courseIndex = _availableCourses.indexWhere(
+        (course) => course.courseId == courseId,
+      );
 
-      // TODO: Envoyer le refus au backend
+      if (courseIndex != -1) {
+        final course = _availableCourses[courseIndex];
+        print('❌ Course refusée: ${course.name} (ID: $courseId)');
+        
+        _availableCourses.removeAt(courseIndex);
+        _updatePendingCoursesCount();
+        
+        // 3. Nettoyer à nouveau pour s'assurer que tout est en ordre
+        await CourseNotificationStorage.cleanExpiredNotifications(
+          maxAge: const Duration(minutes: 1),
+        );
 
-      if (_availableCourses.isEmpty) {
-        hideBottomSheet();
+        // 4. Cacher le bottom sheet si plus de courses
+        if (_availableCourses.isEmpty) {
+          hideBottomSheet();
+        }
+
+        // 5. Notifier les écouteurs
+        notifyListeners();
+        print('✅ Refus de la course $courseId traité avec succès');
+      } else {
+        print('⚠️ Course non trouvée dans la liste des courses disponibles: $courseId');
       }
-
+    } catch (e) {
+      print('❌ Erreur lors du refus de la course $courseId: $e');
+      // En cas d'erreur, on nettoie quand même le cache
+      await CourseNotificationStorage.cleanExpiredNotifications(
+        maxAge: const Duration(minutes: 1),
+      );
+      // On notifie quand même pour rafraîchir l'interface
       notifyListeners();
     }
   }
@@ -563,7 +590,10 @@ class CoursesViewModel extends BaseViewModel {
   // ✨ Nettoyer les notifications expirées (méthode utilitaire)
   Future<void> cleanExpiredNotifications() async {
     try {
-      await CourseNotificationStorage.cleanExpiredNotifications();
+      // Utiliser la même durée de validité que partout ailleurs (1 minute)
+      await CourseNotificationStorage.cleanExpiredNotifications(
+        maxAge: const Duration(minutes: 1),
+      );
       // Recharger les notifications après nettoyage
       await refreshStoredNotifications();
       print('🧹 Notifications expirées nettoyées');
