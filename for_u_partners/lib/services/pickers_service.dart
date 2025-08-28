@@ -55,6 +55,27 @@ class PickersService {
     }
   }
 
+    Future<RamasseurDemand> getActivityList() async {
+    final url = Uri.parse('$baseUrl/conducteur/demandes-ramassage-terminer');
+
+    final response =
+        await http.get(url, headers: await getAuthenticatedHeaders());
+
+    if (response.statusCode == 200) {
+      final responseData = jsonDecode(response.body);
+      return RamasseurDemand.fromJson(responseData);
+
+      //* Non authentifié
+    } else if (response.statusCode == 401) {
+      await _authService.logOut();
+      throw Exception('Session expirée');
+
+      //* erreur
+    } else {
+      throw Exception('Erreur lors du chargement des demandes de ramassages');
+    }
+  }
+
   //* Accepter une demande de ramassage
   Future<void> acceptRamassage(int id, BuildContext context) async {
     final url = Uri.parse(

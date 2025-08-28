@@ -1,14 +1,28 @@
 import 'dart:async';
-import 'package:flutter/material.dart';
-import 'package:for_u_partners/app/models/ramasseur_models/ramasseur_demand_detail.dart';
-import 'package:for_u_partners/app/models/ramasseur_models/ramasseur_demand_model.dart';
-import 'package:for_u_partners/services/pickers_service.dart';
-import 'package:for_u_partners/services/sharedpreferences_service.dart';
 import 'package:intl/intl.dart';
 import 'package:stacked/stacked.dart';
-import 'package:stacked_services/stacked_services.dart';
+import 'package:flutter/material.dart';
+import 'package:geolocator/geolocator.dart';
 import 'package:for_u_partners/app/app.locator.dart';
 import 'package:for_u_partners/ui/common/toast.dart';
+import 'package:stacked_services/stacked_services.dart';
+import 'package:for_u_partners/services/pickers_service.dart';
+import 'package:google_maps_flutter/google_maps_flutter.dart'
+    show
+        GoogleMapController,
+        LatLng,
+        Marker,
+        CameraPosition,
+        Polyline,
+        PolylinePoints,
+        BitmapDescriptor,
+        MarkerId,
+        InfoWindow,
+        CameraUpdate;
+import 'package:flutter_polyline_points/flutter_polyline_points.dart';
+import 'package:for_u_partners/services/sharedpreferences_service.dart';
+import 'package:for_u_partners/app/models/ramasseur_models/ramasseur_demand_model.dart';
+import 'package:for_u_partners/app/models/ramasseur_models/ramasseur_demand_detail.dart';
 
 // Enum pour les états des bottom sheets du ramassage
 enum RamassageBottomSheetType {
@@ -22,6 +36,100 @@ class CoursesDeliveryViewModel extends BaseViewModel {
   final pickerService = locator<PickersService>();
   final navigationService = locator<NavigationService>();
   final _sharedPreferencesService = locator<SharedpreferencesService>();
+
+  //* Google maps
+  GoogleMapController? _mapController;
+  GoogleMapController? get mapController => _mapController;
+  final Completer<GoogleMapController> _controllerCompleter = Completer();
+
+  Position? _currentPosition;
+  Position? get currentPosiction => _currentPosition;
+
+  LatLng _mapCenter = const LatLng(48.8566, 2.3522);
+  LatLng get mapCenter => _mapCenter;
+
+  double _mapZoom = 15.0;
+  double get mapZoom => _mapZoom;
+
+  final Set<Marker> _markers = <Marker>{};
+  Set<Marker> get markers => _markers;
+
+  // Polylines pour les trajets
+  final Set<Polyline> _polylines = <Polyline>{};
+  Set<Polyline> get polylines => _polylines;
+
+  final Completer<GoogleMapController> controller = Completer();
+  CameraPosition? initialPosition;
+  bool isMapReady = false;
+
+  //* Methods
+  void onMapCreated(GoogleMapController controller) {
+    _mapController = controller;
+    _controllerCompleter.complete(controller);
+    if (_currentPosition != null) {
+      _moveToPosition(
+          LatLng(_currentPosition!.latitude, _currentPosition!.longitude));
+    }
+  }
+
+  void _moveToPosition(LatLng position) {
+    _mapController?.animateCamera(
+      CameraUpdate.newLatLngZoom(position, _mapZoom),
+    );
+  }
+
+  void onMapTapped(LatLng point) {
+    addMarker(point);
+  }
+
+  void addMarker(LatLng position) {
+    final markerId = 'marker_${_markers.length}';
+    final newMarker = Marker(
+      markerId: MarkerId(markerId),
+      position: position,
+      icon: BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueBlue),
+      infoWindow: InfoWindow(
+        title: 'Marqueur $markerId',
+        snippet:
+            'Lat: ${position.latitude.toStringAsFixed(4)}, Lng: ${position.longitude.toStringAsFixed(4)}',
+      ),
+    );
+
+    _markers.add(newMarker);
+    notifyListeners();
+  }
+
+  Future<void> _getCurrentLocation() async {
+    bool serviceEnabled = await Geolocator.isLocationServiceEnabled();
+    if (!serviceEnabled) {
+      return;
+    }
+
+    LocationPermission permission = await Geolocator.checkPermission();
+    if (permission == LocationPermission.denied) {
+      permission = await Geolocator.requestPermission();
+      if (permission == LocationPermission.denied) {
+        return;
+      }
+    }
+
+    if (permission == LocationPermission.deniedForever) {
+      return;
+    }
+
+    try {
+      Position position = await Geolocator.getCurrentPosition();
+      _currentPosition = position;
+      _mapCenter = LatLng(position.latitude, position.longitude);
+      isMapReady = true;
+      notifyListeners();
+    } catch (e) {
+      // En cas d'erreur, initialisez quand même la carte avec une position par défaut
+      isMapReady = true;
+      notifyListeners();
+    }
+  }
+  //*
 
   String _userName = '';
   String _userRole = '';
@@ -72,6 +180,7 @@ class CoursesDeliveryViewModel extends BaseViewModel {
     setBusy(true);
     try {
       await Future.wait([
+        _getCurrentLocation(),
         _loadAvailableDemandes(),
         _loadUserData(),
       ]);
@@ -104,7 +213,7 @@ class CoursesDeliveryViewModel extends BaseViewModel {
     setBusy(false);
   }
 
-  // Charger les demandes de ramassage disponibles
+  //* Charger les demandes de ramassage disponibles
   Future<void> _loadAvailableDemandes() async {
     try {
       _isLoadingDemandes = true;
@@ -176,11 +285,11 @@ class CoursesDeliveryViewModel extends BaseViewModel {
       print('2/3 - Récupération des détails mis à jour...');
       _acceptedDemande = await pickerService.getCurrentRamassageDetails(
           demande.id!, _context!);
-      
+
       if (_acceptedDemande == null) {
         throw Exception('Impossible de récupérer les détails de la demande');
       }
-      
+
       print('   ✓ Détails récupérés: ${_acceptedDemande!.toJson()}');
 
       // 3. Mettre à jour l'interface
@@ -188,7 +297,7 @@ class CoursesDeliveryViewModel extends BaseViewModel {
       _availableDemandes.removeWhere((d) => d.id == demande.id);
       _currentDemande = demande; // Conserver la référence à la demande actuelle
       _setBottomSheetType(RamassageBottomSheetType.details);
-      
+
       print('✅ Flux d\'acceptation terminé avec succès');
       print('📊 État final:');
       print('   - Type de bottom sheet: ${_currentBottomSheetType}');
@@ -206,20 +315,21 @@ class CoursesDeliveryViewModel extends BaseViewModel {
       print('❌ ERREUR CRITIQUE lors de l\'acceptation de la demande:');
       print('   - Message: $e');
       print('   - Stack trace: $stackTrace');
-      
+
       // Réinitialiser l'état en cas d'erreur
       _currentDemande = null;
       _acceptedDemande = null;
-      
+
       // Afficher un message d'erreur
       if (_context != null) {
-        final errorMessage = e is Exception ? e.toString() : 'Une erreur est survenue';
+        final errorMessage =
+            e is Exception ? e.toString() : 'Une erreur est survenue';
         CustomToast.showError(
           _context!,
           message: errorMessage,
         );
       }
-      
+
       // Rejeter l'erreur pour qu'elle soit gérée par l'appelant si nécessaire
       rethrow;
     } finally {

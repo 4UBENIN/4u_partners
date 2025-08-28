@@ -3,6 +3,7 @@ import 'package:stacked/stacked.dart';
 import 'package:flutter/material.dart';
 import 'courses_delivery_viewmodel.dart';
 import 'package:for_u_partners/ui/common/app_colors.dart';
+import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:for_u_partners/app/models/ramasseur_models/ramasseur_demand_model.dart';
 
 class CoursesDeliveryView extends StackedView<CoursesDeliveryViewModel> {
@@ -18,11 +19,72 @@ class CoursesDeliveryView extends StackedView<CoursesDeliveryViewModel> {
 
     return Scaffold(
       backgroundColor: const Color(0xFFF8FAFE),
-      body: viewModel.isBusy || viewModel.isLoadingDemandes
-          ? _buildLoadingState()
-          : viewModel.userRole == "ramasseur"
-              ? _buildRamasseurContent(viewModel, context, primaryColor)
-              : _buildEmptyState("Accès non autorisé", Icons.lock_outline),
+      body: _buildBody(viewModel, context, primaryColor),
+    );
+  }
+
+  Widget _buildBody(CoursesDeliveryViewModel viewModel, BuildContext context,
+      Color primaryColor) {
+    // Gestion des états de chargement
+    if (viewModel.isBusy || viewModel.isLoadingDemandes) {
+      return _buildLoadingState();
+    }
+
+    // Vérification de l'accès
+    if (viewModel.userRole != "ramasseur") {
+      return _buildEmptyState("Accès non autorisé", Icons.lock_outline);
+    }
+
+    // Interface principale pour ramasseur
+    return Stack(
+      children: [
+        // Carte Google Maps en arrière-plan
+        _buildMapContainer(viewModel),
+
+        // Bottom Sheet overlay
+        if (viewModel.currentBottomSheetType != RamassageBottomSheetType.none)
+          _buildPickerBottomSheet(viewModel, context),
+
+        // Loading overlay
+        if (viewModel.isAcceptingDemande) _buildLoadingOverlay(),
+      ],
+    );
+  }
+
+  Widget _buildMapContainer(CoursesDeliveryViewModel viewModel) {
+    return Container(
+      width: double.infinity,
+      height: double.infinity,
+      child: viewModel.isMapReady
+          ? GoogleMap(
+              onMapCreated: (controller) => viewModel.onMapCreated(controller),
+              initialCameraPosition: CameraPosition(
+                target: viewModel.mapCenter,
+                zoom: viewModel.mapZoom,
+              ),
+              onTap: viewModel.onMapTapped,
+              markers: viewModel.markers,
+              polylines: viewModel.polylines,
+              myLocationEnabled: true,
+              myLocationButtonEnabled: true,
+              mapType: MapType.normal,
+              zoomControlsEnabled: true,
+              compassEnabled: true,
+              buildingsEnabled: true,
+              rotateGesturesEnabled: true,
+              tiltGesturesEnabled: true,
+              zoomGesturesEnabled: true,
+              scrollGesturesEnabled: true,
+              minMaxZoomPreference: MinMaxZoomPreference(0, 20),
+            )
+          : Container(
+              color: const Color(0xFFF8FAFE),
+              child: const Center(
+                child: CircularProgressIndicator(
+                  valueColor: AlwaysStoppedAnimation<Color>(Color(0xFF184E9C)),
+                ),
+              ),
+            ),
     );
   }
 
