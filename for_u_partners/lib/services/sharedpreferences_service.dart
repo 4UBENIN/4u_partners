@@ -1,4 +1,5 @@
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:for_u_partners/ui/views/delivery/courses_delivery/courses_delivery_viewmodel.dart';
 
 class SharedpreferencesService {
   static const String _tokenKey = 'user_token';
@@ -46,6 +47,47 @@ class SharedpreferencesService {
   Future<void> removeUserType() async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.remove(_userType);
+  }
+
+  //* Gestion de l'état du bottom sheet
+  static const String _bottomSheetTypeKey = 'ramassage_bottom_sheet_type';
+  static const String _acceptedDemandeIdKey = 'accepted_demande_id';
+
+  // Sauvegarder le type de bottom sheet
+  Future<void> setBottomSheetType(RamassageBottomSheetType type) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString(_bottomSheetTypeKey, type.toString());
+  }
+
+  // Récupérer le type de bottom sheet
+  Future<RamassageBottomSheetType?> getBottomSheetType() async {
+    final prefs = await SharedPreferences.getInstance();
+    final typeString = prefs.getString(_bottomSheetTypeKey);
+    if (typeString == null) return null;
+
+    return RamassageBottomSheetType.values.firstWhere(
+      (e) => e.toString() == typeString,
+      orElse: () => RamassageBottomSheetType.none,
+    );
+  }
+
+  // Sauvegarder l'ID de la demande acceptée
+  Future<void> setAcceptedDemandeId(String id) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString(_acceptedDemandeIdKey, id);
+  }
+
+  // Récupérer l'ID de la demande acceptée
+  Future<String?> getAcceptedDemandeId() async {
+    final prefs = await SharedPreferences.getInstance();
+    return prefs.getString(_acceptedDemandeIdKey);
+  }
+
+  // Effacer l'état du bottom sheet
+  Future<void> clearBottomSheetState() async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.remove(_bottomSheetTypeKey);
+    await prefs.remove(_acceptedDemandeIdKey);
   }
 
   //* USER ID

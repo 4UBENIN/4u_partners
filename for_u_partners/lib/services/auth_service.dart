@@ -86,7 +86,7 @@ class AuthService {
           _navigationService.replaceWithHomemainView();
           break;
         case 'ramasseur':
-          _navigationService.replaceWithPickerNavBarView();
+          _navigationService.replaceWithDeliveryNavBarView();
           break;
         case 'pressing':
           //await _sharedPreferencesServices.saveToken(token);

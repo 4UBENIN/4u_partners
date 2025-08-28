@@ -287,11 +287,11 @@ class _CountryPhoneSelectorState extends State<CountryPhoneSelector>
       // Remove any listeners to prevent callbacks after disposal
       _textController.removeListener(() {});
     }
-    
+
     // Dispose focus node and animation controller
     _focusNode.dispose();
     _animationController.dispose();
-    
+
     // Call super last
     super.dispose();
   }

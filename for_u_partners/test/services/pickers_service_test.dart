@@ -4,7 +4,7 @@ import 'package:for_u_partners/app/app.locator.dart';
 import '../helpers/test_helpers.dart';
 
 void main() {
-  group('PickerNavBarViewModel Tests -', () {
+  group('PickersServiceTest -', () {
     setUp(() => registerServices());
     tearDown(() => locator.reset());
   });

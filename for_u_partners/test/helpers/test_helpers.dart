@@ -8,6 +8,7 @@ import 'package:for_u_partners/services/driver_service.dart';
 import 'package:for_u_partners/services/pressing_service.dart';
 import 'package:for_u_partners/services/wallet_service.dart';
 import 'package:for_u_partners/services/chat_service.dart';
+import 'package:for_u_partners/services/pickers_service.dart';
 // @stacked-import
 
 import 'test_helpers.mocks.dart';
@@ -28,6 +29,7 @@ import 'test_helpers.mocks.dart';
     MockSpec<ActiveRideService>(onMissingStub: OnMissingStub.returnDefault),
     MockSpec<ActiveRideService>(onMissingStub: OnMissingStub.returnDefault),
     MockSpec<ChatService>(onMissingStub: OnMissingStub.returnDefault),
+    MockSpec<PickersService>(onMissingStub: OnMissingStub.returnDefault),
 // @stacked-mock-spec
   ],
 )
@@ -44,6 +46,7 @@ void registerServices() {
   getAndRegisterActiveRideService();
   getAndRegisterActiveRideService();
   getAndRegisterChatService();
+  getAndRegisterPickersService();
 // @stacked-mock-register
 }
 
@@ -140,6 +143,13 @@ MockChatService getAndRegisterChatService() {
   _removeRegistrationIfExists<ChatService>();
   final service = MockChatService();
   locator.registerSingleton<ChatService>(service);
+  return service;
+}
+
+MockPickersService getAndRegisterPickersService() {
+  _removeRegistrationIfExists<PickersService>();
+  final service = MockPickersService();
+  locator.registerSingleton<PickersService>(service);
   return service;
 }
 // @stacked-mock-create

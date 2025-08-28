@@ -26,7 +26,7 @@ class StartupViewModel extends BaseViewModel {
           _navigationService.replaceWithHomemainView();
           break;
         case 'ramasseur':
-          _navigationService.replaceWithPickerNavBarView();
+          _navigationService.replaceWithDeliveryNavBarView();
           break;
         case 'pressing':
           _navigationService.replaceWithNavBarPressingView();

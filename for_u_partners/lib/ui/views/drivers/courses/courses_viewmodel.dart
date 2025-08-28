@@ -543,11 +543,11 @@ class CoursesViewModel extends BaseViewModel {
   Future<void> rejectCourseById(String courseId) async {
     try {
       print('🔄 Tentative de refus de la course: $courseId');
-      
+
       // 1. Supprimer du stockage d'abord
       await CourseNotificationStorage.removeNotification(courseId);
       print('✅ Notification supprimée du stockage pour la course: $courseId');
-      
+
       // 2. Supprimer de la liste des courses disponibles
       final courseIndex = _availableCourses.indexWhere(
         (course) => course.courseId == courseId,
@@ -556,10 +556,10 @@ class CoursesViewModel extends BaseViewModel {
       if (courseIndex != -1) {
         final course = _availableCourses[courseIndex];
         print('❌ Course refusée: ${course.name} (ID: $courseId)');
-        
+
         _availableCourses.removeAt(courseIndex);
         _updatePendingCoursesCount();
-        
+
         // 3. Nettoyer à nouveau pour s'assurer que tout est en ordre
         await CourseNotificationStorage.cleanExpiredNotifications(
           maxAge: const Duration(minutes: 1),
@@ -574,7 +574,8 @@ class CoursesViewModel extends BaseViewModel {
         notifyListeners();
         print('✅ Refus de la course $courseId traité avec succès');
       } else {
-        print('⚠️ Course non trouvée dans la liste des courses disponibles: $courseId');
+        print(
+            '⚠️ Course non trouvée dans la liste des courses disponibles: $courseId');
       }
     } catch (e) {
       print('❌ Erreur lors du refus de la course $courseId: $e');

@@ -1,531 +1,431 @@
 import 'dart:async';
-import 'package:for_u_partners/app/models/deliveryModels/delivery_request.dart';
-import 'package:stacked/stacked.dart';
-import 'package:latlong2/latlong.dart';
 import 'package:flutter/material.dart';
-import 'package:geolocator/geolocator.dart';
-import 'package:flutter_map/flutter_map.dart';
-import 'package:for_u_partners/app/app.locator.dart';
-import 'package:for_u_partners/services/delivery_service.dart'; // Assure-toi que ce service existe
-import 'package:for_u_partners/ui/common/enum/bottom_enum.dart';
-import 'package:for_u_partners/ui/views/delivery/courses_delivery/model/client_model.dart';
+import 'package:for_u_partners/app/models/ramasseur_models/ramasseur_demand_detail.dart';
+import 'package:for_u_partners/app/models/ramasseur_models/ramasseur_demand_model.dart';
+import 'package:for_u_partners/services/pickers_service.dart';
+import 'package:for_u_partners/services/sharedpreferences_service.dart';
+import 'package:intl/intl.dart';
+import 'package:stacked/stacked.dart';
 import 'package:stacked_services/stacked_services.dart';
+import 'package:for_u_partners/app/app.locator.dart';
 import 'package:for_u_partners/ui/common/toast.dart';
-import 'dart:io' show Platform;
+
+// Enum pour les états des bottom sheets du ramassage
+enum RamassageBottomSheetType {
+  none,
+  demandes, // Liste des demandes
+  details, // Détails d'une demande acceptée
+  inProgress, // Ramassage en cours
+}
 
 class CoursesDeliveryViewModel extends BaseViewModel {
-  BuildContext? _currentContext;
-  // Contrôleur de carte
-  final MapController _mapController = MapController();
-  MapController get mapController => _mapController;
-  final deliveryService = locator<DeliveryService>();
+  final pickerService = locator<PickersService>();
   final navigationService = locator<NavigationService>();
+  final _sharedPreferencesService = locator<SharedpreferencesService>();
 
-  // Position initiale de la carte
-  LatLng _mapCenter =
-      const LatLng(6.3586, 2.3912); // Position par défaut (Cotonou)
-  LatLng get mapCenter => _mapCenter;
+  String _userName = '';
+  String _userRole = '';
 
-  // Niveau de zoom initial
-  double _mapZoom = 15.0;
-  double get mapZoom => _mapZoom;
+  String get userName => _userName;
+  String get userRole => _userRole;
 
-  // Liste des marqueurs
-  final List<Marker> _markers = [];
-  List<Marker> get markers => _markers;
-
-  // Liste des demandes de livraison disponibles
-  final List<DeliveryRequestData> _availableDeliveries = [];
-  List<DeliveryRequestData> get availableDeliveries =>
-      List.unmodifiable(_availableDeliveries);
-
-  // Demande de livraison actuellement sélectionnée
-  DeliveryRequestData? _currentDelivery;
-  DeliveryRequestData? get currentDelivery => _currentDelivery;
-
-  // États de chargement
-  bool _isLoadingLocation = true;
-  bool get isLoadingLocation => _isLoadingLocation;
-
-  bool _isLoadingDeliveries = true;
-  bool get isLoadingDeliveries => _isLoadingDeliveries;
-
-  // Position actuelle de l'utilisateur
-  Position? _currentPosition;
-  Position? get currentPosition => _currentPosition;
+  BuildContext? _context;
 
   // État du bottom sheet
-  BottomSheetAppType _currentBottomSheetType = BottomSheetAppType.none;
-  BottomSheetAppType get currentBottomSheetType => _currentBottomSheetType;
+  RamassageBottomSheetType _currentBottomSheetType =
+      RamassageBottomSheetType.none;
+  RamassageBottomSheetType get currentBottomSheetType =>
+      _currentBottomSheetType;
 
-  // États du trajet
-  bool _isGoingToPickup = false;
-  bool get isGoingToPickup => _isGoingToPickup;
+  // Liste des demandes de ramassage disponibles
+  final List<Demandes> _availableDemandes = [];
+  List<Demandes> get availableDemandes => _availableDemandes;
 
-  bool _isOnDelivery = false;
-  bool get isOnDelivery => _isOnDelivery;
+  Demandes? _currentDemande;
+  Demandes? get currentDemande => _currentDemande;
 
-  // Platform checks
-  bool get isAndroid => Platform.isAndroid;
-  bool get isIOS => Platform.isIOS;
+  // Demande actuellement sélectionnée/acceptée
+  RamasseurDemandDetail? _acceptedDemande;
+  RamasseurDemandDetail? get acceptedDemande => _acceptedDemande;
 
-  CoursesDeliveryViewModel();
+  // États de chargement
+  bool _isLoadingDemandes = true;
+  bool get isLoadingDemandes => _isLoadingDemandes;
 
-  // ✨ Initialisation complète du ViewModel
-  Future<void> initialize() async {
-    // Attendre que le contexte soit défini
-    while (_currentContext == null) {
-      await Future.delayed(const Duration(milliseconds: 100));
-    }
+  bool _isAcceptingRamassageDemande = false;
+  bool get isAcceptingDemande => _isAcceptingRamassageDemande;
 
-    // Lancer les tâches en parallèle
-    await Future.wait([
-      _getCurrentLocation(),
-      _loadAvailableDeliveries(),
-    ]);
-    if (_availableDeliveries.isNotEmpty) {
-      setBottomSheetType(BottomSheetAppType.clients);
-    }
-  }
+  // État du ramassage
+  bool _isRamassageInProgress = false;
+  bool get isRamassageInProgress => _isRamassageInProgress;
 
-  // ✨ Charger les demandes de livraison depuis l'API
+  // Timer pour rafraîchir les demandes
+  Timer? _refreshTimer;
+
+  // Définir le contexte
   void setContext(BuildContext context) {
-    _currentContext = context;
+    _context = context;
   }
 
-  Future<void> _loadAvailableDeliveries() async {
-    if (_currentContext == null) {
-      print('⚠️ Context is not set. Call setContext() first.');
+  // Initialisation du ViewModel
+  Future<void> initialize() async {
+    setBusy(true);
+    try {
+      await Future.wait([
+        _loadAvailableDemandes(),
+        _loadUserData(),
+      ]);
+      _startAutoRefresh();
+    } catch (e) {
+      print('Erreur lors de l\'initialisation: $e');
+      if (_context != null) {
+        CustomToast.showError(_context!,
+            message: 'Erreur lors du chargement des données');
+      }
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  //* Methode pour charger les données utilisateur
+  Future<void> _loadUserData() async {
+    setBusy(true);
+    try {
+      _userName =
+          await _sharedPreferencesService.getUserName() ?? 'Utilisateur';
+      print('Nom de l\'utilisateur: $_userName');
+      _userRole = await _sharedPreferencesService.getUserType() ?? 'Partenaire';
+      print('Rôle de l\'utilisateur: $_userRole');
+      notifyListeners();
+    } catch (e) {
+      // Gérer l'erreur
+      print('Erreur lors du chargement des données utilisateur: $e');
+    }
+    setBusy(false);
+  }
+
+  // Charger les demandes de ramassage disponibles
+  Future<void> _loadAvailableDemandes() async {
+    try {
+      _isLoadingDemandes = true;
+      notifyListeners();
+
+      print('📦 Chargement des demandes de ramassage...');
+
+      // Appeler le service pour récupérer les demandes
+      final response = await pickerService.getRamassageList();
+
+      if (response != null && response.demandes != null) {
+        _availableDemandes.clear();
+        _availableDemandes.addAll(response.demandes!);
+
+        print('✅ ${_availableDemandes.length} demandes chargées');
+
+        // Afficher le bottom sheet s'il y a des demandes
+        if (_availableDemandes.isNotEmpty) {
+          _setBottomSheetType(RamassageBottomSheetType.demandes);
+        } else {
+          _setBottomSheetType(RamassageBottomSheetType.none);
+        }
+      }
+    } catch (e) {
+      print('❌ Erreur chargement demandes: $e');
+      if (_context != null) {
+        CustomToast.showError(_context!,
+            message: 'Erreur lors du chargement des demandes');
+      }
+    } finally {
+      _isLoadingDemandes = false;
+      notifyListeners();
+    }
+  }
+
+  // Rafraîchir manuellement les demandes
+  Future<void> refreshDemandes() async {
+    await _loadAvailableDemandes();
+  }
+
+  // Démarrer le rafraîchissement automatique
+  void _startAutoRefresh() {
+    _refreshTimer = Timer.periodic(const Duration(minutes: 2), (timer) {
+      if (!_isAcceptingRamassageDemande && _currentDemande == null) {
+        _loadAvailableDemandes();
+      }
+    });
+  }
+
+  //* Accepter une demande de ramassage
+  Future<void> acceptDemande(Demandes demande) async {
+    if (demande.id == null) {
+      print('❌ ID de demande manquant');
       return;
     }
 
-    try {
-      _isLoadingDeliveries = true;
-      notifyListeners();
-
-      print('📦 Chargement des demandes de livraison...');
-
-      // Appeler l'API pour récupérer les demandes de livraison
-      final response =
-          await deliveryService.getAvailableDeliveries(_currentContext!);
-
-      // Parser la réponse
-      final deliveryResponse = DeliveryRequestResponse.fromJson(response);
-
-      // Vider la liste actuelle et ajouter les nouvelles demandes
-      _availableDeliveries.clear();
-      _availableDeliveries.addAll(deliveryResponse.data);
-
-      print('✅ ${_availableDeliveries.length} demandes de livraison chargées');
-
-      // Toujours afficher le bottom sheet, même s'il n'y a pas de livraisons
-      setBottomSheetType(BottomSheetAppType.clients);
-
-      _isLoadingDeliveries = false;
-      notifyListeners();
-    } catch (e) {
-      print('❌ Erreur chargement demandes de livraison: $e');
-      _isLoadingDeliveries = false;
-      notifyListeners();
-    }
-  }
-
-  // ✨ Rafraîchir les demandes de livraison
-  Future<void> refreshDeliveries() async {
-    await _loadAvailableDeliveries();
-
-    // Réafficher le bottom sheet si nécessaire
-    if (_availableDeliveries.isNotEmpty &&
-        _currentBottomSheetType == BottomSheetAppType.none) {
-      setBottomSheetType(BottomSheetAppType.clients);
-    } else if (_availableDeliveries.isEmpty) {
-      hideBottomSheet();
-    }
-  }
-
-  // Obtenir la position actuelle de l'utilisateur
-  Future<void> _getCurrentLocation() async {
-    try {
-      _isLoadingLocation = true;
-      notifyListeners();
-
-      bool serviceEnabled = await Geolocator.isLocationServiceEnabled();
-      if (!serviceEnabled) {
-        _isLoadingLocation = false;
-        notifyListeners();
-        return;
-      }
-
-      LocationPermission permission = await Geolocator.checkPermission();
-      if (permission == LocationPermission.denied) {
-        permission = await Geolocator.requestPermission();
-        if (permission == LocationPermission.denied) {
-          _isLoadingLocation = false;
-          notifyListeners();
-          return;
-        }
-      }
-
-      if (permission == LocationPermission.deniedForever) {
-        _isLoadingLocation = false;
-        notifyListeners();
-        return;
-      }
-
-      _currentPosition = await Geolocator.getCurrentPosition(
-        desiredAccuracy: LocationAccuracy.high,
-      );
-
-      _mapCenter =
-          LatLng(_currentPosition!.latitude, _currentPosition!.longitude);
-      _mapController.move(_mapCenter, _mapZoom);
-      _addUserLocationMarker();
-
-      _isLoadingLocation = false;
-      notifyListeners();
-    } catch (e) {
-      print('Erreur lors de l\'obtention de la position: $e');
-      _isLoadingLocation = false;
-      notifyListeners();
-    }
-  }
-
-  // Ajouter un marqueur pour la position actuelle de l'utilisateur
-  void _addUserLocationMarker() {
-    _markers.removeWhere((marker) =>
-        marker.point ==
-        LatLng(_currentPosition!.latitude, _currentPosition!.longitude));
-
-    if (_currentPosition != null) {
-      _markers.add(
-        Marker(
-          width: 80.0,
-          height: 80.0,
-          point:
-              LatLng(_currentPosition!.latitude, _currentPosition!.longitude),
-          child: Container(
-            decoration: BoxDecoration(
-              color: Colors.blue,
-              shape: BoxShape.circle,
-              border: Border.all(color: Colors.white, width: 3),
-            ),
-            child: const Icon(
-              Icons.my_location,
-              color: Colors.white,
-              size: 30,
-            ),
-          ),
-        ),
-      );
-    }
-  }
-
-  // ✨ Convertir DeliveryRequestData en DeliveryClientData pour l'affichage
-  List<DeliveryClientData> getClientsList() {
-    return _availableDeliveries
-        .map((delivery) => delivery.toDeliveryClientData())
-        .toList();
-  }
-
-  // ✨ Accepter une demande de livraison
-  Future<void> acceptDelivery(String deliveryId, BuildContext context) async {
-    final deliveryIndex = _availableDeliveries.indexWhere(
-      (delivery) => delivery.livraisonId == deliveryId,
-    );
-
-    if (deliveryIndex != -1) {
-      final delivery = _availableDeliveries[deliveryIndex];
-      _currentDelivery = delivery;
-      _isGoingToPickup = true;
-      _isOnDelivery = false;
-
-      print('✅ Livraison acceptée: ${delivery.fullName} (ID: $deliveryId)');
-
-      // Tracer la route vers le point de départ si possible
-      if (_currentPosition != null &&
-          delivery.departLat != null &&
-          delivery.departLng != null) {
-        await _drawRouteToPickup();
-      }
-
-      // Supprimer de la liste des demandes disponibles
-      _availableDeliveries.removeAt(deliveryIndex);
-
-      // Appeler le service
-      await acceptDeliveryService(int.parse(deliveryId), context);
-    }
-  }
-
-  // ✨ Refuser une demande de livraison
-  Future<void> rejectDeliveryById(String deliveryId) async {
-    final deliveryIndex = _availableDeliveries.indexWhere(
-      (delivery) => delivery.livraisonId == deliveryId,
-    );
-
-    if (deliveryIndex != -1) {
-      final delivery = _availableDeliveries[deliveryIndex];
-      print('❌ Livraison refusée: ${delivery.fullName} (ID: $deliveryId)');
-
-      _availableDeliveries.removeAt(deliveryIndex);
-
-      // TODO: Appeler l'API pour envoyer le refus
-
-      if (_availableDeliveries.isEmpty) {
-        hideBottomSheet();
-      }
-
-      notifyListeners();
-    }
-  }
-
-  // ✨ Supprimer une livraison de la liste
-  void removeDelivery(String deliveryId) {
-    _availableDeliveries
-        .removeWhere((delivery) => delivery.livraisonId == deliveryId);
-
-    if (_availableDeliveries.isEmpty) {
-      hideBottomSheet();
-    }
-
+    _isAcceptingRamassageDemande = true;
     notifyListeners();
-  }
 
-  // Services API calls
-  Future<void> acceptDeliveryService(
-      int deliveryId, BuildContext context) async {
-    bool canAccept = false;
+    print('🔄 Tentative d\'acceptation de la demande ${demande.id}...');
+
     try {
-      setBusy(true);
-      print("🔄 Début acceptation livraison...");
+      // 1. Accepter la demande
+      print('1/3 - Envoi de la demande d\'acceptation...');
+      await pickerService.acceptRamassage(demande.id!, _context!);
+      print('   ✓ Demande acceptée avec succès');
 
-      // TODO: Remplace par la vraie méthode de ton service
-      // await deliveryService.acceptDelivery(deliveryId);
-
-      canAccept = true;
-      print("✅ Livraison acceptée avec succès");
-    } catch (e) {
-      print('❌ Erreur acceptation livraison: $e');
-      canAccept = false;
-      CustomToast.showError(context, message: e.toString());
-
-      // Réinitialiser en cas d'erreur
-      _isGoingToPickup = false;
-      _currentDelivery = null;
-      _markers.clear();
-      _addUserLocationMarker();
-    } finally {
-      setBusy(false);
-
-      if (canAccept) {
-        setBottomSheetType(BottomSheetAppType.pickup);
-
-        // Recentrer sur le point de ramassage
-        if (_currentDelivery != null &&
-            _currentDelivery!.departLat != null &&
-            _currentDelivery!.departLng != null) {
-          final pickupLatLng = LatLng(
-              _currentDelivery!.departLat!, _currentDelivery!.departLng!);
-          _mapController.move(pickupLatLng, 15.0);
-        }
-      } else {
-        hideBottomSheet();
+      // 2. Récupérer les détails mis à jour
+      print('2/3 - Récupération des détails mis à jour...');
+      _acceptedDemande = await pickerService.getCurrentRamassageDetails(
+          demande.id!, _context!);
+      
+      if (_acceptedDemande == null) {
+        throw Exception('Impossible de récupérer les détails de la demande');
       }
-    }
-  }
+      
+      print('   ✓ Détails récupérés: ${_acceptedDemande!.toJson()}');
 
-  Future<void> startDeliveryService(
-      int deliveryId, BuildContext context) async {
-    bool canStart = false;
-    try {
-      setBusy(true);
-      print("🔄 Début démarrage livraison...");
+      // 3. Mettre à jour l'interface
+      print('3/3 - Mise à jour de l\'interface...');
+      _availableDemandes.removeWhere((d) => d.id == demande.id);
+      _currentDemande = demande; // Conserver la référence à la demande actuelle
+      _setBottomSheetType(RamassageBottomSheetType.details);
+      
+      print('✅ Flux d\'acceptation terminé avec succès');
+      print('📊 État final:');
+      print('   - Type de bottom sheet: ${_currentBottomSheetType}');
+      print('   - Demande acceptée: ${_acceptedDemande != null}');
+      print('   - Demande courante: ${_currentDemande != null}');
 
-      // TODO: Appeler ton service de livraison
-      // await deliveryService.startDelivery(deliveryId);
-
-      canStart = true;
-      print("✅ Livraison démarrée avec succès");
-    } catch (e) {
-      print('❌ Erreur démarrage livraison: $e');
-      canStart = false;
-      CustomToast.showError(context, message: e.toString());
-    } finally {
-      setBusy(false);
-
-      if (canStart) {
-        setBottomSheetType(BottomSheetAppType.inprogress);
+      // Afficher un message de succès
+      if (_context != null) {
+        CustomToast.showSuccess(
+          _context!,
+          message: 'Demande acceptée avec succès',
+        );
       }
+    } catch (e, stackTrace) {
+      print('❌ ERREUR CRITIQUE lors de l\'acceptation de la demande:');
+      print('   - Message: $e');
+      print('   - Stack trace: $stackTrace');
+      
+      // Réinitialiser l'état en cas d'erreur
+      _currentDemande = null;
+      _acceptedDemande = null;
+      
+      // Afficher un message d'erreur
+      if (_context != null) {
+        final errorMessage = e is Exception ? e.toString() : 'Une erreur est survenue';
+        CustomToast.showError(
+          _context!,
+          message: errorMessage,
+        );
+      }
+      
+      // Rejeter l'erreur pour qu'elle soit gérée par l'appelant si nécessaire
+      rethrow;
+    } finally {
+      _isAcceptingRamassageDemande = false;
+      notifyListeners();
     }
   }
 
-  // ✨ Tracer la route vers le point de ramassage
-  Future<void> _drawRouteToPickup() async {
-    if (_currentPosition == null ||
-        _currentDelivery == null ||
-        _currentDelivery!.departLat == null ||
-        _currentDelivery!.departLng == null) {
-      return;
-    }
+  //* Refuser une demande
+  // Future<void> rejectDemande(Demandes demande) async {
+  //   if (demande.id == null) return;
 
-    try {
-      final pickupLatLng =
-          LatLng(_currentDelivery!.departLat!, _currentDelivery!.departLng!);
+  //   try {
+  //     print('❌ Refus de la demande ${demande.id}');
 
-      // Ajouter marqueur pickup
-      _markers.add(
-        Marker(
-          width: 80.0,
-          height: 80.0,
-          point: pickupLatLng,
-          child: Container(
-            decoration: BoxDecoration(
-              color: Colors.green,
-              shape: BoxShape.circle,
-              border: Border.all(color: Colors.white, width: 3),
-            ),
-            child: const Icon(
-              Icons.local_shipping,
-              color: Colors.white,
-              size: 30,
-            ),
-          ),
-        ),
-      );
+  //     // Appeler l'API pour refuser
+  //     await driverService.rejectRamassageDemande(demande.id!);
 
-      // Ajuster la caméra pour voir les deux points
-      _adjustCameraToShowBothPoints(
-        LatLng(_currentPosition!.latitude, _currentPosition!.longitude),
-        pickupLatLng,
-      );
+  //     // Retirer de la liste
+  //     _availableDemandes.removeWhere((d) => d.id == demande.id);
 
-      print('✅ Route vers pickup ajoutée');
-    } catch (e) {
-      print('❌ Erreur calcul route pickup: $e');
-    }
+  //     // Masquer le bottom sheet si plus de demandes
+  //     if (_availableDemandes.isEmpty) {
+  //       _setBottomSheetType(RamassageBottomSheetType.none);
+  //     }
 
-    notifyListeners();
-  }
+  //     notifyListeners();
 
-  // ✨ Ajuster la caméra pour afficher plusieurs points
-  void _adjustCameraToShowBothPoints(LatLng point1, LatLng point2) {
-    // Calculer les limites
-    final minLat =
-        [point1.latitude, point2.latitude].reduce((a, b) => a < b ? a : b);
-    final maxLat =
-        [point1.latitude, point2.latitude].reduce((a, b) => a > b ? a : b);
-    final minLng =
-        [point1.longitude, point2.longitude].reduce((a, b) => a < b ? a : b);
-    final maxLng =
-        [point1.longitude, point2.longitude].reduce((a, b) => a > b ? a : b);
+  //   } catch (e) {
+  //     print('❌ Erreur refus demande: $e');
+  //     if (_context != null) {
+  //       CustomToast.showError(_context!, message: 'Erreur lors du refus');
+  //     }
+  //   }
+  // }
 
-    // Calculer le centre et le zoom approprié
-    final centerLat = (minLat + maxLat) / 2;
-    final centerLng = (minLng + maxLng) / 2;
-    final center = LatLng(centerLat, centerLng);
+  //* Démarrer le ramassage
+  // Future<void> startRamassage() async {
+  //   if (_currentDemande?.id == null) return;
 
-    // Calculer la distance pour ajuster le zoom
-    final distance = Geolocator.distanceBetween(
-      point1.latitude,
-      point1.longitude,
-      point2.latitude,
-      point2.longitude,
-    );
+  //   try {
+  //     setBusy(true);
 
-    // Ajuster le zoom selon la distance
-    double zoom = 15.0;
-    if (distance > 5000) {
-      zoom = 12.0;
-    } else if (distance > 2000)
-      zoom = 13.0;
-    else if (distance > 1000) zoom = 14.0;
+  //     print('🚛 Démarrage du ramassage pour la demande ${_currentDemande!.id}');
 
-    _mapController.move(center, zoom);
-  }
+  //     // Appeler l'API pour démarrer le ramassage
+  //     await driverService.startRamassage(_currentDemande!.id!);
 
-  // Gestion des bottom sheets
-  void setBottomSheetType(BottomSheetAppType type) {
+  //     _isRamassageInProgress = true;
+  //     _setBottomSheetType(RamassageBottomSheetType.inProgress);
+
+  //     print('✅ Ramassage démarré');
+
+  //     if (_context != null) {
+  //       CustomToast.showSuccess(_context!, message: 'Ramassage démarré');
+  //     }
+
+  //   } catch (e) {
+  //     print('❌ Erreur démarrage ramassage: $e');
+  //     if (_context != null) {
+  //       CustomToast.showError(_context!, message: 'Erreur lors du démarrage');
+  //     }
+  //   } finally {
+  //     setBusy(false);
+  //     notifyListeners();
+  //   }
+  // }
+
+  //* Terminer le ramassage
+  // Future<void> completeRamassage() async {
+  //   if (_currentDemande?.id == null) return;
+
+  //   try {
+  //     setBusy(true);
+
+  //     print('✅ Finalisation du ramassage pour la demande ${_currentDemande!.id}');
+
+  //     // Appeler l'API pour terminer le ramassage
+  //     await driverService.completeRamassage(_currentDemande!.id!);
+
+  //     print('🎉 Ramassage terminé avec succès');
+
+  //     if (_context != null) {
+  //       CustomToast.showSuccess(_context!, message: 'Ramassage terminé avec succès');
+  //     }
+
+  //     // Réinitialiser l'état
+  //     _resetRamassageState();
+
+  //   } catch (e) {
+  //     print('❌ Erreur finalisation ramassage: $e');
+  //     if (_context != null) {
+  //       CustomToast.showError(_context!, message: 'Erreur lors de la finalisation');
+  //     }
+  //   } finally {
+  //     setBusy(false);
+  //     notifyListeners();
+  //   }
+  // }
+
+  //* Annuler une demande acceptée
+  // Future<void> cancelDemande() async {
+  //   if (_currentDemande?.id == null) return;
+
+  //   try {
+  //     setBusy(true);
+
+  //     print('🔄 Annulation de la demande ${_currentDemande!.id}');
+
+  //     // Appeler l'API pour annuler
+  //     await driverService.cancelRamassageDemande(_currentDemande!.id!);
+
+  //     // Remettre dans la liste des demandes disponibles si nécessaire
+  //     if (!_availableDemandes.any((d) => d.id == _currentDemande!.id)) {
+  //       _availableDemandes.insert(0, _currentDemande!);
+  //     }
+
+  //     // Réinitialiser l'état
+  //     _resetRamassageState();
+
+  //     if (_context != null) {
+  //       CustomToast.showInfo(_context!, message: 'Demande annulée');
+  //     }
+
+  //   } catch (e) {
+  //     print('❌ Erreur annulation demande: $e');
+  //     if (_context != null) {
+  //       CustomToast.showError(_context!, message: 'Erreur lors de l\'annulation');
+  //     }
+  //   } finally {
+  //     setBusy(false);
+  //     notifyListeners();
+  //   }
+  // }
+
+  //* Changer le type de bottom sheet
+  void _setBottomSheetType(RamassageBottomSheetType type) {
+    print('[BottomSheet] Changement: $_currentBottomSheetType -> $type');
     _currentBottomSheetType = type;
     notifyListeners();
   }
 
-  void onNewDeliveryRequest() {
-    setBottomSheetType(BottomSheetAppType.clients);
-  }
-
+  //* Masquer le bottom sheet
   void hideBottomSheet() {
-    setBottomSheetType(BottomSheetAppType.none);
+    _setBottomSheetType(RamassageBottomSheetType.none);
   }
 
-  // Démarrer la livraison
-  void startDelivery() {
-    if (_currentDelivery == null) return;
+  //* Réinitialiser l'état du ramassage
+  void _resetRamassageState() {
+    _currentDemande = null;
+    _isRamassageInProgress = false;
 
-    _isGoingToPickup = false;
-    _isOnDelivery = true;
-
-    // TODO: Tracer la route vers la destination si tu as cette info
-    // _drawRouteToDestination();
-
-    notifyListeners();
-  }
-
-  // Terminer la livraison
-  void completeDelivery() {
-    _isOnDelivery = false;
-    _isGoingToPickup = false;
-    _currentDelivery = null;
-    _markers.clear();
-    _addUserLocationMarker();
-
-    notifyListeners();
-  }
-
-  // Recentrer sur la position actuelle
-  Future<void> recenterOnUserLocation() async {
-    if (_currentPosition != null) {
-      _mapController.move(
-        LatLng(_currentPosition!.latitude, _currentPosition!.longitude),
-        _mapZoom,
-      );
+    // Revenir à l'affichage des demandes s'il y en a
+    if (_availableDemandes.isNotEmpty) {
+      _setBottomSheetType(RamassageBottomSheetType.demandes);
     } else {
-      await _getCurrentLocation();
+      _setBottomSheetType(RamassageBottomSheetType.none);
     }
   }
 
-  void onMapTapped(LatLng point) {
-    addMarker(point);
+  //* Obtenir la date formatée
+  String formatDateTime(String input) {
+    final dateTime = DateTime.parse(input);
+    final formatter = DateFormat("dd/MM/yyyy 'à' HH:mm");
+    return formatter.format(dateTime.toLocal());
   }
 
-  // Ajouter un marqueur
-  void addMarker(LatLng position) {
-    final newMarker = Marker(
-      width: 80.0,
-      height: 80.0,
-      point: position,
-      child: Container(
-        child: const Icon(
-          Icons.place,
-          color: Colors.red,
-          size: 40,
-        ),
-      ),
-    );
-
-    _markers.add(newMarker);
-    notifyListeners();
+  //* Obtenir le statut formaté d'une demande
+  String getDemandeStatusText(String? statut) {
+    switch (statut?.toLowerCase()) {
+      case 'en_attente':
+        return 'En attente';
+      case 'acceptee':
+        return 'Acceptée';
+      case 'en_cours':
+        return 'En cours';
+      case 'terminee':
+        return 'Terminée';
+      case 'annulee':
+        return 'Annulée';
+      default:
+        return 'Affectée';
+    }
   }
 
-  // Changer la position centrale de la carte
-  void changeMapCenter(LatLng newCenter) {
-    _mapCenter = newCenter;
-    _mapController.move(newCenter, _mapZoom);
-    notifyListeners();
+  //* Obtenir la couleur du statut
+  Color getDemandeStatusColor(String? statut) {
+    switch (statut?.toLowerCase()) {
+      case 'en_attente':
+        return Colors.orange;
+      case 'acceptee':
+        return Colors.blue;
+      case 'en_cours':
+        return Colors.green;
+      case 'terminee':
+        return Colors.grey;
+      case 'annulee':
+        return Colors.red;
+      default:
+        return Colors.grey;
+    }
   }
 
-  // Changer le niveau de zoom
-  void changeZoom(double newZoom) {
-    _mapZoom = newZoom;
-    _mapController.move(_mapCenter, newZoom);
-    notifyListeners();
+  @override
+  void dispose() {
+    _refreshTimer?.cancel();
+    super.dispose();
   }
 }
