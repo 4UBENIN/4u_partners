@@ -1,6 +1,9 @@
 import 'dart:async';
 import 'dart:convert';
+import 'package:for_u_partners/app/app.router.dart';
+import 'package:for_u_partners/app/models/ramasseur_models/facture_ramassage_model.dart';
 import 'package:for_u_partners/ui/common/app_colors.dart';
+import 'package:for_u_partners/ui/views/delivery/courses_delivery/factureRamassagePage.dart';
 import 'package:http/http.dart' as http;
 import 'package:intl/intl.dart';
 import 'package:stacked/stacked.dart';
@@ -11,7 +14,19 @@ import 'package:for_u_partners/ui/common/toast.dart';
 import 'package:stacked_services/stacked_services.dart';
 import 'package:for_u_partners/services/pickers_service.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart'
-    show GoogleMapController, LatLng, Marker, CameraPosition, Polyline, PolylinePoints, BitmapDescriptor, MarkerId, InfoWindow, CameraUpdate, LatLngBounds, PolylineId;
+    show
+        GoogleMapController,
+        LatLng,
+        Marker,
+        CameraPosition,
+        Polyline,
+        PolylinePoints,
+        BitmapDescriptor,
+        MarkerId,
+        InfoWindow,
+        CameraUpdate,
+        LatLngBounds,
+        PolylineId;
 import 'package:flutter_polyline_points/flutter_polyline_points.dart';
 import 'package:for_u_partners/services/sharedpreferences_service.dart';
 import 'package:for_u_partners/app/models/ramasseur_models/ramasseur_demand_model.dart';
@@ -35,6 +50,9 @@ class CoursesDeliveryViewModel extends FormViewModel {
   GoogleMapController? get mapController => _mapController;
   final Completer<GoogleMapController> _controllerCompleter = Completer();
 
+  bool _isMapControllerReady = false;
+  bool get isMapControllerReady => _isMapControllerReady;
+
   Position? _currentPosition;
   Position? get currentPosiction => _currentPosition;
 
@@ -53,7 +71,7 @@ class CoursesDeliveryViewModel extends FormViewModel {
   // Polylines pour les trajets
   final Set<Polyline> _polylines = <Polyline>{};
   Set<Polyline> get polylines => _polylines;
-  
+
   // Clé API Google Maps
   static const String _googleApiKey = 'AIzaSyAVtrvygnbsdnL6VMEJS_DB0JfEa0piHqM';
 
@@ -63,18 +81,36 @@ class CoursesDeliveryViewModel extends FormViewModel {
 
   //* Methods
   void onMapCreated(GoogleMapController controller) {
-    _mapController = controller;
-    _controllerCompleter.complete(controller);
-    if (_currentPosition != null) {
-      _moveToPosition(
-          LatLng(_currentPosition!.latitude, _currentPosition!.longitude));
+    if (!_controllerCompleter.isCompleted) {
+      _mapController = controller;
+      _controllerCompleter.complete(controller);
+      _isMapControllerReady = true;
+
+      // Attendre un frame avant de faire des opérations sur la carte
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (_currentPosition != null && _isMapControllerReady) {
+          _moveToPosition(
+              LatLng(_currentPosition!.latitude, _currentPosition!.longitude));
+        }
+      });
+
+      notifyListeners();
     }
   }
 
-  void _moveToPosition(LatLng position) {
-    _mapController?.animateCamera(
-      CameraUpdate.newLatLngZoom(position, _mapZoom),
-    );
+  Future<void> _moveToPosition(LatLng position) async {
+    if (_mapController == null || !_isMapControllerReady) {
+      print('⚠️ Contrôleur de carte non prêt');
+      return;
+    }
+
+    try {
+      await _mapController!.animateCamera(
+        CameraUpdate.newLatLngZoom(position, _mapZoom),
+      );
+    } catch (e) {
+      print('⚠️ Erreur lors du déplacement de la caméra: $e');
+    }
   }
 
   // Méthode pour obtenir l'itinéraire entre deux points
@@ -89,25 +125,27 @@ class CoursesDeliveryViewModel extends FormViewModel {
 
       final response = await http.get(url);
       final data = jsonDecode(response.body);
-      
+
       if (data['status'] == 'OK') {
         // Effacer les anciennes polylignes
         _polylines.clear();
-        
+
         // Extraire les points de l'itinéraire
         final points = data['routes'][0]['overview_polyline']['points'];
-        
+
         // Décoder les points en coordonnées LatLng
         final List<LatLng> routeCoords = [];
-        final polylinePoints = PolylinePoints(apiKey: 'AIzaSyAVtrvygnbsdnL6VMEJS_DB0JfEa0piHqM');
+        final polylinePoints =
+            PolylinePoints(apiKey: 'AIzaSyAVtrvygnbsdnL6VMEJS_DB0JfEa0piHqM');
         final List<PointLatLng> result = PolylinePoints.decodePolyline(points);
-            
+
         for (var point in result) {
           routeCoords.add(LatLng(point.latitude, point.longitude));
         }
-        
+
         // Créer la polyligne
-        final String polylineId = 'polyline_${origin.latitude}_${origin.longitude}';
+        final String polylineId =
+            'polyline_${origin.latitude}_${origin.longitude}';
         _polylines.add(
           Polyline(
             polylineId: PolylineId(polylineId),
@@ -116,7 +154,7 @@ class CoursesDeliveryViewModel extends FormViewModel {
             points: routeCoords,
           ),
         );
-        
+
         notifyListeners();
       }
     } catch (e) {
@@ -126,37 +164,46 @@ class CoursesDeliveryViewModel extends FormViewModel {
 
   // Méthode utilitaire pour centrer la carte sur les marqueurs avec un bon zoom
   Future<void> _fitToMarkers() async {
-    if (_mapController == null || _markers.isEmpty) return;
+    if (_mapController == null || !_isMapControllerReady || _markers.isEmpty) {
+      print('⚠️ Conditions non remplies pour _fitToMarkers');
+      return;
+    }
 
     try {
-      // Créer les limites pour inclure tous les marqueurs
+      // Attendre un court délai pour s'assurer que la carte est stable
+      await Future.delayed(const Duration(milliseconds: 500));
+
+      if (!_isMapControllerReady) return;
+
       final LatLngBounds bounds = _boundsFromLatLngList(
         _markers.map((m) => m.position).toList(),
       );
 
-      // Calculer le padding en fonction de la taille de l'écran
-      const double padding = 100.0; // padding en pixels
-      
-      // Créer la caméra update avec les limites
-      final CameraUpdate cameraUpdate = CameraUpdate.newLatLngBounds(bounds, padding);
-      
-      // Animer la caméra vers la nouvelle position
-      await _mapController?.animateCamera(cameraUpdate);
-      
-      // Vérifier le niveau de zoom et ajuster si nécessaire
+      const double padding = 100.0;
+      final CameraUpdate cameraUpdate =
+          CameraUpdate.newLatLngBounds(bounds, padding);
+
+      await _mapController!.animateCamera(cameraUpdate);
+
+      // Vérifier et ajuster le zoom si nécessaire
       final double currentZoom = await _mapController!.getZoomLevel();
       if (currentZoom > 16.0) {
-        await _mapController?.animateCamera(
-          CameraUpdate.zoomTo(16.0), // Niveau de zoom maximal pour une bonne visibilité
-        );
+        await Future.delayed(const Duration(milliseconds: 300));
+        if (_isMapControllerReady) {
+          await _mapController!.animateCamera(CameraUpdate.zoomTo(16.0));
+        }
       }
     } catch (e) {
       print('Erreur lors du positionnement de la carte: $e');
-      // En cas d'erreur, centrer simplement sur le premier marqueur
-      if (_markers.isNotEmpty) {
-        await _mapController?.animateCamera(
-          CameraUpdate.newLatLng(_markers.first.position),
-        );
+      // Fallback : centrer sur le premier marqueur
+      if (_markers.isNotEmpty && _isMapControllerReady) {
+        try {
+          await _mapController!.animateCamera(
+            CameraUpdate.newLatLng(_markers.first.position),
+          );
+        } catch (fallbackError) {
+          print('Erreur de fallback: $fallbackError');
+        }
       }
     }
   }
@@ -239,6 +286,21 @@ class CoursesDeliveryViewModel extends FormViewModel {
   String get userName => _userName;
   String get userRole => _userRole;
 
+  double? _poids;
+  double? get poids => _poids;
+  set poids(dynamic value) {
+    if (value is String) {
+      _poids = double.tryParse(value);
+    } else if (value is double) {
+      _poids = value;
+    } else if (value is int) {
+      _poids = value.toDouble();
+    } else {
+      _poids = null;
+    }
+    notifyListeners();
+  }
+
   BuildContext? _context;
 
   // État du bottom sheet
@@ -271,6 +333,8 @@ class CoursesDeliveryViewModel extends FormViewModel {
 
   // Timer pour rafraîchir les demandes
   Timer? _refreshTimer;
+
+  FactureRamassageModel? factureRamassageModel;
 
   // Définir le contexte
   void setContext(BuildContext context) {
@@ -418,7 +482,7 @@ class CoursesDeliveryViewModel extends FormViewModel {
 
           // Ajouter la polyligne entre la position actuelle et le point de ramassage
           await _getRouteBetweenPoints(currentLatLng, ramassage_point!);
-          
+
           // Centrer la carte sur les marqueurs
           await _fitToMarkers();
         }
@@ -510,69 +574,147 @@ class CoursesDeliveryViewModel extends FormViewModel {
   //   }
   // }
 
-  //* Démarrer le ramassage
-  // Future<void> startRamassage() async {
-  //   if (_currentDemande?.id == null) return;
+  //* Démarrer la livraison au pressing
+  Future<void> goToPressing(Demandes demande) async {
+    if (_currentDemande?.id == null) return;
 
-  //   try {
-  //     setBusy(true);
+    try {
+      setBusy(true);
 
-  //     print('🚛 Démarrage du ramassage pour la demande ${_currentDemande!.id}');
+      print('🚛 Livraison au pressing pour la demande ${_currentDemande!.id}');
 
-  //     // Appeler l'API pour démarrer le ramassage
-  //     await driverService.startRamassage(_currentDemande!.id!);
+      // Vérifier la validité des coordonnées
+      if (demande.latLivraison == null || demande.lngLivraison == null) {
+        throw Exception('Coordonnées de livraison manquantes');
+      }
 
-  //     _isRamassageInProgress = true;
-  //     _setBottomSheetType(RamassageBottomSheetType.inProgress);
+      try {
+        livraison_point = LatLng(double.parse(demande.latLivraison!),
+            double.parse(demande.lngLivraison!));
+      } catch (e) {
+        throw Exception('Coordonnées de livraison invalides');
+      }
 
-  //     print('✅ Ramassage démarré');
+      // Effacer les anciens marqueurs et polylignes
+      _markers.clear();
+      _polylines.clear();
 
-  //     if (_context != null) {
-  //       CustomToast.showSuccess(_context!, message: 'Ramassage démarré');
-  //     }
+      // Ajouter le marqueur du point de livraison
+      _markers.add(
+        Marker(
+          markerId: const MarkerId('livraison_point'),
+          position: livraison_point!,
+          infoWindow: const InfoWindow(title: 'Point de livraison'),
+          icon: BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueRed),
+        ),
+      );
 
-  //   } catch (e) {
-  //     print('❌ Erreur démarrage ramassage: $e');
-  //     if (_context != null) {
-  //       CustomToast.showError(_context!, message: 'Erreur lors du démarrage');
-  //     }
-  //   } finally {
-  //     setBusy(false);
-  //     notifyListeners();
-  //   }
-  // }
+      // Ajouter la position actuelle si disponible
+      if (_currentPosition != null) {
+        final currentLatLng = LatLng(
+          _currentPosition!.latitude,
+          _currentPosition!.longitude,
+        );
+
+        _markers.add(
+          Marker(
+            markerId: const MarkerId('current_position'),
+            position: currentLatLng,
+            infoWindow: const InfoWindow(title: 'Votre position'),
+            icon:
+                BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueBlue),
+          ),
+        );
+
+        // Obtenir l'itinéraire
+        await _getRouteBetweenPoints(currentLatLng, livraison_point!);
+      }
+
+      // Mettre à jour l'état avant d'essayer de manipuler la carte
+      _isRamassageInProgress = true;
+      _setBottomSheetType(RamassageBottomSheetType.inProgress);
+      notifyListeners();
+
+      // Attendre que l'UI se mette à jour avant de manipuler la carte
+      await Future.delayed(const Duration(milliseconds: 100));
+
+      // Essayer de centrer la carte seulement si le contrôleur est prêt
+      if (_isMapControllerReady && _markers.isNotEmpty) {
+        await _fitToMarkers();
+      }
+
+      if (_context != null) {
+        CustomToast.showSuccess(_context!,
+            message: 'Livraison au pressing démarrée');
+      }
+    } catch (e) {
+      print('❌ Erreur démarrage livraison: $e');
+      if (_context != null) {
+        CustomToast.showError(_context!,
+            message: 'Erreur lors du démarrage de la livraison au pressing');
+      }
+    } finally {
+      setBusy(false);
+      notifyListeners();
+    }
+  }
+
+  // Ajouter une méthode pour vérifier l'état du contrôleur
+  bool get canPerformMapOperations =>
+      _mapController != null && _isMapControllerReady;
 
   //* Terminer le ramassage
-  // Future<void> completeRamassage() async {
-  //   if (_currentDemande?.id == null) return;
+  Future<void> completeRamassageAndGetFacture() async {
+    if (_currentDemande?.id == null) return;
 
-  //   try {
-  //     setBusy(true);
+    try {
+      setBusy(true);
 
-  //     print('✅ Finalisation du ramassage pour la demande ${_currentDemande!.id}');
+      print('✅ Finalisation du ramassage pour la demande ${_currentDemande!.id}');
 
-  //     // Appeler l'API pour terminer le ramassage
-  //     await driverService.completeRamassage(_currentDemande!.id!);
+      // Appeler l'API pour terminer le ramassage et récupérer la facture
+      final facture = await pickerService.getPickerFacture(_currentDemande!.id!, poids!);
+      
+      // Stocker la facture reçue
+      factureRamassageModel = facture;
 
-  //     print('🎉 Ramassage terminé avec succès');
+      print('🎉 Ramassage terminé avec succès');
 
-  //     if (_context != null) {
-  //       CustomToast.showSuccess(_context!, message: 'Ramassage terminé avec succès');
-  //     }
+      if (_context != null) {
+        if (!_context!.mounted) return;
+        
+        CustomToast.showSuccess(_context!,
+            message: 'Ramassage terminé avec succès');
+            
+        // Naviguer vers la page de facture
+        await Navigator.push(
+          _context!,
+          MaterialPageRoute(
+            builder: (context) => FactureRamassagePage(
+              factureModel: facture,
+              onTerminer: () {
+                if (_context != null && _context!.mounted) {
+                  navigationService.replaceWithDeliveryNavBarView();
+                }
+              },
+            ),
+          ),
+        );
+      }
 
-  //     // Réinitialiser l'état
-  //     _resetRamassageState();
-
-  //   } catch (e) {
-  //     print('❌ Erreur finalisation ramassage: $e');
-  //     if (_context != null) {
-  //       CustomToast.showError(_context!, message: 'Erreur lors de la finalisation');
-  //     }
-  //   } finally {
-  //     setBusy(false);
-  //     notifyListeners();
-  //   }
-  // }
+      // Réinitialiser l'état
+      _resetRamassageState();
+    } catch (e) {
+      print('❌ Erreur finalisation ramassage: $e');
+      if (_context != null) {
+        CustomToast.showError(_context!,
+            message: 'Erreur lors de la finalisation');
+      }
+    } finally {
+      setBusy(false);
+      notifyListeners();
+    }
+  }
 
   //* Annuler une demande acceptée
   // Future<void> cancelDemande() async {
@@ -680,6 +822,8 @@ class CoursesDeliveryViewModel extends FormViewModel {
   @override
   void dispose() {
     _refreshTimer?.cancel();
+    _isMapControllerReady = false;
+    _mapController?.dispose();
     super.dispose();
   }
 }

@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:for_u_partners/app/api_constant.dart';
+import 'package:for_u_partners/app/models/ramasseur_models/facture_ramassage_model.dart';
 import 'package:for_u_partners/app/models/ramasseur_models/ramasseur_demand_detail.dart';
 import 'package:for_u_partners/app/models/ramasseur_models/ramasseur_demand_model.dart';
 import 'package:for_u_partners/services/auth_service.dart';
@@ -151,6 +152,72 @@ class PickersService {
         print('🔐 Session expirée, déconnexion...');
         await _authService.logOut();
         throw Exception('Votre session a expiré. Veuillez vous reconnecter.');
+      } else {
+        //* Autre erreur
+        final errorMsg =
+            'Erreur ${response.statusCode} lors de la récupération des détails';
+        print('❌ $errorMsg');
+        print('Réponse complète: ${response.body}');
+        throw Exception('$errorMsg. Veuillez réessayer plus tard.');
+      }
+    } catch (e) {
+      print('❌ Erreur lors de la récupération des détails: $e');
+      rethrow;
+    }
+  }
+
+  Future<FactureRamassageModel> getPickerFacture(int id, double poids) async {
+    final url = Uri.parse(
+        'https://foryou.cilassocies.com/api/conducteur/demandes-ramassage/$id/facture');
+
+    print(
+        '🔍 Envoi des éléments pour la récupération de la facture de la demande $id...');
+    try {
+      final headers = await getAuthenticatedHeaders();
+      // Ensure we're sending JSON content type
+      headers['Content-Type'] = 'application/json';
+      print('🔑 En-têtes: $headers');
+
+      // Create a proper JSON body with the correct field name
+      final body = jsonEncode({
+        'poids_total': poids,
+      });
+
+      print('📦 Corps de la requête: $body');
+      final response = await http.post(
+        url,
+        headers: headers,
+        body: body,
+      );
+
+      print("📊 Poids envoyé: $poids kg");
+
+      print('🟢 Réponse - Status: ${response.statusCode}');
+      print('📄 Corps de la réponse: ${response.body}');
+
+      if (response.statusCode == 201) {
+        try {
+          final responseData = jsonDecode(response.body);
+          print('✅ Facture de la demande récupérés avec succès');
+          return FactureRamassageModel.fromJson(responseData);
+        } catch (e) {
+          print('❌ Erreur lors du parsing de la réponse: $e');
+          throw Exception(
+              'Erreur lors de la lecture des données de la demande');
+        }
+      } else if (response.statusCode == 401) {
+        //* Non authentifié
+        print('🔐 Session expirée, déconnexion...');
+        await _authService.logOut();
+        throw Exception('Votre session a expiré. Veuillez vous reconnecter.');
+      } else if (response.statusCode == 404) {
+        print('😓 Demande non trouvée');
+        await _authService.logOut();
+        throw Exception('La damande n\'a pas été trouvée');
+      } else if (response.statusCode == 422) {
+        print('❌ validation échouée');
+        await _authService.logOut();
+        throw Exception('La damande de validation à échouée');
       } else {
         //* Autre erreur
         final errorMsg =

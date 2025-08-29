@@ -1,4 +1,5 @@
 import 'package:for_u_partners/ui/common/app_textInput.dart';
+import 'package:for_u_partners/ui/common/toast.dart';
 import 'package:for_u_partners/ui/views/delivery/courses_delivery/courses_delivery_view.form.dart';
 import 'package:stacked/stacked.dart';
 import 'package:flutter/material.dart';
@@ -181,8 +182,11 @@ class CoursesDeliveryView extends StackedView<CoursesDeliveryViewModel>
 
   Widget _buildPickerBottomSheet(
       CoursesDeliveryViewModel viewModel, BuildContext context) {
+    // Always show the demandes bottom sheet when there are no demands to display the empty state
     if (viewModel.currentBottomSheetType == RamassageBottomSheetType.none) {
-      return const SizedBox.shrink();
+      return viewModel.availableDemandes.isEmpty
+          ? _buildDemandesBottomSheet(viewModel, context, primaryColor)
+          : const SizedBox.shrink();
     }
 
     switch (viewModel.currentBottomSheetType) {
@@ -314,7 +318,6 @@ class CoursesDeliveryView extends StackedView<CoursesDeliveryViewModel>
     );
   }
 
-  //! Bottom sheet pour les détails d'une demande acceptée
   Widget _buildDetailsBottomSheet(
       CoursesDeliveryViewModel viewModel, BuildContext context) {
     const primaryColor = Color(0xFF184E9C);
@@ -639,7 +642,15 @@ class CoursesDeliveryView extends StackedView<CoursesDeliveryViewModel>
                           width: double.infinity,
                           child: ElevatedButton(
                             onPressed: () {
-                              // TODO: Implémenter l'action de confirmation
+                              if (poidsInputController.text.isEmpty) {
+                                CustomToast.showError(context,
+                                    message:
+                                        "Veuillez renseigner le poids total avant de continuer");
+                              } else {
+                                viewModel.poids = poidsInputController.text;
+                                viewModel
+                                    .goToPressing(viewModel.currentDemande!);
+                              }
                             },
                             style: ElevatedButton.styleFrom(
                               backgroundColor: primaryColor,
@@ -743,7 +754,7 @@ class CoursesDeliveryView extends StackedView<CoursesDeliveryViewModel>
     );
   }
 
-//* Bottom sheet pour le ramassage en cours
+//! Bottom sheet pour le ramassage en cours
   Widget _buildInProgressBottomSheet(
       CoursesDeliveryViewModel viewModel, BuildContext context) {
     return DraggableScrollableSheet(
@@ -833,8 +844,8 @@ class CoursesDeliveryView extends StackedView<CoursesDeliveryViewModel>
                                   ),
                                 ),
                                 const SizedBox(width: 6),
-                                const Text(
-                                  'Ramassage en cours',
+                                Text(
+                                  'Livraison à ${viewModel.acceptedDemande?.nomPressing ?? 'Non spécifié'} en cours',
                                   style: TextStyle(
                                     fontSize: 12,
                                     color: Colors.green,
@@ -889,7 +900,7 @@ class CoursesDeliveryView extends StackedView<CoursesDeliveryViewModel>
                               icon: Icons.check_box_outlined,
                               title: 'Récupérer les vêtements',
                               subtitle: 'Vérifiez les éléments avec le client',
-                              isCompleted: false,
+                              isCompleted: true,
                               isActive: true,
                             ),
                             const SizedBox(height: 16),
@@ -900,45 +911,13 @@ class CoursesDeliveryView extends StackedView<CoursesDeliveryViewModel>
                                   viewModel.currentDemande?.adresseLivraison ??
                                       'Non spécifiée',
                               isCompleted: false,
-                              isActive: false,
+                              isActive: true,
                             ),
                           ],
                         ),
                       ),
 
-                      const SizedBox(height: 24),
-
-                      // Informations importantes
-                      Container(
-                        padding: const EdgeInsets.all(16),
-                        decoration: BoxDecoration(
-                          color: Colors.blue.withOpacity(0.05),
-                          borderRadius: BorderRadius.circular(12),
-                          border: Border.all(
-                            color: Colors.blue.withOpacity(0.2),
-                          ),
-                        ),
-                        child: Row(
-                          children: [
-                            Icon(
-                              Icons.info_outline,
-                              color: Colors.blue.shade600,
-                              size: 20,
-                            ),
-                            const SizedBox(width: 12),
-                            const Expanded(
-                              child: Text(
-                                'N\'oubliez pas de prendre une photo des vêtements avant le ramassage',
-                                style: TextStyle(
-                                  fontSize: 13,
-                                  color: Color(0xFF1E40AF),
-                                  fontWeight: FontWeight.w500,
-                                ),
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
+                      // const SizedBox(height: 24),
 
                       const SizedBox(height: 80), // Espace pour les boutons
                     ],
@@ -966,7 +945,7 @@ class CoursesDeliveryView extends StackedView<CoursesDeliveryViewModel>
                       width: double.infinity,
                       child: ElevatedButton(
                         onPressed: () {
-                          // viewModel.completeRamassage();
+                          viewModel.completeRamassageAndGetFacture();
                         },
                         style: ElevatedButton.styleFrom(
                           backgroundColor: const Color(0xFF059669),
@@ -1354,35 +1333,38 @@ class CoursesDeliveryView extends StackedView<CoursesDeliveryViewModel>
     );
   }
 
-  //! LIVREUR PART A MODIFIER !
+  // Widget affiché lorsqu'il n'y a pas de demandes disponibles
   Widget _buildEmptyDemandesState() {
-    return const Center(
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Icon(
-            Icons.inbox_outlined,
-            size: 64,
-            color: Color(0xFF94A3B8),
-          ),
-          SizedBox(height: 16),
-          Text(
-            'Aucune demande disponible',
-            style: TextStyle(
-              fontSize: 16,
-              fontWeight: FontWeight.w500,
-              color: Color(0xFF64748B),
-            ),
-          ),
-          SizedBox(height: 8),
-          Text(
-            'Les nouvelles demandes apparaîtront ici',
-            style: TextStyle(
-              fontSize: 14,
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.all(20.0),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(
+              Icons.inbox_outlined,
+              size: 64,
               color: Color(0xFF94A3B8),
             ),
-          ),
-        ],
+            SizedBox(height: 16),
+            Text(
+              'Aucune demande pour l\'instant',
+              style: TextStyle(
+                fontSize: 18,
+                fontWeight: FontWeight.w500,
+                color: Color(0xFF64748B),
+              ),
+              textAlign: TextAlign.center,
+            ),
+            Text(
+              'Les nouvelles demandes apparaîtront ici',
+              style: TextStyle(
+                fontSize: 14,
+                color: Color(0xFF94A3B8),
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }

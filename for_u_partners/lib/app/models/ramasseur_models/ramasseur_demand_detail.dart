@@ -75,8 +75,8 @@ class RamasseurDemandDetail {
       adresseRamassage: json['adresse_ramassage'],
       adressePressing: json['adresse_pressing'],
       nomPressing: json['nom_pressing'],
-      prixRamassage: json['prix_ramassage'] is int 
-          ? json['prix_ramassage'] 
+      prixRamassage: json['prix_ramassage'] is int
+          ? json['prix_ramassage']
           : int.tryParse(json['prix_ramassage']?.toString() ?? '0') ?? 0,
       message: json['message'],
     );
@@ -91,8 +91,10 @@ class RamasseurDemandDetail {
         'lat_livraison': latLivraison,
         'lng_livraison': lngLivraison,
         'vetements_au_kilo': vetementsAuKilo?.map((v) => v.toJson()).toList(),
-        'vetements_speciaux': vetementsSpeciaux?.map((v) => v.toJson()).toList(),
-        'services_complementaires': servicesComplementaires?.map((v) => v.toJson()).toList(),
+        'vetements_speciaux':
+            vetementsSpeciaux?.map((v) => v.toJson()).toList(),
+        'services_complementaires':
+            servicesComplementaires?.map((v) => v.toJson()).toList(),
         'adresse_ramassage': adresseRamassage,
         'adresse_pressing': adressePressing,
         'nom_pressing': nomPressing,
@@ -141,7 +143,9 @@ class VetementsAuKilo {
       // Conversion de tarifUnitaire
       if (json['tarif_unitaire'] != null) {
         if (json['tarif_unitaire'] is String) {
-          tarifUnitaire = int.tryParse(json['tarif_unitaire']) ?? 0;
+          // First parse as double, then convert to int to handle decimal strings like "2500.00"
+          final doubleValue = double.tryParse(json['tarif_unitaire']);
+          tarifUnitaire = doubleValue?.toInt() ?? 0;
         } else if (json['tarif_unitaire'] is num) {
           tarifUnitaire = json['tarif_unitaire'].toInt();
         }
@@ -222,7 +226,16 @@ class ServicesComplementaires {
   ServicesComplementaires.fromJson(Map<String, dynamic> json) {
     serviceId = json['service_id'];
     libelle = json['libelle'];
-    montant = json['montant'];
+
+    // FIXED: Handle string decimal values for montant
+    if (json['montant'] != null) {
+      if (json['montant'] is String) {
+        final doubleValue = double.tryParse(json['montant']);
+        montant = doubleValue?.toInt() ?? 0;
+      } else if (json['montant'] is num) {
+        montant = json['montant'].toInt();
+      }
+    }
   }
 
   Map<String, dynamic> toJson() => {
