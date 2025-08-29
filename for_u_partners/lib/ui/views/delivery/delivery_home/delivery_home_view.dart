@@ -166,7 +166,6 @@ class _TabBarContent extends StatelessWidget {
                   mainAxisAlignment: MainAxisAlignment.start,
                   children: [
                     const SizedBox(height: 24),
-                    
                   ],
                 ),
         ],

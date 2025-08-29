@@ -18,7 +18,8 @@ import 'package:google_maps_flutter/google_maps_flutter.dart'
         BitmapDescriptor,
         MarkerId,
         InfoWindow,
-        CameraUpdate;
+        CameraUpdate,
+        LatLngBounds;
 import 'package:flutter_polyline_points/flutter_polyline_points.dart';
 import 'package:for_u_partners/services/sharedpreferences_service.dart';
 import 'package:for_u_partners/app/models/ramasseur_models/ramasseur_demand_model.dart';
@@ -32,7 +33,7 @@ enum RamassageBottomSheetType {
   inProgress, // Ramassage en cours
 }
 
-class CoursesDeliveryViewModel extends BaseViewModel {
+class CoursesDeliveryViewModel extends FormViewModel {
   final pickerService = locator<PickersService>();
   final navigationService = locator<NavigationService>();
   final _sharedPreferencesService = locator<SharedpreferencesService>();
@@ -47,6 +48,9 @@ class CoursesDeliveryViewModel extends BaseViewModel {
 
   LatLng _mapCenter = const LatLng(48.8566, 2.3522);
   LatLng get mapCenter => _mapCenter;
+
+  LatLng? ramassage_point;
+  LatLng? livraison_point;
 
   double _mapZoom = 15.0;
   double get mapZoom => _mapZoom;
@@ -78,9 +82,65 @@ class CoursesDeliveryViewModel extends BaseViewModel {
     );
   }
 
-  void onMapTapped(LatLng point) {
-    addMarker(point);
+  // Méthode utilitaire pour centrer la carte sur les marqueurs avec un bon zoom
+  Future<void> _fitToMarkers() async {
+    if (_mapController == null || _markers.isEmpty) return;
+
+    try {
+      // Créer les limites pour inclure tous les marqueurs
+      final LatLngBounds bounds = _boundsFromLatLngList(
+        _markers.map((m) => m.position).toList(),
+      );
+
+      // Calculer le padding en fonction de la taille de l'écran
+      const double padding = 100.0; // padding en pixels
+      
+      // Créer la caméra update avec les limites
+      final CameraUpdate cameraUpdate = CameraUpdate.newLatLngBounds(bounds, padding);
+      
+      // Animer la caméra vers la nouvelle position
+      await _mapController?.animateCamera(cameraUpdate);
+      
+      // Vérifier le niveau de zoom et ajuster si nécessaire
+      final double currentZoom = await _mapController!.getZoomLevel();
+      if (currentZoom > 16.0) {
+        await _mapController?.animateCamera(
+          CameraUpdate.zoomTo(16.0), // Niveau de zoom maximal pour une bonne visibilité
+        );
+      }
+    } catch (e) {
+      print('Erreur lors du positionnement de la carte: $e');
+      // En cas d'erreur, centrer simplement sur le premier marqueur
+      if (_markers.isNotEmpty) {
+        await _mapController?.animateCamera(
+          CameraUpdate.newLatLng(_markers.first.position),
+        );
+      }
+    }
   }
+
+  LatLngBounds _boundsFromLatLngList(List<LatLng> list) {
+    double? x0, x1, y0, y1;
+    for (LatLng latLng in list) {
+      if (x0 == null) {
+        x0 = x1 = latLng.latitude;
+        y0 = y1 = latLng.longitude;
+      } else {
+        if (latLng.latitude > x1!) x1 = latLng.latitude;
+        if (latLng.latitude < x0) x0 = latLng.latitude;
+        if (latLng.longitude > y1!) y1 = latLng.longitude;
+        if (latLng.longitude < y0!) y0 = latLng.longitude;
+      }
+    }
+    return LatLngBounds(
+      northeast: LatLng(x1!, y1!),
+      southwest: LatLng(x0!, y0!),
+    );
+  }
+
+  // void onMapTapped(LatLng point) {
+  //   addMarker(point);
+  // }
 
   void addMarker(LatLng position) {
     final markerId = 'marker_${_markers.length}';
@@ -281,7 +341,45 @@ class CoursesDeliveryViewModel extends BaseViewModel {
       await pickerService.acceptRamassage(demande.id!, _context!);
       print('   ✓ Demande acceptée avec succès');
 
-      // 2. Récupérer les détails mis à jour
+      // 2. Mettre à jour les coordonnées du point de ramassage
+      if (demande.latRamassage != null && demande.lngRamassage != null) {
+        ramassage_point = LatLng(double.parse(demande.latRamassage!),
+            double.parse(demande.lngRamassage!));
+
+        // Ajouter le marqueur du point de ramassage
+        _markers.add(
+          Marker(
+            markerId: const MarkerId('ramassage_point'),
+            position: ramassage_point!,
+            infoWindow: const InfoWindow(title: 'Point de ramassage'),
+            icon:
+                BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueRed),
+          ),
+        );
+
+        // Si on a la position actuelle, on l'ajoute aussi
+        if (_currentPosition != null) {
+          final currentLatLng = LatLng(
+            _currentPosition!.latitude,
+            _currentPosition!.longitude,
+          );
+
+          _markers.add(
+            Marker(
+              markerId: const MarkerId('current_position'),
+              position: currentLatLng,
+              infoWindow: const InfoWindow(title: 'Votre position'),
+              icon: BitmapDescriptor.defaultMarkerWithHue(
+                  BitmapDescriptor.hueBlue),
+            ),
+          );
+
+          // Centrer la carte sur les marqueurs
+          _fitToMarkers();
+        }
+      }
+
+      // 3. Récupérer les détails mis à jour
       print('2/3 - Récupération des détails mis à jour...');
       _acceptedDemande = await pickerService.getCurrentRamassageDetails(
           demande.id!, _context!);
@@ -292,11 +390,12 @@ class CoursesDeliveryViewModel extends BaseViewModel {
 
       print('   ✓ Détails récupérés: ${_acceptedDemande!.toJson()}');
 
-      // 3. Mettre à jour l'interface
+      // 4. Mettre à jour l'interface
       print('3/3 - Mise à jour de l\'interface...');
       _availableDemandes.removeWhere((d) => d.id == demande.id);
       _currentDemande = demande; // Conserver la référence à la demande actuelle
       _setBottomSheetType(RamassageBottomSheetType.details);
+      notifyListeners(); // Rafraîchir l'interface pour afficher les marqueurs
 
       print('✅ Flux d\'acceptation terminé avec succès');
       print('📊 État final:');

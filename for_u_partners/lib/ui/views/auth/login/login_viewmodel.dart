@@ -44,9 +44,7 @@ class LoginViewModel extends FormViewModel {
 
     try {
       await _authService.login(model, context);
-     
     } catch (e) {
-      
       setBusy(false);
     }
   }

@@ -55,7 +55,7 @@ class PickersService {
     }
   }
 
-    Future<RamasseurDemand> getActivityList() async {
+  Future<RamasseurDemand> getActivityList() async {
     final url = Uri.parse('$baseUrl/conducteur/demandes-ramassage-terminer');
 
     final response =
@@ -80,7 +80,7 @@ class PickersService {
   Future<void> acceptRamassage(int id, BuildContext context) async {
     final url = Uri.parse(
         'https://foryou.cilassocies.com/api/conducteur/demandes-ramassage/$id/accept');
-    
+
     print('🔵 Appel API - URL: $url');
     print('🆔 ID de la demande: $id');
 
@@ -105,7 +105,8 @@ class PickersService {
         throw Exception('Session expirée');
       } else {
         //* Erreur serveur
-        final errorMsg = '❌ Erreur ${response.statusCode} lors de l\'acceptation de la demande';
+        final errorMsg =
+            '❌ Erreur ${response.statusCode} lors de l\'acceptation de la demande';
         print('$errorMsg: ${response.body}');
         throw Exception('$errorMsg: ${response.body}');
       }
@@ -120,15 +121,15 @@ class PickersService {
       int id, BuildContext context) async {
     final url = Uri.parse(
         'https://foryou.cilassocies.com/api/conducteur/demandes-ramassage/$id/preview');
-    
+
     print('🔍 Récupération des détails de la demande $id...');
-    
+
     try {
       final headers = await getAuthenticatedHeaders();
       print('🔑 En-têtes: $headers');
-      
+
       final response = await http.get(
-        url, 
+        url,
         headers: headers,
       );
 
@@ -142,7 +143,8 @@ class PickersService {
           return RamasseurDemandDetail.fromJson(responseData);
         } catch (e) {
           print('❌ Erreur lors du parsing de la réponse: $e');
-          throw Exception('Erreur lors de la lecture des données de la demande');
+          throw Exception(
+              'Erreur lors de la lecture des données de la demande');
         }
       } else if (response.statusCode == 401) {
         //* Non authentifié
@@ -151,7 +153,8 @@ class PickersService {
         throw Exception('Votre session a expiré. Veuillez vous reconnecter.');
       } else {
         //* Autre erreur
-        final errorMsg = 'Erreur ${response.statusCode} lors de la récupération des détails';
+        final errorMsg =
+            'Erreur ${response.statusCode} lors de la récupération des détails';
         print('❌ $errorMsg');
         print('Réponse complète: ${response.body}');
         throw Exception('$errorMsg. Veuillez réessayer plus tard.');

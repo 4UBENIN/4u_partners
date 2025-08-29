@@ -1,5 +1,11 @@
 class RamasseurDemandDetail {
   int? demandeId;
+  String? adresseLivraison;
+  String? dateDemande;
+  double? latRamassage;
+  double? lngRamassage;
+  double? latLivraison;
+  double? lngLivraison;
   List<VetementsAuKilo>? vetementsAuKilo;
   List<VetementsSpeciaux>? vetementsSpeciaux;
   List<ServicesComplementaires>? servicesComplementaires;
@@ -9,66 +15,90 @@ class RamasseurDemandDetail {
   int? prixRamassage;
   String? message;
 
-  RamasseurDemandDetail(
-      {this.demandeId,
-      this.vetementsAuKilo,
-      this.vetementsSpeciaux,
-      this.servicesComplementaires,
-      this.adresseRamassage,
-      this.adressePressing,
-      this.nomPressing,
-      this.prixRamassage,
-      this.message});
+  RamasseurDemandDetail({
+    this.demandeId,
+    this.adresseLivraison,
+    this.dateDemande,
+    this.latRamassage,
+    this.lngRamassage,
+    this.latLivraison,
+    this.lngLivraison,
+    this.vetementsAuKilo,
+    this.vetementsSpeciaux,
+    this.servicesComplementaires,
+    this.adresseRamassage,
+    this.adressePressing,
+    this.nomPressing,
+    this.prixRamassage,
+    this.message,
+  });
 
-  RamasseurDemandDetail.fromJson(Map<String, dynamic> json) {
-    demandeId = json['demande_id'];
-    if (json['vetements_au_kilo'] != null) {
-      vetementsAuKilo = <VetementsAuKilo>[];
-      json['vetements_au_kilo'].forEach((v) {
-        vetementsAuKilo!.add(new VetementsAuKilo.fromJson(v));
-      });
-    }
-    if (json['vetements_speciaux'] != null) {
-      vetementsSpeciaux = <VetementsSpeciaux>[];
-      json['vetements_speciaux'].forEach((v) {
-        vetementsSpeciaux!.add(new VetementsSpeciaux.fromJson(v));
-      });
-    }
-    if (json['services_complementaires'] != null) {
-      servicesComplementaires = <ServicesComplementaires>[];
-      json['services_complementaires'].forEach((v) {
-        servicesComplementaires!.add(new ServicesComplementaires.fromJson(v));
-      });
-    }
-    adresseRamassage = json['adresse_ramassage'];
-    adressePressing = json['adresse_pressing'];
-    nomPressing = json['nom_pressing'];
-    prixRamassage = json['prix_ramassage'];
-    message = json['message'];
+  // Helper method to safely convert any value to double
+  static double? _toDouble(dynamic value) {
+    if (value == null) return null;
+    if (value is double) return value;
+    if (value is int) return value.toDouble();
+    if (value is String) return double.tryParse(value);
+    return null;
   }
 
-  Map<String, dynamic> toJson() {
-    final Map<String, dynamic> data = new Map<String, dynamic>();
-    data['demande_id'] = this.demandeId;
-    if (this.vetementsAuKilo != null) {
-      data['vetements_au_kilo'] =
-          this.vetementsAuKilo!.map((v) => v.toJson()).toList();
-    }
-    if (this.vetementsSpeciaux != null) {
-      data['vetements_speciaux'] =
-          this.vetementsSpeciaux!.map((v) => v.toJson()).toList();
-    }
-    if (this.servicesComplementaires != null) {
-      data['services_complementaires'] =
-          this.servicesComplementaires!.map((v) => v.toJson()).toList();
-    }
-    data['adresse_ramassage'] = this.adresseRamassage;
-    data['adresse_pressing'] = this.adressePressing;
-    data['nom_pressing'] = this.nomPressing;
-    data['prix_ramassage'] = this.prixRamassage;
-    data['message'] = this.message;
-    return data;
+  factory RamasseurDemandDetail.fromJson(Map<String, dynamic> json) {
+    final vetementsAuKilo = json['vetements_au_kilo'] != null
+        ? (json['vetements_au_kilo'] as List)
+            .map((v) => VetementsAuKilo.fromJson(v))
+            .toList()
+        : null;
+
+    final vetementsSpeciaux = json['vetements_speciaux'] != null
+        ? (json['vetements_speciaux'] as List)
+            .map((v) => VetementsSpeciaux.fromJson(v))
+            .toList()
+        : null;
+
+    final servicesComplementaires = json['services_complementaires'] != null
+        ? (json['services_complementaires'] as List)
+            .map((v) => ServicesComplementaires.fromJson(v))
+            .toList()
+        : null;
+
+    return RamasseurDemandDetail(
+      demandeId: json['demande_id'],
+      adresseLivraison: json['adresse_livraison'],
+      dateDemande: json['date_demande'],
+      latRamassage: _toDouble(json['lat_ramassage']),
+      lngRamassage: _toDouble(json['lng_ramassage']),
+      latLivraison: _toDouble(json['lat_livraison']),
+      lngLivraison: _toDouble(json['lng_livraison']),
+      vetementsAuKilo: vetementsAuKilo,
+      vetementsSpeciaux: vetementsSpeciaux,
+      servicesComplementaires: servicesComplementaires,
+      adresseRamassage: json['adresse_ramassage'],
+      adressePressing: json['adresse_pressing'],
+      nomPressing: json['nom_pressing'],
+      prixRamassage: json['prix_ramassage'] is int 
+          ? json['prix_ramassage'] 
+          : int.tryParse(json['prix_ramassage']?.toString() ?? '0') ?? 0,
+      message: json['message'],
+    );
   }
+
+  Map<String, dynamic> toJson() => {
+        'demande_id': demandeId,
+        'adresse_livraison': adresseLivraison,
+        'date_demande': dateDemande,
+        'lat_ramassage': latRamassage,
+        'lng_ramassage': lngRamassage,
+        'lat_livraison': latLivraison,
+        'lng_livraison': lngLivraison,
+        'vetements_au_kilo': vetementsAuKilo?.map((v) => v.toJson()).toList(),
+        'vetements_speciaux': vetementsSpeciaux?.map((v) => v.toJson()).toList(),
+        'services_complementaires': servicesComplementaires?.map((v) => v.toJson()).toList(),
+        'adresse_ramassage': adresseRamassage,
+        'adresse_pressing': adressePressing,
+        'nom_pressing': nomPressing,
+        'prix_ramassage': prixRamassage,
+        'message': message,
+      };
 }
 
 class VetementsAuKilo {
@@ -95,10 +125,10 @@ class VetementsAuKilo {
           detailId = json['detail_id'].toInt();
         }
       }
-      
+
       libelle = json['libelle']?.toString();
       typeLavage = json['type_lavage']?.toString();
-      
+
       // Conversion de quantite
       if (json['quantite'] != null) {
         if (json['quantite'] is String) {
@@ -107,7 +137,7 @@ class VetementsAuKilo {
           quantite = json['quantite'].toDouble();
         }
       }
-      
+
       // Conversion de tarifUnitaire
       if (json['tarif_unitaire'] != null) {
         if (json['tarif_unitaire'] is String) {
@@ -116,20 +146,19 @@ class VetementsAuKilo {
           tarifUnitaire = json['tarif_unitaire'].toInt();
         }
       }
-      
+
       print('✅ VetementsAuKilo.fromJson - Données parsées avec succès');
       print('   - detailId: $detailId');
       print('   - libelle: $libelle');
       print('   - typeLavage: $typeLavage');
       print('   - quantite: $quantite');
       print('   - tarifUnitaire: $tarifUnitaire');
-      
     } catch (e, stackTrace) {
       print('❌ Erreur dans VetementsAuKilo.fromJson:');
       print('   - Erreur: $e');
       print('   - StackTrace: $stackTrace');
       print('   - Données reçues: $json');
-      
+
       // Valeurs par défaut en cas d'erreur
       detailId = 0;
       libelle = '';
@@ -196,11 +225,9 @@ class ServicesComplementaires {
     montant = json['montant'];
   }
 
-  Map<String, dynamic> toJson() {
-    final Map<String, dynamic> data = new Map<String, dynamic>();
-    data['service_id'] = this.serviceId;
-    data['libelle'] = this.libelle;
-    data['montant'] = this.montant;
-    return data;
-  }
+  Map<String, dynamic> toJson() => {
+        'service_id': serviceId,
+        'libelle': libelle,
+        'montant': montant,
+      };
 }

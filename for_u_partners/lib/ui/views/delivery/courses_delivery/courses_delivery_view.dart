@@ -1,12 +1,18 @@
 import 'package:for_u_partners/ui/common/app_textInput.dart';
+import 'package:for_u_partners/ui/views/delivery/courses_delivery/courses_delivery_view.form.dart';
 import 'package:stacked/stacked.dart';
 import 'package:flutter/material.dart';
+import 'package:stacked/stacked_annotations.dart';
 import 'courses_delivery_viewmodel.dart';
 import 'package:for_u_partners/ui/common/app_colors.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:for_u_partners/app/models/ramasseur_models/ramasseur_demand_model.dart';
 
-class CoursesDeliveryView extends StackedView<CoursesDeliveryViewModel> {
+@FormView(fields: [
+  FormTextField(name: 'poidsInput'),
+])
+class CoursesDeliveryView extends StackedView<CoursesDeliveryViewModel>
+    with $CoursesDeliveryView {
   const CoursesDeliveryView({Key? key}) : super(key: key);
 
   @override
@@ -32,7 +38,7 @@ class CoursesDeliveryView extends StackedView<CoursesDeliveryViewModel> {
 
     // Vérification de l'accès
     if (viewModel.userRole != "ramasseur") {
-      return _buildEmptyState("Accès non autorisé", Icons.lock_outline);
+      return _buildEmptyState("A venir !", Icons.lock_outline);
     }
 
     // Interface principale pour ramasseur
@@ -62,7 +68,7 @@ class CoursesDeliveryView extends StackedView<CoursesDeliveryViewModel> {
                 target: viewModel.mapCenter,
                 zoom: viewModel.mapZoom,
               ),
-              onTap: viewModel.onMapTapped,
+              // onTap: viewModel.onMapTapped,
               markers: viewModel.markers,
               polylines: viewModel.polylines,
               myLocationEnabled: true,
@@ -593,6 +599,7 @@ class CoursesDeliveryView extends StackedView<CoursesDeliveryViewModel> {
                                 bigLabel: "Poids total",
                                 hintText: "ex : 1kg",
                                 keyboardType: TextInputType.number,
+                                controller: poidsInputController,
                               )
                             ],
                             const SizedBox(height: 20),
@@ -1347,6 +1354,7 @@ class CoursesDeliveryView extends StackedView<CoursesDeliveryViewModel> {
     );
   }
 
+  //! LIVREUR PART A MODIFIER !
   Widget _buildEmptyDemandesState() {
     return const Center(
       child: Column(
@@ -1379,6 +1387,7 @@ class CoursesDeliveryView extends StackedView<CoursesDeliveryViewModel> {
     );
   }
 
+  //! DEMAND CARD WIDGET
   Widget _buildModernDemandeCard(
       Demandes demande,
       CoursesDeliveryViewModel viewModel,
@@ -1690,6 +1699,11 @@ class CoursesDeliveryView extends StackedView<CoursesDeliveryViewModel> {
         ),
       ),
     );
+  }
+
+  @override
+  void onViewModelReady(CoursesDeliveryViewModel viewModel) {
+    syncFormWithViewModel(viewModel);
   }
 
   @override
