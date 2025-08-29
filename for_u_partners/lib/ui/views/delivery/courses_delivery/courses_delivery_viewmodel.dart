@@ -1,4 +1,7 @@
 import 'dart:async';
+import 'dart:convert';
+import 'package:for_u_partners/ui/common/app_colors.dart';
+import 'package:http/http.dart' as http;
 import 'package:intl/intl.dart';
 import 'package:stacked/stacked.dart';
 import 'package:flutter/material.dart';
@@ -8,18 +11,7 @@ import 'package:for_u_partners/ui/common/toast.dart';
 import 'package:stacked_services/stacked_services.dart';
 import 'package:for_u_partners/services/pickers_service.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart'
-    show
-        GoogleMapController,
-        LatLng,
-        Marker,
-        CameraPosition,
-        Polyline,
-        PolylinePoints,
-        BitmapDescriptor,
-        MarkerId,
-        InfoWindow,
-        CameraUpdate,
-        LatLngBounds;
+    show GoogleMapController, LatLng, Marker, CameraPosition, Polyline, PolylinePoints, BitmapDescriptor, MarkerId, InfoWindow, CameraUpdate, LatLngBounds, PolylineId;
 import 'package:flutter_polyline_points/flutter_polyline_points.dart';
 import 'package:for_u_partners/services/sharedpreferences_service.dart';
 import 'package:for_u_partners/app/models/ramasseur_models/ramasseur_demand_model.dart';
@@ -61,6 +53,9 @@ class CoursesDeliveryViewModel extends FormViewModel {
   // Polylines pour les trajets
   final Set<Polyline> _polylines = <Polyline>{};
   Set<Polyline> get polylines => _polylines;
+  
+  // Clé API Google Maps
+  static const String _googleApiKey = 'AIzaSyAVtrvygnbsdnL6VMEJS_DB0JfEa0piHqM';
 
   final Completer<GoogleMapController> controller = Completer();
   CameraPosition? initialPosition;
@@ -80,6 +75,53 @@ class CoursesDeliveryViewModel extends FormViewModel {
     _mapController?.animateCamera(
       CameraUpdate.newLatLngZoom(position, _mapZoom),
     );
+  }
+
+  // Méthode pour obtenir l'itinéraire entre deux points
+  Future<void> _getRouteBetweenPoints(LatLng origin, LatLng destination) async {
+    try {
+      final url = Uri.parse(
+        'https://maps.googleapis.com/maps/api/directions/json?'
+        'origin=${origin.latitude},${origin.longitude}'
+        '&destination=${destination.latitude},${destination.longitude}'
+        '&key=$_googleApiKey',
+      );
+
+      final response = await http.get(url);
+      final data = jsonDecode(response.body);
+      
+      if (data['status'] == 'OK') {
+        // Effacer les anciennes polylignes
+        _polylines.clear();
+        
+        // Extraire les points de l'itinéraire
+        final points = data['routes'][0]['overview_polyline']['points'];
+        
+        // Décoder les points en coordonnées LatLng
+        final List<LatLng> routeCoords = [];
+        final polylinePoints = PolylinePoints(apiKey: 'AIzaSyAVtrvygnbsdnL6VMEJS_DB0JfEa0piHqM');
+        final List<PointLatLng> result = PolylinePoints.decodePolyline(points);
+            
+        for (var point in result) {
+          routeCoords.add(LatLng(point.latitude, point.longitude));
+        }
+        
+        // Créer la polyligne
+        final String polylineId = 'polyline_${origin.latitude}_${origin.longitude}';
+        _polylines.add(
+          Polyline(
+            polylineId: PolylineId(polylineId),
+            color: primaryColor,
+            width: 5,
+            points: routeCoords,
+          ),
+        );
+        
+        notifyListeners();
+      }
+    } catch (e) {
+      print('Erreur lors de la récupération de l\'itinéraire: $e');
+    }
   }
 
   // Méthode utilitaire pour centrer la carte sur les marqueurs avec un bon zoom
@@ -374,8 +416,11 @@ class CoursesDeliveryViewModel extends FormViewModel {
             ),
           );
 
+          // Ajouter la polyligne entre la position actuelle et le point de ramassage
+          await _getRouteBetweenPoints(currentLatLng, ramassage_point!);
+          
           // Centrer la carte sur les marqueurs
-          _fitToMarkers();
+          await _fitToMarkers();
         }
       }
 
