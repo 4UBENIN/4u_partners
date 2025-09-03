@@ -26,6 +26,7 @@ class DriverService {
           'Authorization': 'Bearer $token',
         },
       );
+      print("accept-course-response: ${response.body}");
 
       if (response.statusCode == 200) {
         // La course a été acceptée avec succès

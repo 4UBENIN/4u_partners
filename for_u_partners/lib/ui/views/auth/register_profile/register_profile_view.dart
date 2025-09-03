@@ -612,10 +612,22 @@ class RegisterProfileView extends StackedView<RegisterProfileViewModel>
                           const SizedBox(height: 20),
 
                           //* Nombre de places
-                          TextInputField(
-                            bigLabel: "Nombre de places",
-                            hintText: "Ex: 5",
-                            controller: driverCarPlacesInputController,
+                          Builder(
+                            builder: (context) {
+                              // Set the seat number based on vehicle type
+                              if (viewModel.selectedVehicle == 'moto') {
+                                driverCarPlacesInputController.text = '1';
+                              } else if (viewModel.selectedVehicle == 'tricycle') {
+                                driverCarPlacesInputController.text = '3';
+                              }
+                              
+                              return TextInputField(
+                                bigLabel: "Nombre de places",
+                                hintText: viewModel.getSeatNumberHint(),
+                                controller: driverCarPlacesInputController,
+                                enabled: viewModel.isSeatNumberEditable(),
+                              );
+                            },
                           ),
                           const SizedBox(height: 20),
 
@@ -687,10 +699,22 @@ class RegisterProfileView extends StackedView<RegisterProfileViewModel>
                           const SizedBox(height: 20),
 
                           //* Nombre de places
-                          TextInputField(
-                            bigLabel: "Nombre de places",
-                            hintText: "Ex: 5",
-                            controller: driverCarPlacesInputController,
+                          Builder(
+                            builder: (context) {
+                              // Set the seat number based on vehicle type
+                              if (viewModel.selectedVehicle == 'moto') {
+                                driverCarPlacesInputController.text = '1';
+                              } else if (viewModel.selectedVehicle == 'tricycle') {
+                                driverCarPlacesInputController.text = '3';
+                              }
+                              
+                              return TextInputField(
+                                bigLabel: "Nombre de places",
+                                hintText: viewModel.getSeatNumberHint(),
+                                controller: driverCarPlacesInputController,
+                                enabled: viewModel.isSeatNumberEditable(),
+                              );
+                            },
                           ),
                           const SizedBox(height: 20),
 
@@ -897,10 +921,22 @@ class RegisterProfileView extends StackedView<RegisterProfileViewModel>
                           const SizedBox(height: 20),
 
                           //* Nombre de places
-                          TextInputField(
-                            bigLabel: "Nombre de places",
-                            hintText: "Ex: 5",
-                            controller: driverCarPlacesInputController,
+                          Builder(
+                            builder: (context) {
+                              // Set the seat number based on vehicle type
+                              if (viewModel.selectedVehicle == 'moto') {
+                                driverCarPlacesInputController.text = '1';
+                              } else if (viewModel.selectedVehicle == 'tricycle') {
+                                driverCarPlacesInputController.text = '3';
+                              }
+                              
+                              return TextInputField(
+                                bigLabel: "Nombre de places",
+                                hintText: viewModel.getSeatNumberHint(),
+                                controller: driverCarPlacesInputController,
+                                enabled: viewModel.isSeatNumberEditable(),
+                              );
+                            },
                           ),
                           const SizedBox(height: 20),
 
@@ -972,10 +1008,22 @@ class RegisterProfileView extends StackedView<RegisterProfileViewModel>
                           const SizedBox(height: 20),
 
                           //* Nombre de places
-                          TextInputField(
-                            bigLabel: "Nombre de places",
-                            hintText: "Ex: 5",
-                            controller: driverCarPlacesInputController,
+                          Builder(
+                            builder: (context) {
+                              // Set the seat number based on vehicle type
+                              if (viewModel.selectedVehicle == 'moto') {
+                                driverCarPlacesInputController.text = '1';
+                              } else if (viewModel.selectedVehicle == 'tricycle') {
+                                driverCarPlacesInputController.text = '3';
+                              }
+                              
+                              return TextInputField(
+                                bigLabel: "Nombre de places",
+                                hintText: viewModel.getSeatNumberHint(),
+                                controller: driverCarPlacesInputController,
+                                enabled: viewModel.isSeatNumberEditable(),
+                              );
+                            },
                           ),
                           const SizedBox(height: 20),
 

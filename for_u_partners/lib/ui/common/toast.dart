@@ -182,6 +182,7 @@ class _ToastOverlayState extends State<_ToastOverlay>
                   vertical: 12,
                 ),
                 child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Container(
                       padding: const EdgeInsets.all(8),
@@ -199,13 +200,22 @@ class _ToastOverlayState extends State<_ToastOverlay>
                     ),
                     const SizedBox(width: 12),
                     Expanded(
-                      child: Text(
-                        widget.message,
-                        style: TextStyle(
-                          color: widget.colors['text'],
-                          fontSize: 14,
-                          fontWeight: FontWeight.w500,
-                        ),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        mainAxisSize: MainAxisSize.min,
+                        children: widget.message.split('\n').map((line) => 
+                          Padding(
+                            padding: const EdgeInsets.symmetric(vertical: 2.0),
+                            child: Text(
+                              line,
+                              style: TextStyle(
+                                color: widget.colors['text'],
+                                fontSize: 14,
+                                fontWeight: FontWeight.w500,
+                              ),
+                            ),
+                          )
+                        ).toList(),
                       ),
                     ),
                     GestureDetector(

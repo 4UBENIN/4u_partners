@@ -7,6 +7,7 @@ import 'package:for_u_partners/ui/common/toast.dart';
 import 'package:stacked/stacked.dart';
 import 'package:flutter/material.dart';
 import 'package:geolocator/geolocator.dart';
+import 'package:url_launcher/url_launcher.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:for_u_partners/ui/common/enum/bottom_enum.dart';
 import 'package:for_u_partners/ui/views/drivers/courses/model/client_model.dart';
@@ -149,48 +150,71 @@ class CoursesViewModel extends BaseViewModel {
 
       // Nettoyer d'abord les notifications expirées
       await CourseNotificationStorage.cleanExpiredNotifications(
-        maxAge: const Duration(minutes: 1), // Réduit à 1 minute
+        maxAge: const Duration(minutes: 15), // Augmenté à 15 minutes
       );
 
-      // Récupérer uniquement les notifications valides des dernières minutes
+      // Récupérer uniquement les notifications valides
       final storedNotifications =
           await CourseNotificationStorage.getValidNotifications(
-        maxAge: const Duration(minutes: 1), // Réduit à 1 minute
+        maxAge: const Duration(minutes: 15), // Augmenté à 15 minutes
       );
 
       print(
           '📱 ${storedNotifications.length} notifications trouvées en storage');
 
-      // Convertir les notifications en ClientData
-      for (final notification in storedNotifications) {
-        final clientData = notification.toClientData();
-
-        // Vérifier si pas déjà dans la liste (éviter doublons)
-        final existingIndex = _availableCourses.indexWhere(
-          (course) => course.courseId == notification.courseId,
-        );
-
-        if (existingIndex == -1) {
-          _availableCourses.add(clientData);
-          print('✅ Course chargée depuis storage: ${clientData.name}');
+      // Vérifier si des notifications ont été supprimées
+      if (storedNotifications.isEmpty) {
+        // Si aucune notification valide, vider complètement la liste
+        if (_availableCourses.isNotEmpty) {
+          _availableCourses.clear();
           _updatePendingCoursesCount();
+          print('🧹 Aucune notification valide, liste des courses vidée');
         }
+      } else {
+        // Convertir les notifications en ClientData
+        final validCourseIds = <String>[];
+        
+        for (final notification in storedNotifications) {
+          final clientData = notification.toClientData();
+          validCourseIds.add(notification.courseId);
+
+          // Vérifier si pas déjà dans la liste (éviter doublons)
+          final existingIndex = _availableCourses.indexWhere(
+            (course) => course.courseId == notification.courseId,
+          );
+
+          if (existingIndex == -1) {
+            _availableCourses.add(clientData);
+            print('✅ Course chargée depuis storage: ${clientData.name}');
+          } else {
+            // Mettre à jour la course existante
+            _availableCourses[existingIndex] = clientData;
+            print('🔄 Course mise à jour depuis storage: ${clientData.name}');
+          }
+        }
+
+        // Supprimer les courses qui ne sont plus dans le stockage
+        _availableCourses.removeWhere((course) => 
+          course.courseId != null && 
+          !validCourseIds.contains(course.courseId));
+
+        // Trier par courseId (plus récent en premier)
+        _availableCourses.sort((a, b) => 
+          b.courseId!.compareTo(a.courseId!));
+
+        // Mettre à jour le compteur de courses en attente
+        _updatePendingCoursesCount();
       }
-
-      // Trier par timestamp (plus récent en premier) - si tu as besoin
-      _availableCourses.sort((a, b) {
-        // Supposant que tu ajoutes un timestamp à ClientData aussi
-        // Sinon, tu peux trier par courseId ou autre critère
-        return b.courseId!.compareTo(a.courseId!);
-      });
-
-      // Mettre à jour le compteur de courses en attente
-      _updatePendingCoursesCount();
 
       _isLoadingCourses = false;
       notifyListeners();
 
       print('✅ ${_availableCourses.length} courses chargées au total');
+      
+      // Si aucune course disponible, cacher le bottom sheet
+      if (_availableCourses.isEmpty) {
+        hideBottomSheet();
+      }
     } catch (e) {
       print('❌ Erreur chargement notifications stockées: $e');
       _isLoadingCourses = false;
@@ -212,16 +236,29 @@ class CoursesViewModel extends BaseViewModel {
     }
   }
 
-  void onMapCreated(GoogleMapController controller) {
-    _mapController = controller;
-    if (_currentPosition != null) {
-      _moveToPosition(
-          LatLng(_currentPosition!.latitude, _currentPosition!.longitude));
+  Future<void> onMapCreated(GoogleMapController controller) async {
+    try {
+      _mapController = controller;
+      if (_currentPosition != null) {
+        await _moveToPosition(
+          LatLng(_currentPosition!.latitude, _currentPosition!.longitude),
+        );
+      }
+      // Forcer un rafraîchissement de l'affichage
+      notifyListeners();
+    } catch (e) {
+      print('Erreur dans onMapCreated: $e');
+      // En cas d'erreur, on réessaie d'initialiser la carte après un court délai
+      await Future.delayed(const Duration(milliseconds: 500));
+      if (_mapController != null) {
+        await onMapCreated(_mapController!);
+      }
     }
   }
 
   Future<void> _getCurrentLocation() async {
     try {
+      print("getCurrentLocation appelé");
       _isLoadingLocation = true;
       notifyListeners();
 
@@ -256,7 +293,7 @@ class CoursesViewModel extends BaseViewModel {
           LatLng(_currentPosition!.latitude, _currentPosition!.longitude);
 
       if (_mapController != null) {
-        _moveToPosition(_mapCenter);
+        await _moveToPosition(_mapCenter);
       }
 
       _addUserLocationMarker();
@@ -270,10 +307,38 @@ class CoursesViewModel extends BaseViewModel {
     }
   }
 
-  void _moveToPosition(LatLng position) {
-    _mapController?.animateCamera(
-      CameraUpdate.newLatLngZoom(position, _mapZoom),
-    );
+  Future<void> _moveToPosition(LatLng position) async {
+    try {
+      if (_mapController == null) {
+        print('Erreur: _mapController est null dans _moveToPosition');
+        return;
+      }
+
+      // Vérifier si la position est valide
+      if (position.latitude < -90 ||
+          position.latitude > 90 ||
+          position.longitude < -180 ||
+          position.longitude > 180) {
+        print('Position invalide: $position');
+        return;
+      }
+
+      // Utiliser un try-catch pour capturer les erreurs potentielles
+      await _mapController!.animateCamera(
+        CameraUpdate.newLatLngZoom(position, _mapZoom),
+      );
+
+      // Mettre à jour le centre de la carte
+      _mapCenter = position;
+      notifyListeners();
+    } catch (e) {
+      print('Erreur dans _moveToPosition: $e');
+      // En cas d'erreur, on réessaie après un court délai
+      await Future.delayed(const Duration(milliseconds: 300));
+      if (_mapController != null) {
+        _moveToPosition(position);
+      }
+    }
   }
 
   void _addUserLocationMarker() {
@@ -412,7 +477,7 @@ class CoursesViewModel extends BaseViewModel {
 
   Future<void> recenterOnUserLocation() async {
     if (_currentPosition != null && _mapController != null) {
-      _moveToPosition(
+      await _moveToPosition(
           LatLng(_currentPosition!.latitude, _currentPosition!.longitude));
     } else {
       await _getCurrentLocation();
@@ -440,10 +505,10 @@ class CoursesViewModel extends BaseViewModel {
     notifyListeners();
   }
 
-  void changeMapCenter(LatLng newCenter) {
+  Future<void> changeMapCenter(LatLng newCenter) async {
     _mapCenter = newCenter;
     if (_mapController != null) {
-      _moveToPosition(newCenter);
+      await _moveToPosition(newCenter);
     }
     notifyListeners();
   }
@@ -478,10 +543,7 @@ class CoursesViewModel extends BaseViewModel {
         courseId: courseId,
       );
 
-      // Afficher la notification d'attente de confirmation
-      await LocalNotificationService.showWaitingForClientConfirmation(
-        courseId: courseId,
-      );
+     
 
       // Tracer la polyligne jusqu'au point de départ
       if (_currentPosition != null &&
@@ -749,6 +811,58 @@ class CoursesViewModel extends BaseViewModel {
       // Ajouter d'autres cas selon les besoins
     }
   }
+
+String buildGoogleMapsUrlFlexible({
+  double? originLat,
+  double? originLng,
+  String? originAddress,
+  required String destAddress,
+  String travelMode = "driving",
+}) {
+  // Détermine l'origine : adresse ou coordonnées
+  final String origin = originAddress != null
+      ? Uri.encodeComponent(originAddress)
+      : (originLat != null && originLng != null
+          ? "$originLat,$originLng"
+          : throw ArgumentError("Il faut soit originAddress, soit originLat+originLng"));
+
+  // Encode la destination
+  final String encodedDestination = Uri.encodeComponent(destAddress);
+
+  return "https://www.google.com/maps/dir/?api=1"
+      "&origin=$origin"
+      "&destination=$encodedDestination"
+      "&travelmode=$travelMode";
+}
+
+Future<void> redirectPickupToGoogleMaps() async {
+  try {
+    final Uri uri = Uri.parse(buildGoogleMapsUrlFlexible(
+      originLat: _currentPosition!.latitude,
+      originLng: _currentPosition!.longitude,
+      destAddress: _currentCourse!.adresseDepart!,
+    ));
+
+    await launchUrl(uri, mode: LaunchMode.externalApplication);
+  } catch (e) {
+    throw "❌ Impossible d’ouvrir Google Maps: $e";
+  }
+}
+
+Future<void> redirectDestinationToGoogleMaps() async {
+  try {
+    final Uri uri = Uri.parse(buildGoogleMapsUrlFlexible(
+      originAddress: _currentCourse!.adresseDepart,
+      destAddress: _currentCourse!.destination,
+    ));
+
+    await launchUrl(uri, mode: LaunchMode.externalApplication);
+  } catch (e) {
+    throw "❌ Impossible d’ouvrir Google Maps: $e";
+  }
+}
+
+
 
   // Tracer la route jusqu'au point de ramassage
   Future<void> _drawRouteToPickup() async {
@@ -1071,16 +1185,20 @@ class CoursesViewModel extends BaseViewModel {
     if (_currentCourse != null) {
       try {
         setBusy(true);
+        final courseId = _currentCourse!.courseId!;
 
         // Appeler l'API pour terminer la course
-        final result = await driverservice
-            .completeCourse(int.parse(_currentCourse!.courseId!));
+        final result = await driverservice.completeCourse(int.parse(courseId));
 
         // Afficher la notification de fin de course
         await LocalNotificationService.showCourseFinishedNotification(
-          courseId: _currentCourse!.courseId!,
+          courseId: courseId,
           amount: _currentCourse!.prix!,
         );
+
+        // Supprimer la course du cache
+        await CourseNotificationStorage.removeNotification(courseId);
+        print('🗑️ Course supprimée du cache: $courseId');
 
         // Sauvegarder l'état de la course comme terminée
         await _saveRideState('completed');
@@ -1102,16 +1220,21 @@ class CoursesViewModel extends BaseViewModel {
     if (_currentCourse != null) {
       try {
         setBusy(true);
+        final courseId = _currentCourse!.courseId!;
 
         // Appeler l'API pour annuler la course
         await driverservice.rejectCourse(
-          int.parse(_currentCourse!.courseId!),
+          int.parse(courseId),
         );
 
         // Afficher la notification d'annulation
         await LocalNotificationService.showCourseAbortedNotification(
-          courseId: _currentCourse!.courseId!,
+          courseId: courseId,
         );
+
+        // Supprimer la course du cache
+        await CourseNotificationStorage.removeNotification(courseId);
+        print('🗑️ Course rejetée supprimée du cache: $courseId');
 
         // Sauvegarder l'état de la course comme rejetée
         await _saveRideState('rejected');
@@ -1130,6 +1253,9 @@ class CoursesViewModel extends BaseViewModel {
 
   // ✨ Réinitialiser l'état de la course
   Future<void> _resetCourseState() async {
+    // Sauvegarder l'ID de la course avant de la supprimer
+    final currentCourseId = _currentCourse?.courseId;
+    
     _currentCourse = null;
     _isGoingToPickup = false;
     _isOnTrip = false;
@@ -1153,6 +1279,12 @@ class CoursesViewModel extends BaseViewModel {
 
     // Réinitialiser l'état de la course dans le stockage
     await RidePersistenceService.clearRideState();
+    
+    // Supprimer la course du cache si elle existe
+    if (currentCourseId != null) {
+      await CourseNotificationStorage.removeNotification(currentCourseId);
+      print('🗑️ Course supprimée du cache lors de la réinitialisation: $currentCourseId');
+    }
   }
 
   @override

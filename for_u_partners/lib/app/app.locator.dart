@@ -18,6 +18,7 @@ import '../services/pickers_service.dart';
 import '../services/pressing_service.dart';
 import '../services/sharedpreferences_service.dart';
 import '../services/wallet_service.dart';
+import '../ui/views/drivers/homemain/homemain_viewmodel.dart';
 
 final locator = StackedLocator.instance;
 
@@ -40,4 +41,5 @@ Future<void> setupLocator({
   locator.registerLazySingleton(() => WalletService());
   locator.registerLazySingleton(() => ChatService());
   locator.registerLazySingleton(() => PickersService());
+  locator.registerLazySingleton(() => HomemainViewModel());
 }

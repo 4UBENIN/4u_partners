@@ -20,7 +20,7 @@ class DeliveryHomeViewModel extends BaseViewModel {
   String? _errorMessage;
   String? get errorMessage => _errorMessage;
 
-  bool _hasCurrentDemand = false;
+  final bool _hasCurrentDemand = false;
   bool get hasCurrentDemand => _hasCurrentDemand;
 
   DeliveryHomeViewModel() {

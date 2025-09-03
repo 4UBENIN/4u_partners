@@ -200,7 +200,7 @@ class ActivityWidget extends StatelessWidget {
               shape: BoxShape.circle,
             ),
             child: const Icon(
-              Icons.directions_car_filled_outlined,
+              Icons.history,
               size: 48,
               color: kcPrimaryColor,
             ),

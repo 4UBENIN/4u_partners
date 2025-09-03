@@ -59,7 +59,7 @@ class CoursesDeliveryView extends StackedView<CoursesDeliveryViewModel>
   }
 
   Widget _buildMapContainer(CoursesDeliveryViewModel viewModel) {
-    return Container(
+    return SizedBox(
       width: double.infinity,
       height: double.infinity,
       child: viewModel.isMapReady
@@ -82,7 +82,7 @@ class CoursesDeliveryView extends StackedView<CoursesDeliveryViewModel>
               tiltGesturesEnabled: true,
               zoomGesturesEnabled: true,
               scrollGesturesEnabled: true,
-              minMaxZoomPreference: MinMaxZoomPreference(0, 20),
+              minMaxZoomPreference: const MinMaxZoomPreference(0, 20),
             )
           : Container(
               color: const Color(0xFFF8FAFE),
@@ -846,7 +846,7 @@ class CoursesDeliveryView extends StackedView<CoursesDeliveryViewModel>
                                 const SizedBox(width: 6),
                                 Text(
                                   'Livraison à ${viewModel.acceptedDemande?.nomPressing ?? 'Non spécifié'} en cours',
-                                  style: TextStyle(
+                                  style: const TextStyle(
                                     fontSize: 12,
                                     color: Colors.green,
                                     fontWeight: FontWeight.w600,
@@ -1335,9 +1335,9 @@ class CoursesDeliveryView extends StackedView<CoursesDeliveryViewModel>
 
   // Widget affiché lorsqu'il n'y a pas de demandes disponibles
   Widget _buildEmptyDemandesState() {
-    return Center(
+    return const Center(
       child: Padding(
-        padding: const EdgeInsets.all(20.0),
+        padding: EdgeInsets.all(20.0),
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [

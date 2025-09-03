@@ -1,5 +1,4 @@
 import 'package:for_u_partners/ui/common/text_component.dart';
-import 'package:for_u_partners/ui/views/delivery/delivery_home/widgets/current_ride_widget.dart';
 import 'package:for_u_partners/ui/views/pressing/widgets/animated_dot.dart';
 import 'package:stacked/stacked.dart';
 import 'delivery_home_viewmodel.dart';
@@ -150,22 +149,22 @@ class _TabBarContent extends StatelessWidget {
         children: [
           //* Tab LIVRAISON
           viewModel.userRole == "ramasseur"
-              ? Center(
+              ? const Center(
                   child: TextComponent("Aucune demandes de livraison"),
                 )
-              : Column(
+              : const Column(
                   children: [],
                 ),
 
           //* Tab RAMASSAGE
           viewModel.userRole == "livreur"
-              ? Center(
+              ? const Center(
                   child: TextComponent("Aucune demandes de ramassage"),
                 )
-              : Column(
+              : const Column(
                   mainAxisAlignment: MainAxisAlignment.start,
                   children: [
-                    const SizedBox(height: 24),
+                    SizedBox(height: 24),
                   ],
                 ),
         ],

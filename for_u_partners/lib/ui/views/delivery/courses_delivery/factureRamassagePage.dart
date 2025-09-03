@@ -177,9 +177,9 @@ class FactureRamassagePage extends StatelessWidget {
                                     ),
                                   ),
                                 ),
-                                child: Row(
+                                child: const Row(
                                   children: [
-                                    const Expanded(
+                                    Expanded(
                                       flex: 3,
                                       child: Text(
                                         'Description',
@@ -190,7 +190,7 @@ class FactureRamassagePage extends StatelessWidget {
                                         ),
                                       ),
                                     ),
-                                    const Expanded(
+                                    Expanded(
                                       child: Text(
                                         'Qté',
                                         style: TextStyle(
@@ -201,7 +201,7 @@ class FactureRamassagePage extends StatelessWidget {
                                         textAlign: TextAlign.center,
                                       ),
                                     ),
-                                    const Expanded(
+                                    Expanded(
                                       child: Text(
                                         'P.U.',
                                         style: TextStyle(
@@ -212,7 +212,7 @@ class FactureRamassagePage extends StatelessWidget {
                                         textAlign: TextAlign.center,
                                       ),
                                     ),
-                                    const Expanded(
+                                    Expanded(
                                       child: Text(
                                         'Total',
                                         style: TextStyle(

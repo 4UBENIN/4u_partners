@@ -4,6 +4,7 @@ import 'package:for_u_partners/ui/common/app_colors.dart';
 import 'package:for_u_partners/services/driver_service.dart';
 import 'package:for_u_partners/ui/views/drivers/courses/courses_viewmodel.dart';
 import 'package:intl/intl.dart';
+import 'package:loading_animation_widget/loading_animation_widget.dart';
 
 class RecapitulatifCoursePage extends StatefulWidget {
   final int courseId;
@@ -76,13 +77,16 @@ class _RecapitulatifCoursePageState extends State<RecapitulatifCoursePage> {
         future: _factureFuture,
         builder: (context, snapshot) {
           if (snapshot.connectionState == ConnectionState.waiting) {
-            return const Center(
+            return  Center(
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  CircularProgressIndicator(),
-                  SizedBox(height: 16),
-                  Text(
+                 LoadingAnimationWidget.fourRotatingDots(
+                        color: kcPrimaryColor,
+                        size: 60,
+                      ),
+                  const SizedBox(height: 16),
+                  const Text(
                     'Finalisation de la course...',
                     style: TextStyle(
                       fontSize: 16,

@@ -27,7 +27,7 @@ class ActivitiesDeliveryViewModel extends BaseViewModel {
       // Appeler le service pour récupérer les demandes
       final response = await pickerService.getActivityList();
 
-      if (response != null && response.demandes != null) {
+      if (response.demandes != null) {
         activities.clear();
         activities.addAll(response.demandes!);
 

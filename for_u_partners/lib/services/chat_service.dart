@@ -72,7 +72,7 @@ class ChatService {
         });
       } else {
         // Si la conversation existe déjà mais n'a pas les champs typing, les ajouter
-        final data = conversationDoc.data() as Map<String, dynamic>?;
+        final data = conversationDoc.data();
         if (data != null && !data.containsKey('typingUsers')) {
           await conversationRef.update({
             'typingUsers': <String>[],

@@ -232,8 +232,8 @@ class LocalNotificationService {
         enableVibration: true,
         playSound: true,
         styleInformation: BigTextStyleInformation(
-          'Veuillez attendre la confirmation du client avant de commencer le ramassage.',
-          contentTitle: '✅ Course acceptée',
+          'Vous pouvez commencer le ramassage',
+          contentTitle: 'Course acceptée',
           htmlFormatBigText: true,
         ),
       );
@@ -242,13 +242,13 @@ class LocalNotificationService {
         presentAlert: true,
         presentBadge: true,
         presentSound: true,
-        subtitle: 'En attente de confirmation',
+        //subtitle: 'Vous pouvez commencer le ramassage',
       );
 
       await _flutterLocalNotificationsPlugin.show(
         DateTime.now().millisecondsSinceEpoch ~/ 1000,
-        '✅ Course acceptée',
-        'En attente de la confirmation du client',
+        'Course acceptée',
+        'Vous pouvez commencer le ramassage',
         const NotificationDetails(
           android: androidNotificationDetails,
           iOS: iosNotificationDetails,

@@ -5,7 +5,6 @@ import 'package:for_u_partners/app/models/ramasseur_models/facture_ramassage_mod
 import 'package:for_u_partners/app/models/ramasseur_models/ramasseur_demand_detail.dart';
 import 'package:for_u_partners/app/models/ramasseur_models/ramasseur_demand_model.dart';
 import 'package:for_u_partners/services/auth_service.dart';
-import 'package:for_u_partners/ui/common/toast.dart';
 import 'package:http/http.dart' as http;
 import 'package:for_u_partners/app/app.locator.dart';
 import 'package:for_u_partners/services/sharedpreferences_service.dart';
@@ -36,6 +35,7 @@ class PickersService {
 
   //* Récupérer la liste des demandes de ramassage
   Future<RamasseurDemand> getRamassageList() async {
+
     final url = Uri.parse('$baseUrl/conducteur/demandes-ramassage');
 
     final response =
@@ -43,6 +43,8 @@ class PickersService {
 
     if (response.statusCode == 200) {
       final responseData = jsonDecode(response.body);
+      print("RESPONSE : ");
+      print(responseData);
       return RamasseurDemand.fromJson(responseData);
 
       //* Non authentifié
@@ -64,6 +66,8 @@ class PickersService {
 
     if (response.statusCode == 200) {
       final responseData = jsonDecode(response.body);
+      print("RESPONSE : ");
+      print(responseData);
       return RamasseurDemand.fromJson(responseData);
 
       //* Non authentifié

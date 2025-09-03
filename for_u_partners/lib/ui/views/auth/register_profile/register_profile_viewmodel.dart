@@ -1,4 +1,5 @@
 import 'dart:io';
+import 'package:dio/dio.dart';
 import 'package:for_u_partners/app/models/register_model.dart';
 import 'package:for_u_partners/services/auth_service.dart';
 import 'package:for_u_partners/ui/common/toast.dart';
@@ -77,6 +78,21 @@ class RegisterProfileViewModel extends FormViewModel {
     rebuildUi();
   }
 
+  String getSeatNumberHint() {
+    switch (_selectedVehicle) {
+      case 'moto':
+        return '1 (fixé pour une moto)';
+      case 'tricycle':
+        return '3 (fixé pour un tricycle)';
+      default:
+        return 'Ex: 5';
+    }
+  }
+
+  bool isSeatNumberEditable() {
+    return _selectedVehicle != 'moto' && _selectedVehicle != 'tricycle';
+  }
+
   void setWantedVehicle(String value) {
     _wantedVehicle = value;
     rebuildUi();
@@ -101,13 +117,63 @@ class RegisterProfileViewModel extends FormViewModel {
       RegistrationModel model, BuildContext context) async {
     setBusy(true);
     try {
-      CustomToast.showSuccess(context, message: "Inscription reussie");
       await _authService.register(model, context);
-      // Succès - le setBusy(false) sera appelé dans finally
+      // Succès - afficher un message de succès
+      if (context.mounted) {
+        CustomToast.showSuccess(context, message: "Inscription réussie");
+      }
+    } on DioException catch (e) {
+      // Gestion spécifique des erreurs Dio
+      String errorMessage = "Une erreur est survenue lors de l'inscription";
+      
+      // Essayer d'extraire le message d'erreur de la réponse
+      if (e.response?.data is Map) {
+        final responseData = e.response!.data as Map<String, dynamic>;
+        
+        // Si on a des erreurs de validation (comme pour l'année du véhicule)
+        if (responseData['errors'] != null) {
+          final errors = responseData['errors'] as Map<String, dynamic>;
+          final errorMessages = <String>[];
+          
+          // Extraire tous les messages d'erreur
+          errors.forEach((key, value) {
+            if (value is List) {
+              errorMessages.addAll(value.cast<String>());
+            } else if (value is String) {
+              errorMessages.add(value);
+            }
+          });
+          
+          if (errorMessages.isNotEmpty) {
+            errorMessage = errorMessages.join('\n');
+          }
+        } 
+        // Sinon utiliser le message d'erreur principal
+        else if (responseData['message'] != null) {
+          errorMessage = responseData['message'] as String;
+        }
+      } else if (e.message != null) {
+        errorMessage = e.message!;
+      }
+      
+      // Afficher l'erreur à l'utilisateur
+      if (context.mounted) {
+        CustomToast.showError(context, message: errorMessage);
+      }
+      
+      print("Erreur lors de l'inscription: $errorMessage");
+      if (e.response?.data != null) {
+        print("Détails de l'erreur: ${e.response!.data}");
+      }
     } catch (e) {
-      // Gérer l'erreur
-      print("Erreur lors de l'inscription: $e");
-      // Afficher un message d'erreur à l'utilisateur si nécessaire
+      // Gestion des autres types d'erreurs
+      print("Erreur inattendue lors de l'inscription: $e");
+      if (context.mounted) {
+        CustomToast.showError(
+          context, 
+          message: "Une erreur inattendue est survenue: ${e.toString()}"
+        );
+      }
     } finally {
       setBusy(false);
     }

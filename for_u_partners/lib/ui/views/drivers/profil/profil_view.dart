@@ -178,6 +178,8 @@ class ProfilView extends StackedView<ProfilViewModel> {
     );
   }
 
+  
+
   Widget _buildMenuItem({
     required Widget icon,
     required String text,

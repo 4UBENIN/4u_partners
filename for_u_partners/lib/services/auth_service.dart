@@ -394,12 +394,6 @@ class AuthService {
       if (response.statusCode == 201) {
         String registerType = responseJson['type'];
         print("Type: $registerType");
-        CustomToast.showSuccess(context, message: responseJson['message']);
-
-        // Vérification du token
-        if (token == null) {
-          throw Exception("Token manquant dans la réponse du serveur");
-        }
 
         // Gérer statut_validation qui peut être null pour certains types (comme pressing)
         final String? profilStatuts = responseJson['data']['statut_validation'];
@@ -492,17 +486,25 @@ class AuthService {
 
         // Extraire le message d'erreur du serveur
         if (response.data is Map) {
-          if (response.data.containsKey('message')) {
-            errorMessage = response.data['message'];
-          } else if (response.data.containsKey('errors')) {
+          if (response.data['message'] != null) {
+            errorMessage = response.data['message'].toString();
+          } else if (response.data['errors'] != null) {
             // Si c'est des erreurs de validation
             final errors = response.data['errors'] as Map<String, dynamic>;
             if (errors.isNotEmpty) {
-              final firstError = errors.values.first;
-              if (firstError is List && firstError.isNotEmpty) {
-                errorMessage = firstError.first.toString();
-              } else {
-                errorMessage = firstError.toString();
+              // Récupérer toutes les erreurs
+              final allErrors = <String>[];
+              
+              errors.forEach((key, value) {
+                if (value is List) {
+                  allErrors.addAll(value.map((e) => e.toString()));
+                } else if (value != null) {
+                  allErrors.add(value.toString());
+                }
+              });
+              
+              if (allErrors.isNotEmpty) {
+                errorMessage = allErrors.join('\n');
               }
             }
           }

@@ -457,7 +457,7 @@ class _AcceptedClientBottomSheetState extends State<AcceptedClientBottomSheet> {
                               _clientPickedUp = value;
                             });
                           },
-                          activeColor: Colors.white,
+                          activeThumbColor: Colors.white,
                           activeTrackColor: kcPrimaryColor,
                           inactiveThumbColor: Colors.white,
                           inactiveTrackColor: Colors.grey[300],

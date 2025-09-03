@@ -355,7 +355,7 @@ class ActivitiesDeliveryView extends StackedView<ActivitiesDeliveryViewModel> {
                 shape: BoxShape.circle,
               ),
               child: const Icon(
-                Icons.directions_car,
+                Icons.history,
                 color: Color(0xFF94A3B8),
                 size: 20,
               ),

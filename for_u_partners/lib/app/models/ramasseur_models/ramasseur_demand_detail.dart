@@ -173,12 +173,12 @@ class VetementsAuKilo {
   }
 
   Map<String, dynamic> toJson() {
-    final Map<String, dynamic> data = new Map<String, dynamic>();
-    data['detail_id'] = this.detailId;
-    data['libelle'] = this.libelle;
-    data['type_lavage'] = this.typeLavage;
-    data['quantite'] = this.quantite;
-    data['tarif_unitaire'] = this.tarifUnitaire;
+    final Map<String, dynamic> data = <String, dynamic>{};
+    data['detail_id'] = detailId;
+    data['libelle'] = libelle;
+    data['type_lavage'] = typeLavage;
+    data['quantite'] = quantite;
+    data['tarif_unitaire'] = tarifUnitaire;
     return data;
   }
 }
@@ -206,12 +206,12 @@ class VetementsSpeciaux {
   }
 
   Map<String, dynamic> toJson() {
-    final Map<String, dynamic> data = new Map<String, dynamic>();
-    data['detail_id'] = this.detailId;
-    data['libelle'] = this.libelle;
-    data['type_lavage'] = this.typeLavage;
-    data['quantite'] = this.quantite;
-    data['tarif_unitaire'] = this.tarifUnitaire;
+    final Map<String, dynamic> data = <String, dynamic>{};
+    data['detail_id'] = detailId;
+    data['libelle'] = libelle;
+    data['type_lavage'] = typeLavage;
+    data['quantite'] = quantite;
+    data['tarif_unitaire'] = tarifUnitaire;
     return data;
   }
 }

@@ -62,7 +62,7 @@ class CoursesDeliveryViewModel extends FormViewModel {
   LatLng? ramassage_point;
   LatLng? livraison_point;
 
-  double _mapZoom = 15.0;
+  final double _mapZoom = 15.0;
   double get mapZoom => _mapZoom;
 
   final Set<Marker> _markers = <Marker>{};
@@ -390,7 +390,7 @@ class CoursesDeliveryViewModel extends FormViewModel {
       // Appeler le service pour récupérer les demandes
       final response = await pickerService.getRamassageList();
 
-      if (response != null && response.demandes != null) {
+      if (response.demandes != null) {
         _availableDemandes.clear();
         _availableDemandes.addAll(response.demandes!);
 
@@ -508,7 +508,7 @@ class CoursesDeliveryViewModel extends FormViewModel {
 
       print('✅ Flux d\'acceptation terminé avec succès');
       print('📊 État final:');
-      print('   - Type de bottom sheet: ${_currentBottomSheetType}');
+      print('   - Type de bottom sheet: $_currentBottomSheetType');
       print('   - Demande acceptée: ${_acceptedDemande != null}');
       print('   - Demande courante: ${_currentDemande != null}');
 
