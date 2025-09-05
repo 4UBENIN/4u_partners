@@ -1,13 +1,32 @@
+import 'dart:convert';
+
 import 'package:flutter/material.dart';
+import 'package:for_u_partners/app/app.locator.dart';
+import 'package:for_u_partners/services/driver_service.dart';
 import 'package:for_u_partners/ui/common/app_colors.dart';
+import 'package:for_u_partners/ui/common/ui_helpers.dart';
+import 'package:for_u_partners/ui/common/toast.dart';
 
-class WalletWidget extends StatelessWidget {
+class WalletWidget extends StatefulWidget {
   final double balance;
-  final VoidCallback? onAdd;
-  final VoidCallback? onTransfer;
+  
+  const WalletWidget({required this.balance, super.key});
 
-  const WalletWidget(
-      {required this.balance, this.onAdd, this.onTransfer, super.key});
+  @override
+  State<WalletWidget> createState() => _WalletWidgetState();
+}
+
+class _WalletWidgetState extends State<WalletWidget> {
+  final DriverService _driverService = locator<DriverService>();
+  final _formKey = GlobalKey<FormState>();
+  final TextEditingController _amountController = TextEditingController();
+  bool _isLoading = false;
+
+  @override
+  void dispose() {
+    _amountController.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -43,7 +62,7 @@ class WalletWidget extends StatelessWidget {
                 ),
                 const SizedBox(height: 4),
                 Text(
-                  "${balance.toString()} CFA",
+                  "${widget.balance.toStringAsFixed(0)} CFA",
                   style: const TextStyle(
                     fontSize: 20,
                     fontWeight: FontWeight.w600,
@@ -55,16 +74,13 @@ class WalletWidget extends StatelessWidget {
 
             // Section actions (droite)
             Row(
+              mainAxisAlignment: MainAxisAlignment.end,
               children: [
                 _actionButton(
                   icon: Icons.add,
-                  onTap: onAdd,
+                  onTap: _showRechargeBottomSheet,
                 ),
-                const SizedBox(width: 12),
-                _actionButton(
-                  icon: Icons.north,
-                  onTap: onTransfer,
-                ),
+              
               ],
             ),
           ],
@@ -101,4 +117,140 @@ class WalletWidget extends StatelessWidget {
       ),
     );
   }
+
+  void _showRechargeBottomSheet() {
+    _amountController.clear();
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (context) => Padding(
+        padding: EdgeInsets.only(
+          bottom: MediaQuery.of(context).viewInsets.bottom,
+          left: 20,
+          right: 20,
+          top: 20,
+        ),
+        child: Form(
+          key: _formKey,
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Text(
+                'Recharger le portefeuille',
+                style: TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+              const SizedBox(height: 16),
+              TextFormField(
+                controller: _amountController,
+                keyboardType: TextInputType.number,
+                decoration: const InputDecoration(
+                  focusedBorder: OutlineInputBorder(
+                    borderSide: BorderSide(
+                      color: kcPrimaryColor
+                    )
+                  ),
+                  labelText: 'Montant (FCFA)',
+                  labelStyle: TextStyle(
+                    color: kcPrimaryColor
+                  ),
+                  border: OutlineInputBorder(
+
+                  ),
+                  prefixText: 'FCFA ',
+                ),
+                
+                validator: (value) {
+                  if (value == null || value.isEmpty) {
+                    return 'Veuillez entrer un montant';
+                  }
+                  final amount = int.tryParse(value);
+                  if (amount == null) {
+                    return 'Montant invalide';
+                  }
+                  if (amount < 500) {
+                    return 'Le montant minimum est de 500 FCFA';
+                  }
+                  return null;
+                },
+              ),
+              const SizedBox(height: 20),
+              SizedBox(
+                width: double.infinity,
+                child: ElevatedButton(
+                  onPressed: _isLoading ? null : _rechargeWallet,
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: kcPrimaryColor,
+                    padding: const EdgeInsets.symmetric(vertical: 16),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                  ),
+                  child: _isLoading
+                      ? const SizedBox(
+                          width: 20,
+                          height: 20,
+                          child: CircularProgressIndicator(
+                            color: Colors.white,
+                            strokeWidth: 2,
+                          ),
+                        )
+                      : const Text(
+                          'Valider',
+                          style: TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.w600,
+                            color: Colors.white,
+                          ),
+                        ),
+                ),
+              ),
+              const SizedBox(height: 20),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Future<void> _rechargeWallet() async {
+    if (_formKey.currentState?.validate() ?? false) {
+      setState(() => _isLoading = true);
+      try {
+        final amount = int.parse(_amountController.text.trim());
+        print("Amount: $amount");
+        await _driverService.updateWallet(amount, context);
+        if (mounted) {
+          Navigator.pop(context);
+          // Show success message
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Redirection vers le paiement...'),
+              backgroundColor: Colors.green,
+            ),
+          );
+        }
+      } catch (e) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('Erreur: $e'),
+              backgroundColor: Colors.red,
+            ),
+          );
+        }
+      } finally {
+        if (mounted) {
+          setState(() => _isLoading = false);
+        }
+      }
+    }
+  }
 }
+

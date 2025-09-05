@@ -15,46 +15,23 @@ import 'package:for_u_partners/ui/common/text_component.dart';
 class RegisterProfileViewModel extends FormViewModel {
   bool? hasVehicle;
 
-  //* Deliver
+  //* Files
   XFile? deliverCarteGrise;
   XFile? deliverAssurance;
-
-  //* Car
   XFile? driverIdentity;
   XFile? driverCarCarteGrise;
   XFile? driverCarAssurance;
   XFile? driverCarPermis;
   XFile? driverNoCarPermis;
-
-  //* Moto
   XFile? driverMotoCarteGrise;
   XFile? driverMotoAssurance;
-
-  //* Cleaning
   XFile? cleaningIdentity;
 
-  final vehicles = [
-    "moto",
-    "voiture",
-    "tricycle",
-  ];
-
-  final categories = [
-    "standard",
-    "premium",
-    "vip",
-  ];
-
-  final wantedVehicles = [
-    "moto",
-    "voiture",
-    "tricycle",
-  ];
-
-  final genders = [
-    "masculin",
-    "feminin",
-  ];
+  //* Dropdown values
+  final vehicles = ["moto", "voiture", "tricycle"];
+  final categories = ["standard", "premium", "vip"];
+  final wantedVehicles = ["moto", "voiture", "tricycle"];
+  final genders = ["masculin", "feminin"];
 
   String _selectedVehicle = "moto";
   String get selectedVehicle => _selectedVehicle;
@@ -68,16 +45,64 @@ class RegisterProfileViewModel extends FormViewModel {
   String _selectedGender = "masculin";
   String get selectedGender => _selectedGender;
 
+  //* Services
   final _authService = locator<AuthService>();
   final ImagePicker _picker = ImagePicker();
 
-  //* Functions
+  //* Controllers
+  late final TextEditingController _driverCarPlacesController;
+  bool _isInitialized = false;
 
-  void setSelectedVehicle(String value) {
-    _selectedVehicle = value;
-    rebuildUi();
+  void setControllers({
+    required TextEditingController driverCarPlacesController,
+  }) {
+    _driverCarPlacesController = driverCarPlacesController;
+    _isInitialized = true;
   }
 
+  //* Functions
+  void setSelectedVehicle(String value) {
+    if (_selectedVehicle != value) {
+      _selectedVehicle = value;
+      
+      if (!_isInitialized) return;
+      
+      // Schedule the controller update for after the build phase
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (_selectedVehicle == 'moto') {
+          _driverCarPlacesController.text = '1';
+        } else if (_selectedVehicle == 'tricycle') {
+          _driverCarPlacesController.text = '3';
+        } else if (_driverCarPlacesController.text == '1' || _driverCarPlacesController.text == '3') {
+          _driverCarPlacesController.clear();
+        }
+        // Notify listeners after updating the controller
+        notifyListeners();
+      });
+    }
+  }
+
+  void setHasVehicle(bool value) {
+    if (hasVehicle != value) {
+      hasVehicle = value;
+      
+      // Mettre à jour les valeurs après la fin du frame
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (value == false) {
+          _selectedVehicle = "moto";
+          _wantedVehicle = "moto";
+          // Mettre à jour le contrôleur pour la moto
+          if (_isInitialized) {
+            _driverCarPlacesController.text = '1';
+          }
+        }
+        // Notifier les écouteurs après les mises à jour
+        if (_isInitialized) {
+          notifyListeners();
+        }
+      });
+    }
+  }
   String getSeatNumberHint() {
     switch (_selectedVehicle) {
       case 'moto':
@@ -98,11 +123,6 @@ class RegisterProfileViewModel extends FormViewModel {
     rebuildUi();
   }
 
-  void setHasVehicle(bool value) {
-    hasVehicle = value;
-    rebuildUi();
-  }
-
   void setSelectedCategory(String value) {
     _selectedCategory = value;
     rebuildUi();
@@ -118,24 +138,16 @@ class RegisterProfileViewModel extends FormViewModel {
     setBusy(true);
     try {
       await _authService.register(model, context);
-      // Succès - afficher un message de succès
       if (context.mounted) {
         CustomToast.showSuccess(context, message: "Inscription réussie");
       }
     } on DioException catch (e) {
-      // Gestion spécifique des erreurs Dio
       String errorMessage = "Une erreur est survenue lors de l'inscription";
-      
-      // Essayer d'extraire le message d'erreur de la réponse
       if (e.response?.data is Map) {
         final responseData = e.response!.data as Map<String, dynamic>;
-        
-        // Si on a des erreurs de validation (comme pour l'année du véhicule)
         if (responseData['errors'] != null) {
           final errors = responseData['errors'] as Map<String, dynamic>;
           final errorMessages = <String>[];
-          
-          // Extraire tous les messages d'erreur
           errors.forEach((key, value) {
             if (value is List) {
               errorMessages.addAll(value.cast<String>());
@@ -143,36 +155,27 @@ class RegisterProfileViewModel extends FormViewModel {
               errorMessages.add(value);
             }
           });
-          
           if (errorMessages.isNotEmpty) {
             errorMessage = errorMessages.join('\n');
           }
-        } 
-        // Sinon utiliser le message d'erreur principal
-        else if (responseData['message'] != null) {
+        } else if (responseData['message'] != null) {
           errorMessage = responseData['message'] as String;
         }
       } else if (e.message != null) {
         errorMessage = e.message!;
       }
-      
-      // Afficher l'erreur à l'utilisateur
       if (context.mounted) {
         CustomToast.showError(context, message: errorMessage);
       }
-      
       print("Erreur lors de l'inscription: $errorMessage");
       if (e.response?.data != null) {
         print("Détails de l'erreur: ${e.response!.data}");
       }
     } catch (e) {
-      // Gestion des autres types d'erreurs
       print("Erreur inattendue lors de l'inscription: $e");
       if (context.mounted) {
-        CustomToast.showError(
-          context, 
-          message: "Une erreur inattendue est survenue: ${e.toString()}"
-        );
+        CustomToast.showError(context,
+            message: "Une erreur inattendue est survenue: ${e.toString()}");
       }
     } finally {
       setBusy(false);
@@ -181,18 +184,15 @@ class RegisterProfileViewModel extends FormViewModel {
 
   Future<void> _pickImage(void Function(XFile file) onImagePicked) async {
     try {
-      // Demander les permissions nécessaires
       if (Platform.isAndroid) {
         final storagePermission = await Permission.storage.request();
         final photosPermission = await Permission.photos.request();
-
         if (!storagePermission.isGranted && !photosPermission.isGranted) {
           print("Permission refusée");
           return;
         }
       }
 
-      // Afficher un dialog pour choisir la source
       final ImageSource? source = await _showImageSourceDialog();
       if (source == null) return;
 
@@ -238,7 +238,6 @@ class RegisterProfileViewModel extends FormViewModel {
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              // Handle bar élégant
               Container(
                 margin: const EdgeInsets.only(top: 15),
                 height: 5,
@@ -248,7 +247,6 @@ class RegisterProfileViewModel extends FormViewModel {
                   borderRadius: BorderRadius.circular(10),
                 ),
               ),
-
               const SizedBox(height: 25),
               const TextComponent(
                 "Choisissez une source d'image",
@@ -256,13 +254,10 @@ class RegisterProfileViewModel extends FormViewModel {
                 fontweight: FontWeight.bold,
               ),
               const SizedBox(height: 25),
-
-              // ListTiles
               Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 20),
                 child: Column(
                   children: [
-                    // Galerie
                     Container(
                       margin: const EdgeInsets.only(bottom: 12),
                       decoration: BoxDecoration(
@@ -319,8 +314,6 @@ class RegisterProfileViewModel extends FormViewModel {
                             Navigator.of(context).pop(ImageSource.gallery),
                       ),
                     ),
-
-                    // Appareil photo
                     Container(
                       decoration: BoxDecoration(
                         color: Colors.white,
@@ -379,10 +372,7 @@ class RegisterProfileViewModel extends FormViewModel {
                   ],
                 ),
               ),
-
               const SizedBox(height: 25),
-
-              // Bouton Annuler stylisé
               Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 20),
                 child: SizedBox(
@@ -408,7 +398,6 @@ class RegisterProfileViewModel extends FormViewModel {
                   ),
                 ),
               ),
-
               const SizedBox(height: 35),
             ],
           ),
@@ -466,15 +455,13 @@ class RegisterProfileViewModel extends FormViewModel {
                         ),
                       ),
               ),
-              pickedFile != null
-                  ? const SizedBox(height: 10)
-                  : const SizedBox(height: 0),
-              pickedFile != null
-                  ? const TextComponent(
-                      "Cliquez sur l'image pour la remplacer, si besoin",
-                      textcolor: primaryColor,
-                    )
-                  : const TextComponent("")
+              if (pickedFile != null) ...[
+                const SizedBox(height: 10),
+                const TextComponent(
+                  "Cliquez sur l'image pour la remplacer, si besoin",
+                  textcolor: primaryColor,
+                )
+              ]
             ],
           ),
         ),

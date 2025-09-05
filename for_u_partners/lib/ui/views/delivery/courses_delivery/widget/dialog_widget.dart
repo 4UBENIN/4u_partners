@@ -32,21 +32,24 @@ class DeliveryClientPickupDialog extends StatelessWidget {
           children: [
             // Indicateur bleu en haut
             Container(
-              width: 4,
-              height: 4,
-              decoration: const BoxDecoration(
-                color: kcPrimaryColor,
-                shape: BoxShape.circle,
-              ),
-            ),
-            const SizedBox(height: 20),
-
-            // Image du client avec valise
-            Image.asset(
-              'assets/delivery.png', // Remplacez par le chemin de votre image
               width: 120,
               height: 120,
-              fit: BoxFit.cover,
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                  colors: [
+                    kcPrimaryColor.withOpacity(0.8),
+                    kcPrimaryColor,
+                  ],
+                ),
+                shape: BoxShape.circle,
+              ),
+              child: const Icon(
+                Icons.help_outline,
+                size: 60,
+                color: Colors.white,
+              ),
             ),
             const SizedBox(height: 24),
 

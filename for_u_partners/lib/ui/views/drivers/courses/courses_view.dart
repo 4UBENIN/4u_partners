@@ -426,6 +426,7 @@ class CoursesView extends StackedView<CoursesViewModel> {
             key: const ValueKey('pickup'),
             client: pickupCourse,
             clientId: pickupCourse.clientId,
+            courseId: int.tryParse(pickupCourse.courseId!)!,
             onCancelRide: () {
               // Annuler la course acceptée - PAS de WidgetsBinding ici
               if (pickupCourse.hasValidCourseId) {

@@ -1,13 +1,16 @@
 import 'dart:convert';
 import 'package:flutter/foundation.dart';
+import 'package:flutter/material.dart';
 import 'package:for_u_partners/app/app.locator.dart';
 import 'package:for_u_partners/services/sharedpreferences_service.dart';
+import 'package:for_u_partners/ui/common/toast.dart';
 import 'package:http/http.dart' as http;
 import 'package:for_u_partners/app/api_constant.dart';
 import 'package:for_u_partners/app/models/course_model.dart';
 import '../models/daily_stats_model.dart';
 import '../models/global_stats_model.dart';
 import '../models/user_model.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 class DriverService {
   final sharedPreferencesService = locator<SharedpreferencesService>();
@@ -398,4 +401,90 @@ class DriverService {
       throw Exception('Échec du chargement des détails de la course');
     }
   }
+
+  Future<void> notifyClient(int courseId) async {
+    try {
+      final token = await sharedPreferencesService.getToken();
+      if (token == null) {
+        throw Exception('Token non disponible');
+      }
+
+      final url = Uri.parse('$baseUrl/conducteur/courses/$courseId/notif');
+      print('Notification URL: $url');
+
+      final response = await http.patch(
+        url,
+        headers: {
+          'Accept': 'application/json',
+          'Authorization': 'Bearer $token',
+        },
+      );
+
+      print("Notification response status: ${response.statusCode}");
+      print("Notification response body: ${response.body}");
+
+      if (response.statusCode != 200) {
+        final errorData = jsonDecode(response.body);
+        throw Exception(
+            errorData['message'] ?? 'Échec de la notification au client');
+      }
+
+      // If we get here, the notification was successful
+      final responseData = jsonDecode(response.body);
+      print('Notification successful: $responseData');
+    } catch (e) {
+      print('Error in notifyClient: $e');
+      rethrow; // Rethrow to let the caller handle the error
+    }
+  }
+
+  Future<void> updateWallet(int amount, BuildContext context) async {
+  final token = await sharedPreferencesService.getToken();
+  try {
+    print('Sending amount: $amount');
+
+    final response = await http.post(
+      Uri.parse("https://foryou.cilassocies.com/api/wallet_recharge"),
+      headers: {
+        'Accept': 'application/json',
+        'Authorization': 'Bearer $token',
+      },
+      body: {
+        'montant': amount.toString(),
+      },
+      encoding: Encoding.getByName('utf-8'),
+    ).timeout(const Duration(seconds: 30));
+
+    // Log request details
+    if (response.request is http.Request) {
+      final req = response.request as http.Request;
+      print('Request URL: ${req.url}');
+      print('Request Headers: ${req.headers}');
+      print('Request Body: ${req.body}');
+    }
+
+    print('Response status: ${response.statusCode}');
+    print('Response body: ${response.body}');
+
+    if (response.statusCode == 200) {
+      final data = jsonDecode(response.body);
+
+      final String paymentUrl = data['payment_url'];
+      print('Lien de paiement : $paymentUrl');
+
+      final Uri uri = Uri.parse(paymentUrl);
+      if (!await launchUrl(uri, mode: LaunchMode.externalApplication)) {
+        throw Exception("Impossible d'ouvrir le lien: $paymentUrl");
+      }
+    } else {
+      final error = jsonDecode(response.body);
+      final errorMessage = error['message'] ?? 'Échec de la mise à jour';
+      print('Erreur : $errorMessage');
+      throw Exception(errorMessage);
+    }
+  } catch (e) {
+    print('Erreur réseau : $e');
+    throw Exception('Erreur lors de la mise à jour du wallet: $e');
+  }
+}
 }

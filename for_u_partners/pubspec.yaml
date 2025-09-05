@@ -51,8 +51,9 @@ dev_dependencies:
   flutter_launcher_icons: ^0.13.1
   pull_to_refresh: ^2.0.0
   logger: ^2.1.0
-  shimmer: ^2.0.0
+  shimmer: ^3.0.0
   url_launcher: ^6.3.1
+  slider_button: ^2.1.0
 
 flutter_icons:
   android: true

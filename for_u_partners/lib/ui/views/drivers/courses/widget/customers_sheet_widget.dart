@@ -1,7 +1,10 @@
 import 'package:flutter/material.dart';
+import 'package:for_u_partners/app/app.locator.dart';
+import 'package:for_u_partners/services/driver_service.dart';
 import 'package:for_u_partners/ui/common/app_colors.dart';
 import 'package:for_u_partners/ui/views/drivers/courses/model/client_model.dart';
 import 'package:for_u_partners/ui/views/drivers/courses/widget/dialog_widget.dart';
+import 'package:slider_button/slider_button.dart';
 
 class ClientsBottomSheet extends StatelessWidget {
   final List<ClientData> getClientsList;
@@ -221,6 +224,7 @@ class ClientCard extends StatelessWidget {
 class AcceptedClientBottomSheet extends StatefulWidget {
   final ClientData client;
   final String? clientId;
+  final int courseId;
   final Function() onCancelRide;
   final Function() onStartRide;
   final Function() onCallClients;
@@ -234,6 +238,7 @@ class AcceptedClientBottomSheet extends StatefulWidget {
     required this.onCallClients,
     required this.onChatClients,
     this.clientId,
+    required this.courseId,
   }) : super(key: key);
 
   @override
@@ -242,10 +247,13 @@ class AcceptedClientBottomSheet extends StatefulWidget {
 }
 
 class _AcceptedClientBottomSheetState extends State<AcceptedClientBottomSheet> {
-  bool _clientPickedUp = false; // État du toggle switch
+  bool _clientPickedUp = false;
+  bool _isLoading = false; // État du toggle switch
 
   @override
   Widget build(BuildContext context) {
+     final driverservice = locator<DriverService>();
+
     return DraggableScrollableSheet(
       initialChildSize: 0.45,
       minChildSize: 0.25,
@@ -434,35 +442,80 @@ class _AcceptedClientBottomSheetState extends State<AcceptedClientBottomSheet> {
 
                   const SizedBox(height: 30),
 
-                  // Question avec Toggle Switch
-                  Row(
+                  // Question avec Slider Button
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      const Expanded(
-                        child: Text(
-                          'Vous avez déjà récupéré le client ?',
-                          style: TextStyle(
-                            fontSize: 16,
-                            color: Colors.black87,
-                            fontWeight: FontWeight.w500,
-                          ),
+                     
+                      Container(
+                        decoration: BoxDecoration(
+                          color: Colors.grey[200],
+                          borderRadius: BorderRadius.circular(30),
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.black.withOpacity(0.1),
+                              blurRadius: 4,
+                              offset: const Offset(0, 2),
+                            ),
+                          ],
                         ),
-                      ),
-                      const SizedBox(width: 12),
-                      Transform.scale(
-                        scale: 0.9,
-                        child: Switch(
-                          value: _clientPickedUp,
-                          onChanged: (bool value) {
-                            setState(() {
-                              _clientPickedUp = value;
-                            });
+                        child: SliderButton(
+                          width: double.infinity,
+                          height: 60,
+                          buttonSize: 50,
+                          backgroundColor: Colors.grey[200]!,
+                          buttonColor: kcPrimaryColor,
+                          shimmer: true,
+                          //dismissible: false,
+                          label: Center(
+                            child: Text(
+                              'Glissez pour confirmer votre arrivée',
+                              style: TextStyle(
+                                color: Colors.grey[700],
+                                fontWeight: FontWeight.w500,
+                                fontSize: 16,
+                              ),
+                            ),
+                          ),
+                          icon: const Icon(
+                            Icons.double_arrow_rounded,
+                            color: Colors.white,
+                            size: 24,
+                          ),
+                          action: () async {
+                            try {
+                              // Show loading state
+                              setState(() {
+                                _isLoading = true;
+                              });
+                              
+                              // Send notification
+                              await driverservice.notifyClient(widget.courseId);
+                              
+                              // If successful, update UI
+                              if (mounted) {
+                                setState(() {
+                                  _clientPickedUp = true;
+                                  _isLoading = false;
+                                });
+                              }
+                              return true;
+                            } catch (e) {
+                              // Handle error
+                              if (mounted) {
+                                setState(() {
+                                  _isLoading = false;
+                                });
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  SnackBar(
+                                    content: Text('Erreur: ${e.toString()}'),
+                                    backgroundColor: Colors.red,
+                                  ),
+                                );
+                              }
+                              return false;
+                            }
                           },
-                          activeThumbColor: Colors.white,
-                          activeTrackColor: kcPrimaryColor,
-                          inactiveThumbColor: Colors.white,
-                          inactiveTrackColor: Colors.grey[300],
-                          materialTapTargetSize:
-                              MaterialTapTargetSize.shrinkWrap,
                         ),
                       ),
                     ],
