@@ -8,6 +8,7 @@ class SharedpreferencesService {
   static const String _userTypeId = 'user_type_id';
   static const String _userName = 'user_name';
   static const String _profilStatuts = 'profil_statuts';
+  static const String _onlineStatus = 'driver_online_status';
 
   //* USER TOKEN
 
@@ -47,6 +48,18 @@ class SharedpreferencesService {
   Future<void> removeUserType() async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.remove(_userType);
+  }
+
+  // Enregistrer l'état en ligne/hors ligne
+  Future<void> setOnlineStatus(bool isOnline) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setBool(_onlineStatus, isOnline);
+  }
+
+  // Récupérer l'état enregistré
+  Future<bool?> getOnlineStatus() async {
+    final prefs = await SharedPreferences.getInstance();
+    return prefs.getBool(_onlineStatus);
   }
 
   //* Gestion de l'état du bottom sheet

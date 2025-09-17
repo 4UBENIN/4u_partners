@@ -542,8 +542,8 @@ class CoursesView extends StackedView<CoursesViewModel> {
     final homeMainViewModel = locator<HomemainViewModel>();
     final viewModel = CoursesViewModel();
     viewModel.setHomeMainViewModel(homeMainViewModel);
-    // Appeler onModelReady pour restaurer l'état de la course
-    viewModel.onModelReady();
+    // Initialiser le ViewModel
+    viewModel.initializeViewModel();
     return viewModel;
   }
 }

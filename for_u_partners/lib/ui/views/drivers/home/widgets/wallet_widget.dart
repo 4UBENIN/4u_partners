@@ -1,11 +1,8 @@
-import 'dart:convert';
 
 import 'package:flutter/material.dart';
 import 'package:for_u_partners/app/app.locator.dart';
 import 'package:for_u_partners/services/driver_service.dart';
 import 'package:for_u_partners/ui/common/app_colors.dart';
-import 'package:for_u_partners/ui/common/ui_helpers.dart';
-import 'package:for_u_partners/ui/common/toast.dart';
 
 class WalletWidget extends StatefulWidget {
   final double balance;

@@ -39,7 +39,7 @@ class ActivityWidget extends StatelessWidget {
       activities.add(_buildActivityItem(
         '⭐',
         'Nouvelle évaluation',
-        '${evaluations!.first.etoiles} étoiles • "${evaluations!.first.commentaire ?? 'Aucun commentaire'}"',
+        '${evaluations!.first.etoiles} étoiles',
         null,
         const Color(0xFFFFF3E0),
         const Color(0xFFFF9800),

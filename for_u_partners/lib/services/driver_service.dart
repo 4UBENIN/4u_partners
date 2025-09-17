@@ -1,9 +1,7 @@
 import 'dart:convert';
-import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:for_u_partners/app/app.locator.dart';
 import 'package:for_u_partners/services/sharedpreferences_service.dart';
-import 'package:for_u_partners/ui/common/toast.dart';
 import 'package:http/http.dart' as http;
 import 'package:for_u_partners/app/api_constant.dart';
 import 'package:for_u_partners/app/models/course_model.dart';
@@ -12,7 +10,114 @@ import '../models/global_stats_model.dart';
 import '../models/user_model.dart';
 import 'package:url_launcher/url_launcher.dart';
 
+class DriverLocation {
+  final int id;
+  final double latitude;
+  final double longitude;
+  final String? name;
+
+  DriverLocation({
+    required this.id,
+    required this.latitude,
+    required this.longitude,
+    this.name,
+  });
+
+  factory DriverLocation.fromJson(Map<String, dynamic> json) {
+    return DriverLocation(
+      id: json['id'],
+      latitude: (json['latitude'] as num).toDouble(),
+      longitude: (json['longitude'] as num).toDouble(),
+      name: json['utilisateur'] != null 
+          ? '${json['utilisateur']['prenom']} ${json['utilisateur']['nom']}'
+          : null,
+    );
+  }
+}
+
 class DriverService {
+  // URL de l'API pour les conducteurs en ligne
+  static const String onlineDriversUrl = 'https://foryou.cilassocies.com/api/conducteur/en-ligne';
+
+  // Passer en mode en ligne
+  Future<void> goOnline() async {
+    final token = await sharedPreferencesService.getToken();
+    const url = 'https://foryou.cilassocies.com/api/conducteur/online';
+    
+    try {
+      final response = await http.post(
+        Uri.parse(url),
+        headers: {
+          'Accept': 'application/json',
+          'Authorization': 'Bearer $token',
+        },
+      );
+    print("go-online-response: ${response.body}");
+      if (response.statusCode != 200) {
+        throw Exception('Erreur lors du passage en mode en ligne');
+      }
+    } catch (e) {
+      debugPrint('Erreur goOnline: $e');
+      rethrow;
+    }
+  }
+
+  // Passer en mode hors ligne
+  Future<void> goOffline() async {
+    final token = await sharedPreferencesService.getToken();
+    const url = 'https://foryou.cilassocies.com/api/conducteur/offline';
+    
+    try {
+      final response = await http.post(
+        Uri.parse(url),
+        headers: {
+          'Accept': 'application/json',
+          'Authorization': 'Bearer $token',
+        },
+      );
+    print("go-offline-response: ${response.body}");
+      if (response.statusCode != 200) {
+        throw Exception('Erreur lors du passage en mode hors ligne');
+      }
+    } catch (e) {
+      debugPrint('Erreur goOffline: $e');
+      rethrow;
+    }
+  }
+
+  // Récupérer la liste des conducteurs en ligne avec leurs coordonnées
+  Future<List<DriverLocation>> getOnlineDrivers() async {
+    final token = await sharedPreferencesService.getToken();
+    final url = Uri.parse(onlineDriversUrl);
+
+    try {
+      final response = await http.get(
+        url,
+        headers: {
+          'Accept': 'application/json',
+          'Authorization': 'Bearer $token',
+        },
+      );
+
+      if (response.statusCode == 200) {
+        final Map<String, dynamic> data = jsonDecode(response.body);
+        if (data['success'] == true) {
+          final List<dynamic> drivers = data['data'];
+          return drivers
+              .map((driver) => DriverLocation.fromJson(driver))
+              .toList();
+        } else {
+          throw Exception('Erreur lors de la récupération des conducteurs: ${data['message']}');
+        }
+      } else {
+        throw Exception('Erreur serveur: ${response.statusCode}');
+      }
+    } catch (e) {
+      debugPrint('Erreur lors de la récupération des conducteurs en ligne: $e');
+      rethrow;
+    }
+  }
+
   final sharedPreferencesService = locator<SharedpreferencesService>();
 
   // Accepter une course
@@ -439,52 +544,83 @@ class DriverService {
   }
 
   Future<void> updateWallet(int amount, BuildContext context) async {
-  final token = await sharedPreferencesService.getToken();
-  try {
-    print('Sending amount: $amount');
+    final token = await sharedPreferencesService.getToken();
+    try {
+      print('Sending amount: $amount');
 
-    final response = await http.post(
-      Uri.parse("https://foryou.cilassocies.com/api/wallet_recharge"),
-      headers: {
-        'Accept': 'application/json',
-        'Authorization': 'Bearer $token',
-      },
-      body: {
-        'montant': amount.toString(),
-      },
-      encoding: Encoding.getByName('utf-8'),
-    ).timeout(const Duration(seconds: 30));
+      final response = await http
+          .post(
+            Uri.parse("https://foryou.cilassocies.com/api/wallet_recharge"),
+            headers: {
+              'Accept': 'application/json',
+              'Authorization': 'Bearer $token',
+            },
+            body: {
+              'montant': amount.toString(),
+            },
+            encoding: Encoding.getByName('utf-8'),
+          )
+          .timeout(const Duration(seconds: 30));
 
-    // Log request details
-    if (response.request is http.Request) {
-      final req = response.request as http.Request;
-      print('Request URL: ${req.url}');
-      print('Request Headers: ${req.headers}');
-      print('Request Body: ${req.body}');
-    }
-
-    print('Response status: ${response.statusCode}');
-    print('Response body: ${response.body}');
-
-    if (response.statusCode == 200) {
-      final data = jsonDecode(response.body);
-
-      final String paymentUrl = data['payment_url'];
-      print('Lien de paiement : $paymentUrl');
-
-      final Uri uri = Uri.parse(paymentUrl);
-      if (!await launchUrl(uri, mode: LaunchMode.externalApplication)) {
-        throw Exception("Impossible d'ouvrir le lien: $paymentUrl");
+      // Log request details
+      if (response.request is http.Request) {
+        final req = response.request as http.Request;
+        print('Request URL: ${req.url}');
+        print('Request Headers: ${req.headers}');
+        print('Request Body: ${req.body}');
       }
-    } else {
-      final error = jsonDecode(response.body);
-      final errorMessage = error['message'] ?? 'Échec de la mise à jour';
-      print('Erreur : $errorMessage');
-      throw Exception(errorMessage);
+
+      print('Response status: ${response.statusCode}');
+      print('Response body: ${response.body}');
+
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+
+        final String paymentUrl = data['payment_url'];
+        print('Lien de paiement : $paymentUrl');
+
+        final Uri uri = Uri.parse(paymentUrl);
+        if (!await launchUrl(uri, mode: LaunchMode.externalApplication)) {
+          throw Exception("Impossible d'ouvrir le lien: $paymentUrl");
+        }
+      } else {
+        final error = jsonDecode(response.body);
+        final errorMessage = error['message'] ?? 'Échec de la mise à jour';
+        print('Erreur : $errorMessage');
+        throw Exception(errorMessage);
+      }
+    } catch (e) {
+      print('Erreur réseau : $e');
+      throw Exception('Erreur lors de la mise à jour du wallet: $e');
     }
-  } catch (e) {
-    print('Erreur réseau : $e');
-    throw Exception('Erreur lors de la mise à jour du wallet: $e');
   }
-}
+
+  
+  Future<void> postdriverheartbeat(double lat, double long) async {
+    final token = await sharedPreferencesService.getToken();
+    if (token == null) {
+      throw Exception('Token non disponible');
+    }
+    print("post-driver-heartbeat: $lat $long");
+
+    final url = Uri.parse('$baseUrl/api/conducteur/heartbeat');
+    print('Notification URL: $url');
+
+    final response = await http.post(url,
+        headers: {
+          'Accept': 'application/json',
+          'Authorization': 'Bearer $token',
+        },
+        body: jsonEncode(<String, dynamic>{
+          'latitude': lat,
+          'longitude': long,
+        }));
+
+    if (response.statusCode != 200) {
+      final errorData = jsonDecode(response.body);
+      throw Exception(
+          errorData['message'] ?? 'Échec de la notification au client');
+    }
+    print("post-driver-heartbeat-response: ${response.body}");
+  }
 }

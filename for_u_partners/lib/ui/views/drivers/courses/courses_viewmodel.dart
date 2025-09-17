@@ -19,6 +19,8 @@ import 'package:for_u_partners/services/ride/ride_persistence_service.dart';
 import 'package:for_u_partners/ui/views/drivers/homemain/homemain_viewmodel.dart';
 
 class CoursesViewModel extends BaseViewModel {
+  final _driverService = locator<DriverService>();
+  
   GoogleMapController? _mapController;
   GoogleMapController? get mapController => _mapController;
 
@@ -30,6 +32,13 @@ class CoursesViewModel extends BaseViewModel {
 
   final Set<Marker> _markers = <Marker>{};
   Set<Marker> get markers => _markers;
+  
+  // Liste des conducteurs en ligne
+  List<DriverLocation> _onlineDrivers = [];
+  List<DriverLocation> get onlineDrivers => _onlineDrivers;
+  
+  // Timer pour le rafraîchissement des conducteurs en ligne
+  Timer? _driversRefreshTimer;
 
   // Polylines pour les trajets
   final Set<Polyline> _polylines = <Polyline>{};
@@ -66,15 +75,11 @@ class CoursesViewModel extends BaseViewModel {
   // Référence au ViewModel principal
   HomemainViewModel? _homeMainViewModel;
 
-  // Définir la référence au ViewModel principal
-  Future<void> onModelReady() async {
-    await checkAndRestoreRideState();
-    print("currentBottomSheetType: $_currentBottomSheetType");
-  }
 
   void setHomeMainViewModel(HomemainViewModel viewModel) {
     _homeMainViewModel = viewModel;
   }
+
 
   // Mettre à jour le compteur de courses en attente
   void _updatePendingCoursesCount() {
@@ -115,11 +120,11 @@ class CoursesViewModel extends BaseViewModel {
   String? _error;
 
   CoursesViewModel() {
-    _initializeViewModel();
+    initializeViewModel();
   }
 
   // ✨ Initialisation complète du ViewModel
-  Future<void> _initializeViewModel() async {
+  Future<void> initializeViewModel() async {
     // Lancer les tâches en parallèle
     await Future.wait([
       _getCurrentLocation(),
@@ -127,6 +132,9 @@ class CoursesViewModel extends BaseViewModel {
     ]);
 
     _setupCourseListeners();
+    
+    // Démarrer le rafraîchissement des conducteurs en ligne
+    startDriversRefresh();
 
     // Afficher le bottom sheet s'il y a des courses
     print(
@@ -1289,6 +1297,8 @@ Future<void> redirectDestinationToGoogleMaps() async {
 
   @override
   void dispose() {
+    _mapController?.dispose();
+    _driversRefreshTimer?.cancel();
     _newCourseSubscription?.cancel();
     _courseUpdateSubscription?.cancel();
     super.dispose();
@@ -1468,6 +1478,61 @@ Future<void> redirectDestinationToGoogleMaps() async {
 
   // Méthode pour effacer l'état de la course
   Future<void> _clearRideState() async {
+    await RidePersistenceService.clearRideState();
+  }
+
+  // Récupérer les conducteurs en ligne
+  Future<void> fetchOnlineDrivers() async {
+    try {
+      _onlineDrivers = await _driverService.getOnlineDrivers();
+      print("onlineDrivers: $_onlineDrivers");
+      _updateDriverMarkers();
+      notifyListeners();
+    } catch (e) {
+      debugPrint('Erreur lors de la récupération des conducteurs en ligne: $e');
+    }
+  }
+  
+  // Mettre à jour les marqueurs des conducteurs
+  void _updateDriverMarkers() {
+    // Supprimer les anciens marqueurs de conducteurs
+    _markers.removeWhere((marker) => marker.markerId.value.startsWith('driver_'));
+    
+    // Ajouter les nouveaux marqueurs
+    for (var driver in _onlineDrivers) {
+      final markerId = 'driver_${driver.id}';
+      final marker = Marker(
+        markerId: MarkerId(markerId),
+        position: LatLng(driver.latitude, driver.longitude),
+        icon: BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueBlue),
+        infoWindow: InfoWindow(
+          title: 'Conducteur #${driver.id}',
+          snippet: 'Disponible',
+        ),
+      );
+      _markers.add(marker);
+    }
+  }
+  
+  // Démarrer le rafraîchissement périodique des conducteurs
+  void startDriversRefresh() {
+    // Récupérer immédiatement
+    fetchOnlineDrivers();
+    
+    // Puis toutes les 30 secondes
+    _driversRefreshTimer?.cancel();
+    _driversRefreshTimer = Timer.periodic(const Duration(seconds: 30), (timer) {
+      fetchOnlineDrivers();
+    });
+  }
+  
+  // Arrêter le rafraîchissement
+  void stopDriversRefresh() {
+    _driversRefreshTimer?.cancel();
+  }
+
+  // Méthode pour initialiser la position actuelle
+  Future<void> initializeLocation() async {
     await RidePersistenceService.clearRideState();
   }
 }
