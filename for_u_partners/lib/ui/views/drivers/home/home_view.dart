@@ -1,14 +1,13 @@
-import 'package:for_u_partners/ui/views/pressing/widgets/animated_dot.dart';
+import 'package:flutter/material.dart';
+import 'package:stacked/stacked.dart';
 import 'package:loading_animation_widget/loading_animation_widget.dart';
-
+import 'package:for_u_partners/ui/common/app_colors.dart';
+import 'package:for_u_partners/ui/views/drivers/courses/course_view.dart';
 import 'home_viewmodel.dart';
 import 'widgets/wallet_widget.dart';
 import 'widgets/summary_widget.dart';
-import 'package:stacked/stacked.dart';
 import 'widgets/activity_widget.dart';
-import 'package:flutter/material.dart';
 import 'widgets/current_ride_widget.dart';
-import 'package:for_u_partners/ui/common/app_colors.dart';
 
 class HomeView extends StackedView<HomeViewModel> {
   const HomeView({Key? key}) : super(key: key);
@@ -37,18 +36,7 @@ class HomeView extends StackedView<HomeViewModel> {
                     todayEarnings: viewModel.montantGainToday.toString(),
                   ),
                   const SizedBox(height: 24),
-                  if (viewModel.hasActiveRide)
-                    CurrentRideWidget(
-                      clientName: viewModel.activeRideClientName,
-                      destination: viewModel.activeRideDestination,
-                      timeRemaining:
-                          '', // À remplacer par la valeur réelle si disponible
-                      distanceKm: viewModel.activeRideDistance,
-                      onTap: () {
-                        // Navigation vers l'écran de détail de la course
-                      },
-                    ),
-                  if (viewModel.hasActiveRide) const SizedBox(height: 24),
+                  _buildSimpleStartRideButton(context),
                   const Text(
                     'Activité récente',
                     style: TextStyle(
@@ -138,7 +126,10 @@ class HomeView extends StackedView<HomeViewModel> {
                     ),
                     const SizedBox(width: 12),
                     model.isBusy
-                        ? const DotsLoader()
+                        ? LoadingAnimationWidget.threeArchedCircle(
+                            color: primaryColor,
+                            size: 24,
+                          )
                         : Text(
                             model.name!.isNotEmpty == true ? model.name! : '?',
                             style: const TextStyle(
@@ -152,9 +143,12 @@ class HomeView extends StackedView<HomeViewModel> {
                 GestureDetector(
                   onTap: model.isBusy ? null : () => model.toggleOnlineStatus(),
                   child: Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                     decoration: BoxDecoration(
-                      color: model.isOnline ? const Color(0xFF10B981) : Colors.grey,
+                      color: model.isOnline
+                          ? const Color(0xFF10B981)
+                          : Colors.grey,
                       borderRadius: BorderRadius.circular(20),
                       boxShadow: [
                         BoxShadow(
@@ -190,6 +184,41 @@ class HomeView extends StackedView<HomeViewModel> {
                 ),
               ],
             ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  // Bouton pour démarrer une nouvelle course
+  Widget _buildSimpleStartRideButton(BuildContext context) {
+    return Container(
+      width: double.infinity,
+      height: 56,
+      margin: const EdgeInsets.symmetric(vertical: 10),
+      child: ElevatedButton(
+        onPressed: () {
+          // Navigation vers le nouvel écran de réservation
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (context) => const CourseView(),
+            ),
+          );
+        },
+        style: ElevatedButton.styleFrom(
+          backgroundColor: kcPrimaryColor,
+          foregroundColor: Colors.white,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(12),
+          ),
+          elevation: 2,
+        ),
+        child: const Text(
+          'Démarrer une course',
+          style: TextStyle(
+            fontSize: 16,
+            fontWeight: FontWeight.w600,
           ),
         ),
       ),

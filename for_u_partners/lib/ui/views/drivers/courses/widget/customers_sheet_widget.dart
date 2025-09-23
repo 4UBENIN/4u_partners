@@ -252,9 +252,13 @@ class _AcceptedClientBottomSheetState extends State<AcceptedClientBottomSheet>
   bool _clientPickedUp = false;
   bool _isLoading = false; // État du toggle switch
   bool _showTimer = false;
+  bool _arrivalConfirmed =
+      false; // Pour suivre si la confirmation d'arrivée a été faite
   late AnimationController _controller;
   int _countdown = 300; // 5 minutes en secondes
   Timer? _countdownTimer;
+  Timer? _waitingTimer;
+  int _waitingTime = 0; // Track waiting time in seconds
 
   @override
   void initState() {
@@ -269,7 +273,29 @@ class _AcceptedClientBottomSheetState extends State<AcceptedClientBottomSheet>
   void dispose() {
     _controller.dispose();
     _countdownTimer?.cancel();
+    _waitingTimer?.cancel();
     super.dispose();
+  }
+
+  void _startWaitingTimer() {
+    // Annuler le timer existant s'il y en a un
+    _waitingTimer?.cancel();
+
+    // Réinitialiser le temps d'attente
+    setState(() {
+      _waitingTime = 0;
+    });
+
+    // Démarrer un nouveau timer qui s'incrémente chaque seconde
+    _waitingTimer = Timer.periodic(const Duration(seconds: 1), (timer) {
+      if (mounted) {
+        setState(() {
+          _waitingTime++;
+        });
+      } else {
+        timer.cancel();
+      }
+    });
   }
 
   void _startCountdown() {
@@ -285,7 +311,6 @@ class _AcceptedClientBottomSheetState extends State<AcceptedClientBottomSheet>
             _countdown--;
           } else {
             timer.cancel();
-            // Action à effectuer quand le décompte est terminé
           }
         });
       }
@@ -293,66 +318,223 @@ class _AcceptedClientBottomSheetState extends State<AcceptedClientBottomSheet>
   }
 
   Widget _buildTimerWidget() {
-    final minutes = (_countdown ~/ 60).toString().padLeft(2, '0');
-    final seconds = (_countdown % 60).toString().padLeft(2, '0');
+    // SUPPRIMER CES LIGNES - elles écrasent les variables de classe !
+    // int _waitingTime = 0;
+    // Timer? _waitingTimer;
+
+    // Use 0 as default if _waitingTime is null
+    final waitingTime = _waitingTime ?? 0;
+    final hours = (waitingTime ~/ 3600).toString().padLeft(2, '0');
+    final minutes = ((waitingTime % 3600) ~/ 60).toString().padLeft(2, '0');
+    final seconds = (waitingTime % 60).toString().padLeft(2, '0');
+
+    // Calcul du prix d'attente
+    final double waitingPrice = _calculateWaitingPrice();
 
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      padding:
+          const EdgeInsets.all(20), // Réduire le padding pour éviter l'overflow
       decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(30),
+        gradient: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [
+            Colors.white,
+            Colors.grey[50]!,
+          ],
+        ),
+        borderRadius: BorderRadius.circular(20),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.1),
-            blurRadius: 10,
-            offset: const Offset(0, 2),
+            color: Colors.black.withOpacity(0.08),
+            blurRadius: 20,
+            offset: const Offset(0, 4),
+            spreadRadius: 0,
+          ),
+          BoxShadow(
+            color: Colors.black.withOpacity(0.04),
+            blurRadius: 4,
+            offset: const Offset(0, 1),
+            spreadRadius: 0,
           ),
         ],
       ),
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          const Text(
-            'Temps d\'attente estimé',
-            style: TextStyle(
-              fontSize: 16,
-              color: Colors.grey,
-              fontWeight: FontWeight.w500,
-            ),
-          ),
-          const SizedBox(height: 8),
+          // Header avec icône et titre
           Row(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              _buildTimeSegment(minutes, 'MIN'),
-              const Text(
-                ':',
-                style: TextStyle(
-                  fontSize: 40,
-                  fontWeight: FontWeight.bold,
+              Container(
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  color: kcPrimaryColor.withOpacity(0.1),
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                child: const Icon(
+                  Icons.schedule_rounded,
                   color: kcPrimaryColor,
+                  size: 20,
                 ),
               ),
-              _buildTimeSegment(seconds, 'SEC'),
+              const SizedBox(width: 12),
+              Flexible(
+                // Utiliser Flexible pour éviter l'overflow
+                child: Text(
+                  'Temps d\'attente',
+                  style: TextStyle(
+                    fontSize: 18,
+                    color: Colors.grey[700],
+                    fontWeight: FontWeight.w600,
+                    letterSpacing: 0.5,
+                  ),
+                ),
+              ),
             ],
           ),
-          const SizedBox(height: 8),
-          LinearProgressIndicator(
-            value: _countdown / 300,
-            backgroundColor: Colors.grey[200],
-            valueColor: AlwaysStoppedAnimation<Color>(
-              _countdown > 60 ? kcPrimaryColor : Colors.orange,
+
+          const SizedBox(height: 16), // Réduire l'espace
+
+          // Timer principal
+          Container(
+            padding: const EdgeInsets.symmetric(
+                horizontal: 16, vertical: 12), // Réduire le padding
+            decoration: BoxDecoration(
+              color: kcPrimaryColor.withOpacity(0.05),
+              borderRadius: BorderRadius.circular(16),
+              border: Border.all(
+                color: kcPrimaryColor.withOpacity(0.1),
+                width: 1,
+              ),
             ),
-            minHeight: 6,
-            borderRadius: BorderRadius.circular(3),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              mainAxisSize: MainAxisSize.min, // Ajouter pour éviter l'overflow
+              children: [
+                _buildTimeSegment(hours, 'H'),
+                _buildTimeSeparator(),
+                _buildTimeSegment(minutes, 'MIN'),
+                _buildTimeSeparator(),
+                _buildTimeSegment(seconds, 'SEC'),
+              ],
+            ),
           ),
-          const SizedBox(height: 4),
-          Text(
-            _countdown > 60 ? 'En attente du client...' : 'Presque là !',
-            style: TextStyle(
-              color: _countdown > 60 ? Colors.grey[600] : Colors.orange,
-              fontWeight: FontWeight.w500,
+
+          const SizedBox(height: 16), // Réduire l'espace
+
+          // Section prix d'attente
+          Container(
+            width: double.infinity,
+            padding: const EdgeInsets.all(14), // Réduire le padding
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+                colors: [Colors.orange[100]!, Colors.orange[50]!],
+              ),
+              borderRadius: BorderRadius.circular(14),
+              border: Border.all(
+                color: Colors.orange[200]!,
+                width: 1,
+              ),
             ),
+            child: Row(
+              children: [
+                Container(
+                  padding:
+                      const EdgeInsets.all(8), // Réduire le padding de l'icône
+                  decoration: BoxDecoration(
+                    color: Colors.orange,
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                  child: const Icon(
+                    Icons.payments_rounded,
+                    color: Colors.white,
+                    size: 18, // Réduire la taille de l'icône
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'Frais d\'attente',
+                        style: TextStyle(
+                          fontSize: 14,
+                          color: Colors.orange[700],
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                      const SizedBox(height: 2),
+                      Text(
+                        'Facturation dès la première minute',
+                        style: TextStyle(
+                          fontSize:
+                              11, // Réduire la taille pour éviter l'overflow
+                          color: Colors.grey[600],
+                          fontWeight: FontWeight.w400,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                Container(
+                  padding: const EdgeInsets.symmetric(
+                      horizontal: 14, vertical: 6), // Réduire le padding
+                  decoration: BoxDecoration(
+                    color: Colors.orange,
+                    borderRadius: BorderRadius.circular(20),
+                  ),
+                  child: Text(
+                    '+${waitingPrice.toStringAsFixed(0)} FCFA',
+                    style: const TextStyle(
+                      fontSize: 14, // Réduire la taille de police
+                      fontWeight: FontWeight.bold,
+                      color: Colors.white,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+
+          const SizedBox(height: 12), // Réduire l'espace
+
+          // Status indicator
+          Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Container(
+                width: 6, // Réduire la taille
+                height: 6,
+                decoration: BoxDecoration(
+                  color: Colors.orange,
+                  shape: BoxShape.circle,
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.orange.withOpacity(0.4),
+                      blurRadius: 6,
+                      spreadRadius: 1,
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(width: 8),
+              Flexible(
+                // Utiliser Flexible pour éviter l'overflow
+                child: Text(
+                  'Facturation en cours',
+                  style: TextStyle(
+                    color: Colors.orange[700],
+                    fontWeight: FontWeight.w500,
+                    fontSize: 13, // Réduire la taille de police
+                  ),
+                ),
+              ),
+            ],
           ),
         ],
       ),
@@ -360,38 +542,76 @@ class _AcceptedClientBottomSheetState extends State<AcceptedClientBottomSheet>
   }
 
   Widget _buildTimeSegment(String value, String label) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 4),
-      child: Column(
-        children: [
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-            decoration: BoxDecoration(
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Container(
+          padding: const EdgeInsets.symmetric(
+              horizontal: 8, vertical: 6), // Réduire le padding
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(10),
+            border: Border.all(
               color: kcPrimaryColor.withOpacity(0.1),
-              borderRadius: BorderRadius.circular(10),
+              width: 1,
             ),
-            child: Text(
-              value,
-              style: const TextStyle(
-                fontSize: 32,
-                fontWeight: FontWeight.bold,
-                color: kcPrimaryColor,
-                fontFeatures: [FontFeature.tabularFigures()],
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withOpacity(0.04),
+                blurRadius: 4,
+                offset: const Offset(0, 2),
               ),
-            ),
+            ],
           ),
-          const SizedBox(height: 4),
-          Text(
-            label,
+          child: Text(
+            value,
             style: const TextStyle(
-              fontSize: 12,
-              color: Colors.grey,
-              letterSpacing: 1.2,
+              fontSize: 24, // Réduire la taille de police
+              fontWeight: FontWeight.bold,
+              color: kcPrimaryColor,
+              fontFeatures: [FontFeature.tabularFigures()],
+              height: 1.0,
             ),
           ),
-        ],
+        ),
+        const SizedBox(height: 4),
+        Text(
+          label,
+          style: TextStyle(
+            fontSize: 10, // Réduire la taille
+            color: Colors.grey[600],
+            fontWeight: FontWeight.w500,
+            letterSpacing: 0.5,
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildTimeSeparator() {
+    return Padding(
+      padding:
+          const EdgeInsets.symmetric(horizontal: 6), // Réduire l'espacement
+      child: Text(
+        ':',
+        style: TextStyle(
+          fontSize: 24, // Réduire la taille
+          fontWeight: FontWeight.bold,
+          color: kcPrimaryColor.withOpacity(0.6),
+          height: 1.0,
+        ),
       ),
     );
+  }
+
+// Méthode pour calculer le prix d'attente
+  double _calculateWaitingPrice() {
+    // Utiliser directement _waitingTime qui est déjà en secondes
+    // Convertir en minutes (arrondi au supérieur)
+    final int minutes = (_waitingTime / 60).ceil();
+
+    // Calculer le prix (50 FCFA par minute)
+    return minutes * 50.0;
   }
 
   // Widget _buildCancelButton() {
@@ -649,7 +869,13 @@ class _AcceptedClientBottomSheetState extends State<AcceptedClientBottomSheet>
                                   size: 24,
                                 ),
                                 action: () async {
-                                  // D'abord démarrer le timer
+                                  // Éviter les déclenchements multiples
+                                  if (_arrivalConfirmed) return true;
+
+                                  // Démarrer le minuteur d'attente
+                                  _startWaitingTimer();
+
+                                  // Démarrer le compte à rebours
                                   _startCountdown();
 
                                   // Ensuite gérer la notification
@@ -660,15 +886,18 @@ class _AcceptedClientBottomSheetState extends State<AcceptedClientBottomSheet>
                                     if (mounted) {
                                       setState(() {
                                         _clientPickedUp = true;
+                                        _arrivalConfirmed =
+                                            true; // Marquer comme confirmé
                                       });
                                     }
                                   } catch (e) {
-                                    // En cas d'erreur, annuler le timer
+                                    // En cas d'erreur, annuler les timers
                                     if (mounted) {
                                       setState(() {
                                         _showTimer = false;
                                       });
                                       _countdownTimer?.cancel();
+                                      _waitingTimer?.cancel();
                                     }
                                     // ... gestion d'erreur
                                     return false;
@@ -800,6 +1029,7 @@ class _InProgressRideBottomSheetState extends State<InProgressRideBottomSheet>
   late Animation<double> _pulseAnimation;
   late Animation<double> _progressAnimation;
   int _countdown = 300; // 5 minutes en secondes
+  int? _waitingTime; // Track waiting time in seconds
 
   @override
   void initState() {
@@ -1195,7 +1425,6 @@ class _InProgressRideBottomSheetState extends State<InProgressRideBottomSheet>
                   const SizedBox(height: 15),
 
                   // Bouton pénalité
-               
                 ],
               ),
             ),
@@ -1206,66 +1435,230 @@ class _InProgressRideBottomSheetState extends State<InProgressRideBottomSheet>
   }
 
   Widget _buildTimerWidget() {
-    final minutes = (_countdown ~/ 60).toString().padLeft(2, '0');
-    final seconds = (_countdown % 60).toString().padLeft(2, '0');
+    // Utiliser 0 comme valeur par défaut si _waitingTime est null
+    final waitingTime = _waitingTime ?? 0;
+    final hours = (waitingTime ~/ 3600).toString().padLeft(2, '0');
+    final minutes = ((waitingTime % 3600) ~/ 60).toString().padLeft(2, '0');
+    final seconds = (waitingTime % 60).toString().padLeft(2, '0');
+
+    // Calcul du prix d'attente (exemple: 50 FCFA par minute après les 2 premières minutes gratuites)
+    final double waitingPrice = _calculateWaitingPrice();
 
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      padding: const EdgeInsets.all(24),
       decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(30),
+        gradient: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [
+            Colors.white,
+            Colors.grey[50]!,
+          ],
+        ),
+        borderRadius: BorderRadius.circular(20),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.1),
-            blurRadius: 10,
-            offset: const Offset(0, 2),
+            color: Colors.black.withOpacity(0.08),
+            blurRadius: 20,
+            offset: const Offset(0, 4),
+            spreadRadius: 0,
+          ),
+          BoxShadow(
+            color: Colors.black.withOpacity(0.04),
+            blurRadius: 4,
+            offset: const Offset(0, 1),
+            spreadRadius: 0,
           ),
         ],
       ),
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          const Text(
-            'Temps d\'attente estimé',
-            style: TextStyle(
-              fontSize: 16,
-              color: Colors.grey,
-              fontWeight: FontWeight.w500,
-            ),
-          ),
-          const SizedBox(height: 8),
+          // Header avec icône et titre
           Row(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              _buildTimeSegment(minutes, 'MIN'),
-              const Text(
-                ':',
-                style: TextStyle(
-                  fontSize: 40,
-                  fontWeight: FontWeight.bold,
+              Container(
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  color: kcPrimaryColor.withOpacity(0.1),
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                child: Icon(
+                  Icons.schedule_rounded,
                   color: kcPrimaryColor,
+                  size: 20,
                 ),
               ),
-              _buildTimeSegment(seconds, 'SEC'),
+              const SizedBox(width: 12),
+              Text(
+                'Temps d\'attente',
+                style: TextStyle(
+                  fontSize: 18,
+                  color: Colors.grey[700],
+                  fontWeight: FontWeight.w600,
+                  letterSpacing: 0.5,
+                ),
+              ),
             ],
           ),
-          const SizedBox(height: 8),
-          LinearProgressIndicator(
-            value: _countdown / 300,
-            backgroundColor: Colors.grey[200],
-            valueColor: AlwaysStoppedAnimation<Color>(
-              _countdown > 60 ? kcPrimaryColor : Colors.orange,
+
+          const SizedBox(height: 20),
+
+          // Timer principal
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
+            decoration: BoxDecoration(
+              color: kcPrimaryColor.withOpacity(0.05),
+              borderRadius: BorderRadius.circular(16),
+              border: Border.all(
+                color: kcPrimaryColor.withOpacity(0.1),
+                width: 1,
+              ),
             ),
-            minHeight: 6,
-            borderRadius: BorderRadius.circular(3),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                _buildTimeSegment(hours, 'H'),
+                _buildTimeSeparator(),
+                _buildTimeSegment(minutes, 'MIN'),
+                _buildTimeSeparator(),
+                _buildTimeSegment(seconds, 'SEC'),
+              ],
+            ),
           ),
-          const SizedBox(height: 4),
-          Text(
-            _countdown > 60 ? 'En attente du client...' : 'Presque là !',
-            style: TextStyle(
-              color: _countdown > 60 ? Colors.grey[600] : Colors.orange,
-              fontWeight: FontWeight.w500,
+
+          const SizedBox(height: 20),
+
+          // Section prix d'attente
+          Container(
+            width: double.infinity,
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+                colors: waitingPrice > 0
+                    ? [Colors.orange[100]!, Colors.orange[50]!]
+                    : [Colors.green[100]!, Colors.green[50]!],
+              ),
+              borderRadius: BorderRadius.circular(14),
+              border: Border.all(
+                color:
+                    waitingPrice > 0 ? Colors.orange[200]! : Colors.green[200]!,
+                width: 1,
+              ),
             ),
+            child: Row(
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(10),
+                  decoration: BoxDecoration(
+                    color: waitingPrice > 0 ? Colors.orange : Colors.green,
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                  child: Icon(
+                    waitingPrice > 0
+                        ? Icons.payments_rounded
+                        : Icons.timer_outlined,
+                    color: Colors.white,
+                    size: 20,
+                  ),
+                ),
+                const SizedBox(width: 16),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        waitingPrice > 0
+                            ? 'Frais d\'attente'
+                            : 'Attente gratuite',
+                        style: TextStyle(
+                          fontSize: 14,
+                          color: waitingPrice > 0
+                              ? Colors.orange[700]
+                              : Colors.green[700],
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                      const SizedBox(height: 2),
+                      Text(
+                        waitingPrice > 0
+                            ? 'Facturation après 2 min'
+                            : '2 minutes gratuites',
+                        style: TextStyle(
+                          fontSize: 12,
+                          color: Colors.grey[600],
+                          fontWeight: FontWeight.w400,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                Container(
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                  decoration: BoxDecoration(
+                    color: waitingPrice > 0 ? Colors.orange : Colors.green,
+                    borderRadius: BorderRadius.circular(20),
+                  ),
+                  child: Text(
+                    waitingPrice > 0
+                        ? '+${waitingPrice.toStringAsFixed(0)} FCFA'
+                        : '0 FCFA',
+                    style: const TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.white,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+
+          const SizedBox(height: 16),
+
+          // Status indicator
+          Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Container(
+                width: 8,
+                height: 8,
+                decoration: BoxDecoration(
+                  color: (_waitingTime ?? 0) > 120
+                      ? Colors.orange
+                      : kcPrimaryColor,
+                  shape: BoxShape.circle,
+                  boxShadow: [
+                    BoxShadow(
+                      color: ((_waitingTime ?? 0) > 120
+                              ? Colors.orange
+                              : kcPrimaryColor)
+                          .withOpacity(0.4),
+                      blurRadius: 8,
+                      spreadRadius: 2,
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(width: 12),
+              Text(
+                (_waitingTime ?? 0) <= 120
+                    ? 'En attente du client...'
+                    : 'Facturation en cours',
+                style: TextStyle(
+                  color: (_waitingTime ?? 0) > 120
+                      ? Colors.orange[700]
+                      : Colors.grey[600],
+                  fontWeight: FontWeight.w500,
+                  fontSize: 14,
+                ),
+              ),
+            ],
           ),
         ],
       ),
@@ -1273,38 +1666,74 @@ class _InProgressRideBottomSheetState extends State<InProgressRideBottomSheet>
   }
 
   Widget _buildTimeSegment(String value, String label) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 4),
-      child: Column(
-        children: [
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-            decoration: BoxDecoration(
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Container(
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(
               color: kcPrimaryColor.withOpacity(0.1),
-              borderRadius: BorderRadius.circular(10),
+              width: 1,
             ),
-            child: Text(
-              value,
-              style: const TextStyle(
-                fontSize: 32,
-                fontWeight: FontWeight.bold,
-                color: kcPrimaryColor,
-                fontFeatures: [FontFeature.tabularFigures()],
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withOpacity(0.04),
+                blurRadius: 4,
+                offset: const Offset(0, 2),
               ),
-            ),
+            ],
           ),
-          const SizedBox(height: 4),
-          Text(
-            label,
+          child: Text(
+            value,
             style: const TextStyle(
-              fontSize: 12,
-              color: Colors.grey,
-              letterSpacing: 1.2,
+              fontSize: 28,
+              fontWeight: FontWeight.bold,
+              color: kcPrimaryColor,
+              fontFeatures: [FontFeature.tabularFigures()],
+              height: 1.0,
             ),
           ),
-        ],
+        ),
+        const SizedBox(height: 6),
+        Text(
+          label,
+          style: TextStyle(
+            fontSize: 11,
+            color: Colors.grey[600],
+            fontWeight: FontWeight.w500,
+            letterSpacing: 0.8,
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildTimeSeparator() {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 8),
+      child: Text(
+        ':',
+        style: TextStyle(
+          fontSize: 28,
+          fontWeight: FontWeight.bold,
+          color: kcPrimaryColor.withOpacity(0.6),
+          height: 1.0,
+        ),
       ),
     );
+  }
+
+// Méthode pour calculer le prix d'attente
+  double _calculateWaitingPrice() {
+    // Return 0 if waiting time is not set
+    if (_waitingTime == null) return 0.0;
+
+    // Facturation dès la première minute à 50 FCFA par minute
+    final int billableMinutes = (_waitingTime! / 60).ceil();
+    return billableMinutes * 50.0;
   }
 
   Widget _buildCancelButton() {
