@@ -1,4 +1,6 @@
 import 'package:for_u_partners/app/app.router.dart';
+import 'package:for_u_partners/ui/common/app_colors.dart';
+import 'package:loading_animation_widget/loading_animation_widget.dart';
 
 import 'profil_viewmodel.dart';
 import 'package:stacked/stacked.dart';
@@ -15,138 +17,168 @@ class ProfilView extends StackedView<ProfilViewModel> {
   ) {
     return Scaffold(
       backgroundColor: Colors.white,
-      body: SafeArea(
-        child: SingleChildScrollView(
-          child: Column(
-            children: [
-              const SizedBox(height: 50),
-              // Avatar
-              Container(
-                margin: const EdgeInsets.only(bottom: 40),
-                child: Container(
-                  width: 120,
-                  height: 120,
-                  decoration: BoxDecoration(
-                    borderRadius: BorderRadius.circular(60),
-                    gradient: const LinearGradient(
-                      begin: Alignment.topLeft,
-                      end: Alignment.bottomRight,
-                      colors: [Color(0xFF184E9C), Color(0xFF2A5BB8)],
-                    ),
-                  ),
-                  child: Center(
-                    child: Text(
-                      viewModel.initials,
-                      style: TextStyle(
-                        fontSize: 48,
-                        fontWeight: FontWeight.bold,
-                        color: Colors.white,
-                      ),
-                    ),
-                  ),
-                ),
+      body: viewModel.isLoading
+          ? Center(
+              child: LoadingAnimationWidget.fourRotatingDots(
+                color: kcPrimaryColor,
+                size: 50,
               ),
-
-              // Stats Section
-              Container(
-                padding: const EdgeInsets.fromLTRB(25, 0, 25, 30),
-                child: Row(
-                  children: [
-                    Expanded(
-                      child: _buildStatCard(
-                          viewModel.globalStats?.totalActivities.toString() ??
-                              '0',
-                          'Courses'),
-                    ),
-                    const SizedBox(width: 15),
-                    Expanded(
-                      child: _buildStatCard(
-                          viewModel.globalStats?.totalNotes.toString() ?? '0',
-                          'Note'),
-                    ),
-                    const SizedBox(width: 15),
-                    Expanded(
-                      child: _buildStatCard(
-                          "${viewModel.globalStats?.totalEarnings.toString() ?? '0'} F",
-                          'Revenus'),
-                    ),
-                  ],
-                ),
-              ),
-
-              // Menu Section
-              Container(
-                padding: const EdgeInsets.fromLTRB(25, 0, 25, 0),
+            )
+          : SafeArea(
+              child: SingleChildScrollView(
                 child: Column(
                   children: [
-                    _buildMenuItem(
-                      icon: _buildUserIcon(),
-                      text: 'Mon compte',
-                      onTap: () {
-                        viewModel.navigateToEditProfile(context);
-                      },
+                    const SizedBox(height: 50),
+                    // Avatar
+                    Container(
+                      margin: const EdgeInsets.only(bottom: 40),
+                      child: Container(
+                        width: 120,
+                        height: 120,
+                        decoration: BoxDecoration(
+                          borderRadius: BorderRadius.circular(60),
+                          gradient: const LinearGradient(
+                            begin: Alignment.topLeft,
+                            end: Alignment.bottomRight,
+                            colors: [Color(0xFF184E9C), Color(0xFF2A5BB8)],
+                          ),
+                        ),
+                        child: Center(
+                          child: Text(
+                            viewModel.initials,
+                            style: const TextStyle(
+                              fontSize: 48,
+                              fontWeight: FontWeight.bold,
+                              color: Colors.white,
+                            ),
+                          ),
+                        ),
+                      ),
                     ),
-                  
-                    _buildMenuItem(
-                      icon: _buildWalletIcon(),
-                      text: 'Portefeuille',
-                      onTap: () {},
+
+                    // Stats Section
+                    Container(
+                      padding: const EdgeInsets.fromLTRB(25, 0, 25, 30),
+                      child: Row(
+                        children: [
+                          Expanded(
+                            child: _buildStatCard(
+                              viewModel.globalStats?.totalActivities
+                                      .toString() ??
+                                  '0',
+                              'Courses',
+                            ),
+                          ),
+                          const SizedBox(width: 15),
+                          Expanded(
+                            child: _buildStatCard(
+                              viewModel.globalStats?.totalNotes.toString() ??
+                                  '0',
+                              'Note',
+                            ),
+                          ),
+                          const SizedBox(width: 15),
+                          Expanded(
+                            child: _buildStatCard(
+                              _formatAmount(viewModel.globalStats?.totalEarnings
+                                      .toDouble() ??
+                                  0),
+                              'Revenus',
+                            ),
+                          ),
+                        ],
+                      ),
                     ),
-                    _buildMenuItem(
-                      icon: _buildHistoryIcon(),
-                      text: 'Historique',
-                      onTap: () {
-                        viewModel.navigationService.navigateToActivityView();
-                      },
-                    ),
-                    _buildMenuItem(
-                      icon: _buildLogoutIcon(),
-                      text: 'Log Out',
-                      isLogout: true,
-                      onTap: () {
-                        viewModel.logOut();
-                      },
+
+                    // Menu Section
+                    Container(
+                      padding: const EdgeInsets.fromLTRB(25, 0, 25, 0),
+                      child: Column(
+                        children: [
+                          _buildMenuItem(
+                            icon: _buildUserIcon(),
+                            text: 'Mon compte',
+                            onTap: () {
+                              viewModel.navigateToEditProfile(context);
+                            },
+                          ),
+                          _buildMenuItem(
+                            icon: _buildWalletIcon(),
+                            text: 'Portefeuille',
+                            onTap: () {},
+                          ),
+                          _buildMenuItem(
+                            icon: _buildHistoryIcon(),
+                            text: 'Historique',
+                            onTap: () {
+                              viewModel.navigationService
+                                  .navigateToActivityView();
+                            },
+                          ),
+                          _buildMenuItem(
+                            icon: _buildLogoutIcon(),
+                            text: 'Déconnexion',
+                            isLogout: true,
+                            onTap: () {
+                              viewModel.showLogoutConfirmationDialog(context);
+                            },
+                          ),
+                        ],
+                      ),
                     ),
                   ],
                 ),
               ),
-            ],
-          ),
-        ),
-      ),
+            ),
     );
   }
 
-  Widget _buildStatCard(String number, String label) {
+  // Fonction utilitaire pour formater les montants
+  String _formatAmount(double amount) {
+    if (amount >= 1000000) {
+      return '${(amount / 1000000).toStringAsFixed(1).replaceAll('.0', '')}M F';
+    } else if (amount >= 1000) {
+      return '${(amount / 1000).toStringAsFixed(1).replaceAll('.0', '')}K F';
+    } else {
+      return '${amount.toStringAsFixed(0)} F';
+    }
+  }
+
+  Widget _buildStatCard(String value, String label) {
     return Container(
-      padding: const EdgeInsets.fromLTRB(10, 20, 10, 20),
+      padding: const EdgeInsets.symmetric(vertical: 15, horizontal: 5),
       decoration: BoxDecoration(
         color: const Color(0xFFF8F9FA),
         borderRadius: BorderRadius.circular(12),
       ),
       child: Column(
+        mainAxisSize: MainAxisSize.min,
         children: [
           Text(
-            number,
+            value,
             style: const TextStyle(
-              fontSize: 24,
+              fontSize: 16,
               fontWeight: FontWeight.bold,
               color: Color(0xFF184E9C),
             ),
+            textAlign: TextAlign.center,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
           ),
-          const SizedBox(height: 5),
+          const SizedBox(height: 4),
           Text(
             label,
-            style: const TextStyle(
+            style: TextStyle(
               fontSize: 12,
-              color: Color(0xFF666666),
-              fontWeight: FontWeight.w500,
+              color: Colors.grey[600],
             ),
           ),
         ],
       ),
     );
   }
+
+  
 
   Widget _buildMenuItem({
     required Widget icon,

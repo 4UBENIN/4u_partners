@@ -1,8 +1,8 @@
-import 'package:for_u_partners/app/models/depot_models/depot_detail_model.dart';
-import 'package:for_u_partners/app/models/depot_models/depot_model.dart';
-import 'package:for_u_partners/app/models/depot_models/planned_depot_model.dart';
-import 'package:for_u_partners/app/models/ramassage_models/ramassage_detail_model.dart';
-import 'package:for_u_partners/app/models/ramassage_models/ramassage_statut_model.dart';
+import 'package:for_u_partners/app/models/pressing_depot_models/depot_detail_model.dart';
+import 'package:for_u_partners/app/models/pressing_depot_models/depot_model.dart';
+import 'package:for_u_partners/app/models/pressing_depot_models/planned_depot_model.dart';
+import 'package:for_u_partners/app/models/pressing_ramassage_models/ramassage_detail_model.dart';
+import 'package:for_u_partners/app/models/pressing_ramassage_models/ramassage_statut_model.dart';
 import 'package:for_u_partners/services/wallet_service.dart';
 import 'package:for_u_partners/ui/common/api_constant.dart';
 import 'package:for_u_partners/ui/common/get_fcm_token.dart';
@@ -11,7 +11,7 @@ import 'package:for_u_partners/app/models/pressing_model.dart';
 import 'package:for_u_partners/services/pressing_service.dart';
 import 'package:stacked/stacked.dart';
 import 'package:for_u_partners/app/app.locator.dart';
-import 'package:for_u_partners/app/models/ramassage_models/ramassage_model.dart';
+import 'package:for_u_partners/app/models/pressing_ramassage_models/ramassage_model.dart';
 import 'package:stacked_services/stacked_services.dart';
 
 class HomePressingViewModel extends FormViewModel {
@@ -248,7 +248,7 @@ class HomePressingViewModel extends FormViewModel {
   }
 
   //! DEPOT PART
-  
+
   //* GET DEPOT LIST
   Future<void> getDepotList() async {
     _isLoadingDepots = true;
@@ -315,19 +315,20 @@ class HomePressingViewModel extends FormViewModel {
     try {
       // Appeler le service pour planifier le dépôt
       plannedDepot = await _pressingService.planifierDepot(depotId);
-      
+
       // Trouver et supprimer le dépôt de la liste des demandes
       _depots.removeWhere((depot) => depot.id == depotId);
-      
+
       // Rafraîchir la liste des dépôts planifiés
       await getPlanifiedDepotList();
-      
+
       // Rafraîchir aussi la liste des demandes pour être sûr
       await getDepotList();
 
       return plannedDepot;
     } catch (e) {
-      _errorMessage = 'Erreur lors de la planification du dépôt: ${e.toString()}';
+      _errorMessage =
+          'Erreur lors de la planification du dépôt: ${e.toString()}';
       print("Erreur planification dépôt: $e");
       return null;
     } finally {

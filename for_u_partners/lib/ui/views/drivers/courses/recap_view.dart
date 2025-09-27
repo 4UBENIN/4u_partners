@@ -4,6 +4,7 @@ import 'package:for_u_partners/ui/common/app_colors.dart';
 import 'package:for_u_partners/services/driver_service.dart';
 import 'package:for_u_partners/ui/views/drivers/courses/courses_viewmodel.dart';
 import 'package:intl/intl.dart';
+import 'package:loading_animation_widget/loading_animation_widget.dart';
 
 class RecapitulatifCoursePage extends StatefulWidget {
   final int courseId;
@@ -38,7 +39,7 @@ class _RecapitulatifCoursePageState extends State<RecapitulatifCoursePage> {
     try {
       // D'abord on complète le service de course
       await widget.viewModel.completeCourseService(widget.courseId, context);
-      
+
       // Ensuite on récupère la facture
       return await _driverService.fetchFactureCourse(widget.courseId);
     } catch (e) {
@@ -76,13 +77,16 @@ class _RecapitulatifCoursePageState extends State<RecapitulatifCoursePage> {
         future: _factureFuture,
         builder: (context, snapshot) {
           if (snapshot.connectionState == ConnectionState.waiting) {
-            return const Center(
+            return  Center(
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  CircularProgressIndicator(),
-                  SizedBox(height: 16),
-                  Text(
+                 LoadingAnimationWidget.fourRotatingDots(
+                        color: kcPrimaryColor,
+                        size: 60,
+                      ),
+                  const SizedBox(height: 16),
+                  const Text(
                     'Finalisation de la course...',
                     style: TextStyle(
                       fontSize: 16,
@@ -172,7 +176,7 @@ class _RecapitulatifCoursePageState extends State<RecapitulatifCoursePage> {
                       padding: const EdgeInsets.symmetric(
                           horizontal: 12, vertical: 6),
                       decoration: BoxDecoration(
-                        color: theme.primaryColor,
+                        color: kcPrimaryColor,
                         borderRadius: BorderRadius.circular(20),
                       ),
                       child: const Text(
@@ -332,7 +336,7 @@ class _RecapitulatifCoursePageState extends State<RecapitulatifCoursePage> {
                   child: ElevatedButton(
                     onPressed: widget.onSoumettre,
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: theme.primaryColor,
+                      backgroundColor: kcPrimaryColor,
                       padding: const EdgeInsets.symmetric(vertical: 16),
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(12),
@@ -342,6 +346,7 @@ class _RecapitulatifCoursePageState extends State<RecapitulatifCoursePage> {
                       'Retour à l\'accueil',
                       style: TextStyle(
                         fontSize: 16,
+                        color: Colors.white,
                         fontWeight: FontWeight.w600,
                       ),
                     ),
@@ -380,7 +385,7 @@ class _RecapitulatifCoursePageState extends State<RecapitulatifCoursePage> {
         children: [
           Row(
             children: [
-              Icon(icon, color: Theme.of(context).primaryColor, size: 20),
+              Icon(icon, color: kcPrimaryColor, size: 20),
               const SizedBox(width: 8),
               Text(
                 title,

@@ -1,3 +1,4 @@
+import 'package:flutter/material.dart';
 import 'package:for_u_partners/app/models/login_model.dart';
 import 'package:for_u_partners/services/auth_service.dart';
 import 'package:for_u_partners/ui/views/auth/login/login_view.form.dart';
@@ -14,7 +15,7 @@ class LoginViewModel extends FormViewModel {
   bool obscurePassword = true;
   final profiles = [
     "pressing",
-    "coursier",
+    "livreur",
     "conducteur",
     "agent d'entretien",
     "garagiste"
@@ -38,12 +39,11 @@ class LoginViewModel extends FormViewModel {
     rebuildUi();
   }
 
-  void login(LoginModel model) async {
+  void login(LoginModel model, BuildContext context) async {
     setBusy(true);
 
     try {
-      await _authService.login(model, _selectedProfile);
-      // _navigationService.replaceWithDeliveryNavBarView();
+      await _authService.login(model, context);
     } catch (e) {
       setBusy(false);
     }

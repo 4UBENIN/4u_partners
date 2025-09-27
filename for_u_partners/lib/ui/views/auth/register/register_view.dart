@@ -28,7 +28,7 @@ class RegisterView extends StackedView<RegisterViewModel> with $RegisterView {
     Widget? child,
   ) {
     return Scaffold(
-      backgroundColor: Theme.of(context).colorScheme.surface,
+      backgroundColor: Colors.white,
       body: SafeArea(
         child: LayoutBuilder(
           builder: (context, constraints) {

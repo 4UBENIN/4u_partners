@@ -16,10 +16,19 @@ class DailyStats {
   });
 
   factory DailyStats.fromJson(Map<String, dynamic> json) {
+    // Helper function to safely parse numeric values
+    num? parseNumber(dynamic value) {
+      if (value == null) return null;
+      if (value is num) return value;
+      if (value is String) return num.tryParse(value);
+      return null;
+    }
+
     return DailyStats(
-      porteFeuille: (json['porte_feuille'] as num).toDouble(),
-      totalActiviteToday: json['total_activite_today'] as int,
-      montantGainToday: json['montant_gain_today'] as int,
+      porteFeuille: parseNumber(json['porte_feuille'])?.toDouble() ?? 0.0,
+      totalActiviteToday:
+          parseNumber(json['total_activite_today'])?.toInt() ?? 0,
+      montantGainToday: parseNumber(json['montant_gain_today'])?.toInt() ?? 0,
       activiteEnCours: json['activite_en_cours'] != null
           ? ActiviteEnCours.fromJson(
               json['activite_en_cours'] as Map<String, dynamic>)
@@ -40,18 +49,24 @@ class ActiviteEnCours {
   final String clientNom;
   final String clientPrenom;
   final double distanceKm;
+  final String destinationClient;
+  final int idActivite;
 
   ActiviteEnCours({
     required this.clientNom,
     required this.clientPrenom,
     required this.distanceKm,
+    required this.destinationClient,
+    required this.idActivite,
   });
 
   factory ActiviteEnCours.fromJson(Map<String, dynamic> json) {
     return ActiviteEnCours(
-      clientNom: json['client_nom'] as String,
-      clientPrenom: json['client_prenom'] as String,
-      distanceKm: (json['distance_km'] as num).toDouble(),
+      clientNom: json['client_nom'] as String? ?? '',
+      clientPrenom: json['client_prenom'] as String? ?? '',
+      distanceKm: (json['distance_km'] as num?)?.toDouble() ?? 0.0,
+      destinationClient: json['destination_client'] as String? ?? '',
+      idActivite: (json['id_activite'] as num?)?.toInt() ?? 0,
     );
   }
 }
@@ -59,19 +74,32 @@ class ActiviteEnCours {
 class ActiviteRecenteTerminee {
   final String adresseDepart;
   final String adresseArrivee;
-  final DateTime heureArrivee;
+  final DateTime? heureArrivee;
+  final int montant;
 
   ActiviteRecenteTerminee({
     required this.adresseDepart,
     required this.adresseArrivee,
-    required this.heureArrivee,
+    this.heureArrivee,
+    required this.montant,
   });
 
   factory ActiviteRecenteTerminee.fromJson(Map<String, dynamic> json) {
+    // Helper function to safely parse numeric values
+    num? parseNumber(dynamic value) {
+      if (value == null) return null;
+      if (value is num) return value;
+      if (value is String) return num.tryParse(value);
+      return null;
+    }
+
     return ActiviteRecenteTerminee(
-      adresseDepart: json['adresse_depart'] as String,
-      adresseArrivee: json['adresse_arrivee'] as String,
-      heureArrivee: DateTime.parse(json['heure_arrivee'] as String),
+      adresseDepart: json['adresse_depart'] as String? ?? '',
+      adresseArrivee: json['adresse_arrivee'] as String? ?? '',
+      heureArrivee: json['heure_arrivee'] != null
+          ? DateTime.tryParse(json['heure_arrivee'] as String)
+          : null,
+      montant: parseNumber(json['montant'])?.toInt() ?? 0,
     );
   }
 }
@@ -91,10 +119,10 @@ class Evaluation {
 
   factory Evaluation.fromJson(Map<String, dynamic> json) {
     return Evaluation(
-      clientNom: json['client_nom'] as String,
-      clientPrenom: json['client_prenom'] as String,
-      etoiles: json['etoiles'] as int,
-      commentaire: json['commentaire'] as String,
+      clientNom: json['client_nom'] as String? ?? '',
+      clientPrenom: json['client_prenom'] as String? ?? '',
+      etoiles: (json['etoiles'] as num?)?.toInt() ?? 0,
+      commentaire: json['commentaire'] as String? ?? '',
     );
   }
 }

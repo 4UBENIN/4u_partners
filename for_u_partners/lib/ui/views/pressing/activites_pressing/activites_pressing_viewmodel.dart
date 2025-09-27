@@ -1,6 +1,6 @@
 import 'package:for_u_partners/app/app.locator.dart';
-import 'package:for_u_partners/app/models/depot_models/depot_model.dart';
-import 'package:for_u_partners/app/models/ramassage_models/ramassage_model.dart';
+import 'package:for_u_partners/app/models/pressing_depot_models/depot_model.dart';
+import 'package:for_u_partners/app/models/pressing_ramassage_models/ramassage_model.dart';
 import 'package:for_u_partners/services/pressing_service.dart';
 import 'package:stacked/stacked.dart';
 

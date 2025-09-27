@@ -18,17 +18,17 @@ class CustomToast {
     'background': const Color.fromARGB(255, 252, 232, 232),
     'border': const Color(0xFFEF4444),
     'icon': const Color(0xFFEF4444),
-    'iconBg':  Colors.red.withValues(alpha: 0.2),
+    'iconBg': Colors.red.withValues(alpha: 0.2),
     'text': const Color(0xFFB91C1C),
   };
 
-static final warningColors = {
-  'background': Colors.amber.shade50,
-  'border': Colors.amber.shade400,
-  'icon': Colors.amber.shade700,
-  'iconBg': Colors.amber.shade100.withValues(alpha: 0.8),
-  'text': Colors.amber.shade700,
-};
+  static final warningColors = {
+    'background': Colors.amber.shade50,
+    'border': Colors.amber.shade400,
+    'icon': Colors.amber.shade700,
+    'iconBg': Colors.amber.shade100.withValues(alpha: 0.8),
+    'text': Colors.amber.shade700,
+  };
 
   static void _showToast(
     BuildContext context, {
@@ -65,7 +65,8 @@ static final warningColors = {
     });
   }
 
-  static void showSuccess(BuildContext context, {String message = "Trajet créé avec succès"}) {
+  static void showSuccess(BuildContext context,
+      {String message = "Trajet créé avec succès"}) {
     _showToast(
       context,
       message: message,
@@ -74,7 +75,8 @@ static final warningColors = {
     );
   }
 
-  static void showError(BuildContext context, {String message = "Erreur lors de la suppression du trajet"}) {
+  static void showError(BuildContext context,
+      {String message = "Erreur lors de la suppression du trajet"}) {
     _showToast(
       context,
       message: message,
@@ -83,7 +85,8 @@ static final warningColors = {
     );
   }
 
-  static void showWarning(BuildContext context, {String message = "Modifications en attente de sauvegarde"}) {
+  static void showWarning(BuildContext context,
+      {String message = "Modifications en attente de sauvegarde"}) {
     _showToast(
       context,
       message: message,
@@ -110,7 +113,8 @@ class _ToastOverlay extends StatefulWidget {
   _ToastOverlayState createState() => _ToastOverlayState();
 }
 
-class _ToastOverlayState extends State<_ToastOverlay> with SingleTickerProviderStateMixin {
+class _ToastOverlayState extends State<_ToastOverlay>
+    with SingleTickerProviderStateMixin {
   late AnimationController _animationController;
   late Animation<double> _slideAnimation;
   late Animation<double> _fadeAnimation;
@@ -178,6 +182,7 @@ class _ToastOverlayState extends State<_ToastOverlay> with SingleTickerProviderS
                   vertical: 12,
                 ),
                 child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Container(
                       padding: const EdgeInsets.all(8),
@@ -195,13 +200,22 @@ class _ToastOverlayState extends State<_ToastOverlay> with SingleTickerProviderS
                     ),
                     const SizedBox(width: 12),
                     Expanded(
-                      child: Text(
-                        widget.message,
-                        style: TextStyle(
-                          color: widget.colors['text'],
-                          fontSize: 14,
-                          fontWeight: FontWeight.w500,
-                        ),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        mainAxisSize: MainAxisSize.min,
+                        children: widget.message.split('\n').map((line) => 
+                          Padding(
+                            padding: const EdgeInsets.symmetric(vertical: 2.0),
+                            child: Text(
+                              line,
+                              style: TextStyle(
+                                color: widget.colors['text'],
+                                fontSize: 14,
+                                fontWeight: FontWeight.w500,
+                              ),
+                            ),
+                          )
+                        ).toList(),
                       ),
                     ),
                     GestureDetector(

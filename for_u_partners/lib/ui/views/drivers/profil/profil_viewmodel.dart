@@ -1,3 +1,6 @@
+import 'dart:io';
+
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:for_u_partners/models/global_stats_model.dart';
 import 'package:for_u_partners/models/user_model.dart';
@@ -39,10 +42,139 @@ class ProfilViewModel extends BaseViewModel {
     ]);
   }
 
+  void showLogoutConfirmationDialog(BuildContext context) {
+    if (Platform.isIOS) {
+      _showCupertinoLogoutDialog(context);
+    } else {
+      _showMaterialLogoutDialog(context);
+    }
+  }
+
   //* AUTH METHODS
   void logOut() {
     _sharedPreferencesServices.removeToken();
     navigationService.replaceWithLoginView();
+  }
+
+  void _showMaterialLogoutDialog(BuildContext context) {
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16),
+          ),
+          title: Row(
+            children: [
+              Icon(
+                Icons.logout_rounded,
+                color: Colors.red[600],
+                size: 24,
+              ),
+              const SizedBox(width: 12),
+              const Text(
+                'Déconnexion',
+                style: TextStyle(
+                  fontSize: 20,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ],
+          ),
+          content: const Text(
+            'Êtes-vous sûr de vouloir vous déconnecter de votre compte ?',
+            style: TextStyle(fontSize: 16),
+          ),
+          contentPadding: const EdgeInsets.fromLTRB(24, 16, 24, 0),
+          actionsPadding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(),
+              style: TextButton.styleFrom(
+                foregroundColor: Colors.grey[600],
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+              ),
+              child: const Text(
+                'Annuler',
+                style: TextStyle(fontWeight: FontWeight.w500),
+              ),
+            ),
+            ElevatedButton(
+              onPressed: () {
+                Navigator.of(context).pop();
+                logOut();
+              },
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.red[600],
+                foregroundColor: Colors.white,
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(8),
+                ),
+              ),
+              child: const Text(
+                'Se déconnecter',
+                style: TextStyle(fontWeight: FontWeight.w600),
+              ),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+// Style Cupertino (iOS)
+  void _showCupertinoLogoutDialog(BuildContext context) {
+    showCupertinoDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (BuildContext context) {
+        return CupertinoAlertDialog(
+          title: const Text(
+            'Déconnexion',
+            style: TextStyle(
+              fontSize: 17,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+          content: const Padding(
+            padding: EdgeInsets.only(top: 8),
+            child: Text(
+              'Êtes-vous sûr de vouloir vous déconnecter de votre compte ?',
+              style: TextStyle(fontSize: 13),
+            ),
+          ),
+          actions: [
+            CupertinoDialogAction(
+              onPressed: () => Navigator.of(context).pop(),
+              child: const Text(
+                'Annuler',
+                style: TextStyle(
+                  color: CupertinoColors.activeBlue,
+                  fontWeight: FontWeight.w400,
+                ),
+              ),
+            ),
+            CupertinoDialogAction(
+              isDestructiveAction: true,
+              onPressed: () {
+                Navigator.of(context).pop();
+                logOut();
+              },
+              child: const Text(
+                'Se déconnecter',
+                style: TextStyle(
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ),
+          ],
+        );
+      },
+    );
   }
 
   //* PROFILE METHODS
@@ -115,13 +247,13 @@ class ProfilViewModel extends BaseViewModel {
     }
   }
 
-void navigateToEditProfile(BuildContext context) {
-  if (user != null) {
-    Navigator.of(context).push(
-      MaterialPageRoute(
-        builder: (context) => EditProfileView(user: user!, viewModel: this),
-      ),
-    );
+  void navigateToEditProfile(BuildContext context) {
+    if (user != null) {
+      Navigator.of(context).push(
+        MaterialPageRoute(
+          builder: (context) => EditProfileView(user: user!, viewModel: this),
+        ),
+      );
+    }
   }
-}
 }

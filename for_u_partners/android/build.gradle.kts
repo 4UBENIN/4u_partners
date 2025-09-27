@@ -1,6 +1,6 @@
 plugins {
     // Déclare le plugin Google Services pour qu'il soit dispo dans les modules
-    id("com.google.gms.google-services") version "4.4.3" apply false
+    id("com.google.gms.google-services") version "4.3.15" apply false
 }
 
 allprojects {

@@ -3,9 +3,10 @@ class ClientData {
   final String timeInfo;
   final String destination;
   final String initials;
-  
+
   // ✨ Nouvelles propriétés depuis Firebase
   final String? courseId;
+  final String? clientId;
   final double? prix;
   final double? distance;
   final double? duree;
@@ -22,6 +23,7 @@ class ClientData {
     required this.timeInfo,
     required this.destination,
     required this.initials,
+    this.clientId,
     this.courseId,
     this.prix,
     this.distance,
@@ -36,13 +38,58 @@ class ClientData {
   });
 
   // ✨ Méthodes utiles
-  String get formattedPrice => prix != null ? '${prix!.toStringAsFixed(0)} FCFA' : 'Prix non défini';
-  
-  String get formattedDistance => distance != null ? '${distance!.toStringAsFixed(1)} km' : 'Distance inconnue';
-  
-  String get formattedDuration => duree != null ? '${duree!.toStringAsFixed(0)} min' : 'Durée inconnue';
+  String get formattedPrice =>
+      prix != null ? '${prix!.toStringAsFixed(0)} FCFA' : 'Prix non défini';
+
+  String get formattedDistance => distance != null
+      ? '${distance!.toStringAsFixed(1)} km'
+      : 'Distance inconnue';
+
+  String get formattedDuration =>
+      duree != null ? '${duree!.toStringAsFixed(0)} min' : 'Durée inconnue';
 
   bool get hasValidCourseId => courseId != null && courseId!.isNotEmpty;
+
+  // Ajout des méthodes de sérialisation/désérialisation
+  Map<String, dynamic> toJson() {
+    return {
+      'name': name,
+      'timeInfo': timeInfo,
+      'destination': destination,
+      'initials': initials,
+      'courseId': courseId,
+      'prix': prix,
+      'distance': distance,
+      'duree': duree,
+      'adresseDepart': adresseDepart,
+      'isNight': isNight,
+      'etaMinutes': etaMinutes,
+      'destLong': destLong,
+      'destLat': destLat,
+      'depLong': depLong,
+      'depLat': depLat,
+    };
+  }
+
+  factory ClientData.fromJson(Map<String, dynamic> json) {
+    return ClientData(
+      name: json['name'] as String,
+      timeInfo: json['timeInfo'] as String,
+      destination: json['destination'] as String,
+      initials: json['initials'] as String,
+      courseId: json['courseId'] as String?,
+      prix: json['prix']?.toDouble(),
+      distance: json['distance']?.toDouble(),
+      duree: json['duree']?.toDouble(),
+      adresseDepart: json['adresseDepart'] as String?,
+      isNight: json['isNight'] as bool?,
+      etaMinutes: json['etaMinutes'] as int?,
+      destLong: json['destLong']?.toDouble(),
+      destLat: json['destLat']?.toDouble(),
+      depLong: json['depLong']?.toDouble(),
+      depLat: json['depLat']?.toDouble(),
+    );
+  }
 
   @override
   String toString() {

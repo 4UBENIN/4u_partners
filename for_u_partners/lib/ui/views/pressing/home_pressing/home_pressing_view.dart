@@ -229,7 +229,7 @@ class HomePressingView extends StackedView<HomePressingViewModel> {
   Widget _buildDepotContent(
       HomePressingViewModel viewModel, BuildContext context) {
     // Utiliser isLoadingDepots pour un loading plus précis
-    if (viewModel.isLoadingDepots || 
+    if (viewModel.isLoadingDepots ||
         (viewModel.isBusy && viewModel.currentDepotList.isEmpty)) {
       return const Center(
         child: CircularProgressIndicator(color: primaryColor),
@@ -310,7 +310,7 @@ class HomePressingView extends StackedView<HomePressingViewModel> {
                       builder: (_) => DepotDetailView(depot: depot),
                     ),
                   );
-                  
+
                   // Si result est true, cela signifie qu'un dépôt a été planifié
                   if (result == true) {
                     // Rafraîchir les listes

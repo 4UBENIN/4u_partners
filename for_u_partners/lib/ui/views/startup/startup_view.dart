@@ -13,6 +13,7 @@ class StartupView extends StackedView<StartupViewModel> {
     Widget? child,
   ) {
     return Scaffold(
+      backgroundColor: Colors.white,
       body: Center(
         child: Image.asset("assets/logo.png", width: 200, height: 200),
       ),

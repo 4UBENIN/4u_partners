@@ -1,7 +1,11 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
+import 'package:for_u_partners/app/app.locator.dart';
+import 'package:for_u_partners/services/driver_service.dart';
 import 'package:for_u_partners/ui/common/app_colors.dart';
 import 'package:for_u_partners/ui/views/drivers/courses/model/client_model.dart';
 import 'package:for_u_partners/ui/views/drivers/courses/widget/dialog_widget.dart';
+import 'package:slider_button/slider_button.dart';
 
 class ClientsBottomSheet extends StatelessWidget {
   final List<ClientData> getClientsList;
@@ -220,9 +224,12 @@ class ClientCard extends StatelessWidget {
 
 class AcceptedClientBottomSheet extends StatefulWidget {
   final ClientData client;
+  final String? clientId;
+  final int courseId;
   final Function() onCancelRide;
   final Function() onStartRide;
   final Function() onCallClients;
+  final Function() onChatClients;
 
   const AcceptedClientBottomSheet({
     Key? key,
@@ -230,6 +237,9 @@ class AcceptedClientBottomSheet extends StatefulWidget {
     required this.onCancelRide,
     required this.onStartRide,
     required this.onCallClients,
+    required this.onChatClients,
+    this.clientId,
+    required this.courseId,
   }) : super(key: key);
 
   @override
@@ -237,11 +247,179 @@ class AcceptedClientBottomSheet extends StatefulWidget {
       _AcceptedClientBottomSheetState();
 }
 
-class _AcceptedClientBottomSheetState extends State<AcceptedClientBottomSheet> {
-  bool _clientPickedUp = false; // État du toggle switch
+class _AcceptedClientBottomSheetState extends State<AcceptedClientBottomSheet>
+    with SingleTickerProviderStateMixin {
+  bool _clientPickedUp = false;
+  final bool _isLoading = false; // État du toggle switch
+  bool _showTimer = false;
+  late AnimationController _controller;
+  int _countdown = 300; // 5 minutes en secondes
+  Timer? _countdownTimer;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 500),
+    );
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    _countdownTimer?.cancel();
+    super.dispose();
+  }
+
+  void _startCountdown() {
+    setState(() {
+      _showTimer = true;
+      _controller.forward();
+    });
+
+    _countdownTimer = Timer.periodic(const Duration(seconds: 1), (timer) {
+      if (mounted) {
+        setState(() {
+          if (_countdown > 0) {
+            _countdown--;
+          } else {
+            timer.cancel();
+            // Action à effectuer quand le décompte est terminé
+          }
+        });
+      }
+    });
+  }
+
+  Widget _buildTimerWidget() {
+    final minutes = (_countdown ~/ 60).toString().padLeft(2, '0');
+    final seconds = (_countdown % 60).toString().padLeft(2, '0');
+
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(30),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.1),
+            blurRadius: 10,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          const Text(
+            'Temps d\'attente estimé',
+            style: TextStyle(
+              fontSize: 16,
+              color: Colors.grey,
+              fontWeight: FontWeight.w500,
+            ),
+          ),
+          const SizedBox(height: 8),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              _buildTimeSegment(minutes, 'MIN'),
+              const Text(
+                ':',
+                style: TextStyle(
+                  fontSize: 40,
+                  fontWeight: FontWeight.bold,
+                  color: kcPrimaryColor,
+                ),
+              ),
+              _buildTimeSegment(seconds, 'SEC'),
+            ],
+          ),
+          const SizedBox(height: 8),
+          LinearProgressIndicator(
+            value: _countdown / 300,
+            backgroundColor: Colors.grey[200],
+            valueColor: AlwaysStoppedAnimation<Color>(
+              _countdown > 60 ? kcPrimaryColor : Colors.orange,
+            ),
+            minHeight: 6,
+            borderRadius: BorderRadius.circular(3),
+          ),
+          const SizedBox(height: 4),
+          Text(
+            _countdown > 60 ? 'En attente du client...' : 'Presque là !',
+            style: TextStyle(
+              color: _countdown > 60 ? Colors.grey[600] : Colors.orange,
+              fontWeight: FontWeight.w500,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildTimeSegment(String value, String label) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 4),
+      child: Column(
+        children: [
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+            decoration: BoxDecoration(
+              color: kcPrimaryColor.withOpacity(0.1),
+              borderRadius: BorderRadius.circular(10),
+            ),
+            child: Text(
+              value,
+              style: const TextStyle(
+                fontSize: 32,
+                fontWeight: FontWeight.bold,
+                color: kcPrimaryColor,
+                fontFeatures: [FontFeature.tabularFigures()],
+              ),
+            ),
+          ),
+          const SizedBox(height: 4),
+          Text(
+            label,
+            style: const TextStyle(
+              fontSize: 12,
+              color: Colors.grey,
+              letterSpacing: 1.2,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  // Widget _buildCancelButton() {
+  //   return ElevatedButton(
+  //     onPressed: () => _showCancelDialog(context),
+  //     style: ElevatedButton.styleFrom(
+  //       backgroundColor: Colors.red[50],
+  //       foregroundColor: Colors.red,
+  //       shape: RoundedRectangleBorder(
+  //         borderRadius: BorderRadius.circular(12),
+  //       ),
+  //       padding: const EdgeInsets.symmetric(vertical: 16),
+  //       elevation: 0,
+  //     ),
+  //     child: const Text(
+  //       'Annuler la course',
+  //       style: TextStyle(
+  //         fontSize: 16,
+  //         fontWeight: FontWeight.w600,
+  //       ),
+  //     ),
+  //   );
+  // }
 
   @override
   Widget build(BuildContext context) {
+    final driverservice = locator<DriverService>();
+
     return DraggableScrollableSheet(
       initialChildSize: 0.45,
       minChildSize: 0.25,
@@ -349,22 +527,45 @@ class _AcceptedClientBottomSheetState extends State<AcceptedClientBottomSheet> {
                             ],
                           ),
                         ),
-                        // Bouton téléphone
-                        Container(
-                          width: 50,
-                          height: 50,
-                          decoration: const BoxDecoration(
-                            color: kcPrimaryColor,
-                            shape: BoxShape.circle,
-                          ),
-                          child: IconButton(
-                            onPressed: widget.onCallClients,
-                            icon: const Icon(
-                              Icons.phone,
-                              color: Colors.white,
-                              size: 24,
+                        // Bouton téléphone et chat
+                        Row(
+                          children: [
+                            Container(
+                              width: 40,
+                              height: 40,
+                              decoration: const BoxDecoration(
+                                color: kcPrimaryColor,
+                                shape: BoxShape.circle,
+                              ),
+                              child: IconButton(
+                                onPressed: widget.onChatClients,
+                                icon: const Icon(
+                                  Icons.message_rounded,
+                                  color: Colors.white,
+                                  size: 24,
+                                ),
+                              ),
                             ),
-                          ),
+                            const SizedBox(
+                              width: 15,
+                            ),
+                            Container(
+                              width: 40,
+                              height: 40,
+                              decoration: const BoxDecoration(
+                                color: kcPrimaryColor,
+                                shape: BoxShape.circle,
+                              ),
+                              child: IconButton(
+                                onPressed: widget.onCallClients,
+                                icon: const Icon(
+                                  Icons.phone,
+                                  color: Colors.white,
+                                  size: 24,
+                                ),
+                              ),
+                            ),
+                          ],
                         ),
                       ],
                     ),
@@ -407,36 +608,74 @@ class _AcceptedClientBottomSheetState extends State<AcceptedClientBottomSheet> {
 
                   const SizedBox(height: 30),
 
-                  // Question avec Toggle Switch
-                  Row(
+                  // Question avec Slider Button
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      const Expanded(
-                        child: Text(
-                          'Vous avez déjà récupéré le client ?',
-                          style: TextStyle(
-                            fontSize: 16,
-                            color: Colors.black87,
-                            fontWeight: FontWeight.w500,
-                          ),
+                      Container(
+                        decoration: BoxDecoration(
+                          color: Colors.grey[200],
+                          borderRadius: BorderRadius.circular(30),
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.black.withOpacity(0.1),
+                              blurRadius: 4,
+                              offset: const Offset(0, 2),
+                            ),
+                          ],
                         ),
-                      ),
-                      const SizedBox(width: 12),
-                      Transform.scale(
-                        scale: 0.9,
-                        child: Switch(
-                          value: _clientPickedUp,
-                          onChanged: (bool value) {
-                            setState(() {
-                              _clientPickedUp = value;
-                            });
-                          },
-                          activeColor: Colors.white,
-                          activeTrackColor: kcPrimaryColor,
-                          inactiveThumbColor: Colors.white,
-                          inactiveTrackColor: Colors.grey[300],
-                          materialTapTargetSize:
-                              MaterialTapTargetSize.shrinkWrap,
-                        ),
+                        child: _showTimer
+                            ? _buildTimerWidget()
+                            : SliderButton(
+                                width: double.infinity,
+                                height: 60,
+                                buttonSize: 50,
+                                backgroundColor: Colors.grey[200]!,
+                                buttonColor: kcPrimaryColor,
+                                shimmer: true,
+                                label: Center(
+                                  child: Text(
+                                    'Glissez pour confirmer votre arrivée',
+                                    style: TextStyle(
+                                      color: Colors.grey[700],
+                                      fontWeight: FontWeight.w500,
+                                      fontSize: 16,
+                                    ),
+                                  ),
+                                ),
+                                icon: const Icon(
+                                  Icons.double_arrow_rounded,
+                                  color: Colors.white,
+                                  size: 24,
+                                ),
+                                action: () async {
+                                  // D'abord démarrer le timer
+                                  _startCountdown();
+
+                                  // Ensuite gérer la notification
+                                  try {
+                                    await driverservice
+                                        .notifyClient(widget.courseId);
+
+                                    if (mounted) {
+                                      setState(() {
+                                        _clientPickedUp = true;
+                                      });
+                                    }
+                                  } catch (e) {
+                                    // En cas d'erreur, annuler le timer
+                                    if (mounted) {
+                                      setState(() {
+                                        _showTimer = false;
+                                      });
+                                      _countdownTimer?.cancel();
+                                    }
+                                    // ... gestion d'erreur
+                                    return false;
+                                  }
+
+                                  return true;
+                                }),
                       ),
                     ],
                   ),
@@ -491,26 +730,11 @@ class _AcceptedClientBottomSheetState extends State<AcceptedClientBottomSheet> {
                   const SizedBox(height: 15),
 
                   // Bouton Annuler
-                  SizedBox(
-                    width: double.infinity,
-                    height: 50,
-                    child: TextButton(
-                      onPressed: () => _showCancelDialog(context),
-                      style: TextButton.styleFrom(
-                        foregroundColor: Colors.red,
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(25),
-                        ),
-                      ),
-                      child: const Text(
-                        'Annuler la course',
-                        style: TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
-                    ),
-                  ),
+                  // SizedBox(
+                  //   width: double.infinity,
+                  //   height: 50,
+                  //   child: _buildCancelButton(),
+                  // ),
                 ],
               ),
             ),
@@ -525,13 +749,14 @@ class _AcceptedClientBottomSheetState extends State<AcceptedClientBottomSheet> {
       context: context,
       builder: (BuildContext context) {
         return AlertDialog(
+          backgroundColor: Colors.white,
           title: const Text('Annuler la course'),
           content: Text(
               'Êtes-vous sûr de vouloir annuler la course avec ${widget.client.name} ?'),
           actions: [
             TextButton(
               onPressed: () => Navigator.of(context).pop(),
-              child: const Text('Non'),
+              child: const Text('Non', style: TextStyle(color: Colors.black)),
             ),
             TextButton(
               onPressed: widget.onCancelRide,
@@ -564,7 +789,8 @@ class InProgressRideBottomSheet extends StatefulWidget {
   }) : super(key: key);
 
   @override
-  State<InProgressRideBottomSheet> createState() => _InProgressRideBottomSheetState();
+  State<InProgressRideBottomSheet> createState() =>
+      _InProgressRideBottomSheetState();
 }
 
 class _InProgressRideBottomSheetState extends State<InProgressRideBottomSheet>
@@ -573,11 +799,12 @@ class _InProgressRideBottomSheetState extends State<InProgressRideBottomSheet>
   late AnimationController _progressController;
   late Animation<double> _pulseAnimation;
   late Animation<double> _progressAnimation;
+  final int _countdown = 300; // 5 minutes en secondes
 
   @override
   void initState() {
     super.initState();
-    
+
     // Animation pour le pouls du prix
     _pulseController = AnimationController(
       duration: const Duration(milliseconds: 1500),
@@ -590,7 +817,7 @@ class _InProgressRideBottomSheetState extends State<InProgressRideBottomSheet>
       parent: _pulseController,
       curve: Curves.easeInOut,
     ));
-    
+
     // Animation pour la barre de progression
     _progressController = AnimationController(
       duration: const Duration(milliseconds: 2000),
@@ -771,7 +998,7 @@ class _InProgressRideBottomSheetState extends State<InProgressRideBottomSheet>
                           child: IconButton(
                             onPressed: widget.onCallClients,
                             icon: const Icon(
-                              Icons.phone,
+                              Icons.pause,
                               color: Colors.white,
                               size: 24,
                             ),
@@ -968,30 +1195,161 @@ class _InProgressRideBottomSheetState extends State<InProgressRideBottomSheet>
                   const SizedBox(height: 15),
 
                   // Bouton pénalité
-                  SizedBox(
-                    width: double.infinity,
-                    height: 50,
-                    child: TextButton(
-                      onPressed: widget.onAddPenalty,
-                      style: TextButton.styleFrom(
-                        foregroundColor: Colors.red,
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(25),
-                        ),
-                      ),
-                      child: const Text(
-                        'Ajouter une pénalité de retard',
-                        style: TextStyle(
-                          fontSize: 12,
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
-                    ),
-                  ),
+               
                 ],
               ),
             ),
           ),
+        );
+      },
+    );
+  }
+
+  Widget _buildTimerWidget() {
+    final minutes = (_countdown ~/ 60).toString().padLeft(2, '0');
+    final seconds = (_countdown % 60).toString().padLeft(2, '0');
+
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(30),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.1),
+            blurRadius: 10,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          const Text(
+            'Temps d\'attente estimé',
+            style: TextStyle(
+              fontSize: 16,
+              color: Colors.grey,
+              fontWeight: FontWeight.w500,
+            ),
+          ),
+          const SizedBox(height: 8),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              _buildTimeSegment(minutes, 'MIN'),
+              const Text(
+                ':',
+                style: TextStyle(
+                  fontSize: 40,
+                  fontWeight: FontWeight.bold,
+                  color: kcPrimaryColor,
+                ),
+              ),
+              _buildTimeSegment(seconds, 'SEC'),
+            ],
+          ),
+          const SizedBox(height: 8),
+          LinearProgressIndicator(
+            value: _countdown / 300,
+            backgroundColor: Colors.grey[200],
+            valueColor: AlwaysStoppedAnimation<Color>(
+              _countdown > 60 ? kcPrimaryColor : Colors.orange,
+            ),
+            minHeight: 6,
+            borderRadius: BorderRadius.circular(3),
+          ),
+          const SizedBox(height: 4),
+          Text(
+            _countdown > 60 ? 'En attente du client...' : 'Presque là !',
+            style: TextStyle(
+              color: _countdown > 60 ? Colors.grey[600] : Colors.orange,
+              fontWeight: FontWeight.w500,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildTimeSegment(String value, String label) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 4),
+      child: Column(
+        children: [
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+            decoration: BoxDecoration(
+              color: kcPrimaryColor.withOpacity(0.1),
+              borderRadius: BorderRadius.circular(10),
+            ),
+            child: Text(
+              value,
+              style: const TextStyle(
+                fontSize: 32,
+                fontWeight: FontWeight.bold,
+                color: kcPrimaryColor,
+                fontFeatures: [FontFeature.tabularFigures()],
+              ),
+            ),
+          ),
+          const SizedBox(height: 4),
+          Text(
+            label,
+            style: const TextStyle(
+              fontSize: 12,
+              color: Colors.grey,
+              letterSpacing: 1.2,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildCancelButton() {
+    return ElevatedButton(
+      onPressed: () => _showCancelDialog(context),
+      style: ElevatedButton.styleFrom(
+        backgroundColor: Colors.red[50],
+        foregroundColor: Colors.red,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(12),
+        ),
+        padding: const EdgeInsets.symmetric(vertical: 16),
+        elevation: 0,
+      ),
+      child: const Text(
+        'Annuler la course',
+        style: TextStyle(
+          fontSize: 16,
+          fontWeight: FontWeight.w600,
+        ),
+      ),
+    );
+  }
+
+  void _showCancelDialog(BuildContext context) {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: const Text('Annuler la course'),
+          content:
+              const Text('Êtes-vous sûr de vouloir annuler cette course ?'),
+          actions: <Widget>[
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(),
+              child: const Text('Non'),
+            ),
+            TextButton(
+              onPressed: () {
+                Navigator.of(context).pop();
+                widget.onCancelRide();
+              },
+              child: const Text('Oui'),
+            ),
+          ],
         );
       },
     );

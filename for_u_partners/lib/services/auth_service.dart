@@ -1,4 +1,8 @@
 import 'dart:convert';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:flutter/material.dart';
+import 'package:for_u_partners/ui/common/profil_validation_page.dart';
+import 'package:for_u_partners/ui/common/toast.dart';
 import 'package:http/http.dart' as http;
 import 'package:dio/dio.dart';
 import 'package:path/path.dart' as path;
@@ -14,10 +18,11 @@ import 'package:for_u_partners/services/sharedpreferences_service.dart';
 class AuthService {
   final _sharedPreferencesServices = locator<SharedpreferencesService>();
   final _navigationService = locator<NavigationService>();
+  final FirebaseFirestore _firestore = FirebaseFirestore.instance;
 
   //* LOGIN FUNCTION
 
-  Future<void> login(LoginModel loginModel, String type) async {
+  Future<void> login(LoginModel loginModel, BuildContext context) async {
     final url =
         Uri.parse("https://foryou.cilassocies.com/api/partenaire/login");
 
@@ -25,50 +30,127 @@ class AuthService {
         headers: headers, body: jsonEncode(loginModel.toJson()));
 
     print("=== RESPONSE: ${response.body} ===");
+    final responseJson = jsonDecode(response.body);
     if (response.statusCode == 200) {
-      final responseJson = jsonDecode(response.body);
-
       print("VALEURS");
       print("role : ${responseJson['data']['role']}");
       print("name : ${responseJson['data']['nom']}");
       print("userId : ${responseJson['data']['id']}");
+      if (responseJson['data']['conducteur'] != null) {
+        print("conducteurId : ${responseJson['data']['conducteur']['id']}");
+      }
       print("TOKEN : ${responseJson['token']}");
 
 // Récupération directe des valeurs
       String role = responseJson['type'];
+      if (role == "conducteur") {
+        role = responseJson['conducteur_type'];
+      }
       String name = responseJson['data']['nom'];
       String userId = responseJson['data']['id']
           .toString(); // Si tu veux le garder en String
       String token = responseJson['token'];
-
+      String message = responseJson['message'];
 // Sauvegarde dans SharedPreferences
       await _sharedPreferencesServices.saveToken(token);
       await _sharedPreferencesServices.saveUserName(name);
       await _sharedPreferencesServices.saveUserType(role);
       await _sharedPreferencesServices.saveUserId(userId);
+
+      // Determiner quel ID utiliser pour la base de données Firestore
+      String firestoreUserId;
+      if (responseJson['data']['conducteur'] != null) {
+        // Si c'est un conducteur/livreur, utiliser l'ID du conducteur
+        final conducteurId =
+            responseJson['data']['conducteur']['id'].toString();
+        await _sharedPreferencesServices.saveUserTypeId(conducteurId);
+        firestoreUserId = conducteurId;
+        print(
+            "Utilisateur partenaire détecté - ID Firestore: $firestoreUserId");
+      } else {
+        // Si c'est un autre partenaire, utiliser l'ID utilisateur normal
+        firestoreUserId = userId;
+        print("Autre partenaire détecté - ID Firestore: $firestoreUserId");
+      }
+
+      // Synchroniser avec Firestore en passant le bon ID
+      await _syncUserToFirestore(responseJson['data'], role, firestoreUserId);
+
+      // redirection
+      CustomToast.showSuccess(context, message: message);
       switch (role) {
         case 'livreur':
           _navigationService.replaceWithDeliveryNavBarView();
           break;
-        case 'conducteur':
+        case 'chauffeur':
           _navigationService.replaceWithHomemainView();
           break;
-        case 'coursier':
+        case 'ramasseur':
           _navigationService.replaceWithDeliveryNavBarView();
           break;
         case 'pressing':
+          //await _sharedPreferencesServices.saveToken(token);
           _navigationService.replaceWithNavBarPressingView();
           break;
         default:
-          _navigationService.replaceWithNavBarPressingView();
+          null;
       }
     } else {
+      String message = responseJson['error'];
+      CustomToast.showError(context, message: message);
       throw Exception('Something went wrong');
     }
   }
 
-  //* GET TOKEN HEADERS
+  //* Synchroniser l'utilisateur avec Firestore
+  Future<void> _syncUserToFirestore(Map<String, dynamic> userData, String type,
+      String firestoreUserId) async {
+    try {
+      // ✅ UTILISER L'ID PASSÉ EN PARAMÈTRE
+      final userDoc = _firestore.collection('users').doc(firestoreUserId);
 
+      // Vérifier si le document existe déjà
+      final docSnapshot = await userDoc.get();
+
+      // Données de base communes à tous les utilisateurs
+      Map<String, dynamic> baseUserData = {
+        'id': userData['id'], // ✅ GARDER L'ID ORIGINAL POUR RÉFÉRENCE
+        'nom': userData['nom'] ?? '',
+        'prenom': userData['prenom'] ?? '',
+        'email': userData['email'] ?? '',
+        'telephone': userData['telephone'] ?? '',
+        'role': type,
+        'status': 'active',
+        'lastSeen': FieldValue.serverTimestamp(),
+      };
+
+      // ✅ AJOUTER L'ID CONDUCTEUR SI DISPONIBLE
+      if (userData['conducteur'] != null) {
+        baseUserData['conducteurId'] = userData['conducteur']['id'];
+      }
+
+      if (!docSnapshot.exists) {
+        // Créer un nouveau document avec les données complètes
+        baseUserData['createdAt'] = FieldValue.serverTimestamp();
+
+        await userDoc.set(baseUserData);
+        print('✅ Nouvel utilisateur créé dans Firestore: $firestoreUserId');
+      } else {
+        // Mettre à jour les données existantes
+        Map<String, dynamic> updateData = {
+          'lastSeen': FieldValue.serverTimestamp(),
+          'status': 'active',
+        };
+
+        await userDoc.update(updateData);
+        print('🔄 Utilisateur mis à jour dans Firestore: $firestoreUserId');
+      }
+    } catch (e) {
+      print('❌ Erreur lors de la synchronisation Firestore: $e');
+    }
+  }
+
+  //* GET TOKEN HEADERS
   Future<Map<String, String>> getAuthenticatedHeaders() async {
     final token = await _sharedPreferencesServices.getToken();
 
@@ -106,13 +188,17 @@ class AuthService {
     final formData = FormData();
 
     print("=== CONSTRUCTION FORMDATA SELON API ===");
+    print("Type d'utilisateur: ${model.type}");
+    print("Téléphone: ${model.telephone}");
+    print("Email: ${model.email}");
+    print("Véhicule présent: ${model.vehicule != null}");
 
     // Champs obligatoires de base
     formData.fields.addAll([
       MapEntry('type', model.type),
       MapEntry('telephone', model.telephone),
       MapEntry('email', model.email),
-      MapEntry('code', model.code), // L'API l'attend (voir curl)
+      MapEntry('code', model.code),
       MapEntry('mot_de_passe', model.motDePasse),
       MapEntry('mot_de_passe_confirmation', model.motDePasseConfirmation),
       MapEntry('nom', model.nom),
@@ -232,7 +318,8 @@ class AuthService {
     return formData;
   }
 
-  Future<void> register(RegistrationModel registrationModel) async {
+  Future<void> register(
+      RegistrationModel registrationModel, BuildContext context) async {
     final dio = Dio();
     const url = 'https://foryou.cilassocies.com/api/partenaire/register';
 
@@ -301,55 +388,123 @@ class AuthService {
       print("Status Code: ${response.statusCode}");
       print("Response Data: ${response.data}");
 
+      final responseJson = response.data;
+      print("Response JSON: $responseJson");
+      String token = responseJson['token'];
       if (response.statusCode == 201) {
-        final responseJson = response.data;
-        final registerType = responseJson['type'];
+        String registerType = responseJson['type'];
+        print("Type: $registerType");
 
-        await _sharedPreferencesServices.saveToken(responseJson['token']);
+        // Gérer statut_validation qui peut être null pour certains types (comme pressing)
+        final String? profilStatuts = responseJson['data']['statut_validation'];
+
+        if (registerType == "conducteur") {
+          final String? conducteurType = responseJson['conducteur_type'];
+          if (conducteurType != null) {
+            registerType = conducteurType;
+          }
+        }
+
+        // Sauvegarder les données de base
         await _sharedPreferencesServices.saveUserId(responseJson['data']['id']);
         await _sharedPreferencesServices.saveUserType(registerType);
         await _sharedPreferencesServices
             .saveUserName(responseJson['data']['nom']);
 
+        String firestoreUserId;
+        if (responseJson['data']['conducteur'] != null) {
+          print(
+              "Conducteur inscrit - ID Firestore: ${responseJson['data']['conducteur']['id']}");
+          final conducteurId =
+              responseJson['data']['conducteur']['id'].toString();
+          await _sharedPreferencesServices.saveUserTypeId(conducteurId);
+          firestoreUserId = conducteurId;
+          print("Partenaire inscrit - ID Firestore: $firestoreUserId");
+        } else {
+          firestoreUserId = responseJson['data']['id'].toString();
+          print("Client inscrit - ID Firestore: $firestoreUserId");
+        }
+
+        // Synchroniser avec Firestore après inscription réussie
+        await _syncRegisteredUserToFirestore(responseJson['data'], registerType,
+            registrationModel, firestoreUserId);
+
         print('Inscription réussie pour le type: $registerType');
 
         switch (registerType) {
           case 'livreur':
-            _navigationService.replaceWithDeliveryNavBarView();
+            // Sauvegarder le statut seulement s'il existe
+            if (profilStatuts != null) {
+              await _sharedPreferencesServices.saveProfilStatuts(profilStatuts);
+            }
+            Navigator.push(
+                context,
+                MaterialPageRoute(
+                    builder: (context) => const ProfileValidationPage()));
             break;
-          case 'conducteur':
-            _navigationService.replaceWithHomemainView();
+
+          case 'chauffeur':
+            // Sauvegarder le statut seulement s'il existe
+            if (profilStatuts != null) {
+              await _sharedPreferencesServices.saveProfilStatuts(profilStatuts);
+            }
+            Navigator.push(
+                context,
+                MaterialPageRoute(
+                    builder: (context) => const ProfileValidationPage()));
             break;
-          case 'coursier':
-            _navigationService.replaceWithDeliveryNavBarView();
+
+          case 'ramasseur':
+            // Sauvegarder le statut seulement s'il existe
+            if (profilStatuts != null) {
+              await _sharedPreferencesServices.saveProfilStatuts(profilStatuts);
+            }
+            Navigator.push(
+                context,
+                MaterialPageRoute(
+                    builder: (context) => const ProfileValidationPage()));
             break;
+
           case 'pressing':
+            // Pour pressing, pas besoin de statut_validation
+            await _sharedPreferencesServices.saveToken(token);
+            print("Token sauvegardé, redirection vers la vue pressing...");
             _navigationService.replaceWithNavBarPressingView();
             break;
+
           default:
-            _navigationService.replaceWithNavBarPressingView();
+            print('Type non géré: $registerType');
+            break;
         }
       } else {
         // LANCER UNE EXCEPTION AU LIEU DE JUSTE IMPRIMER
         print('=== ERREUR SERVEUR ===');
         print('Status Code: ${response.statusCode}');
-        print('Response: ${response.data}');
+        print('Response: ${responseJson['error']}');
 
         String errorMessage = "Erreur lors de l'inscription";
 
         // Extraire le message d'erreur du serveur
         if (response.data is Map) {
-          if (response.data.containsKey('message')) {
-            errorMessage = response.data['message'];
-          } else if (response.data.containsKey('errors')) {
+          if (response.data['message'] != null) {
+            errorMessage = response.data['message'].toString();
+          } else if (response.data['errors'] != null) {
             // Si c'est des erreurs de validation
             final errors = response.data['errors'] as Map<String, dynamic>;
             if (errors.isNotEmpty) {
-              final firstError = errors.values.first;
-              if (firstError is List && firstError.isNotEmpty) {
-                errorMessage = firstError.first.toString();
-              } else {
-                errorMessage = firstError.toString();
+              // Récupérer toutes les erreurs
+              final allErrors = <String>[];
+              
+              errors.forEach((key, value) {
+                if (value is List) {
+                  allErrors.addAll(value.map((e) => e.toString()));
+                } else if (value != null) {
+                  allErrors.add(value.toString());
+                }
+              });
+              
+              if (allErrors.isNotEmpty) {
+                errorMessage = allErrors.join('\n');
               }
             }
           }
@@ -379,31 +534,59 @@ class AuthService {
         // Pour toute autre exception, la wrapper dans une DioException
         print('Stack trace : ${StackTrace.current}');
         throw DioException(
-          requestOptions: RequestOptions(path: url),
+          requestOptions: RequestOptions(
+              path: 'https://foryou.cilassocies.com/api/partenaire/register'),
           message: e.toString(),
         );
       }
     }
   }
 
+  Future<void> _syncRegisteredUserToFirestore(
+    Map<String, dynamic> userData,
+    String type,
+    RegistrationModel registrationModel,
+    String firestoreUserId,
+  ) async {
+    try {
+      // ✅ UTILISER L'ID PASSÉ EN PARAMÈTRE
+      final userDoc = _firestore.collection('users').doc(firestoreUserId);
+
+      // Données de base communes à tous les utilisateurs
+      Map<String, dynamic> baseUserData = {
+        'id': userData['id'],
+        'nom': registrationModel.nom,
+        'prenom': registrationModel.prenom ?? '',
+        'email': registrationModel.email,
+        'telephone': registrationModel.telephone,
+        'role': type,
+        'status': 'active',
+        'createdAt': FieldValue.serverTimestamp(),
+        'lastSeen': FieldValue.serverTimestamp(),
+        'adresse': registrationModel.adresse,
+        'genre': registrationModel.genre,
+        'dateNaissance': registrationModel.dateNaissance,
+      };
+
+      // ✅ AJOUTER L'ID CONDUCTEUR SI DISPONIBLE
+      if (userData['conducteur'] != null) {
+        baseUserData['conducteurId'] = userData['conducteur']['id'];
+      }
+
+      await userDoc.set(baseUserData);
+      print(
+          '✅ Nouvel utilisateur inscrit créé dans Firestore: $firestoreUserId');
+    } catch (e) {
+      print('❌ Erreur lors de la synchronisation Firestore (inscription): $e');
+    }
+  }
+
   Future<void> logOut() async {
-    // try {
-    // Optionnel: appeler l'API de déconnexion
-    //   final url =
-    //       Uri.parse("https://foryou.cilassocies.com/api/partenaire/logout");
-
-    //   await http.post(
-    //     url,
-    //     headers: await getAuthenticatedHeaders(),
-    //   );
-    // } catch (e) {
-    //   print("Erreur lors du logout API: $e");
-    // } finally {
-
     // Supprimer toutes les données locales
     await _sharedPreferencesServices.removeToken();
     await _sharedPreferencesServices.removeUserId();
     await _sharedPreferencesServices.removeUserType();
+    await _sharedPreferencesServices.removeUserTypeId();
 
     // Rediriger vers l'écran de connexion
     _navigationService.clearStackAndShow(Routes.loginView);

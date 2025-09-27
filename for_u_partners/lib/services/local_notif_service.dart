@@ -1,8 +1,6 @@
 import 'dart:io';
-import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
-import 'package:timezone/timezone.dart' as tz;
 import 'package:timezone/data/latest.dart' as tz;
 import 'package:logger/logger.dart';
 
@@ -230,12 +228,12 @@ class LocalNotificationService {
         importance: Importance.high,
         priority: Priority.high,
         icon: '@mipmap/ic_launcher',
-        color: const Color(0xFF22C55E), // Vert pour succès
+        color: Color(0xFF22C55E), // Vert pour succès
         enableVibration: true,
         playSound: true,
         styleInformation: BigTextStyleInformation(
-          'Veuillez attendre la confirmation du client avant de commencer le ramassage.',
-          contentTitle: '✅ Course acceptée',
+          'Vous pouvez commencer le ramassage',
+          contentTitle: 'Course acceptée',
           htmlFormatBigText: true,
         ),
       );
@@ -244,14 +242,14 @@ class LocalNotificationService {
         presentAlert: true,
         presentBadge: true,
         presentSound: true,
-        subtitle: 'En attente de confirmation',
+        //subtitle: 'Vous pouvez commencer le ramassage',
       );
 
       await _flutterLocalNotificationsPlugin.show(
         DateTime.now().millisecondsSinceEpoch ~/ 1000,
-        '✅ Course acceptée',
-        'En attente de la confirmation du client',
-        NotificationDetails(
+        'Course acceptée',
+        'Vous pouvez commencer le ramassage',
+        const NotificationDetails(
           android: androidNotificationDetails,
           iOS: iosNotificationDetails,
         ),
@@ -464,7 +462,7 @@ class LocalNotificationService {
         importance: Importance.high,
         priority: Priority.high,
         icon: '@mipmap/ic_launcher',
-        color: const Color(0xFFF59E0B), // Orange pour mise en attente
+        color: Color(0xFFF59E0B), // Orange pour mise en attente
         enableVibration: true,
         playSound: true,
         styleInformation: BigTextStyleInformation(
@@ -486,7 +484,7 @@ class LocalNotificationService {
         DateTime.now().millisecondsSinceEpoch ~/ 1000,
         '⏳ En attente de confirmation',
         'Veuillez patienter pendant que le client confirme la course.Vous recevrez une notification dès que la course sera confirmée.',
-        NotificationDetails(
+        const NotificationDetails(
           android: androidNotificationDetails,
           iOS: iosNotificationDetails,
         ),
@@ -509,7 +507,7 @@ class LocalNotificationService {
         importance: Importance.high,
         priority: Priority.high,
         icon: '@mipmap/ic_launcher',
-        color: const Color(0xFF22C55E), // Vert pour confirmation
+        color: Color(0xFF22C55E), // Vert pour confirmation
         enableVibration: true,
         playSound: true,
         styleInformation: BigTextStyleInformation(
@@ -531,7 +529,7 @@ class LocalNotificationService {
         DateTime.now().millisecondsSinceEpoch ~/ 1000,
         '✅ Course confirmée',
         'Vous pouvez commencer le ramassage',
-        NotificationDetails(
+        const NotificationDetails(
           android: androidNotificationDetails,
           iOS: iosNotificationDetails,
         ),
@@ -555,7 +553,7 @@ class LocalNotificationService {
         importance: Importance.high,
         priority: Priority.high,
         icon: '@mipmap/ic_launcher',
-        color: const Color(0xFF3B82F6), // Bleu pour démarrage
+        color: Color(0xFF3B82F6), // Bleu pour démarrage
         enableVibration: true,
         playSound: true,
         styleInformation: BigTextStyleInformation(
@@ -576,7 +574,7 @@ class LocalNotificationService {
         DateTime.now().millisecondsSinceEpoch ~/ 1000,
         '🚗 Course démarrée',
         'Bonne route !',
-        NotificationDetails(
+        const NotificationDetails(
           android: androidNotificationDetails,
           iOS: iosNotificationDetails,
         ),

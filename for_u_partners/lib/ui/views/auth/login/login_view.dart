@@ -31,7 +31,7 @@ class LoginView extends StackedView<LoginViewModel> with $LoginView {
     Widget? child,
   ) {
     return Scaffold(
-      backgroundColor: Theme.of(context).colorScheme.surface,
+      backgroundColor: Colors.white,
       body: LayoutBuilder(
         builder: (context, constraints) {
           return SingleChildScrollView(
@@ -122,13 +122,14 @@ class LoginView extends StackedView<LoginViewModel> with $LoginView {
                               text: "Se connecter",
                               onPressed: () async {
                                 LoginModel model = LoginModel(
-                                  telephone:
-                                      "+229${phoneNumberInputController.text}",
-                                  motDePasse: passwordInputController.text,
-                                  type: viewModel.selectedProfile,
-                                );
+                                    telephone:
+                                        "+229${phoneNumberInputController.text}",
+                                    motDePasse: passwordInputController.text,
+                                    type: viewModel.selectedProfile == "livreur"
+                                        ? "conducteur"
+                                        : viewModel.selectedProfile);
                                 print("=== MODEL: ${model.toJson()} ===");
-                                viewModel.login(model);
+                                viewModel.login(model, context);
                               }),
                         ),
 

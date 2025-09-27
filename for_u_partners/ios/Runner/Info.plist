@@ -26,10 +26,44 @@
 	<string>$(FLUTTER_BUILD_NUMBER)</string>
 	<key>LSRequiresIPhoneOS</key>
 	<true/>
-	<key>NSLocationAlwaysAndWhenInUseUsageDescription</key>
-	<string>For U Partners a besoin d'accéder à votre position pour vous proposer les meilleures courses dans votre zone.</string>
+
+	<!-- Google Maps Configuration -->
+	<key>GMSApiKey</key>
+	<string>AIzaSyAVtrvygnbsdnL6VMEJS_DB0JfEa0piHqM</string>
+
+	<!-- Location Permissions -->
 	<key>NSLocationWhenInUseUsageDescription</key>
 	<string>For U Partners a besoin d'accéder à votre position pour afficher les courses disponibles près de vous sur la carte.</string>
+	<key>NSLocationAlwaysAndWhenInUseUsageDescription</key>
+	<string>For U Partners a besoin d'accéder à votre position pour vous proposer les meilleures courses dans votre zone.</string>
+	<key>NSLocationAlwaysUsageDescription</key>
+	<string>Nous avons besoin d'accéder à votre position en arrière-plan pour vous fournir des mises à jour en temps réel pendant vos courses.</string>
+
+		<!-- Camera and Photo Library Permissions -->
+	<key>NSCameraUsageDescription</key>
+	<string>For U Partners a besoin d'accéder à votre appareil photo pour prendre des photos de documents ou de votre véhicule.</string>
+	<key>NSPhotoLibraryUsageDescription</key>
+	<string>For U Partners a besoin d'accéder à votre bibliothèque de photos pour sélectionner des images de documents ou de votre véhicule.</string>
+	
+	<!-- Autoriser l'ouverture de Google Maps ou Safari via url_launcher -->
+	<key>LSApplicationQueriesSchemes</key>
+	<array>
+		<string>http</string>
+		<string>https</string>
+		<string>comgooglemaps</string>
+		<string>googlemaps</string>
+	</array>
+
+	<!-- Other required configurations -->
+	<key>io.flutter.embedded_views_preview</key>
+	<true/>
+	<key>NSAppTransportSecurity</key>
+	<dict>
+		<key>NSAllowsArbitraryLoads</key>
+		<true/>
+		<key>NSAllowsArbitraryLoadsInWebContent</key>
+		<true/>
+	</dict>
 	<key>UIApplicationSupportsIndirectInputEvents</key>
 	<true/>
 	<key>UIBackgroundModes</key>

@@ -1,10 +1,10 @@
 import 'dart:convert';
-import 'package:for_u_partners/app/models/depot_models/depot_detail_model.dart';
-import 'package:for_u_partners/app/models/depot_models/depot_model.dart';
-import 'package:for_u_partners/app/models/depot_models/planned_depot_model.dart';
-import 'package:for_u_partners/app/models/ramassage_models/ramassage_detail_model.dart';
-import 'package:for_u_partners/app/models/ramassage_models/ramassage_model.dart';
-import 'package:for_u_partners/app/models/ramassage_models/ramassage_statut_model.dart';
+import 'package:for_u_partners/app/models/pressing_depot_models/depot_detail_model.dart';
+import 'package:for_u_partners/app/models/pressing_depot_models/depot_model.dart';
+import 'package:for_u_partners/app/models/pressing_depot_models/planned_depot_model.dart';
+import 'package:for_u_partners/app/models/pressing_ramassage_models/ramassage_detail_model.dart';
+import 'package:for_u_partners/app/models/pressing_ramassage_models/ramassage_model.dart';
+import 'package:for_u_partners/app/models/pressing_ramassage_models/ramassage_statut_model.dart';
 import 'package:http/http.dart' as http;
 import 'package:for_u_partners/app/app.locator.dart';
 import 'package:for_u_partners/services/auth_service.dart';

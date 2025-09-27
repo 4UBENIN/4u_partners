@@ -34,15 +34,15 @@ class HomeView extends StackedView<HomeViewModel> {
                   const SizedBox(height: 24),
                   SummaryWidget(
                     todayCourses: viewModel.todayCourses,
-                    todayEarnings: viewModel.todayEarnings,
+                    todayEarnings: viewModel.montantGainToday.toString(),
                   ),
                   const SizedBox(height: 24),
                   if (viewModel.hasActiveRide)
                     CurrentRideWidget(
                       clientName: viewModel.activeRideClientName,
-                      destination: "Manchester",
+                      destination: viewModel.activeRideDestination,
                       timeRemaining:
-                          '15 min', // À remplacer par la valeur réelle si disponible
+                          '', // À remplacer par la valeur réelle si disponible
                       distanceKm: viewModel.activeRideDistance,
                       onTap: () {
                         // Navigation vers l'écran de détail de la course
@@ -149,19 +149,42 @@ class HomeView extends StackedView<HomeViewModel> {
                           ),
                   ],
                 ),
-                Container(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                  decoration: BoxDecoration(
-                    color: const Color(0xFF10B981),
-                    borderRadius: BorderRadius.circular(20),
-                  ),
-                  child: const Text(
-                    'EN LIGNE',
-                    style: TextStyle(
-                      color: Colors.white,
-                      fontSize: 12,
-                      fontWeight: FontWeight.w500,
+                GestureDetector(
+                  onTap: model.isBusy ? null : () => model.toggleOnlineStatus(),
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                    decoration: BoxDecoration(
+                      color: model.isOnline ? const Color(0xFF10B981) : Colors.grey,
+                      borderRadius: BorderRadius.circular(20),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withOpacity(0.1),
+                          blurRadius: 4,
+                          offset: const Offset(0, 2),
+                        ),
+                      ],
+                    ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Container(
+                          width: 8,
+                          height: 8,
+                          margin: const EdgeInsets.only(right: 6),
+                          decoration: const BoxDecoration(
+                            color: Colors.white,
+                            shape: BoxShape.circle,
+                          ),
+                        ),
+                        Text(
+                          model.isOnline ? 'EN LIGNE' : 'HORS LIGNE',
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontSize: 12,
+                            fontWeight: FontWeight.w500,
+                          ),
+                        ),
+                      ],
                     ),
                   ),
                 ),
