@@ -250,7 +250,7 @@ class AcceptedClientBottomSheet extends StatefulWidget {
 class _AcceptedClientBottomSheetState extends State<AcceptedClientBottomSheet>
     with SingleTickerProviderStateMixin {
   bool _clientPickedUp = false;
-  bool _isLoading = false; // État du toggle switch
+  final bool _isLoading = false; // État du toggle switch
   bool _showTimer = false;
   bool _arrivalConfirmed =
       false; // Pour suivre si la confirmation d'arrivée a été faite
@@ -1027,8 +1027,12 @@ class _InProgressRideBottomSheetState extends State<InProgressRideBottomSheet>
   late AnimationController _progressController;
   late Animation<double> _pulseAnimation;
   late Animation<double> _progressAnimation;
+<<<<<<< HEAD
   int _countdown = 300; // 5 minutes en secondes
   int? _waitingTime; // Track waiting time in seconds
+=======
+  final int _countdown = 300; // 5 minutes en secondes
+>>>>>>> origin/develop-backup
 
   @override
   void initState() {

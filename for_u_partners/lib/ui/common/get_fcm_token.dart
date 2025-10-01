@@ -55,30 +55,23 @@ class FirebaseMessagingService {
   /// Récupère le token FCM
   Future<void> _getToken() async {
     try {
-      String? token;
-
-      // Pour iOS, attendre le token APNS si nécessaire
+      // Pour iOS, on attend un peu pour laisser le temps à APNS de s'initialiser
       if (Platform.isIOS) {
-        String? apnsToken = await _messaging.getAPNSToken();
-
-        if (apnsToken == null) {
-          // Attendre 3 secondes comme recommandé
-          await Future.delayed(const Duration(seconds: 3));
-          apnsToken = await _messaging.getAPNSToken();
-        }
+        await Future.delayed(const Duration(seconds: 2));
       }
 
       // Récupérer le token FCM
-      token = await _messaging.getToken();
+      final String? token = await _messaging.getToken();
 
       if (token != null) {
         _currentToken = token; // Stocker le token
         onTokenUpdate?.call(token);
-        // Ne pas envoyer automatiquement lors de l'init
-        // L'envoi se fera manuellement selon le contexte
+        print('Token FCM obtenu avec succès');
+      } else {
+        print('Le token FCM est null');
       }
     } catch (e) {
-      print('Erreur récupération token: $e');
+      print('Erreur lors de la récupération du token FCM: $e');
     }
   }
 

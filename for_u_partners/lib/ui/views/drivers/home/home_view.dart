@@ -164,7 +164,7 @@ class HomeView extends StackedView<HomeViewModel> {
                           width: 8,
                           height: 8,
                           margin: const EdgeInsets.only(right: 6),
-                          decoration: BoxDecoration(
+                          decoration: const BoxDecoration(
                             color: Colors.white,
                             shape: BoxShape.circle,
                           ),
