@@ -1,13 +1,12 @@
 import 'package:flutter/material.dart';
+import 'package:for_u_partners/ui/views/drivers/courses/pick_up_page.dart';
 import 'package:stacked/stacked.dart';
 import 'package:loading_animation_widget/loading_animation_widget.dart';
 import 'package:for_u_partners/ui/common/app_colors.dart';
-import 'package:for_u_partners/ui/views/drivers/courses/course_view.dart';
 import 'home_viewmodel.dart';
 import 'widgets/wallet_widget.dart';
 import 'widgets/summary_widget.dart';
 import 'widgets/activity_widget.dart';
-import 'widgets/current_ride_widget.dart';
 
 class HomeView extends StackedView<HomeViewModel> {
   const HomeView({Key? key}) : super(key: key);
@@ -202,7 +201,7 @@ class HomeView extends StackedView<HomeViewModel> {
           Navigator.push(
             context,
             MaterialPageRoute(
-              builder: (context) => const CourseView(),
+              builder: (context) => const PickUpPage(),
             ),
           );
         },

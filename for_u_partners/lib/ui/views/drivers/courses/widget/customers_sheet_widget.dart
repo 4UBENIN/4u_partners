@@ -5,7 +5,7 @@ import 'package:for_u_partners/services/driver_service.dart';
 import 'package:for_u_partners/ui/common/app_colors.dart';
 import 'package:for_u_partners/ui/views/drivers/courses/model/client_model.dart';
 import 'package:for_u_partners/ui/views/drivers/courses/widget/dialog_widget.dart';
-import 'package:slider_button/slider_button.dart';
+import 'package:slide_to_act/slide_to_act.dart';
 
 class ClientsBottomSheet extends StatelessWidget {
   final List<ClientData> getClientsList;
@@ -846,31 +846,27 @@ class _AcceptedClientBottomSheetState extends State<AcceptedClientBottomSheet>
                         ),
                         child: _showTimer
                             ? _buildTimerWidget()
-                            : SliderButton(
-                                width: double.infinity,
+                            : SlideAction(
                                 height: 60,
-                                buttonSize: 50,
-                                backgroundColor: Colors.grey[200]!,
-                                buttonColor: kcPrimaryColor,
-                                shimmer: true,
-                                label: Center(
-                                  child: Text(
-                                    'Glissez pour confirmer votre arrivée',
-                                    style: TextStyle(
-                                      color: Colors.grey[700],
-                                      fontWeight: FontWeight.w500,
-                                      fontSize: 16,
-                                    ),
-                                  ),
-                                ),
-                                icon: const Icon(
+                                sliderButtonIcon: const Icon(
                                   Icons.double_arrow_rounded,
                                   color: Colors.white,
                                   size: 24,
                                 ),
-                                action: () async {
+                                sliderButtonYOffset: -1,
+                                borderRadius: 30,
+                                elevation: 0,
+                                outerColor: Colors.grey[200]!,
+                                innerColor: kcPrimaryColor,
+                                text: 'Glissez pour confirmer votre arrivée',
+                                textStyle: TextStyle(
+                                  color: Colors.grey[700],
+                                  fontWeight: FontWeight.w500,
+                                  fontSize: 16,
+                                ),
+                                onSubmit: () async {
                                   // Éviter les déclenchements multiples
-                                  if (_arrivalConfirmed) return true;
+                                  if (_arrivalConfirmed) return;
 
                                   // Démarrer le minuteur d'attente
                                   _startWaitingTimer();
@@ -886,8 +882,7 @@ class _AcceptedClientBottomSheetState extends State<AcceptedClientBottomSheet>
                                     if (mounted) {
                                       setState(() {
                                         _clientPickedUp = true;
-                                        _arrivalConfirmed =
-                                            true; // Marquer comme confirmé
+                                        _arrivalConfirmed = true; // Marquer comme confirmé
                                       });
                                     }
                                   } catch (e) {
@@ -899,12 +894,16 @@ class _AcceptedClientBottomSheetState extends State<AcceptedClientBottomSheet>
                                       _countdownTimer?.cancel();
                                       _waitingTimer?.cancel();
                                     }
-                                    // ... gestion d'erreur
-                                    return false;
+                                    // Relancer le slider en cas d'erreur
+                                    if (mounted) {
+                                      setState(() {
+                                        _arrivalConfirmed = false;
+                                      });
+                                    }
+                                    rethrow;
                                   }
-
-                                  return true;
-                                }),
+                                },
+                              ),
                       ),
                     ],
                   ),

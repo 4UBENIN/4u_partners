@@ -418,7 +418,7 @@ packages:
     source: hosted
     version: "3.8.13"
   firebase_messaging:
-    dependency: "direct dev"
+    dependency: "direct main"
     description:
       name: firebase_messaging
       sha256: ba12ad0b600e0c939fbb9391e1cd3320a5b5dad5284276b9182fc21eb1e72c2b
@@ -543,7 +543,7 @@ packages:
     source: hosted
     version: "3.1.0"
   flutter_svg:
-    dependency: "direct dev"
+    dependency: "direct main"
     description:
       name: flutter_svg
       sha256: b9c2ad5872518a27507ab432d1fb97e8813b05f0fc693f9d40fad06d073e0678
@@ -744,6 +744,14 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "0.5.14+2"
+  google_places_flutter:
+    dependency: "direct main"
+    description:
+      name: google_places_flutter
+      sha256: "37bd64221cf4a5aa97eb3a33dc2d40f6326aa5ae4e2f2a9a7116bdc1a14f5194"
+      url: "https://pub.dev"
+    source: hosted
+    version: "2.1.1"
   graphs:
     dependency: transitive
     description:
@@ -1300,10 +1308,10 @@ packages:
     dependency: transitive
     description:
       name: shared_preferences_android
-      sha256: a2608114b1ffdcbc9c120eb71a0e207c71da56202852d4aab8a5e30a82269e74
+      sha256: bd14436108211b0d4ee5038689a56d4ae3620fd72fd6036e113bf1345bc74d9e
       url: "https://pub.dev"
     source: hosted
-    version: "2.4.12"
+    version: "2.4.13"
   shared_preferences_foundation:
     dependency: transitive
     description:
@@ -1373,8 +1381,16 @@ packages:
     description: flutter
     source: sdk
     version: "0.0.0"
-  slider_button:
+  slide_to_act:
     dependency: "direct dev"
+    description:
+      name: slide_to_act
+      sha256: cd4ea5019754347d5a2b0375e802ad948610a0e233adfe51a9cc5b3a1fc3a43b
+      url: "https://pub.dev"
+    source: hosted
+    version: "2.0.2"
+  slider_button:
+    dependency: "direct main"
     description:
       name: slider_button
       sha256: dd0cb7e6658c817932767a063b98ec56b71d72bb12eb377e265e6a3727b070e7
