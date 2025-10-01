@@ -1,3 +1,6 @@
+import 'package:for_u_partners/ui/views/drivers/documents/documents_viewmodel.dart';
+import 'package:for_u_partners/ui/views/drivers/homemain/homemain_viewmodel.dart';
+import 'package:for_u_partners/ui/views/drivers/vehicles/vehicles_viewmodel.dart';
 import 'package:stacked/stacked_annotations.dart';
 import 'package:stacked_services/stacked_services.dart';
 import 'package:for_u_partners/ui/views/startup/startup_view.dart';
@@ -16,6 +19,8 @@ import 'package:for_u_partners/ui/views/delivery/delivery_home/delivery_home_vie
 import 'package:for_u_partners/ui/views/pressing/home_pressing/home_pressing_view.dart';
 import 'package:for_u_partners/ui/views/auth/register_profile/register_profile_view.dart';
 import 'package:for_u_partners/ui/views/drivers/activitydetails/activitydetails_view.dart';
+import 'package:for_u_partners/ui/views/drivers/vehicles/vehicles_view.dart';
+import 'package:for_u_partners/ui/views/drivers/documents/documents_view.dart';
 import 'package:for_u_partners/ui/views/pressing/compte_pressing/compte_pressing_view.dart';
 import 'package:for_u_partners/ui/views/delivery/compte_delivery/compte_delivery_view.dart';
 import 'package:for_u_partners/ui/views/delivery/delivery_nav_bar/delivery_nav_bar_view.dart';
@@ -59,6 +64,8 @@ import 'package:for_u_partners/services/pickers_service.dart';
     MaterialRoute(page: ActivitiesDeliveryView),
     MaterialRoute(page: CoursesDeliveryView),
     MaterialRoute(page: ProfilPressingView),
+    MaterialRoute(page: VehiclesView),
+    MaterialRoute(page: DocumentsView),
 // @stacked-route
   ],
   dependencies: [
@@ -72,6 +79,9 @@ import 'package:for_u_partners/services/pickers_service.dart';
     LazySingleton(classType: WalletService),
     LazySingleton(classType: ChatService),
     LazySingleton(classType: PickersService),
+    Singleton(classType: HomemainViewModel),
+    Singleton(classType: VehiclesViewModel),
+    Singleton(classType: DocumentsViewModel),
 // @stacked-service
   ],
   bottomsheets: [

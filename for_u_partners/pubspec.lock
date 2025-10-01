@@ -281,22 +281,6 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "0.7.11"
-  device_info_plus:
-    dependency: transitive
-    description:
-      name: device_info_plus
-      sha256: "98f28b42168cc509abc92f88518882fd58061ea372d7999aecc424345c7bff6a"
-      url: "https://pub.dev"
-    source: hosted
-    version: "11.5.0"
-  device_info_plus_platform_interface:
-    dependency: transitive
-    description:
-      name: device_info_plus_platform_interface
-      sha256: e1ea89119e34903dca74b883d0dd78eb762814f97fb6c76f35e9ff74d261a18f
-      url: "https://pub.dev"
-    source: hosted
-    version: "7.0.3"
   dio:
     dependency: "direct dev"
     description:
@@ -535,7 +519,7 @@ packages:
     source: hosted
     version: "2.0.30"
   flutter_polyline_points:
-    dependency: "direct dev"
+    dependency: "direct main"
     description:
       name: flutter_polyline_points
       sha256: c775fe59fbcf1f925d611c039555c7f58ed6d9411747b7a2915bbd9c5e730a51
@@ -609,7 +593,7 @@ packages:
     source: hosted
     version: "3.2.0"
   geolocator:
-    dependency: "direct dev"
+    dependency: "direct main"
     description:
       name: geolocator
       sha256: f4efb8d3c4cdcad2e226af9661eb1a0dd38c71a9494b22526f9da80ab79520e5
@@ -705,7 +689,7 @@ packages:
     source: hosted
     version: "8.2.0"
   google_maps_flutter:
-    dependency: "direct dev"
+    dependency: "direct main"
     description:
       name: google_maps_flutter
       sha256: c389e16fafc04b37a4105e0757ecb9d59806026cee72f408f1ba68811d01bfe6
@@ -769,7 +753,7 @@ packages:
     source: hosted
     version: "0.15.6"
   http:
-    dependency: "direct dev"
+    dependency: "direct main"
     description:
       name: http
       sha256: bb2ce4590bc2667c96f318d68cac1b5a7987ec819351d32b1c987239a815e007
@@ -792,6 +776,14 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "4.1.2"
+  iconsax:
+    dependency: "direct main"
+    description:
+      name: iconsax
+      sha256: fb0144c61f41f3f8a385fadc27783ea9f5359670be885ed7f35cef32565d5228
+      url: "https://pub.dev"
+    source: hosted
+    version: "0.0.8"
   image:
     dependency: transitive
     description:
@@ -1382,21 +1374,13 @@ packages:
     source: sdk
     version: "0.0.0"
   slide_to_act:
-    dependency: "direct dev"
+    dependency: "direct main"
     description:
       name: slide_to_act
       sha256: cd4ea5019754347d5a2b0375e802ad948610a0e233adfe51a9cc5b3a1fc3a43b
       url: "https://pub.dev"
     source: hosted
     version: "2.0.2"
-  slider_button:
-    dependency: "direct main"
-    description:
-      name: slider_button
-      sha256: dd0cb7e6658c817932767a063b98ec56b71d72bb12eb377e265e6a3727b070e7
-      url: "https://pub.dev"
-    source: hosted
-    version: "2.1.0"
   source_gen:
     dependency: transitive
     description:
@@ -1693,22 +1677,6 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "2.2.0"
-  vibration:
-    dependency: "direct main"
-    description:
-      name: vibration
-      sha256: "06588a845a4ebc73ab7ff7da555c2b3dbcd9676164b5856a38bf0b2287f1045d"
-      url: "https://pub.dev"
-    source: hosted
-    version: "1.9.0"
-  vibration_platform_interface:
-    dependency: transitive
-    description:
-      name: vibration_platform_interface
-      sha256: "6ffeee63547562a6fef53c05a41d4fdcae2c0595b83ef59a4813b0612cd2bc36"
-      url: "https://pub.dev"
-    source: hosted
-    version: "0.0.3"
   vm_service:
     dependency: transitive
     description:
@@ -1757,14 +1725,6 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "5.14.0"
-  win32_registry:
-    dependency: transitive
-    description:
-      name: win32_registry
-      sha256: "6f1b564492d0147b330dd794fee8f512cec4977957f310f9951b5f9d83618dae"
-      url: "https://pub.dev"
-    source: hosted
-    version: "2.1.0"
   wkt_parser:
     dependency: transitive
     description:

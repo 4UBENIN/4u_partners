@@ -7,6 +7,7 @@ import 'package:for_u_partners/models/user_model.dart';
 import 'package:for_u_partners/services/driver_service.dart';
 import 'package:for_u_partners/services/sharedpreferences_service.dart';
 import 'package:for_u_partners/ui/views/drivers/profil/edit_profile_view.dart';
+import 'package:for_u_partners/ui/views/drivers/profil/profil_viewmodel.dart' as navigationService;
 import 'package:stacked/stacked.dart';
 import 'package:for_u_partners/app/app.router.dart';
 import 'package:for_u_partners/app/app.locator.dart';
@@ -256,4 +257,11 @@ class ProfilViewModel extends BaseViewModel {
       );
     }
   }
+}
+void navigateToVehiclesView() {
+  navigationService.navigateToVehiclesView();
+}
+
+void navigateToDocumentsView() {
+  navigationService.navigateToDocumentsView();
 }
