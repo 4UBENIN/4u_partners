@@ -1,5 +1,15 @@
 import 'dart:convert';
 
+// Helper pour parser les valeurs numériques (String ou num)
+double _parseDouble(dynamic value) {
+  if (value is num) {
+    return value.toDouble();
+  } else if (value is String) {
+    return double.parse(value);
+  }
+  throw FormatException('Cannot parse $value to double');
+}
+
 class CoursePendingModel {
   final int courseId;
   final int clientId;
@@ -29,10 +39,10 @@ class CoursePendingModel {
       clientId: json['client_id'],
       clientNom: json['client_nom'],
       clientPrenom: json['client_prenom'],
-      departLat: (json['depart_lat'] as num).toDouble(),
-      departLng: (json['depart_lng'] as num).toDouble(),
+      departLat: _parseDouble(json['depart_lat']),
+      departLng: _parseDouble(json['depart_lng']),
       adresseDepart: json['adresse_depart'],
-      pickupDistanceKm: (json['pickup_distance_km'] as num).toDouble(),
+      pickupDistanceKm: _parseDouble(json['pickup_distance_km']),
       dureeEstimee: json['duree_estimee'],
     );
   }
@@ -42,6 +52,7 @@ class CourseData {
   final int isNight;
   final String clientPrenom;
   final String clientNom;
+  final String clientTelephone;
   final String adresseDepart;
   final String adresseArrivee;
   final double distance;
@@ -54,6 +65,7 @@ class CourseData {
     required this.isNight,
     required this.clientPrenom,
     required this.clientNom,
+    required this.clientTelephone,
     required this.adresseDepart,
     required this.adresseArrivee,
     required this.distance,
@@ -68,6 +80,7 @@ class CourseData {
       isNight: int.parse(data['is_night'].toString()),
       clientPrenom: data['client_prenom'] ?? '',
       clientNom: data['client_nom'] ?? '',
+      clientTelephone: data['client_telephone'] ?? '',
       adresseDepart: data['adresse_depart'] ?? '',
       adresseArrivee: data['adresse_arrivee'] ?? '',
       distance: double.parse(data['distance'].toString()),
@@ -83,6 +96,7 @@ class CourseData {
       'is_night': isNight,
       'client_prenom': clientPrenom,
       'client_nom': clientNom,
+      'client_telephone': clientTelephone,
       'adresse_depart': adresseDepart,
       'adresse_arrivee': adresseArrivee,
       'distance': distance,
@@ -130,7 +144,7 @@ class FactureCourse {
       courseId: json['course_id'],
       adresseDepart: json['adresse_depart'],
       adresseArrivee: json['adresse_arrivee'],
-      distanceKm: (json['distance_km'] as num).toDouble(),
+      distanceKm: _parseDouble(json['distance_km']),
       dureeMin: json['duree_min'],
       montant: json['montant'],
       modePaiement: json['mode_paiement'],
@@ -172,7 +186,7 @@ class CourseDetail {
     return CourseDetail(
       courseId: json['course_id'],
       statut: json['statut'],
-      distanceKm: (json['distance_km'] as num).toDouble(),
+      distanceKm: _parseDouble(json['distance_km']),
       montant: json['montant'],
       modePaiement: json['mode_paiement'],
       vehicule: json['vehicule'] ?? {},

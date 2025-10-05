@@ -26,24 +26,35 @@ class DriverLocation {
   factory DriverLocation.fromJson(Map<String, dynamic> json) {
     return DriverLocation(
       id: json['id'],
-      latitude: (json['latitude'] as num).toDouble(),
-      longitude: (json['longitude'] as num).toDouble(),
-      name: json['utilisateur'] != null 
+      latitude: _parseDouble(json['latitude']),
+      longitude: _parseDouble(json['longitude']),
+      name: json['utilisateur'] != null
           ? '${json['utilisateur']['prenom']} ${json['utilisateur']['nom']}'
           : null,
     );
+  }
+
+  // Méthode helper pour parser les coordonnées (String ou num)
+  static double _parseDouble(dynamic value) {
+    if (value is num) {
+      return value.toDouble();
+    } else if (value is String) {
+      return double.parse(value);
+    }
+    throw FormatException('Cannot parse $value to double');
   }
 }
 
 class DriverService {
   // URL de l'API pour les conducteurs en ligne
-  static const String onlineDriversUrl = 'https://foryou.cilassocies.com/api/conducteur/en-ligne';
+  static const String onlineDriversUrl =
+      'https://foryou.cilassocies.com/api/conducteur/en-ligne';
 
   // Passer en mode en ligne
   Future<void> goOnline() async {
     final token = await sharedPreferencesService.getToken();
     const url = 'https://foryou.cilassocies.com/api/conducteur/online';
-    
+
     try {
       final response = await http.post(
         Uri.parse(url),
@@ -52,7 +63,7 @@ class DriverService {
           'Authorization': 'Bearer $token',
         },
       );
-    print("go-online-response: ${response.body}");
+      print("go-online-response: ${response.body}");
       if (response.statusCode != 200) {
         throw Exception('Erreur lors du passage en mode en ligne');
       }
@@ -66,7 +77,7 @@ class DriverService {
   Future<void> goOffline() async {
     final token = await sharedPreferencesService.getToken();
     const url = 'https://foryou.cilassocies.com/api/conducteur/offline';
-    
+
     try {
       final response = await http.post(
         Uri.parse(url),
@@ -75,7 +86,7 @@ class DriverService {
           'Authorization': 'Bearer $token',
         },
       );
-    print("go-offline-response: ${response.body}");
+      print("go-offline-response: ${response.body}");
       if (response.statusCode != 200) {
         throw Exception('Erreur lors du passage en mode hors ligne');
       }
@@ -99,6 +110,8 @@ class DriverService {
         },
       );
 
+      print("get-online-drivers-response: ${response.body}");
+
       if (response.statusCode == 200) {
         final Map<String, dynamic> data = jsonDecode(response.body);
         if (data['success'] == true) {
@@ -107,7 +120,8 @@ class DriverService {
               .map((driver) => DriverLocation.fromJson(driver))
               .toList();
         } else {
-          throw Exception('Erreur lors de la récupération des conducteurs: ${data['message']}');
+          throw Exception(
+              'Erreur lors de la récupération des conducteurs: ${data['message']}');
         }
       } else {
         throw Exception('Erreur serveur: ${response.statusCode}');
@@ -311,6 +325,26 @@ class DriverService {
     }
   }
 
+  Future<List<Map<String, dynamic>>> getCoursesList() async {
+    final token = await sharedPreferencesService.getToken();
+    final url = Uri.parse('$baseUrl/conducteur/courses_list');
+
+    final response = await http.get(
+      url,
+      headers: {
+        'Accept': 'application/json',
+        'Authorization': 'Bearer $token',
+      },
+    );
+
+    if (response.statusCode == 200) {
+      final responseData = jsonDecode(response.body);
+      return List<Map<String, dynamic>>.from(responseData['courses']);
+    } else {
+      throw Exception('Échec du chargement des courses');
+    }
+  }
+
   // Récupérer les détails d'une course
   Future<CourseDetail> fetchCourseDetail(int courseId) async {
     final token = await sharedPreferencesService.getToken();
@@ -343,7 +377,7 @@ class DriverService {
     print("wallet-body: ${response.body}");
     if (response.statusCode == 200) {
       final data = jsonDecode(response.body);
-      return (data['solde'] as num).toDouble();
+      return DriverLocation._parseDouble(data['solde']);
     } else {
       throw Exception("Erreur ${response.body}");
     }
@@ -466,24 +500,39 @@ class DriverService {
     }
   }
 
-  // Récupérer la liste des courses du conducteur
-  Future<List<Map<String, dynamic>>> getCoursesList() async {
-    final token = await sharedPreferencesService.getToken();
-    final url = Uri.parse('$baseUrl/conducteur/courses_list');
+  /// Demande une pause pour une course spécifique
+  /// [courseId] : L'identifiant de la course pour laquelle demander une pause
+  /// Retourne true si la demande de pause a été effectuée avec succès
+  Future<String> requestPause(int courseId) async {
+    try {
+      final token = await sharedPreferencesService.getToken();
+      if (token == null) {
+        throw Exception('Token non disponible');
+      }
 
-    final response = await http.get(
-      url,
-      headers: {
-        'Accept': 'application/json',
-        'Authorization': 'Bearer $token',
-      },
-    );
+      final url = Uri.parse('$baseUrl/conducteur/courses/$courseId/demande_pause');
+      print('Demande de pause - URL: $url');
 
-    if (response.statusCode == 200) {
-      final responseData = jsonDecode(response.body);
-      return List<Map<String, dynamic>>.from(responseData['courses']);
-    } else {
-      throw Exception('Échec du chargement des courses');
+      final response = await http.post(
+        url,
+        headers: {
+          'Accept': 'application/json',
+          'Authorization': 'Bearer $token',
+        },
+      );
+
+      print("Réponse de la demande de pause - Statut: ${response.statusCode}");
+      print("Réponse de la demande de pause - Corps: ${response.body}");
+
+      if (response.statusCode == 200) {
+        final responseData = jsonDecode(response.body);
+        return responseData['message'] ?? 'Demande de pause effectuée avec succès';
+      } else {
+        throw Exception('Échec de la demande de pause: ${response.statusCode}');
+      }
+    } catch (e) {
+      print('Erreur lors de la demande de pause: $e');
+      rethrow;
     }
   }
 
@@ -595,7 +644,6 @@ class DriverService {
     }
   }
 
-  
   Future<void> postdriverheartbeat(double lat, double long) async {
     final token = await sharedPreferencesService.getToken();
     if (token == null) {
@@ -603,7 +651,7 @@ class DriverService {
     }
     print("post-driver-heartbeat: $lat $long");
 
-    final url = Uri.parse('$baseUrl/api/conducteur/heartbeat');
+    final url = Uri.parse('$baseUrl/conducteur/heartbeat');
     print('Notification URL: $url');
 
     final response = await http.post(url,

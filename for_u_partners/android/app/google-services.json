@@ -7,6 +7,25 @@
   "client": [
     {
       "client_info": {
+        "mobilesdk_app_id": "1:1067745371950:android:39d81a0ce07bb4ddbc3cbf",
+        "android_client_info": {
+          "package_name": "com.foru.driverapp"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAJzasoAgpXkBtofGr2cWlOE2zAHkX66Ec"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    },
+    {
+      "client_info": {
         "mobilesdk_app_id": "1:1067745371950:android:11cb3aaad18e2726bc3cbf",
         "android_client_info": {
           "package_name": "com.foryou.client"
