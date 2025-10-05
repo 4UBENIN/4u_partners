@@ -603,7 +603,7 @@ class DriverService {
     }
     print("post-driver-heartbeat: $lat $long");
 
-    final url = Uri.parse('$baseUrl/api/conducteur/heartbeat');
+    final url = Uri.parse('$baseUrl/conducteur/heartbeat');
     print('Notification URL: $url');
 
     final response = await http.post(url,

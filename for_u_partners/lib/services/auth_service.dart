@@ -96,9 +96,22 @@ class AuthService {
           null;
       }
     } else {
-      String message = responseJson['error'];
-      CustomToast.showError(context, message: message);
-      throw Exception('Something went wrong');
+      String errorMessage = 'Erreur de connexion';
+      
+      if (responseJson is Map && responseJson.containsKey('error')) {
+        errorMessage = responseJson['error'].toString();
+      } else if (responseJson is Map && responseJson.containsKey('message')) {
+        errorMessage = responseJson['message'].toString();
+      } else if (response.statusCode == 401) {
+        errorMessage = 'Numéro de téléphone ou mot de passe incorrect';
+      } else if (response.statusCode == 404) {
+        errorMessage = 'Utilisateur non trouvé';
+      } else if (response.statusCode >= 500) {
+        errorMessage = 'Erreur du serveur. Veuillez réessayer plus tard.';
+      }
+      
+      // Lancer une exception avec le message d'erreur
+      throw errorMessage;
     }
   }
 

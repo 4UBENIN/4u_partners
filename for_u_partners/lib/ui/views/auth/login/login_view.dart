@@ -15,10 +15,11 @@ import 'package:for_u_partners/ui/common/text_component.dart';
 import 'package:for_u_partners/ui/common/app_button_component.dart';
 
 @FormView(fields: [
-  FormTextField(name: 'phoneNumberInput'),
+  FormTextField(
+    name: 'phoneNumberInput',
+  ),
   FormTextField(
     name: 'passwordInput',
-    validator: PasswordValidators.validatePassword,
   ),
 ])
 class LoginView extends StackedView<LoginViewModel> with $LoginView {
@@ -62,8 +63,22 @@ class LoginView extends StackedView<LoginViewModel> with $LoginView {
                         //* Phone
                         CountryPhoneSelector(
                           controller: phoneNumberInputController,
+                          onChanged: (value) {
+                            viewModel.onPhoneNumberChanged(value);
+                          },
+                          errorText: viewModel.phoneNumberErrorText,
                         ),
-                        const SizedBox(height: 20),
+                        if (viewModel.phoneNumberErrorText != null) ...[
+                          const SizedBox(height: 4),
+                          Text(
+                            viewModel.phoneNumberErrorText!,
+                            style: const TextStyle(
+                              color: Colors.red,
+                              fontSize: 12,
+                            ),
+                          ),
+                        ],
+                        const SizedBox(height: 12),
 
                         //* Profile
                         CustomDropdown(
@@ -76,61 +91,120 @@ class LoginView extends StackedView<LoginViewModel> with $LoginView {
                             }
                           },
                         ),
-                        const SizedBox(height: 25),
-
-                        //* Password
-                        TextInputField(
-                          controller: passwordInputController,
-                          bigLabel: "Mot de passe",
-                          obscureText: viewModel.obscurePassword,
-                          hintText: "**********",
-                          suffixIcon: IconButton(
-                            onPressed: () {
-                              viewModel.viewPassword();
-                            },
-                            icon: Icon(
-                              viewModel.obscurePassword
-                                  ? Icons.visibility_off_rounded
-                                  : Icons.visibility_rounded,
+                        if (viewModel.profileErrorText != null) ...[
+                          const SizedBox(height: 4),
+                          Text(
+                            viewModel.profileErrorText!,
+                            style: const TextStyle(
+                              color: Colors.red,
+                              fontSize: 12,
                             ),
                           ),
-                          // Utilisez validator pour la validation automatique
-                          validator: PasswordValidators.validatePassword,
-                          // Utilisez errorText seulement si le champ a été touché
-                          errorText: viewModel.passwordErrorText,
-                          // Ajoutez un callback onTap pour marquer le champ comme touché
-                          onTap: () {
-                            viewModel.onPasswordFieldTouched();
-                          },
-                          // Ajoutez aussi onChanged pour marquer comme touché dès la première saisie
-                          onChanged: (value) {
-                            viewModel.onPasswordFieldTouched();
-                          },
+                        ],
+                        const SizedBox(height: 20),
+
+                        //* Password
+                        Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            TextInputField(
+                              controller: passwordInputController,
+                              bigLabel: "Mot de passe",
+                              obscureText: viewModel.obscurePassword,
+                              hintText: "**********",
+                              suffixIcon: IconButton(
+                                onPressed: () {
+                                  viewModel.viewPassword();
+                                },
+                                icon: Icon(
+                                  viewModel.obscurePassword
+                                      ? Icons.visibility_off_rounded
+                                      : Icons.visibility_rounded,
+                                ),
+                              ),
+                              errorText: viewModel.passwordErrorText,
+                              onTap: () {
+                                viewModel.onPasswordFieldTouched();
+                              },
+                              onChanged: (value) {
+                                viewModel.onPasswordFieldTouched();
+                              },
+                            ),
+                            if (viewModel.loginError != null)
+                              Padding(
+                                padding: const EdgeInsets.only(top: 8.0, left: 16.0),
+                                child: Text(
+                                  viewModel.loginError!,
+                                  style: const TextStyle(
+                                    color: Colors.red,
+                                    fontSize: 12,
+                                  ),
+                                ),
+                              ),
+                          ],
                         ),
 
-                        TextButton(
+                        Align(
+                          alignment: Alignment.centerRight,
+                          child: TextButton(
                             onPressed: () {},
-                            child: const TextComponent(
+                            child: const Text(
                               "Mot de passe oublié ?",
-                              textcolor: primaryColor,
-                            )),
+                              style: TextStyle(color: primaryColor),
+                            ),
+                          ),
+                        ),
+                        const SizedBox(height: 8),
+
+                        // Message d'erreur de connexion
+                        if (viewModel.loginError != null)
+                          Padding(
+                            padding: const EdgeInsets.only(bottom: 12.0, top: 8.0),
+                            child: Text(
+                              viewModel.loginError!,
+                              style: const TextStyle(
+                                color: Colors.red,
+                                fontSize: 14,
+                              ),
+                              textAlign: TextAlign.center,
+                            ),
+                          ),
 
                         //* Connection Button
                         Padding(
-                          padding: const EdgeInsets.only(top: 20),
-                          child: PrimaryButton(
-                              text: "Se connecter",
-                              onPressed: () async {
-                                LoginModel model = LoginModel(
-                                    telephone:
-                                        "+229${phoneNumberInputController.text}",
-                                    motDePasse: passwordInputController.text,
-                                    type: viewModel.selectedProfile == "livreur"
-                                        ? "conducteur"
-                                        : viewModel.selectedProfile);
-                                print("=== MODEL: ${model.toJson()} ===");
-                                viewModel.login(model, context);
-                              }),
+                          padding: const EdgeInsets.only(top: 12),
+                          child: viewModel.isFormValid
+                              ? PrimaryButton(
+                                  text: "Se connecter",
+                                  isActive: true,
+                                  onPressed: () async {
+                                    if (viewModel.validateForm(
+                                      phoneNumberInputController.text,
+                                      passwordInputController.text,
+                                    )) {
+                                      LoginModel model = LoginModel(
+                                        telephone:
+                                            "+229${phoneNumberInputController.text}",
+                                        motDePasse: passwordInputController.text,
+                                        type: viewModel.selectedProfile ==
+                                                "livreur"
+                                            ? "conducteur"
+                                            : viewModel.selectedProfile,
+                                      );
+                                      
+                                      try {
+                                        await viewModel.login(model, context);
+                                      } catch (e) {
+                                        // L'erreur est déjà gérée dans le ViewModel
+                                      }
+                                    }
+                                  },
+                                )
+                              : PrimaryButton(
+                                  text: "Se connecter",
+                                  isActive: false,
+                                  onPressed: () {},
+                          ),
                         ),
 
                         //* Register Button

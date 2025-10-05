@@ -1027,12 +1027,8 @@ class _InProgressRideBottomSheetState extends State<InProgressRideBottomSheet>
   late AnimationController _progressController;
   late Animation<double> _pulseAnimation;
   late Animation<double> _progressAnimation;
-<<<<<<< HEAD
   int _countdown = 300; // 5 minutes en secondes
   int? _waitingTime; // Track waiting time in seconds
-=======
-  final int _countdown = 300; // 5 minutes en secondes
->>>>>>> origin/develop-backup
 
   @override
   void initState() {
