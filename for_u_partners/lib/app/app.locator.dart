@@ -44,6 +44,6 @@ Future<void> setupLocator({
   locator.registerLazySingleton(() => ChatService());
   locator.registerLazySingleton(() => PickersService());
   locator.registerSingleton(HomemainViewModel());
-  locator.registerSingleton(VehiclesViewModel());
+  locator.registerSingleton(MesVehiculesViewModel());
   locator.registerSingleton(DocumentsViewModel());
 }
