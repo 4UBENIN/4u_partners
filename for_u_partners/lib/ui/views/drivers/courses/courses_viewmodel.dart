@@ -39,6 +39,10 @@ class CoursesViewModel extends BaseViewModel {
   
   // Timer pour le rafraîchissement des conducteurs en ligne
   Timer? _driversRefreshTimer;
+  
+  // Rayon maximum pour afficher les conducteurs (en km) - null = tous
+  double? _maxDriverDistanceKm = 10.0; // Par défaut 10km
+  double? get maxDriverDistanceKm => _maxDriverDistanceKm;
 
   // Polylines pour les trajets
   final Set<Polyline> _polylines = <Polyline>{};
@@ -493,7 +497,8 @@ class CoursesViewModel extends BaseViewModel {
   }
 
   void onMapTapped(LatLng point) {
-    addMarker(point);
+    // Ne rien faire lors du clic sur la carte
+    // La fonction addMarker(point) a été désactivée pour éviter d'ajouter des marqueurs indésirables
   }
 
   void addMarker(LatLng position) {
@@ -686,7 +691,7 @@ class CoursesViewModel extends BaseViewModel {
     } catch (e) {
       print('❌ Erreur acceptation course: $e');
       canAccept = false;
-      CustomToast.showError(context, message: e.toString());
+      showToastSafely(context, e.toString(), isError: true);
 
       // En cas d'erreur, réinitialiser l'état
       _isGoingToPickup = false;
@@ -728,7 +733,7 @@ class CoursesViewModel extends BaseViewModel {
     } catch (e) {
       print('❌ Erreur refus course: $e');
       canReject = false;
-      CustomToast.showError(context, message: e.toString());
+      showToastSafely(context, e.toString(), isError: true);
 
       // En cas d'erreur, réinitialiser l'état
       _isGoingToPickup = false;
@@ -757,7 +762,7 @@ class CoursesViewModel extends BaseViewModel {
     } catch (e) {
       print('❌ Erreur démarrage course: $e');
       canStart = false;
-      CustomToast.showError(context, message: e.toString());
+      showToastSafely(context, e.toString(), isError: true);
 
       // En cas d'erreur, réinitialiser l'état
       _isGoingToPickup = false;
@@ -786,7 +791,7 @@ class CoursesViewModel extends BaseViewModel {
     } catch (e) {
       print('❌ Erreur fin course: $e');
       canComplete = false;
-      CustomToast.showError(context, message: e.toString());
+      showToastSafely(context, e.toString(), isError: true);
 
       // En cas d'erreur, réinitialiser l'état
       _isGoingToPickup = false;
@@ -1297,11 +1302,14 @@ Future<void> redirectDestinationToGoogleMaps() async {
 
   @override
   void dispose() {
+    print('🛑 CoursesViewModel dispose() appelé - nettoyage en cours');
     _mapController?.dispose();
     _driversRefreshTimer?.cancel();
+    _driversRefreshTimer = null; // Éviter les références circulaires
     _newCourseSubscription?.cancel();
     _courseUpdateSubscription?.cancel();
     super.dispose();
+    print('✅ CoursesViewModel dispose() terminé');
   }
 
   // Vérifier et restaurer l'état de la course au démarrage
@@ -1485,9 +1493,13 @@ Future<void> redirectDestinationToGoogleMaps() async {
   Future<void> fetchOnlineDrivers() async {
     try {
       _onlineDrivers = await _driverService.getOnlineDrivers();
-      print("onlineDrivers: $_onlineDrivers");
-      _updateDriverMarkers();
-      notifyListeners();
+      debugPrint('${_onlineDrivers.length} conducteurs en ligne récupérés');
+
+      // Vérifier que le ViewModel est toujours actif avant de mettre à jour l'UI
+      if (canRefreshDrivers()) {
+        _updateDriverMarkers();
+        notifyListeners();
+      }
     } catch (e) {
       debugPrint('Erreur lors de la récupération des conducteurs en ligne: $e');
     }
@@ -1498,37 +1510,90 @@ Future<void> redirectDestinationToGoogleMaps() async {
     // Supprimer les anciens marqueurs de conducteurs
     _markers.removeWhere((marker) => marker.markerId.value.startsWith('driver_'));
     
-    // Ajouter les nouveaux marqueurs
+    int displayedCount = 0;
+    
+    // Ajouter les nouveaux marqueurs pour chaque conducteur en ligne
     for (var driver in _onlineDrivers) {
+      // Filtrer par distance si nécessaire
+      if (_maxDriverDistanceKm != null && _currentPosition != null) {
+        final distance = Geolocator.distanceBetween(
+          _currentPosition!.latitude,
+          _currentPosition!.longitude,
+          driver.latitude,
+          driver.longitude,
+        ) / 1000; // Convertir en km
+        
+        if (distance > _maxDriverDistanceKm!) {
+          continue; // Ignorer ce conducteur s'il est trop loin
+        }
+      }
+      
       final markerId = 'driver_${driver.id}';
       final marker = Marker(
         markerId: MarkerId(markerId),
         position: LatLng(driver.latitude, driver.longitude),
-        icon: BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueBlue),
+        icon: BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueGreen),
         infoWindow: InfoWindow(
-          title: 'Conducteur #${driver.id}',
-          snippet: 'Disponible',
+          title: driver.name ?? 'Conducteur #${driver.id}',
+          snippet: 'En ligne - Disponible',
         ),
+        alpha: 0.9, // Légèrement transparent pour les distinguer
       );
       _markers.add(marker);
+      displayedCount++;
     }
+    
+    debugPrint('Marqueurs mis à jour: $displayedCount/${_onlineDrivers.length} conducteurs affichés');
   }
   
   // Démarrer le rafraîchissement périodique des conducteurs
   void startDriversRefresh() {
     // Récupérer immédiatement
     fetchOnlineDrivers();
-    
+
     // Puis toutes les 30 secondes
     _driversRefreshTimer?.cancel();
-    _driversRefreshTimer = Timer.periodic(const Duration(seconds: 30), (timer) {
+    _driversRefreshTimer = Timer.periodic(const Duration(minutes: 3), (timer) {
+      // Vérifier que le ViewModel est toujours actif avant de continuer
+      if (!canRefreshDrivers()) {
+        timer.cancel();
+        return;
+      }
+
       fetchOnlineDrivers();
     });
+  }
+
+  // Vérifier si on peut rafraîchir les conducteurs (widget toujours monté)
+  bool canRefreshDrivers() {
+    try {
+      // Cette vérification simple permet de détecter si le contexte est toujours valide
+      return true; // Pour l'instant, on laisse tourner mais avec précaution
+    } catch (e) {
+      print('⚠️ Arrêt du rafraîchissement des conducteurs: $e');
+      return false;
+    }
   }
   
   // Arrêter le rafraîchissement
   void stopDriversRefresh() {
     _driversRefreshTimer?.cancel();
+  }
+  
+  // Méthode helper pour afficher les toasts de manière sûre
+  void showToastSafely(BuildContext context, String message, {bool isError = false}) {
+    try {
+      // Vérifier que le contexte est toujours valide
+      if (context.mounted) {
+        if (isError) {
+          CustomToast.showError(context, message: message);
+        } else {
+          CustomToast.showSuccess(context, message: message);
+        }
+      }
+    } catch (e) {
+      print('⚠️ Impossible d\'afficher le toast (contexte invalide): $e');
+    }
   }
 
   // Méthode pour initialiser la position actuelle

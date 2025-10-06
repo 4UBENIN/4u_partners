@@ -1,3 +1,13 @@
+// Helper pour parser les valeurs numériques (String ou num)
+double _parseDouble(dynamic value) {
+  if (value is num) {
+    return value.toDouble();
+  } else if (value is String) {
+    return double.parse(value);
+  }
+  throw FormatException('Cannot parse $value to double');
+}
+
 class GlobalStats {
   final int totalActivities;
   final int totalNotes;
@@ -13,7 +23,7 @@ class GlobalStats {
     return GlobalStats(
       totalActivities: json['total_activities'] as int,
       totalNotes: json['total_notes'] as int,
-      totalEarnings: (json['total_earnings'] as num).toDouble(),
+      totalEarnings: _parseDouble(json['total_earnings']),
     );
   }
 }

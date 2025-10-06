@@ -8,6 +8,7 @@ class CourseNotificationData {
   final String clientId;
   final String clientNom;
   final String clientPrenom;
+  final String clientTelephone;
   final String adresseDepart;
   final String adresseArrivee;
   final double distance;
@@ -27,6 +28,7 @@ class CourseNotificationData {
     required this.courseId,
     required this.clientNom,
     required this.clientPrenom,
+    required this.clientTelephone,
     required this.adresseDepart,
     required this.adresseArrivee,
     required this.distance,
@@ -52,6 +54,7 @@ class CourseNotificationData {
       courseId: data['course_id']?.toString() ?? '',
       clientNom: data['client_nom']?.toString() ?? '',
       clientPrenom: data['client_prenom']?.toString() ?? '',
+      clientTelephone: data['client_telephone']?.toString() ?? '',
       adresseDepart: data['adresse_depart']?.toString() ?? '',
       adresseArrivee: data['adresse_arrivee']?.toString() ?? '',
       distance: double.tryParse(data['distance']?.toString() ?? '0') ?? 0.0,
@@ -76,6 +79,7 @@ class CourseNotificationData {
       'courseId': courseId,
       'clientNom': clientNom,
       'clientPrenom': clientPrenom,
+      'clientTelephone': clientTelephone,
       'adresseDepart': adresseDepart,
       'adresseArrivee': adresseArrivee,
       'distance': distance,
@@ -99,6 +103,7 @@ class CourseNotificationData {
       courseId: json['courseId'] ?? '',
       clientNom: json['clientNom'] ?? '',
       clientPrenom: json['clientPrenom'] ?? '',
+      clientTelephone: json['clientTelephone'] ?? '',
       adresseDepart: json['adresseDepart'] ?? '',
       adresseArrivee: json['adresseArrivee'] ?? '',
       distance: (json['distance'] ?? 0.0).toDouble(),
@@ -132,6 +137,7 @@ class CourseNotificationData {
     return ClientData(
       name: '$clientPrenom $clientNom',
       clientId: clientId,
+      clientTelephone: clientTelephone,
       timeInfo: timeInfo,
       destination: adresseArrivee,
       initials: initials.isNotEmpty ? initials : 'C',

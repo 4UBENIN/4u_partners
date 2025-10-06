@@ -3,6 +3,7 @@
     "explorer.fileNesting.patterns": {
         "*.dart": "${capture}.mobile.dart, ${capture}.tablet.dart, ${capture}.desktop.dart, ${capture}.form.dart, ${capture}.g.dart, ${capture}.freezed.dart, ${capture}.logger.dart, ${capture}.locator.dart, ${capture}.router.dart, ${capture}.dialogs.dart, ${capture}.bottomsheets.dart"
     },
-    "java.configuration.updateBuildConfiguration": "interactive"
+    "java.configuration.updateBuildConfiguration": "automatic",
+    "cmake.sourceDirectory": "/Users/deogratiaspatinvoh/backup/4u_partners/for_u_partners/linux"
 }
 

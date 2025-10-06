@@ -138,7 +138,7 @@ class TrackingService {
 
   /// Envoie périodiquement la position (tracking en continu)
   Future<void> demarrerTrackingContinu({
-    Duration intervalle = const Duration(minutes: 2),
+    Duration intervalle = const Duration(minutes: 5),
     Function(Map<String, dynamic>)? onSuccess,
     Function(String)? onError,
   }) async {

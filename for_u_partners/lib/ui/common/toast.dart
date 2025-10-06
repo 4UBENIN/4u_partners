@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'dart:async';
 
 class CustomToast {
   static OverlayEntry? _currentToast;
@@ -37,6 +38,15 @@ class CustomToast {
     required IconData icon,
     int durationSeconds = 7,
   }) {
+    // Vérifier que le contexte est valide en essayant d'accéder à l'overlay
+    try {
+      // Cette ligne va lever une exception si le contexte n'est plus valide
+      Overlay.of(context);
+    } catch (e) {
+      print('⚠️ Tentative d\'affichage de toast avec contexte invalide: $e');
+      return;
+    }
+
     if (_isVisible) {
       _currentToast?.remove();
     }
@@ -54,15 +64,24 @@ class CustomToast {
     );
 
     _isVisible = true;
-    Overlay.of(context).insert(_currentToast!);
 
-    Future.delayed(Duration(seconds: durationSeconds), () {
-      if (_currentToast != null && _isVisible) {
-        _currentToast?.remove();
-        _currentToast = null;
-        _isVisible = false;
-      }
-    });
+    // Vérifier que l'overlay peut être inséré
+    try {
+      Overlay.of(context).insert(_currentToast!);
+
+      // Utiliser un Timer avec vérification du contexte au lieu de Future.delayed
+      Timer(Duration(seconds: durationSeconds), () {
+        if (_currentToast != null && _isVisible) {
+          _currentToast?.remove();
+          _currentToast = null;
+          _isVisible = false;
+        }
+      });
+    } catch (e) {
+      print('❌ Erreur insertion overlay: $e');
+      _currentToast = null;
+      _isVisible = false;
+    }
   }
 
   static void showSuccess(BuildContext context,

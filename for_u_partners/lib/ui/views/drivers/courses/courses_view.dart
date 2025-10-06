@@ -2,9 +2,11 @@ import 'package:for_u_partners/app/app.router.dart';
 import 'package:for_u_partners/services/chat_service.dart';
 import 'package:for_u_partners/services/sharedpreferences_service.dart';
 import 'package:for_u_partners/ui/common/app_colors.dart';
+import 'package:for_u_partners/ui/common/phone_utils.dart';
 import 'package:for_u_partners/ui/views/drivers/courses/chat_page.dart';
 import 'package:for_u_partners/ui/views/drivers/courses/recap_view.dart';
 import 'package:for_u_partners/ui/views/drivers/homemain/homemain_viewmodel_export.dart';
+import 'package:loading_animation_widget/loading_animation_widget.dart';
 import 'package:stacked_services/stacked_services.dart';
 import 'courses_viewmodel.dart';
 import 'package:stacked/stacked.dart';
@@ -29,12 +31,12 @@ class CoursesView extends StackedView<CoursesViewModel> {
       body: Container(
         color: Colors.white,
         child: viewModel.isLoadingLocation
-            ? const Center(
+            ?  Center(
                 child: Column(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    CircularProgressIndicator(),
-                    SizedBox(height: 16),
+                   LoadingAnimationWidget.fourRotatingDots(color: kcPrimaryColor, size: 60),
+                   const SizedBox(height: 16),
                     Text('Obtention de votre position...'),
                   ],
                 ),
@@ -47,7 +49,7 @@ class CoursesView extends StackedView<CoursesViewModel> {
                       target: viewModel.mapCenter,
                       zoom: viewModel.mapZoom,
                     ),
-                    onTap: viewModel.onMapTapped,
+                    // onTap désactivé pour éviter d'ajouter des marqueurs au clic
                     markers: viewModel.markers,
                     polylines: viewModel.polylines,
                     myLocationEnabled: true,
@@ -442,8 +444,57 @@ class CoursesView extends StackedView<CoursesViewModel> {
               viewModel.startCourseService(
                   int.tryParse(pickupCourse.courseId!)!, context);
             },
-            onCallClients: () {
-              // Logique d'appel du client
+            onCallClients: () async {
+              final phoneNumber = pickupCourse.clientTelephone;
+              if (phoneNumber != null && phoneNumber.isNotEmpty) {
+                try {
+                  await makePhoneCall(phoneNumber);
+                } catch (e) {
+                  if (context.mounted) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(
+                        content: Text('Erreur: $e'),
+                        backgroundColor: Colors.red,
+                      ),
+                    );
+                  }
+                }
+              } else {
+                if (context.mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(
+                      content: Text('Numéro de téléphone non disponible'),
+                      backgroundColor: Colors.orange,
+                    ),
+                  );
+                }
+              }
+            },
+            onWhatsAppClients: () async {
+              final phoneNumber = pickupCourse.clientTelephone;
+              if (phoneNumber != null && phoneNumber.isNotEmpty) {
+                try {
+                  await makeWhatsAppCall(phoneNumber);
+                } catch (e) {
+                  if (context.mounted) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(
+                        content: Text('Erreur: $e'),
+                        backgroundColor: Colors.red,
+                      ),
+                    );
+                  }
+                }
+              } else {
+                if (context.mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(
+                      content: Text('Numéro de téléphone non disponible'),
+                      backgroundColor: Colors.orange,
+                    ),
+                  );
+                }
+              }
             },
             onChatClients: () async {
               if (pickupCourse.clientId == null ||
@@ -491,7 +542,7 @@ class CoursesView extends StackedView<CoursesViewModel> {
         return InProgressRideBottomSheet(
           key: const ValueKey('inprogress'),
           client: viewModel.currentCourse!,
-          onCancelRide: () {
+          onFinishRide: () {
             Navigator.push(
               context,
               MaterialPageRoute(
@@ -515,18 +566,6 @@ class CoursesView extends StackedView<CoursesViewModel> {
           onAddPenalty: () {
             // Logique pour ajouter une pénalité
             print('Ajouter une pénalité');
-          },
-          onCallClients: () {
-            // final phoneNumber = viewModel.currentCourse?.phoneNumber;
-            // if (phoneNumber != null && phoneNumber.isNotEmpty) {
-            //   final url = 'tel:$phoneNumber';
-            //   // launchUrl(Uri.parse(url));
-            //   print('Appel du client: $phoneNumber');
-            // } else {
-            //   ScaffoldMessenger.of(context).showSnackBar(
-            //     const SnackBar(content: Text('Numéro de téléphone non disponible')),
-            //   );
-            // }
           },
           price: viewModel.currentCourse?.prix ?? 0.0,
         );
