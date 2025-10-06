@@ -8,6 +8,7 @@ import UserNotifications
 
 @main
 @objc class AppDelegate: FlutterAppDelegate {
+  
   override func application(
     _ application: UIApplication,
     didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]?
@@ -27,32 +28,37 @@ import UserNotifications
           print("❌ Erreur permission notifications : \(error)")
         } else {
           print("✅ Permission notifications accordée : \(granted)")
+          if granted {
+            DispatchQueue.main.async {
+              application.registerForRemoteNotifications()
+            }
+          }
         }
       }
     } else {
       let settings = UIUserNotificationSettings(types: [.alert, .badge, .sound], categories: nil)
       application.registerUserNotificationSettings(settings)
+      application.registerForRemoteNotifications()
     }
     
-    // S'enregistrer pour recevoir les notifications
-    application.registerForRemoteNotifications()
-    
+    // Enregistrement des plugins Flutter
     GeneratedPluginRegistrant.register(with: self)
+    
     return super.application(application, didFinishLaunchingWithOptions: launchOptions)
   }
   
-  // Token APNs reçu
+  // APNs token reçu
   override func application(_ application: UIApplication, didRegisterForRemoteNotificationsWithDeviceToken deviceToken: Data) {
     let tokenParts = deviceToken.map { data in String(format: "%02.2hhx", data) }
     let token = tokenParts.joined()
     print("📱 APNs Token (raw) : \(token)")
     
-    // Envoyer le token APNs à Firebase
+    // Transmettre le token à Firebase
     Messaging.messaging().apnsToken = deviceToken
     print("✅ APNs Token transmis à Firebase")
   }
   
-  // Erreur lors de l’enregistrement APNs
+  // Erreur APNs
   override func application(_ application: UIApplication, didFailToRegisterForRemoteNotificationsWithError error: Error) {
     print("❌ Erreur enregistrement APNs : \(error.localizedDescription)")
   }

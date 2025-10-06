@@ -24,10 +24,7 @@ import 'test_helpers.mocks.dart';
     MockSpec<AuthService>(onMissingStub: OnMissingStub.returnDefault),
     MockSpec<DriverService>(onMissingStub: OnMissingStub.returnDefault),
     MockSpec<PressingService>(onMissingStub: OnMissingStub.returnDefault),
-    MockSpec<RamassageService>(onMissingStub: OnMissingStub.returnDefault),
     MockSpec<WalletService>(onMissingStub: OnMissingStub.returnDefault),
-    MockSpec<ActiveRideService>(onMissingStub: OnMissingStub.returnDefault),
-    MockSpec<ActiveRideService>(onMissingStub: OnMissingStub.returnDefault),
     MockSpec<ChatService>(onMissingStub: OnMissingStub.returnDefault),
     MockSpec<PickersService>(onMissingStub: OnMissingStub.returnDefault),
 // @stacked-mock-spec
@@ -41,10 +38,7 @@ void registerServices() {
   getAndRegisterAuthService();
   getAndRegisterDriverService();
   getAndRegisterPressingService();
-  getAndRegisterRamassageService();
   getAndRegisterWalletService();
-  getAndRegisterActiveRideService();
-  getAndRegisterActiveRideService();
   getAndRegisterChatService();
   getAndRegisterPickersService();
 // @stacked-mock-register

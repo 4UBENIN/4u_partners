@@ -2,6 +2,10 @@
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
 <dict>
+	<key>BGTaskSchedulerPermittedIdentifiers</key>
+	<array>
+		<string>$(PRODUCT_BUNDLE_IDENTIFIER)</string>
+	</array>
 	<key>CADisableMinimumFrameDurationOnPhone</key>
 	<true/>
 	<key>CFBundleDevelopmentRegion</key>
@@ -24,52 +28,27 @@
 	<string>????</string>
 	<key>CFBundleVersion</key>
 	<string>$(FLUTTER_BUILD_NUMBER)</string>
+	<key>FirebaseAppDelegateProxyEnabled</key>
+	<true/>
 	<key>LSRequiresIPhoneOS</key>
 	<true/>
-
-	<!-- Google Maps Configuration -->
-	<key>GMSApiKey</key>
-	<string>AIzaSyAVtrvygnbsdnL6VMEJS_DB0JfEa0piHqM</string>
-
-	<!-- Location Permissions -->
-	<key>NSLocationWhenInUseUsageDescription</key>
-	<string>For U Partners a besoin d'accéder à votre position pour afficher les courses disponibles près de vous sur la carte.</string>
 	<key>NSLocationAlwaysAndWhenInUseUsageDescription</key>
-	<string>For U Partners a besoin d'accéder à votre position pour vous proposer les meilleures courses dans votre zone.</string>
+	<string>Cette application utilise votre position pour vous fournir des fonctionnalités de localisation améliorées.</string>
 	<key>NSLocationAlwaysUsageDescription</key>
-	<string>Nous avons besoin d'accéder à votre position en arrière-plan pour vous fournir des mises à jour en temps réel pendant vos courses.</string>
-
-		<!-- Camera and Photo Library Permissions -->
-	<key>NSCameraUsageDescription</key>
-	<string>For U Partners a besoin d'accéder à votre appareil photo pour prendre des photos de documents ou de votre véhicule.</string>
-	<key>NSPhotoLibraryUsageDescription</key>
-	<string>For U Partners a besoin d'accéder à votre bibliothèque de photos pour sélectionner des images de documents ou de votre véhicule.</string>
-	
-	<!-- Autoriser l'ouverture de Google Maps ou Safari via url_launcher -->
-	<key>LSApplicationQueriesSchemes</key>
-	<array>
-		<string>http</string>
-		<string>https</string>
-		<string>comgooglemaps</string>
-		<string>googlemaps</string>
-	</array>
-
-	<!-- Other required configurations -->
-	<key>io.flutter.embedded_views_preview</key>
-	<true/>
-	<key>NSAppTransportSecurity</key>
+	<string>Cette application utilise votre localisation pour assurer un suivi précis de vos déplacements même en arrière-plan.</string>
+	<key>NSLocationTemporaryUsageDescriptionDictionary</key>
 	<dict>
-		<key>NSAllowsArbitraryLoads</key>
-		<true/>
-		<key>NSAllowsArbitraryLoadsInWebContent</key>
-		<true/>
+		<key>LocationWhenInUse</key>
+		<string>Cette application a besoin d'accéder à votre position pour vous fournir des itinéraires précis.</string>
 	</dict>
+	<key>NSLocationWhenInUseUsageDescription</key>
+	<string>Cette application a besoin d'accéder à votre localisation pour suivre vos trajets en temps réel.</string>
 	<key>UIApplicationSupportsIndirectInputEvents</key>
 	<true/>
 	<key>UIBackgroundModes</key>
 	<array>
-		<string>remote-notification</string>
 		<string>fetch</string>
+		<string>remote-notification</string>
 	</array>
 	<key>UILaunchStoryboardName</key>
 	<string>LaunchScreen</string>

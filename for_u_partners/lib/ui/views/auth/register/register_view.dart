@@ -1,4 +1,5 @@
 import 'package:for_u_partners/app/app.router.dart';
+import 'package:for_u_partners/app/validators/form_validators.dart';
 
 import 'register_view.form.dart';
 import 'register_viewmodel.dart';
@@ -12,10 +13,17 @@ import 'package:for_u_partners/ui/common/text_component.dart';
 import 'package:for_u_partners/ui/common/app_button_component.dart';
 
 @FormView(fields: [
-  FormTextField(name: 'phoneNumberInput'),
-  FormTextField(name: 'emailInput'),
+  FormTextField(
+    name: 'phoneNumberInput',
+    validator: PhoneValidators.validatePhoneNumber,
+  ),
+  FormTextField(
+    name: 'emailInput',
+    validator: EmailValidators.validateEmail,
+  ),
   FormTextField(
     name: 'passwordInput',
+    validator: PasswordValidators.validatePassword,
   ),
 ])
 class RegisterView extends StackedView<RegisterViewModel> with $RegisterView {
@@ -58,7 +66,23 @@ class RegisterView extends StackedView<RegisterViewModel> with $RegisterView {
                       const SizedBox(height: 20),
                       //* Phone Number
                       CountryPhoneSelector(
-                          controller: phoneNumberInputController),
+                        controller: phoneNumberInputController,
+                        errorText: viewModel.phoneNumberInputValidationMessage,
+                        onChanged: (value) {
+                          viewModel.onPhoneNumberChanged();
+                        },
+                      ),
+                      if (viewModel.phoneNumberInputValidationMessage != null)
+                        Padding(
+                          padding: const EdgeInsets.only(top: 4.0, left: 16.0),
+                          child: Text(
+                            viewModel.phoneNumberInputValidationMessage!,
+                            style: const TextStyle(
+                              color: Colors.red,
+                              fontSize: 12,
+                            ),
+                          ),
+                        ),
                       const SizedBox(height: 15),
 
                       //* Email
@@ -67,66 +91,161 @@ class RegisterView extends StackedView<RegisterViewModel> with $RegisterView {
                         bigLabel: "Email",
                         hintText: "votremail@gmail.com",
                         isEmail: true,
+                        errorText: viewModel.emailInputValidationMessage,
+                        onChanged: (value) {
+                          viewModel.onEmailChanged();
+                        },
                       ),
+                      if (viewModel.emailInputValidationMessage != null)
+                        Padding(
+                          padding: const EdgeInsets.only(top: 4.0, left: 16.0),
+                          child: Text(
+                            viewModel.emailInputValidationMessage!,
+                            style: const TextStyle(
+                              color: Colors.red,
+                              fontSize: 12,
+                            ),
+                          ),
+                        ),
                       const SizedBox(height: 20),
 
                       //* Password
-                      TextInputField(
-                        controller: passwordInputController,
-                        bigLabel: "Mot de passe",
-                        obscureText: viewModel.obscurePassword,
-                        hintText: "**********",
-                        suffixIcon: IconButton(
-                          onPressed: () {
-                            viewModel.viewPassword();
-                          },
-                          icon: Icon(
-                            viewModel.obscurePassword
-                                ? Icons.visibility_off_rounded
-                                : Icons.visibility_rounded,
+                      Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          TextInputField(
+                            controller: passwordInputController,
+                            bigLabel: "Mot de passe",
+                            obscureText: viewModel.obscurePassword,
+                            hintText: "**********",
+                            suffixIcon: IconButton(
+                              onPressed: () {
+                                viewModel.viewPassword();
+                              },
+                              icon: Icon(
+                                viewModel.obscurePassword
+                                    ? Icons.visibility_off_rounded
+                                    : Icons.visibility_rounded,
+                              ),
+                            ),
+                            errorText: viewModel.passwordErrorText,
+                            onTap: () {
+                              viewModel.onPasswordFieldTouched();
+                            },
+                            onChanged: (value) {
+                              viewModel.onPasswordFieldTouched();
+                              // Force le recalcul de la force du mot de passe
+                              viewModel.rebuildUi();
+                            },
                           ),
-                        ),
-                        // Utilisez validator pour la validation automatique
-                        validator: PasswordValidators.validatePassword,
-                        // Utilisez errorText seulement si le champ a été touché
-                        errorText: viewModel.passwordErrorText,
-                        // Ajoutez un callback onTap pour marquer le champ comme touché
-                        onTap: () {
-                          viewModel.onPasswordFieldTouched();
-                        },
-                        // Ajoutez aussi onChanged pour marquer comme touché dès la première saisie
-                        onChanged: (value) {
-                          viewModel.onPasswordFieldTouched();
-                        },
+                          
+                          // Indicateur de force du mot de passe
+                          if (viewModel.passwordInputValue?.isNotEmpty == true)
+                            Padding(
+                              padding: const EdgeInsets.only(top: 8.0, left: 16.0, right: 16.0),
+                              child: Builder(
+                                builder: (context) {
+                                  final password = viewModel.passwordInputValue ?? '';
+                                  final strength = viewModel.evaluatePasswordStrength(password);
+                                  
+                                  return Column(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    children: [
+                                      LinearProgressIndicator(
+                                        value: strength['strength'] as double,
+                                        backgroundColor: Colors.grey[200],
+                                        valueColor: AlwaysStoppedAnimation<Color>(
+                                          strength['color'] as Color,
+                                        ),
+                                        minHeight: 4,
+                                      ),
+                                      const SizedBox(height: 4),
+                                      Text(
+                                        strength['message'] as String,
+                                        style: TextStyle(
+                                          fontSize: 12,
+                                          color: strength['color'] as Color,
+                                        ),
+                                      ),
+                                    ],
+                                  );
+                                },
+                              ),
+                            ),
+                        ],
                       ),
                       const SizedBox(height: 20),
 
                       //* Profile Dropdown
-                      CustomDropdown(
-                        title: "Profil",
-                        items: viewModel.profiles,
-                        value: viewModel.selectedProfile,
-                        onChanged: (value) {
-                          if (value != null) {
-                            viewModel.setSelectedProfile(value);
-                          }
-                        },
+                      Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          CustomDropdown(
+                            title: "Profil",
+                            items: viewModel.profiles,
+                            value: viewModel.selectedProfile,
+                            onChanged: (value) {
+                              if (value != null) {
+                                viewModel.setSelectedProfile(value);
+                              }
+                            },
+                          ),
+                          if (viewModel.profileErrorText != null)
+                            Padding(
+                              padding: const EdgeInsets.only(top: 4.0, left: 16.0),
+                              child: Text(
+                                viewModel.profileErrorText!,
+                                style: const TextStyle(
+                                  color: Colors.red,
+                                  fontSize: 12,
+                                ),
+                              ),
+                            ),
+                        ],
                       ),
 
+                      // Message d'erreur d'inscription
+                      if (viewModel.registrationError != null)
+                        Padding(
+                          padding: const EdgeInsets.only(bottom: 12.0),
+                          child: Text(
+                            viewModel.registrationError!,
+                            style: const TextStyle(
+                              color: Colors.red,
+                              fontSize: 14,
+                            ),
+                          ),
+                        ),
+                        
                       //* Continue button
                       Padding(
-                        padding: const EdgeInsets.only(top: 30),
+                        padding: const EdgeInsets.only(top: 12),
                         child: PrimaryButton(
                           text: "Continuer",
-                          onPressed: () {
-                            viewModel.navigationService
-                                .navigateToRegisterProfileView(
-                              selectedProfile: viewModel.selectedProfile,
-                              phoneNumber: phoneNumberInputController.text,
-                              mail: emailInputController.text,
-                              password: passwordInputController.text,
-                            );
-                          },
+                          isActive: viewModel.isFormValid,
+                          onPressed: viewModel.isFormValid
+                              ? () async {
+                                  if (viewModel.validateForm(
+                                    phoneNumberInputController.text,
+                                    emailInputController.text,
+                                    passwordInputController.text,
+                                  )) {
+                                    // Vérifier si le numéro est déjà utilisé
+                                    final isRegistrationValid = await viewModel.registerByProfile();
+                                    
+                                    // Si pas d'erreur, naviguer vers l'écran suivant
+                                    if (isRegistrationValid) {
+                                      viewModel.navigationService
+                                          .navigateToRegisterProfileView(
+                                        selectedProfile: viewModel.selectedProfile,
+                                        phoneNumber: phoneNumberInputController.text,
+                                        mail: emailInputController.text,
+                                        password: passwordInputController.text,
+                                      );
+                                    }
+                                  }
+                                }
+                              : () {},
                         ),
                       ),
 

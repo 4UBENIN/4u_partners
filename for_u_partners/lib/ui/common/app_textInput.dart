@@ -190,6 +190,9 @@ class CountryPhoneSelector extends StatefulWidget {
   /// Pays initialement sélectionné (code indicatif)
   final String? initialCountryCode;
 
+  /// Message d'erreur à afficher sous le champ
+  final String? errorText;
+
   /// Permet de personnaliser la largeur maximale du composant
   final double? maxWidth;
 
@@ -200,6 +203,7 @@ class CountryPhoneSelector extends StatefulWidget {
     this.onCountrySelected,
     this.hintText = 'Numéro de téléphone',
     this.initialCountryCode,
+    this.errorText,
     this.maxWidth,
   });
 
@@ -518,6 +522,19 @@ class _CountryPhoneSelectorState extends State<CountryPhoneSelector>
   }
 }
 
+/// Classe pour stocker les informations des pays
+class CountryInfo {
+  final String name;
+  final String code;
+  final String flagUrl;
+
+  CountryInfo({
+    required this.name,
+    required this.code,
+    required this.flagUrl,
+  });
+}
+
 /// Élément de la liste déroulante des pays
 class CountryListItem extends StatelessWidget {
   final CountryInfo country;
@@ -552,18 +569,16 @@ class CountryListItem extends StatelessWidget {
                 country.name,
                 style: const TextStyle(
                   fontSize: 16,
-                  fontWeight: FontWeight.w400,
                   color: Colors.black87,
                 ),
               ),
             ),
-            // Code indicatif du pays
+            // Code du pays
             Text(
               country.code,
               style: const TextStyle(
                 fontSize: 16,
-                fontWeight: FontWeight.w500,
-                color: Colors.black87,
+                color: Colors.grey,
               ),
             ),
           ],
@@ -571,17 +586,4 @@ class CountryListItem extends StatelessWidget {
       ),
     );
   }
-}
-
-/// Classe pour stocker les informations des pays
-class CountryInfo {
-  final String name;
-  final String code;
-  final String flagUrl;
-
-  CountryInfo({
-    required this.name,
-    required this.code,
-    required this.flagUrl,
-  });
 }
