@@ -63,7 +63,7 @@ import 'package:for_u_partners/services/pickers_service.dart';
     MaterialRoute(page: CompteDeliveryView),
     MaterialRoute(page: ActivitiesDeliveryView),
     MaterialRoute(page: CoursesDeliveryView),
-    MaterialRoute(page: VehiclesView),
+    MaterialRoute(page: MesVehiculesView),
     MaterialRoute(page: DocumentsView),
 // @stacked-route
   ],

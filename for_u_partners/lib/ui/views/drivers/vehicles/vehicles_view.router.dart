@@ -22,14 +22,14 @@ class StackedRouter extends _i1.RouterBase {
   final _routes = <_i1.RouteDef>[
     _i1.RouteDef(
       Routes.vehiclesView,
-      page: _i2.VehiclesView,
+      page: _i2.MesVehiculesView,
     )
   ];
 
   final _pagesMap = <Type, _i1.StackedRouteFactory>{
-    _i2.VehiclesView: (data) {
+    _i2.MesVehiculesView: (data) {
       return _i3.MaterialPageRoute<dynamic>(
-        builder: (context) => const _i2.VehiclesView(),
+        builder: (context) => const _i2.MesVehiculesView(),
         settings: data,
       );
     }

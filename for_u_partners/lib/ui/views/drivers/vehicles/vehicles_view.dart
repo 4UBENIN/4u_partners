@@ -1,18 +1,11 @@
 // mes_vehicules_view.dart
 import 'package:flutter/material.dart';
+import 'package:for_u_partners/models/vehicle_model.dart';
+import 'package:for_u_partners/ui/views/drivers/vehicles/vehicles_viewmodel.dart';
 import 'package:stacked/stacked.dart';
 
-import '../../../../ui/common/app_colors.dart';
-
-class VehiclesView extends StackedView<MesVehiculesViewModel> {
-  const VehiclesView({Key? key}) : super(key: key);
-
-  @override
-  MesVehiculesViewModel viewModelBuilder(BuildContext context) {
-    final viewModel = MesVehiculesViewModel();
-    viewModel.initialise();
-    return viewModel;
-  }
+class MesVehiculesView extends StackedView<MesVehiculesViewModel> {
+  const MesVehiculesView({Key? key}) : super(key: key);
 
   @override
   Widget builder(
@@ -21,7 +14,7 @@ class VehiclesView extends StackedView<MesVehiculesViewModel> {
     Widget? child,
   ) {
     return Scaffold(
-      backgroundColor: Colors.grey[50],
+      backgroundColor: Colors.white,
       appBar: AppBar(
         backgroundColor: Colors.white,
         elevation: 0,
@@ -29,9 +22,17 @@ class VehiclesView extends StackedView<MesVehiculesViewModel> {
           icon: const Icon(Icons.arrow_back, color: Colors.black),
           onPressed: () => Navigator.pop(context),
         ),
+        title: const Text(
+          'Mes Véhicules',
+          style: TextStyle(
+            color: Colors.black,
+            fontSize: 20,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
       ),
       body: viewModel.isBusy
-          ? const Center(child: CircularProgressIndicator(color: primaryColor))
+          ? const Center(child: CircularProgressIndicator(color: Color(0xFF184E9C)))
           : SingleChildScrollView(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -42,7 +43,7 @@ class VehiclesView extends StackedView<MesVehiculesViewModel> {
                     height: 120,
                     decoration: const BoxDecoration(
                       gradient: LinearGradient(
-                        colors: [primaryColor, primaryColorDark],
+                        colors: [Color(0xFF184E9C), Color(0xFF2A5BB8)],
                         begin: Alignment.topLeft,
                         end: Alignment.bottomRight,
                       ),
@@ -135,13 +136,13 @@ class VehiclesView extends StackedView<MesVehiculesViewModel> {
                                     vertical: 4,
                                   ),
                                   decoration: BoxDecoration(
-                                    color: Colors.black,
+                                    color: Colors.white,
                                     borderRadius: BorderRadius.circular(12),
                                   ),
                                   child: Text(
                                     '${viewModel.vehiculesApprouves.length}',
                                     style: const TextStyle(
-                                      color: Colors.white,
+                                      color: Color(0xFF184E9C),
                                       fontSize: 12,
                                       fontWeight: FontWeight.bold,
                                     ),
@@ -179,7 +180,7 @@ class VehiclesView extends StackedView<MesVehiculesViewModel> {
         child: ElevatedButton(
           onPressed: viewModel.addNewVehicle,
           style: ElevatedButton.styleFrom(
-            backgroundColor: primaryColor,
+            backgroundColor: const Color(0xFF184E9C),
             foregroundColor: Colors.white,
             padding: const EdgeInsets.symmetric(vertical: 16),
             shape: RoundedRectangleBorder(
@@ -267,18 +268,17 @@ class VehiclesView extends StackedView<MesVehiculesViewModel> {
               Container(
                 padding: const EdgeInsets.all(8),
                 decoration: BoxDecoration(
-                  color: primaryColor.withOpacity(0.1),
+                  color: const Color(0xFF184E9C).withOpacity(0.1),
                   shape: BoxShape.circle,
                 ),
                 child: const Icon(
                   Icons.check_circle,
-                  color: primaryColor,
+                  color: const Color(0xFF184E9C),
                   size: 24,
                 ),
               ),
             ],
           ),
-          const SizedBox(height: 20),
           const Divider(),
           const SizedBox(height: 16),
           _buildServiceToggle(
@@ -371,13 +371,13 @@ class VehiclesView extends StackedView<MesVehiculesViewModel> {
         ),
         if (hasInfo) ...[
           const SizedBox(width: 4),
-          Icon(Icons.info_outline, size: 16, color: primaryColor.withOpacity(0.8)),
+          Icon(Icons.info_outline, size: 16, color: Colors.blue[400]),
         ],
         const Spacer(),
         Switch(
           value: isActive,
           onChanged: onToggle,
-          activeColor: primaryColor,
+          activeColor: const Color(0xFF184E9C),
         ),
       ],
     );
@@ -408,67 +408,8 @@ class VehiclesView extends StackedView<MesVehiculesViewModel> {
     );
   }
 
+  @override
+  MesVehiculesViewModel viewModelBuilder(BuildContext context) =>
+      MesVehiculesViewModel();
 }
 
-// mes_vehicules_viewmodel.dart
-class MesVehiculesViewModel extends BaseViewModel {
-  Vehicle? _vehiculeActif;
-  List<Vehicle> _vehiculesApprouves = [];
-  bool _isApprovedExpanded = true;
-
-  Vehicle? get vehiculeActif => _vehiculeActif;
-  List<Vehicle> get vehiculesApprouves => _vehiculesApprouves;
-  bool get isApprovedExpanded => _isApprovedExpanded;
-
-  Future<void> initialise() async {
-    setBusy(true);
-    // Ici vous appellerez votre API pour récupérer les données
-    // Exemple:
-    // _vehiculeActif = await _apiService.getVehiculeActif();
-    // _vehiculesApprouves = await _apiService.getVehiculesApprouves();
-    setBusy(false);
-  }
-
-  void toggleApprovedExpanded() {
-    _isApprovedExpanded = !_isApprovedExpanded;
-    notifyListeners();
-  }
-
-  void toggleCourseHeure(bool value) {
-    if (_vehiculeActif != null) {
-      _vehiculeActif!.courseHeure = value;
-      notifyListeners();
-      // Appel API pour mettre à jour
-    }
-  }
-
-  void toggleClim(bool value) {
-    if (_vehiculeActif != null) {
-      _vehiculeActif!.clim = value;
-      notifyListeners();
-      // Appel API pour mettre à jour
-    }
-  }
-
-  void addNewVehicle() {
-    // Navigation vers la page d'ajout de véhicule
-    print('Ajouter un nouveau véhicule');
-  }
-}
-
-// vehicle_model.dart
-class Vehicle {
-  final String id;
-  final String model;
-  final String immatriculation;
-  bool courseHeure;
-  bool clim;
-
-  Vehicle({
-    required this.id,
-    required this.model,
-    required this.immatriculation,
-    this.courseHeure = false,
-    this.clim = false,
-  });
-}

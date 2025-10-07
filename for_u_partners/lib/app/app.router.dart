@@ -234,7 +234,7 @@ class StackedRouter extends _i1.RouterBase {
     ),
     _i1.RouteDef(
       Routes.vehiclesView,
-      page: _i25.VehiclesView,
+      page: _i25.MesVehiculesView,
     ),
     _i1.RouteDef(
       Routes.documentsView,
@@ -388,9 +388,9 @@ class StackedRouter extends _i1.RouterBase {
         settings: data,
       );
     },
-    _i25.VehiclesView: (data) {
+    _i25.MesVehiculesView: (data) {
       return _i27.MaterialPageRoute<dynamic>(
-        builder: (context) => const _i25.VehiclesView(),
+        builder: (context) => const _i25.MesVehiculesView(),
         settings: data,
       );
     },
