@@ -168,6 +168,21 @@ class RegisterProfileView extends StackedView<RegisterProfileViewModel>
   }
 
   void _handlePressingSubmit(RegisterProfileViewModel viewModel, BuildContext context) {
+    // Validation des champs
+    if (pressingNameInputController.text.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Veuillez entrer le nom du pressing')),
+      );
+      return;
+    }
+    
+    if (pressingLocalisationInputController.text.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Veuillez entrer la localisation du pressing')),
+      );
+      return;
+    }
+
     RegistrationModel model = RegistrationModel(
       type: selectedProfile,
       telephone: phoneNumber,
@@ -176,8 +191,8 @@ class RegisterProfileView extends StackedView<RegisterProfileViewModel>
       code: "",
       motDePasse: password,
       motDePasseConfirmation: password,
-      nom: pressingNameInputController.text,
-      adresse: pressingLocalisationInputController.text,
+      nom: pressingNameInputController.text.trim(),
+      adresse: pressingLocalisationInputController.text.trim(),
     );
     viewModel.registerEnding(model, context);
   }
@@ -199,6 +214,27 @@ class RegisterProfileView extends StackedView<RegisterProfileViewModel>
   }
 
   void _handleAgentEntretienSubmit(RegisterProfileViewModel viewModel, BuildContext context) {
+    if (cleaningNameInputController.text.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Veuillez entrer votre prénom')),
+      );
+      return;
+    }
+    
+    if (cleaningSurnameInputController.text.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Veuillez entrer votre nom')),
+      );
+      return;
+    }
+    
+    if (viewModel.cleaningIdentity == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Veuillez télécharger votre pièce d\'identité')),
+      );
+      return;
+    }
+
     RegistrationModel model = RegistrationModel(
       type: "agent d'entretien",
       telephone: phoneNumber,
@@ -206,18 +242,30 @@ class RegisterProfileView extends StackedView<RegisterProfileViewModel>
       code: "1234",
       motDePasse: password,
       motDePasseConfirmation: password,
-      nom: cleaningSurnameInputController.text,
-      prenom: cleaningNameInputController.text,
+      nom: cleaningSurnameInputController.text.trim(),
+      prenom: cleaningNameInputController.text.trim(),
       adresse: "",
       dateNaissance: "1990-01-15",
-      documentIdentite: viewModel.cleaningIdentity != null
-          ? File(viewModel.cleaningIdentity!.path)
-          : null,
+      documentIdentite: File(viewModel.cleaningIdentity!.path),
     );
     viewModel.registerEnding(model, context);
   }
 
   void _handleGaragisteSubmit(RegisterProfileViewModel viewModel, BuildContext context) {
+    if (garageNameInputController.text.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Veuillez entrer le nom du garage')),
+      );
+      return;
+    }
+    
+    if (garageLocalisationInputController.text.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Veuillez entrer la localisation du garage')),
+      );
+      return;
+    }
+
     RegistrationModel model = RegistrationModel(
       type: 'garagiste',
       telephone: phoneNumber,
@@ -225,70 +273,155 @@ class RegisterProfileView extends StackedView<RegisterProfileViewModel>
       code: "1234",
       motDePasse: password,
       motDePasseConfirmation: password,
-      nom: garageNameInputController.text,
-      adresse: garageLocalisationInputController.text,
+      nom: garageNameInputController.text.trim(),
+      adresse: garageLocalisationInputController.text.trim(),
       dateNaissance: "1990-01-15",
     );
     viewModel.registerEnding(model, context);
   }
 
-  void _submitWithVehicle(RegisterProfileViewModel viewModel, BuildContext context, String type, int typeConducteurId) {
-    print("=== $type AVEC VEHICULE ===");
-    
-    VehiculeModel vehiculeModel = _createVehicleModel(viewModel);
-    
-    RegistrationModel model = RegistrationModel(
-      type: type,
-      telephone: phoneNumber,
-      email: mail,
-      code: "1234",
-      genre: viewModel.selectedGender,
-      motDePasse: password,
-      motDePasseConfirmation: password,
-      nom: driverSurnameInputController.text,
-      prenom: driverNameInputController.text,
-      adresse: driverAdresseInputController.text,
-      dateNaissance: "1990-01-15",
-      numeroPermis: "TEMP_PERMIS",
-      dateExpirationPermis: "2030-12-31",
-      documentIdentite: viewModel.driverIdentity != null
-          ? File(viewModel.driverIdentity!.path)
-          : null,
-      possedeVehicule: 1,
-      typeConducteurId: typeConducteurId,
-      vehicule: vehiculeModel,
-    );
+  void _validateDriverFields(RegisterProfileViewModel viewModel, BuildContext context) {
+    if (driverNameInputController.text.isEmpty) {
+      throw 'Veuillez entrer votre prénom';
+    }
+    if (driverSurnameInputController.text.isEmpty) {
+      throw 'Veuillez entrer votre nom';
+    }
+    if (viewModel.selectedGender == null) {
+      throw 'Veuillez sélectionner votre genre';
+    }
+    if (driverAdresseInputController.text.isEmpty) {
+      throw 'Veuillez entrer votre adresse';
+    }
+    if (viewModel.driverIdentity == null) {
+      throw 'Veuillez télécharger votre pièce d\'identité';
+    }
+  }
 
-    _printModelDebug(model);
-    viewModel.registerEnding(model, context);
+  void _validateVehicleFields(RegisterProfileViewModel viewModel) {
+    if (viewModel.selectedVehicle == null) {
+      throw 'Veuillez sélectionner un type de véhicule';
+    }
+    
+    if (driverCarModelInputController.text.isEmpty) {
+      throw 'Veuillez entrer le modèle du véhicule';
+    }
+    
+    if (driverImmatriculationCarInputController.text.isEmpty) {
+      throw 'Veuillez entrer l\'immatriculation du véhicule';
+    }
+    
+    if (driverCarYearInputController.text.isEmpty) {
+      throw 'Veuillez entrer l\'année du véhicule';
+    }
+    
+    if (viewModel.selectedVehicle == 'voiture') {
+      if (driverCarBrandInputController.text.isEmpty) {
+        throw 'Veuillez entrer la marque du véhicule';
+      }
+      if (driverCarColorInputController.text.isEmpty) {
+        throw 'Veuillez entrer la couleur du véhicule';
+      }
+      if (driverCarPlacesInputController.text.isEmpty) {
+        throw 'Veuillez entrer le nombre de places';
+      }
+    }
+  }
+
+  void _submitWithVehicle(RegisterProfileViewModel viewModel, BuildContext context, String type, int typeConducteurId) async {
+    try {
+      // Validation des champs conducteur
+      _validateDriverFields(viewModel, context);
+      
+      // Validation des champs véhicule
+      _validateVehicleFields(viewModel);
+      
+      // Vérification des documents requis
+      if (viewModel.selectedVehicle == 'voiture') {
+        if (viewModel.driverCarPermis == null) {
+          throw 'Veuillez télécharger votre permis de conduire';
+        }
+        if (viewModel.driverCarCarteGrise == null) {
+          throw 'Veuillez télécharger la carte grise';
+        }
+        if (viewModel.driverCarAssurance == null) {
+          throw 'Veuillez télécharger l\'attestation d\'assurance';
+        }
+      } else {
+        if (viewModel.driverMotoCarteGrise == null) {
+          throw 'Veuillez télécharger la carte grise';
+        }
+        if (viewModel.driverMotoAssurance == null) {
+          throw 'Veuillez télécharger l\'attestation d\'assurance';
+        }
+      }
+      
+      print("=== $type AVEC VEHICULE ===");
+      
+      VehiculeModel vehiculeModel = _createVehicleModel(viewModel);
+      
+      RegistrationModel model = RegistrationModel(
+        type: type,
+        telephone: phoneNumber,
+        email: mail,
+        code: "1234",
+        genre: viewModel.selectedGender!,
+        motDePasse: password,
+        motDePasseConfirmation: password,
+        nom: driverSurnameInputController.text.trim(),
+        prenom: driverNameInputController.text.trim(),
+        adresse: driverAdresseInputController.text.trim(),
+        dateNaissance: "1990-01-15",
+        numeroPermis: "TEMP_PERMIS",
+        dateExpirationPermis: "2030-12-31",
+        documentIdentite: File(viewModel.driverIdentity!.path),
+        possedeVehicule: 1,
+        typeConducteurId: typeConducteurId,
+        vehicule: vehiculeModel,
+      );
+
+      _printModelDebug(model);
+      viewModel.registerEnding(model, context);
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(e.toString())),
+      );
+    }
   }
 
   void _submitWithoutVehicle(RegisterProfileViewModel viewModel, BuildContext context, String type, int typeConducteurId) {
-    print("=== $type SANS VEHICULE ===");
-    
-    RegistrationModel model = RegistrationModel(
-      type: type,
-      telephone: phoneNumber,
-      email: mail,
-      code: "1234",
-      genre: viewModel.selectedGender,
-      motDePasse: password,
-      motDePasseConfirmation: password,
-      nom: driverSurnameInputController.text,
-      prenom: driverNameInputController.text,
-      adresse: driverAdresseInputController.text,
-      dateNaissance: "1990-01-15",
-      numeroPermis: "TEMP_PERMIS",
-      dateExpirationPermis: "2030-12-31",
-      documentIdentite: viewModel.driverIdentity != null
-          ? File(viewModel.driverIdentity!.path)
-          : null,
-      possedeVehicule: 0,
-      typeConducteurId: typeConducteurId,
-    );
-    
-    _printModelDebug(model);
-    viewModel.registerEnding(model, context);
+    try {
+      // Validation des champs conducteur
+      _validateDriverFields(viewModel, context);
+      
+      print("=== $type SANS VEHICULE ===");
+      
+      RegistrationModel model = RegistrationModel(
+        type: type,
+        telephone: phoneNumber,
+        email: mail,
+        code: "1234",
+        genre: viewModel.selectedGender!,
+        motDePasse: password,
+        motDePasseConfirmation: password,
+        nom: driverSurnameInputController.text.trim(),
+        prenom: driverNameInputController.text.trim(),
+        adresse: driverAdresseInputController.text.trim(),
+        dateNaissance: "1990-01-15",
+        numeroPermis: "TEMP_PERMIS",
+        dateExpirationPermis: "2030-12-31",
+        documentIdentite: File(viewModel.driverIdentity!.path),
+        possedeVehicule: 0,
+        typeConducteurId: typeConducteurId,
+      );
+      
+      _printModelDebug(model);
+      viewModel.registerEnding(model, context);
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(e.toString())),
+      );
+    }
   }
 
   VehiculeModel _createVehicleModel(RegisterProfileViewModel viewModel) {

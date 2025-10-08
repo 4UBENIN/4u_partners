@@ -21,113 +21,109 @@ class AuthService {
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
 
   //* LOGIN FUNCTION
-
   Future<void> login(LoginModel loginModel, BuildContext context) async {
-    final url =
-        Uri.parse("https://foryou.cilassocies.com/api/partenaire/login");
+    final url = Uri.parse("https://foryou.cilassocies.com/api/partenaire/login");
 
-    final response = await http.post(url,
-        headers: headers, body: jsonEncode(loginModel.toJson()));
+    try {
+      final response = await http.post(
+        url,
+        headers: headers,
+        body: jsonEncode(loginModel.toJson()),
+      );
 
-    print("=== RESPONSE: ${response.body} ===");
-    final responseJson = jsonDecode(response.body);
-    if (response.statusCode == 200) {
-      print("VALEURS");
-      print("role : ${responseJson['data']['role']}");
-      print("name : ${responseJson['data']['nom']}");
-      print("userId : ${responseJson['data']['id']}");
-      if (responseJson['data']['conducteur'] != null) {
-        print("conducteurId : ${responseJson['data']['conducteur']['id']}");
-      }
-      print("TOKEN : ${responseJson['token']}");
+      print("=== RESPONSE STATUS: ${response.statusCode} ===");
+      print("=== RESPONSE BODY: ${response.body} ===");
 
-// Récupération directe des valeurs
-      String role = responseJson['type'];
-      if (role == "conducteur") {
-        role = responseJson['conducteur_type'];
-      }
-      String name = responseJson['data']['nom'];
-      String userId = responseJson['data']['id']
-          .toString(); // Si tu veux le garder en String
-      String token = responseJson['token'];
-      String message = responseJson['message'];
-// Sauvegarde dans SharedPreferences
-      await _sharedPreferencesServices.saveToken(token);
-      await _sharedPreferencesServices.saveUserName(name);
-      await _sharedPreferencesServices.saveUserType(role);
-      await _sharedPreferencesServices.saveUserId(userId);
+      final responseJson = jsonDecode(response.body);
 
-      // Determiner quel ID utiliser pour la base de données Firestore
-      String firestoreUserId;
-      if (responseJson['data']['conducteur'] != null) {
-        // Si c'est un conducteur/livreur, utiliser l'ID du conducteur
-        final conducteurId =
-            responseJson['data']['conducteur']['id'].toString();
-        await _sharedPreferencesServices.saveUserTypeId(conducteurId);
-        firestoreUserId = conducteurId;
-        print(
-            "Utilisateur partenaire détecté - ID Firestore: $firestoreUserId");
+      if (response.statusCode == 200) {
+        print("Connexion réussie ✅");
+
+        String role = responseJson['type'];
+        if (role == "conducteur") {
+          role = responseJson['conducteur_type'];
+        }
+
+        String name = responseJson['data']['nom'];
+        String userId = responseJson['data']['id'].toString();
+        String token = responseJson['token'];
+        String message = responseJson['message'] ?? "Connexion réussie";
+
+        await _sharedPreferencesServices.saveToken(token);
+        await _sharedPreferencesServices.saveUserName(name);
+        await _sharedPreferencesServices.saveUserType(role);
+        await _sharedPreferencesServices.saveUserId(userId);
+
+        String firestoreUserId;
+        if (responseJson['data']['conducteur'] != null) {
+          final conducteurId =
+              responseJson['data']['conducteur']['id'].toString();
+          await _sharedPreferencesServices.saveUserTypeId(conducteurId);
+          firestoreUserId = conducteurId;
+        } else {
+          firestoreUserId = userId;
+        }
+
+        await _syncUserToFirestore(responseJson['data'], role, firestoreUserId);
+
+        CustomToast.showSuccess(context, message: message);
+
+        switch (role) {
+          case 'livreur':
+            _navigationService.replaceWithDeliveryNavBarView();
+            break;
+          case 'chauffeur':
+            _navigationService.replaceWithHomemainView();
+            break;
+          case 'ramasseur':
+            _navigationService.replaceWithDeliveryNavBarView();
+            break;
+          case 'pressing':
+            _navigationService.replaceWithNavBarPressingView();
+            break;
+          default:
+            break;
+        }
       } else {
-        // Si c'est un autre partenaire, utiliser l'ID utilisateur normal
-        firestoreUserId = userId;
-        print("Autre partenaire détecté - ID Firestore: $firestoreUserId");
-      }
+        String errorMessage = "Erreur de connexion. Veuillez réessayer.";
 
-      // Synchroniser avec Firestore en passant le bon ID
-      await _syncUserToFirestore(responseJson['data'], role, firestoreUserId);
+        if (responseJson['error'] != null && responseJson['error'] is String) {
+          errorMessage = responseJson['error'];
+        } else if (responseJson['errors'] != null &&
+            responseJson['errors'] is Map) {
+          final errors = responseJson['errors'] as Map<String, dynamic>;
+          if (errors.isNotEmpty) {
+            final firstError = errors.values.first;
+            if (firstError is List && firstError.isNotEmpty) {
+              errorMessage = firstError.first.toString();
+            }
+          }
+        } else if (responseJson['message'] != null) {
+          errorMessage = responseJson['message'].toString();
+        }
 
-      // redirection
-      CustomToast.showSuccess(context, message: message);
-      switch (role) {
-        case 'livreur':
-          _navigationService.replaceWithDeliveryNavBarView();
-          break;
-        case 'chauffeur':
-          _navigationService.replaceWithHomemainView();
-          break;
-        case 'ramasseur':
-          _navigationService.replaceWithDeliveryNavBarView();
-          break;
-        case 'pressing':
-          //await _sharedPreferencesServices.saveToken(token);
-          _navigationService.replaceWithNavBarPressingView();
-          break;
-        default:
-          null;
+        throw errorMessage;
       }
-    } else {
-      String errorMessage = 'Erreur de connexion';
-      
-      if (responseJson is Map && responseJson.containsKey('error')) {
-        errorMessage = responseJson['error'].toString();
-      } else if (responseJson is Map && responseJson.containsKey('message')) {
-        errorMessage = responseJson['message'].toString();
-      } else if (response.statusCode == 401) {
-        errorMessage = 'Numéro de téléphone ou mot de passe incorrect';
-      } else if (response.statusCode == 404) {
-        errorMessage = 'Utilisateur non trouvé';
-      } else if (response.statusCode >= 500) {
-        errorMessage = 'Erreur du serveur. Veuillez réessayer plus tard.';
+    } catch (e) {
+      print("❌ Exception dans login(): $e");
+
+      if (e.toString().contains('SocketException')) {
+        throw "Problème de connexion Internet. Vérifiez votre réseau.";
+      } else {
+        throw e.toString();
       }
-      
-      // Lancer une exception avec le message d'erreur
-      throw errorMessage;
     }
   }
 
   //* Synchroniser l'utilisateur avec Firestore
-  Future<void> _syncUserToFirestore(Map<String, dynamic> userData, String type,
-      String firestoreUserId) async {
+  Future<void> _syncUserToFirestore(
+      Map<String, dynamic> userData, String type, String firestoreUserId) async {
     try {
-      // ✅ UTILISER L'ID PASSÉ EN PARAMÈTRE
       final userDoc = _firestore.collection('users').doc(firestoreUserId);
-
-      // Vérifier si le document existe déjà
       final docSnapshot = await userDoc.get();
 
-      // Données de base communes à tous les utilisateurs
       Map<String, dynamic> baseUserData = {
-        'id': userData['id'], // ✅ GARDER L'ID ORIGINAL POUR RÉFÉRENCE
+        'id': userData['id'],
         'nom': userData['nom'] ?? '',
         'prenom': userData['prenom'] ?? '',
         'email': userData['email'] ?? '',
@@ -137,25 +133,19 @@ class AuthService {
         'lastSeen': FieldValue.serverTimestamp(),
       };
 
-      // ✅ AJOUTER L'ID CONDUCTEUR SI DISPONIBLE
       if (userData['conducteur'] != null) {
         baseUserData['conducteurId'] = userData['conducteur']['id'];
       }
 
       if (!docSnapshot.exists) {
-        // Créer un nouveau document avec les données complètes
         baseUserData['createdAt'] = FieldValue.serverTimestamp();
-
         await userDoc.set(baseUserData);
         print('✅ Nouvel utilisateur créé dans Firestore: $firestoreUserId');
       } else {
-        // Mettre à jour les données existantes
-        Map<String, dynamic> updateData = {
+        await userDoc.update({
           'lastSeen': FieldValue.serverTimestamp(),
           'status': 'active',
-        };
-
-        await userDoc.update(updateData);
+        });
         print('🔄 Utilisateur mis à jour dans Firestore: $firestoreUserId');
       }
     } catch (e) {
@@ -166,19 +156,41 @@ class AuthService {
   //* GET TOKEN HEADERS
   Future<Map<String, String>> getAuthenticatedHeaders() async {
     final token = await _sharedPreferencesServices.getToken();
-
-    // Créer une copie des headers de base et ajouter le token
     final authenticatedHeaders = Map<String, String>.from(headers);
 
     if (token != null && token.isNotEmpty) {
-      // Remove any existing quotes from the token
       final cleanToken = token.replaceAll('"', '').trim();
       authenticatedHeaders['Authorization'] = 'Bearer $cleanToken';
     }
     print("AUTH HEADERS : ");
     print(authenticatedHeaders);
-
     return authenticatedHeaders;
+  }
+
+  //* VÉRIFICATION DU NUMÉRO DE TÉLÉPHONE
+  Future<bool> checkPhoneNumberExists(String phoneNumber) async {
+    try {
+      final url =
+          Uri.parse("https://foryou.cilassocies.com/api/partenaire/check-phone");
+
+      final response = await http.post(
+        url,
+        headers: headers,
+        body: jsonEncode({'telephone': phoneNumber}),
+      );
+
+      final responseData = jsonDecode(response.body);
+
+      if (response.statusCode == 200) {
+        return responseData['exists'] ?? false;
+      } else {
+        print('Erreur lors de la vérification du numéro: ${response.body}');
+        return false;
+      }
+    } catch (e) {
+      print('Exception lors de la vérification du numéro: $e');
+      return false;
+    }
   }
 
   //* REGISTER FUNCTION
@@ -199,14 +211,6 @@ class AuthService {
 
   Future<FormData> registrationModelToFormData(RegistrationModel model) async {
     final formData = FormData();
-
-    print("=== CONSTRUCTION FORMDATA SELON API ===");
-    print("Type d'utilisateur: ${model.type}");
-    print("Téléphone: ${model.telephone}");
-    print("Email: ${model.email}");
-    print("Véhicule présent: ${model.vehicule != null}");
-
-    // Champs obligatoires de base
     formData.fields.addAll([
       MapEntry('type', model.type),
       MapEntry('telephone', model.telephone),
@@ -218,57 +222,36 @@ class AuthService {
       MapEntry('adresse', model.adresse),
     ]);
 
-    // Champs optionnels mais présents dans le curl
-    if (model.prenom != null) {
-      formData.fields.add(MapEntry('prenom', model.prenom!));
-    }
-    if (model.genre != null) {
-      formData.fields.add(MapEntry('genre', model.genre!));
-    }
-
-    // IMPORTANT: date_naissance est dans le curl, il faut une vraie date ou null
+    if (model.prenom != null) formData.fields.add(MapEntry('prenom', model.prenom!));
+    if (model.genre != null) formData.fields.add(MapEntry('genre', model.genre!));
     if (model.dateNaissance != null && model.dateNaissance!.isNotEmpty) {
       formData.fields.add(MapEntry('date_naissance', model.dateNaissance!));
     }
 
     if (model.numeroPermis != null) {
-      formData.fields
-          .add(MapEntry('numero_permis', model.numeroPermis ?? 'TEMP_PERMIS'));
+      formData.fields.add(MapEntry('numero_permis', model.numeroPermis ?? 'TEMP_PERMIS'));
     }
     if (model.dateExpirationPermis != null) {
-      formData.fields.add(MapEntry('date_expiration_permis',
-          model.dateExpirationPermis ?? '2030-12-31'));
+      formData.fields.add(MapEntry('date_expiration_permis', model.dateExpirationPermis ?? '2030-12-31'));
     }
     if (model.possedeVehicule != null) {
-      formData.fields
-          .add(MapEntry('possedevehicule', model.possedeVehicule.toString()));
+      formData.fields.add(MapEntry('possedevehicule', model.possedeVehicule.toString()));
     }
     if (model.typeConducteurId != null) {
-      formData.fields.add(
-          MapEntry('type_conducteur_id', model.typeConducteurId.toString()));
+      formData.fields.add(MapEntry('type_conducteur_id', model.typeConducteurId.toString()));
     }
 
-    // Document d'identité
     if (model.documentIdentite != null) {
-      try {
-        final file = await MultipartFile.fromFile(
-          model.documentIdentite!.path,
-          filename: path.basename(model.documentIdentite!.path),
-          contentType: getMediaTypeFromFileName(model.documentIdentite!.path),
-        );
-        formData.files.add(MapEntry('document_identite', file));
-        print("Document d'identité ajouté: ${model.documentIdentite!.path}");
-      } catch (e) {
-        print("Erreur avec document d'identité: $e");
-      }
+      final file = await MultipartFile.fromFile(
+        model.documentIdentite!.path,
+        filename: path.basename(model.documentIdentite!.path),
+        contentType: getMediaTypeFromFileName(model.documentIdentite!.path),
+      );
+      formData.files.add(MapEntry('document_identite', file));
     }
 
-    // VEHICULE - Utiliser la syntaxe vehicule[champ] comme dans le curl
     if (model.vehicule != null) {
       final v = model.vehicule!;
-      print("=== AJOUT DU VEHICULE (syntaxe API) ===");
-
-      // Champs du véhicule avec syntaxe vehicule[champ]
       formData.fields.addAll([
         MapEntry('vehicule[type]', v.type!),
         MapEntry('vehicule[marque]', v.marque!),
@@ -280,63 +263,41 @@ class AuthService {
         MapEntry('vehicule[annee]', v.annee.toString()),
       ]);
 
-      print("Champs véhicule ajoutés");
-
-      // FICHIERS DU VEHICULE avec syntaxe vehicule[champ]
       if (v.cartegrise != null) {
-        try {
-          final file = await MultipartFile.fromFile(
-            v.cartegrise!.path,
-            filename: path.basename(v.cartegrise!.path),
-            contentType: getMediaTypeFromFileName(v.cartegrise!.path),
-          );
-          formData.files.add(MapEntry('vehicule[carte_grise]', file));
-          print("Carte grise ajoutée: ${v.cartegrise!.path}");
-        } catch (e) {
-          print("Erreur avec carte grise: $e");
-        }
+        final file = await MultipartFile.fromFile(
+          v.cartegrise!.path,
+          filename: path.basename(v.cartegrise!.path),
+          contentType: getMediaTypeFromFileName(v.cartegrise!.path),
+        );
+        formData.files.add(MapEntry('vehicule[carte_grise]', file));
       }
 
       if (v.assurance != null) {
-        try {
-          final file = await MultipartFile.fromFile(
-            v.assurance!.path,
-            filename: path.basename(v.assurance!.path),
-            contentType: getMediaTypeFromFileName(v.assurance!.path),
-          );
-          formData.files.add(MapEntry('vehicule[assurance]', file));
-          print("Assurance ajoutée: ${v.assurance!.path}");
-        } catch (e) {
-          print("Erreur avec assurance: $e");
-        }
+        final file = await MultipartFile.fromFile(
+          v.assurance!.path,
+          filename: path.basename(v.assurance!.path),
+          contentType: getMediaTypeFromFileName(v.assurance!.path),
+        );
+        formData.files.add(MapEntry('vehicule[assurance]', file));
       }
 
       if (v.permis != null) {
-        try {
-          final file = await MultipartFile.fromFile(
-            v.permis!.path,
-            filename: path.basename(v.permis!.path),
-            contentType: getMediaTypeFromFileName(v.permis!.path),
-          );
-          // CORRECTION: Envoyer à la racine, pas dans vehicule[]
-          formData.files.add(MapEntry('permis_conduire', file));
-          print("Permis ajouté: ${v.permis!.path}");
-        } catch (e) {
-          print("Erreur avec permis: $e");
-        }
+        final file = await MultipartFile.fromFile(
+          v.permis!.path,
+          filename: path.basename(v.permis!.path),
+          contentType: getMediaTypeFromFileName(v.permis!.path),
+        );
+        formData.files.add(MapEntry('permis_conduire', file));
       }
     }
 
-    print("=== FIN CONSTRUCTION FORMDATA ===");
     return formData;
   }
 
-  Future<void> register(
-      RegistrationModel registrationModel, BuildContext context) async {
+  Future<void> register(RegistrationModel registrationModel, BuildContext context) async {
     final dio = Dio();
     const url = 'https://foryou.cilassocies.com/api/partenaire/register';
 
-    // Activer les logs de Dio pour voir les requêtes
     dio.interceptors.add(LogInterceptor(
       requestBody: true,
       responseBody: true,
@@ -345,185 +306,104 @@ class AuthService {
       error: true,
     ));
 
-    print("=== DEBUT DE L'INSCRIPTION ===");
-    print("URL: $url");
-    print("Type: ${registrationModel.type}");
-    print("Telephone: ${registrationModel.telephone}");
-    print("Email: ${registrationModel.email}");
-    print("Nom: ${registrationModel.nom}");
-    print("Vehicule présent: ${registrationModel.vehicule != null}");
-
-    if (registrationModel.vehicule != null) {
-      print("Vehicule type: ${registrationModel.vehicule!.type}");
-      print("Vehicule marque: ${registrationModel.vehicule!.marque}");
-      print(
-          "Fichier carte grise: ${registrationModel.vehicule!.cartegrise?.path}");
-      print(
-          "Fichier assurance: ${registrationModel.vehicule!.assurance?.path}");
-      print("Fichier permis: ${registrationModel.vehicule!.permis?.path}");
-    }
-
-    print("Document identité: ${registrationModel.documentIdentite?.path}");
-
     try {
+      print("=== DEBUT DE L'INSCRIPTION ===");
+
+      // ✅ Vérifier si le numéro existe déjà
+      final phoneExists = await checkPhoneNumberExists(registrationModel.telephone);
+      if (phoneExists) {
+        CustomToast.showError(
+          context,
+          message: "Ce numéro de téléphone est déjà associé à un compte. Veuillez vous connecter.",
+        );
+
+        // Redirection automatique vers la page de connexion
+        Future.delayed(const Duration(seconds: 2), () {
+          _navigationService.clearStackAndShow(Routes.loginView);
+        });
+        return;
+      }
+
       print("=== CREATION DU FORMDATA ===");
       final formData = await registrationModelToFormData(registrationModel);
 
-      // Afficher le contenu du FormData
-      print("=== CONTENU DU FORMDATA ===");
-      print("Fields:");
-      for (var field in formData.fields) {
-        print("  ${field.key}: ${field.value}");
-      }
-      print("Files:");
-      for (var file in formData.files) {
-        print(
-            "  ${file.key}: ${file.value.filename} (${file.value.length} bytes)");
-      }
-
-      print("=== ENVOI DE LA REQUETE ===");
       final response = await dio.post(
         url,
         data: formData,
         options: Options(
-          headers: {
-            'accept': 'application/json',
-            'Content-Type': 'multipart/form-data',
-          },
-          validateStatus: (status) {
-            // Accepter tous les status codes pour pouvoir les traiter
-            return status != null && status < 500;
-          },
+          headers: {'accept': 'application/json', 'Content-Type': 'multipart/form-data'},
+          validateStatus: (status) => status != null && status < 500,
         ),
       );
 
-      print("=== REPONSE RECUE ===");
-      print("Status Code: ${response.statusCode}");
-      print("Response Data: ${response.data}");
-
       final responseJson = response.data;
-      print("Response JSON: $responseJson");
       String token = responseJson['token'];
+
       if (response.statusCode == 201) {
         String registerType = responseJson['type'];
-        print("Type: $registerType");
-
-        // Gérer statut_validation qui peut être null pour certains types (comme pressing)
         final String? profilStatuts = responseJson['data']['statut_validation'];
 
         if (registerType == "conducteur") {
           final String? conducteurType = responseJson['conducteur_type'];
-          if (conducteurType != null) {
-            registerType = conducteurType;
-          }
+          if (conducteurType != null) registerType = conducteurType;
         }
 
-        // Sauvegarder les données de base
         await _sharedPreferencesServices.saveUserId(responseJson['data']['id']);
         await _sharedPreferencesServices.saveUserType(registerType);
-        await _sharedPreferencesServices
-            .saveUserName(responseJson['data']['nom']);
+        await _sharedPreferencesServices.saveUserName(responseJson['data']['nom']);
 
         String firestoreUserId;
         if (responseJson['data']['conducteur'] != null) {
-          print(
-              "Conducteur inscrit - ID Firestore: ${responseJson['data']['conducteur']['id']}");
-          final conducteurId =
-              responseJson['data']['conducteur']['id'].toString();
+          final conducteurId = responseJson['data']['conducteur']['id'].toString();
           await _sharedPreferencesServices.saveUserTypeId(conducteurId);
           firestoreUserId = conducteurId;
-          print("Partenaire inscrit - ID Firestore: $firestoreUserId");
         } else {
           firestoreUserId = responseJson['data']['id'].toString();
-          print("Client inscrit - ID Firestore: $firestoreUserId");
         }
 
-        // Synchroniser avec Firestore après inscription réussie
-        await _syncRegisteredUserToFirestore(responseJson['data'], registerType,
-            registrationModel, firestoreUserId);
-
-        print('Inscription réussie pour le type: $registerType');
+        await _syncRegisteredUserToFirestore(
+          responseJson['data'],
+          registerType,
+          registrationModel,
+          firestoreUserId,
+        );
 
         switch (registerType) {
           case 'livreur':
-            // Sauvegarder le statut seulement s'il existe
-            if (profilStatuts != null) {
-              await _sharedPreferencesServices.saveProfilStatuts(profilStatuts);
-            }
-            Navigator.push(
-                context,
-                MaterialPageRoute(
-                    builder: (context) => const ProfileValidationPage()));
-            break;
-
           case 'chauffeur':
-            // Sauvegarder le statut seulement s'il existe
-            if (profilStatuts != null) {
-              await _sharedPreferencesServices.saveProfilStatuts(profilStatuts);
-            }
-            Navigator.push(
-                context,
-                MaterialPageRoute(
-                    builder: (context) => const ProfileValidationPage()));
-            break;
-
           case 'ramasseur':
-            // Sauvegarder le statut seulement s'il existe
             if (profilStatuts != null) {
               await _sharedPreferencesServices.saveProfilStatuts(profilStatuts);
             }
             Navigator.push(
-                context,
-                MaterialPageRoute(
-                    builder: (context) => const ProfileValidationPage()));
+              context,
+              MaterialPageRoute(builder: (context) => const ProfileValidationPage()),
+            );
             break;
 
           case 'pressing':
-            // Pour pressing, pas besoin de statut_validation
             await _sharedPreferencesServices.saveToken(token);
-            print("Token sauvegardé, redirection vers la vue pressing...");
             _navigationService.replaceWithNavBarPressingView();
-            break;
-
-          default:
-            print('Type non géré: $registerType');
             break;
         }
       } else {
-        // LANCER UNE EXCEPTION AU LIEU DE JUSTE IMPRIMER
-        print('=== ERREUR SERVEUR ===');
-        print('Status Code: ${response.statusCode}');
-        print('Response: ${responseJson['error']}');
-
         String errorMessage = "Erreur lors de l'inscription";
-
-        // Extraire le message d'erreur du serveur
         if (response.data is Map) {
           if (response.data['message'] != null) {
             errorMessage = response.data['message'].toString();
           } else if (response.data['errors'] != null) {
-            // Si c'est des erreurs de validation
             final errors = response.data['errors'] as Map<String, dynamic>;
             if (errors.isNotEmpty) {
-              // Récupérer toutes les erreurs
               final allErrors = <String>[];
-              
               errors.forEach((key, value) {
                 if (value is List) {
                   allErrors.addAll(value.map((e) => e.toString()));
-                } else if (value != null) {
-                  allErrors.add(value.toString());
-                }
+                } else if (value != null) allErrors.add(value.toString());
               });
-              
-              if (allErrors.isNotEmpty) {
-                errorMessage = allErrors.join('\n');
-              }
+              if (allErrors.isNotEmpty) errorMessage = allErrors.join('\n');
             }
           }
         }
-
-        // Lancer l'exception avec le message d'erreur
         throw DioException(
           requestOptions: response.requestOptions,
           response: response,
@@ -531,27 +411,12 @@ class AuthService {
         );
       }
     } catch (e) {
-      print('=== EXCEPTION ===');
-      print('Erreur pendant l\'envoi de la requête : $e');
-
-      // Si c'est déjà une DioException, la relancer
-      if (e is DioException) {
-        print('DioException details:');
-        print('  Type: ${e.type}');
-        print('  Message: ${e.message}');
-        print('  Response: ${e.response?.data}');
-        print('  Status Code: ${e.response?.statusCode}');
-
-        rethrow; // Relancer l'exception pour qu'elle soit captée dans registerEnding
-      } else {
-        // Pour toute autre exception, la wrapper dans une DioException
-        print('Stack trace : ${StackTrace.current}');
-        throw DioException(
-          requestOptions: RequestOptions(
-              path: 'https://foryou.cilassocies.com/api/partenaire/register'),
-          message: e.toString(),
-        );
-      }
+      print('Erreur pendant la requête : $e');
+      if (e is DioException) rethrow;
+      throw DioException(
+        requestOptions: RequestOptions(path: url),
+        message: e.toString(),
+      );
     }
   }
 
@@ -562,10 +427,7 @@ class AuthService {
     String firestoreUserId,
   ) async {
     try {
-      // ✅ UTILISER L'ID PASSÉ EN PARAMÈTRE
       final userDoc = _firestore.collection('users').doc(firestoreUserId);
-
-      // Données de base communes à tous les utilisateurs
       Map<String, dynamic> baseUserData = {
         'id': userData['id'],
         'nom': registrationModel.nom,
@@ -581,28 +443,23 @@ class AuthService {
         'dateNaissance': registrationModel.dateNaissance,
       };
 
-      // ✅ AJOUTER L'ID CONDUCTEUR SI DISPONIBLE
       if (userData['conducteur'] != null) {
         baseUserData['conducteurId'] = userData['conducteur']['id'];
       }
 
       await userDoc.set(baseUserData);
-      print(
-          '✅ Nouvel utilisateur inscrit créé dans Firestore: $firestoreUserId');
+      print('✅ Nouvel utilisateur inscrit dans Firestore: $firestoreUserId');
     } catch (e) {
-      print('❌ Erreur lors de la synchronisation Firestore (inscription): $e');
+      print('❌ Erreur lors de la synchro Firestore: $e');
     }
   }
 
   Future<void> logOut() async {
-    // Supprimer toutes les données locales
     await _sharedPreferencesServices.removeToken();
     await _sharedPreferencesServices.removeUserId();
     await _sharedPreferencesServices.removeUserType();
     await _sharedPreferencesServices.removeUserTypeId();
 
-    // Rediriger vers l'écran de connexion
     _navigationService.clearStackAndShow(Routes.loginView);
-    // }
   }
 }

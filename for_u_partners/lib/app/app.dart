@@ -32,8 +32,6 @@ import 'package:for_u_partners/ui/views/delivery/notifications_delivery/notifica
 import 'package:for_u_partners/ui/views/pressing/notifications_pressing/notifications_pressing_view.dart';
 import 'package:for_u_partners/services/auth_service.dart';
 import 'package:for_u_partners/services/driver_service.dart';
-import 'package:for_u_partners/services/pressing_service.dart';
-import 'package:for_u_partners/ui/views/pressing/compte_pressing/profil_pressing/profil_pressing_view.dart';
 import 'package:for_u_partners/services/wallet_service.dart';
 import 'package:for_u_partners/services/chat_service.dart';
 import 'package:for_u_partners/services/pickers_service.dart';

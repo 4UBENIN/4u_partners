@@ -64,16 +64,17 @@ class RegisterProfileViewModel extends FormViewModel {
   void setSelectedVehicle(String value) {
     if (_selectedVehicle != value) {
       _selectedVehicle = value;
-      
+
       if (!_isInitialized) return;
-      
+
       // Schedule the controller update for after the build phase
       WidgetsBinding.instance.addPostFrameCallback((_) {
         if (_selectedVehicle == 'moto') {
           _driverCarPlacesController.text = '1';
         } else if (_selectedVehicle == 'tricycle') {
           _driverCarPlacesController.text = '3';
-        } else if (_driverCarPlacesController.text == '1' || _driverCarPlacesController.text == '3') {
+        } else if (_driverCarPlacesController.text == '1' ||
+            _driverCarPlacesController.text == '3') {
           _driverCarPlacesController.clear();
         }
         // Notify listeners after updating the controller
@@ -85,7 +86,7 @@ class RegisterProfileViewModel extends FormViewModel {
   void setHasVehicle(bool value) {
     if (hasVehicle != value) {
       hasVehicle = value;
-      
+
       // Mettre à jour les valeurs après la fin du frame
       WidgetsBinding.instance.addPostFrameCallback((_) {
         if (value == false) {
@@ -103,6 +104,7 @@ class RegisterProfileViewModel extends FormViewModel {
       });
     }
   }
+
   String getSeatNumberHint() {
     switch (_selectedVehicle) {
       case 'moto':
