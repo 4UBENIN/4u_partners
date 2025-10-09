@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:for_u_partners/ui/views/auth/register/register_view.form.dart';
 import 'package:stacked/stacked.dart';
 import 'package:for_u_partners/app/app.router.dart';
 import 'package:for_u_partners/app/app.locator.dart';

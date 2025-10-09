@@ -2,7 +2,6 @@ import UIKit
 import Flutter
 import FirebaseCore
 import FirebaseMessaging
-import GoogleMaps
 
 @UIApplicationMain
 @objc class AppDelegate: FlutterAppDelegate {
@@ -12,10 +11,6 @@ import GoogleMaps
   ) -> Bool {
     // Configuration Firebase
     FirebaseApp.configure()
-    
-    // Configuration Google Maps
-    // TODO: Replace 'YOUR_GOOGLE_MAPS_IOS_API_KEY' with your actual Google Maps iOS API key
-    GMSServices.provideAPIKey("YOUR_GOOGLE_MAPS_IOS_API_KEY")
     
     // Configuration des notifications
     if #available(iOS 10.0, *) {

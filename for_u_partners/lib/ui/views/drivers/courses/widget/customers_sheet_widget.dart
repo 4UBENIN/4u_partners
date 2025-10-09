@@ -1484,7 +1484,7 @@ class _InProgressRideBottomSheetState extends State<InProgressRideBottomSheet>
                   color: kcPrimaryColor.withOpacity(0.1),
                   borderRadius: BorderRadius.circular(10),
                 ),
-                child: Icon(
+                child: const Icon(
                   Icons.schedule_rounded,
                   color: kcPrimaryColor,
                   size: 20,

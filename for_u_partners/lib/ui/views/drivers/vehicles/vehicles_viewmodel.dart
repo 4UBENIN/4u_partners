@@ -3,7 +3,6 @@ import 'dart:convert';
 import 'package:for_u_partners/app/app.locator.dart';
 import 'package:for_u_partners/services/sharedpreferences_service.dart';
 import 'package:for_u_partners/models/vehicle_model.dart';
-// Importez seulement ce qui est nécessaire du fichier vehicles_view.dart
 import 'package:http/http.dart' as http;
 import 'package:stacked/stacked.dart';
 
@@ -14,10 +13,11 @@ class MesVehiculesViewModel extends BaseViewModel {
   bool _isApprovedExpanded = true;
   String? _errorMessage;
 
-  // Remplacez par votre URL d'API
-  static const String baseUrl = 'https://foryou.cilassocies.com/api'; // ex: 'https://api.example.com'
+  // URL de base corrigée (sans /api à la fin)
+  static const String baseUrl = 'https://foryou.cilassocies.com';
 
   Vehicle? get vehiculeActif => _vehiculeActif;
+  List<Vehicle> get vehicules => _vehicules; // Ajout : retourner tous les véhicules
   List<Vehicle> get vehiculesApprouves => _vehiculesApprouves;
   bool get isApprovedExpanded => _isApprovedExpanded;
   String? get errorMessage => _errorMessage;
@@ -30,7 +30,7 @@ class MesVehiculesViewModel extends BaseViewModel {
       await fetchDashboardData();
     } catch (e) {
       _errorMessage = 'Erreur lors du chargement des données: $e';
-      print('Erreur initialisation: $e');
+      print('❌ Erreur initialisation: $e');
     }
     
     setBusy(false);
@@ -38,44 +38,92 @@ class MesVehiculesViewModel extends BaseViewModel {
 
   Future<void> fetchDashboardData() async {
     try {
-      // Récupérez le token depuis votre système d'authentification
+      // Récupération du token
       final token = await _getAuthToken();
+      print('✅ Token récupéré: ${token.substring(0, 10)}...');
+      
+      // URL corrigée
+      final url = Uri.parse('$baseUrl/api/conducteur/dashboard');
+      print('🌐 URL de l\'API: $url');
       
       final response = await http.get(
-        Uri.parse('$baseUrl/api/conducteur/dashboard'),
+        url,
         headers: {
           'Authorization': 'Bearer $token',
+          'Accept': 'application/json',
+          'Content-Type': 'application/json',
         },
       );
 
+      print('📡 Statut de la réponse: ${response.statusCode}');
+      print('📦 Corps de la réponse: ${response.body}');
+
       if (response.statusCode == 200) {
-        final data = jsonDecode(response.body);
-        print('Réponse de l\'API: $data'); // Debug
-        if (data['success'] == true) {
-          final List<dynamic> vehiculesData = data['data'] ?? [];
-          _vehicules = vehiculesData
-              .map((item) => Vehicle.fromJson(Map<String, dynamic>.from(item)))
-              .toList();
+        try {
+          final data = jsonDecode(response.body);
+          print('🔍 Données décodées: $data');
           
-          print('Nombre total de véhicules: ${_vehicules.length}'); // Debug
-          
-          _vehiculesApprouves = _vehicules
-              .where((vehicule) {
-                print('Véhicule: ${vehicule.id} - Statut: ${vehicule.statut}');
-                return vehicule.statut == 'approuve';
-              })
-              .toList();
-          print('Nombre de véhicules approuvés: ${_vehiculesApprouves.length}'); // Debug
-        } else {
-          _errorMessage = data['message'] ?? 'Erreur lors de la récupération des véhicules';
+          // Le champ 'vehicule' contient les données du véhicule
+          if (data['vehicule'] != null) {
+            // Créer un véhicule à partir de l'objet vehicule
+            final vehicleData = Map<String, dynamic>.from(data['vehicule']);
+            final vehicle = Vehicle(
+              id: vehicleData['id']?.toString() ?? '',
+              model: vehicleData['modele']?.toString() ?? 'Modèle non spécifié',
+              marque: vehicleData['marque']?.toString() ?? 'Marque inconnue',
+              immatriculation: vehicleData['immatriculation']?.toString() ?? '',
+              statut: vehicleData['statut']?.toString(),
+              categorie: vehicleData['categorie']?.toString() ?? 'standard',
+              couleur: vehicleData['couleur']?.toString() ?? 'Noire',
+              courseHeure: false,
+              clim: false,
+            );
+            
+            print('ℹ️ Catégorie du véhicule: ${vehicle.categorie}'); // Pour le débogage
+            
+            _vehicules = [vehicle];
+            // Définir le véhicule actif
+            _vehiculeActif = vehicle;
+            print('✅ Véhicule récupéré: ID=${vehicle.id}, Modèle=${vehicle.model}, Statut="${vehicle.statut}"');
+            
+            // On affiche le véhicule dans les deux sections, peu importe son statut
+            _vehiculesApprouves = List<Vehicle>.from(_vehicules);
+            
+            // Si le véhicule est en attente, on l'affiche avec un statut spécial
+            if (vehicle.statut?.toLowerCase() == 'en_attente') {
+              print('ℹ️ Le véhicule est en attente de validation mais sera affiché');
+            }
+          } else if (data['message'] != null) {
+            // Si pas de véhicule mais un message est présent
+            _errorMessage = data['message'];
+            print('ℹ️ Message du serveur: $_errorMessage');
+            _vehicules = [];
+            _vehiculesApprouves = [];
+          } else {
+            // Aucun véhicule et pas de message d'erreur
+            _errorMessage = 'Aucun véhicule trouvé';
+            _vehicules = [];
+            _vehiculesApprouves = [];
+          }
+        } catch (e, stackTrace) {
+          print('❌ Erreur lors du décodage de la réponse: $e');
+          print('📍 Stack trace: $stackTrace');
+          _errorMessage = 'Erreur lors du traitement des données: $e';
         }
-        
-        notifyListeners();
+      } else if (response.statusCode == 401) {
+        _errorMessage = 'Non autorisé - Token invalide ou expiré';
+        print('❌ Erreur 401: Token invalide');
       } else {
-        throw Exception('Erreur ${response.statusCode}: ${response.body}');
+        _errorMessage = 'Erreur ${response.statusCode}';
+        print('❌ Erreur HTTP ${response.statusCode}: ${response.body}');
       }
-    } catch (e) {
-      print('Erreur fetchDashboardData: $e');
+      
+      notifyListeners();
+    } catch (e, stackTrace) {
+      print('❌ Erreur fetchDashboardData: $e');
+      print('📍 Stack trace: $stackTrace');
+      _errorMessage = 'Erreur de connexion: $e';
+      notifyListeners();
       rethrow;
     }
   }
@@ -89,7 +137,7 @@ class MesVehiculesViewModel extends BaseViewModel {
       }
       return token;
     } catch (e) {
-      print('Erreur lors de la récupération du token: $e');
+      print('❌ Erreur lors de la récupération du token: $e');
       rethrow;
     }
   }
@@ -103,7 +151,7 @@ class MesVehiculesViewModel extends BaseViewModel {
     if (_vehiculeActif != null) {
       _vehiculeActif!.courseHeure = value;
       notifyListeners();
-      // Appel API pour mettre à jour
+      // TODO: Appel API pour mettre à jour
     }
   }
 
@@ -111,12 +159,12 @@ class MesVehiculesViewModel extends BaseViewModel {
     if (_vehiculeActif != null) {
       _vehiculeActif!.clim = value;
       notifyListeners();
-      // Appel API pour mettre à jour
+      // TODO: Appel API pour mettre à jour
     }
   }
 
   void addNewVehicle() {
-    // Navigation vers la page d'ajout de véhicule
+    // TODO: Navigation vers la page d'ajout de véhicule
     print('Ajouter un nouveau véhicule');
   }
 }

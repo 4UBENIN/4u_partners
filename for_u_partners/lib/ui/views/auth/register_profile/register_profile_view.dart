@@ -313,9 +313,6 @@ class RegisterProfileView extends StackedView<RegisterProfileViewModel>
     if (driverSurnameInputController.text.isEmpty) {
       throw 'Veuillez entrer votre nom';
     }
-    if (viewModel.selectedGender == null) {
-      throw 'Veuillez sélectionner votre genre';
-    }
     if (driverAdresseInputController.text.isEmpty) {
       throw 'Veuillez entrer votre adresse';
     }
@@ -325,10 +322,6 @@ class RegisterProfileView extends StackedView<RegisterProfileViewModel>
   }
 
   void _validateVehicleFields(RegisterProfileViewModel viewModel) {
-    if (viewModel.selectedVehicle == null) {
-      throw 'Veuillez sélectionner un type de véhicule';
-    }
-    
     if (driverCarModelInputController.text.isEmpty) {
       throw 'Veuillez entrer le modèle du véhicule';
     }
@@ -391,7 +384,7 @@ class RegisterProfileView extends StackedView<RegisterProfileViewModel>
         telephone: phoneNumber,
         email: mail,
         code: "1234",
-        genre: viewModel.selectedGender!,
+        genre: viewModel.selectedGender,
         motDePasse: password,
         motDePasseConfirmation: password,
         nom: driverSurnameInputController.text.trim(),
@@ -427,7 +420,7 @@ class RegisterProfileView extends StackedView<RegisterProfileViewModel>
         telephone: phoneNumber,
         email: mail,
         code: "1234",
-        genre: viewModel.selectedGender!,
+        genre: viewModel.selectedGender,
         motDePasse: password,
         motDePasseConfirmation: password,
         nom: driverSurnameInputController.text.trim(),
