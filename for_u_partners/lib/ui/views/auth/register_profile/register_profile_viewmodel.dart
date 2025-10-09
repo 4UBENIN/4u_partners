@@ -14,6 +14,14 @@ import 'package:for_u_partners/ui/common/text_component.dart';
 
 class RegisterProfileViewModel extends FormViewModel {
   bool? hasVehicle;
+  bool _showVehicleError = false;
+  
+  bool? get showVehicleError => _showVehicleError;
+  
+  void setShowVehicleError(bool value) {
+    _showVehicleError = value;
+    notifyListeners();
+  }
 
   //* Files
   XFile? deliverCarteGrise;

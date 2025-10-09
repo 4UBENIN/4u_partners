@@ -9,6 +9,23 @@ import 'package:stacked_services/stacked_services.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 
+final FirebaseMessaging _firebaseMessaging = FirebaseMessaging.instance;
+Future<void> initNotifications() async {
+  // Demander la permission
+  NotificationSettings settings = await _firebaseMessaging.requestPermission(
+    alert: true,
+    badge: true,
+    sound: true,
+  );
+
+  print('Permission status: ${settings.authorizationStatus}');
+}
+@pragma('vm:entry-point')
+Future<void> firebaseMessagingBackgroundHandler(RemoteMessage message) async {
+  await Firebase.initializeApp();
+  print("📱 Message en arrière-plan: ${message.messageId}");
+}
+
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await setupLocator();

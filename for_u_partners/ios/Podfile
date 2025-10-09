@@ -36,6 +36,9 @@ target 'Runner' do
   pod 'Google-Maps-iOS-Utils', '6.1.0'
 
   flutter_install_all_ios_pods File.dirname(File.realpath(__FILE__))
+  # Firebase
+  pod 'FirebaseMessaging'
+  pod 'FirebaseCore'
   target 'RunnerTests' do
     inherit! :search_paths
   end

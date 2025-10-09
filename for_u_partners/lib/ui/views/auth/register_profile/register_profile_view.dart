@@ -192,12 +192,25 @@ class RegisterProfileView extends StackedView<RegisterProfileViewModel>
       motDePasse: password,
       motDePasseConfirmation: password,
       nom: pressingNameInputController.text.trim(),
-      adresse: pressingLocalisationInputController.text.trim(),
+      adresse: '', // Ajout du paramètre adresse manquant
     );
     viewModel.registerEnding(model, context);
   }
 
   void _handleConducteurSubmit(RegisterProfileViewModel viewModel, BuildContext context) {
+    // Valider que l'utilisateur a répondu à la question sur le véhicule
+    if (viewModel.hasVehicle == null) {
+      viewModel.setShowVehicleError(true);
+      // Faire défiler jusqu'au champ de sélection
+      Scrollable.ensureVisible(
+        context,
+        alignment: 0.5, // Faites défiler pour centrer le champ
+        duration: const Duration(milliseconds: 500),
+        curve: Curves.easeInOut,
+      );
+      return;
+    }
+    
     if (viewModel.hasVehicle == true) {
       _submitWithVehicle(viewModel, context, selectedProfile, 1);
     } else {
@@ -206,6 +219,19 @@ class RegisterProfileView extends StackedView<RegisterProfileViewModel>
   }
 
   void _handleLivreurSubmit(RegisterProfileViewModel viewModel, BuildContext context) {
+    // Valider que l'utilisateur a répondu à la question sur le véhicule
+    if (viewModel.hasVehicle == null) {
+      viewModel.setShowVehicleError(true);
+      // Faire défiler jusqu'au champ de sélection
+      Scrollable.ensureVisible(
+        context,
+        alignment: 0.5,
+        duration: const Duration(milliseconds: 500),
+        curve: Curves.easeInOut,
+      );
+      return;
+    }
+    
     if (viewModel.hasVehicle == true) {
       _submitWithVehicle(viewModel, context, 'conducteur', 2);
     } else {
@@ -560,49 +586,106 @@ class RegisterProfileView extends StackedView<RegisterProfileViewModel>
     );
   }
 
+  Widget _buildRadioButton<T>({
+    required T value,
+    required T? groupValue,
+    required String label,
+    required ValueChanged<T?> onChanged,
+  }) {
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Radio<T>(
+          value: value,
+          groupValue: groupValue,
+          onChanged: onChanged,
+          activeColor: primaryColor,
+        ),
+        GestureDetector(
+          onTap: () => onChanged(value),
+          child: TextComponent(
+            label,
+            fontsize: 15,
+          ),
+        ),
+      ],
+    );
+  }
+
   Widget _buildVehicleSection(RegisterProfileViewModel viewModel) {
+    final bool showError = viewModel.showVehicleError ?? false;
+    
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         const TextComponent(
           "Possédez-vous un véhicule ?",
           fontsize: 16,
+          fontweight: FontWeight.w500,
         ),
         const SizedBox(height: 5),
         const TextComponent(
           "Une voiture, une moto ou un tricycle",
           fontsize: 14,
           textcolor: mediumGrey,
+          fontweight: FontWeight.w400,
         ),
         const SizedBox(height: 10),
-        Consumer<RegisterProfileViewModel>(
-          builder: (context, vm, _) {
-            return Row(
-              children: [
-                Radio<bool>(
-                  value: true,
-                  groupValue: vm.hasVehicle,
-                  onChanged: (value) {
-                    if (value != null) {
-                      vm.setHasVehicle(value);
-                    }
-                  },
+        Container(
+          decoration: BoxDecoration(
+            border: showError 
+              ? Border.all(color: Colors.red, width: 1.5) 
+              : null,
+            borderRadius: BorderRadius.circular(8),
+          ),
+          child: Column(
+            children: [
+              Consumer<RegisterProfileViewModel>(
+                builder: (context, vm, _) {
+                  return Row(
+                    children: [
+                      _buildRadioButton(
+                        value: true,
+                        groupValue: vm.hasVehicle,
+                        label: "Oui",
+                        onChanged: (value) {
+                          if (value != null) {
+                            vm.setHasVehicle(value);
+                            vm.setShowVehicleError(false);
+                          }
+                        },
+                      ),
+                      const SizedBox(width: 30),
+                      _buildRadioButton(
+                        value: false,
+                        groupValue: vm.hasVehicle,
+                        label: "Non",
+                        onChanged: (value) {
+                          if (value != null) {
+                            vm.setHasVehicle(value);
+                            vm.setShowVehicleError(false);
+                          }
+                        },
+                      ),
+                    ],
+                  );
+                },
+              ),
+              if (showError) ...[
+                const SizedBox(height: 8),
+                const Row(
+                  children: [
+                    Icon(Icons.error_outline, color: Colors.red, size: 16),
+                    SizedBox(width: 4),
+                    Text(
+                      'Veuillez sélectionner une option',
+                      style: TextStyle(color: Colors.red, fontSize: 12),
+                    ),
+                  ],
                 ),
-                const TextComponent("Oui", fontsize: 15),
-                const SizedBox(width: 50),
-                Radio<bool>(
-                  value: false,
-                  groupValue: vm.hasVehicle,
-                  onChanged: (value) {
-                    if (value != null) {
-                      vm.setHasVehicle(value);
-                    }
-                  },
-                ),
-                const TextComponent("Non", fontsize: 15),
               ],
-            );
-          },
+            ],
+          ),
         ),
         const SizedBox(height: 20),
         if (viewModel.hasVehicle != null) ...[
