@@ -4,7 +4,7 @@ import 'package:stacked/stacked.dart';
 // mes_vehicules_viewmodel.dart
 class MesVehiculesViewModel extends BaseViewModel {
   Vehicle? _vehiculeActif;
-  List<Vehicle> _vehiculesApprouves = [];
+  final List<Vehicle> _vehiculesApprouves = [];
   bool _isApprovedExpanded = true;
 
   Vehicle? get vehiculeActif => _vehiculeActif;

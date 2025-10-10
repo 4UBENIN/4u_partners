@@ -164,7 +164,7 @@ class _CourseRapidePageState extends State<CourseRapidePage> {
           // Carte Mapbox
           Expanded(
             child: FlutterMap(
-              options: MapOptions(
+              options: const MapOptions(
                 center: LatLng(6.3703, 2.3912), // Cotonou par défaut
                 zoom: 13,
               ),

@@ -465,9 +465,9 @@ class _AcceptedClientBottomSheetState extends State<AcceptedClientBottomSheet>
                             Container(
                               width: 40,
                               height: 40,
-                              decoration: BoxDecoration(
+                              decoration: const BoxDecoration(
                                 color:
-                                    const Color(0xFF25D366), // Couleur WhatsApp
+                                    Color(0xFF25D366), // Couleur WhatsApp
                                 shape: BoxShape.circle,
                               ),
                               child: IconButton(
@@ -691,6 +691,9 @@ class _InProgressRideBottomSheetState extends State<InProgressRideBottomSheet>
     with SingleTickerProviderStateMixin {
   final DriverService _driverService = locator<DriverService>();
   bool _isRequestingPause = false;
+  bool _isPaused = false; // État pour savoir si la pause est active
+  Timer? _pauseTimer; // Minuteur pour la pause
+  int _pauseSeconds = 0; // Compteur de secondes de pause
   late AnimationController _animationController;
 
   @override
@@ -700,6 +703,42 @@ class _InProgressRideBottomSheetState extends State<InProgressRideBottomSheet>
       vsync: this,
       duration: const Duration(seconds: 2),
     )..repeat(reverse: true);
+  }
+
+  Widget _buildPauseTimer() {
+    if (!_isPaused) return const SizedBox.shrink();
+
+    final minutes = (_pauseSeconds ~/ 60).toString().padLeft(2, '0');
+    final seconds = (_pauseSeconds % 60).toString().padLeft(2, '0');
+
+    return Container(
+      margin: const EdgeInsets.only(bottom: 16),
+      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+      decoration: BoxDecoration(
+        color: Colors.orange[50],
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: Colors.orange[200]!, width: 1),
+      ),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Icon(
+            Icons.timer,
+            color: Colors.orange[700],
+            size: 20,
+          ),
+          const SizedBox(width: 8),
+          Text(
+            'Pause en cours : $minutes:$seconds',
+            style: TextStyle(
+              fontSize: 16,
+              fontWeight: FontWeight.w600,
+              color: Colors.orange[700],
+            ),
+          ),
+        ],
+      ),
+    );
   }
 
   @override
@@ -751,14 +790,14 @@ class _InProgressRideBottomSheetState extends State<InProgressRideBottomSheet>
                       Container(
                         width: 8,
                         height: 8,
-                        decoration: const BoxDecoration(
-                          color: Colors.green,
+                        decoration: BoxDecoration(
+                          color: _isPaused ? Colors.orange : Colors.green,
                           shape: BoxShape.circle,
                         ),
                       ),
                       const SizedBox(width: 8),
-                      const Text(
-                        'Course en cours',
+                      Text(
+                        _isPaused ? 'Pause en cours' : 'Course en cours',
                         style: TextStyle(
                           fontSize: 16,
                           fontWeight: FontWeight.w600,
@@ -768,6 +807,9 @@ class _InProgressRideBottomSheetState extends State<InProgressRideBottomSheet>
                       ),
                     ],
                   ),
+                  
+                  // Affichage du minuteur de pause
+                  _buildPauseTimer(),
                   
                   const SizedBox(height: 24),
                   
@@ -891,7 +933,7 @@ class _InProgressRideBottomSheetState extends State<InProgressRideBottomSheet>
                     width: double.infinity,
                     height: 52,
                     child: OutlinedButton(
-                      onPressed: _requestPause,
+                      onPressed: _isPaused ? _endPause : _requestPause,
                       style: OutlinedButton.styleFrom(
                         foregroundColor: kcPrimaryColor,
                         side: BorderSide(color: kcPrimaryColor, width: 1.5),
@@ -901,14 +943,16 @@ class _InProgressRideBottomSheetState extends State<InProgressRideBottomSheet>
                           borderRadius: BorderRadius.circular(12),
                         ),
                       ),
-                      
-                      child: const Row(
+                      child: Row(
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
-                          Icon(Icons.pause_circle_outline, size: 22),
+                          Icon(
+                            _isPaused ? Icons.play_circle_outline : Icons.pause_circle_outline,
+                            size: 22,
+                          ),
                           SizedBox(width: 8),
                           Text(
-                            'Demander une pause',
+                            _isPaused ? 'Terminer la pause' : 'Demander une pause',
                             style: TextStyle(
                               fontSize: 16,
                               fontWeight: FontWeight.w600,
@@ -970,6 +1014,7 @@ class _InProgressRideBottomSheetState extends State<InProgressRideBottomSheet>
 
     try {
       final result = await _driverService.requestPause(int.parse(widget.client.courseId.toString()));
+      //await _driverService.answerPause(int.parse(widget.client.courseId.toString()));
       
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -978,6 +1023,9 @@ class _InProgressRideBottomSheetState extends State<InProgressRideBottomSheet>
             backgroundColor: Colors.green,
           ),
         );
+
+        // Démarrer la pause et le minuteur
+        _startPause();
       }
     } catch (e) {
       if (mounted) {
@@ -997,8 +1045,47 @@ class _InProgressRideBottomSheetState extends State<InProgressRideBottomSheet>
     }
   }
 
+  void _startPause() {
+    setState(() {
+      _isPaused = true;
+      _pauseSeconds = 0; // Réinitialiser le compteur
+    });
+
+    // Le minuteur va tourner indéfiniment jusqu'à ce qu'on termine la pause
+    _pauseTimer = Timer.periodic(const Duration(seconds: 1), (timer) {
+      if (mounted) {
+        setState(() {
+          _pauseSeconds++;
+        });
+      }
+    });
+  }
+
+  void _endPause() {
+    _pauseTimer?.cancel();
+    _pauseTimer = null;
+
+    setState(() {
+      _isPaused = false;
+      _pauseSeconds = 0; // Réinitialiser le compteur
+    });
+
+    // Appeler le service pour terminer la pause
+    _driverService.stopPause(int.parse(widget.client.courseId.toString()));
+
+    if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Pause terminée'),
+          backgroundColor: Colors.blue,
+        ),
+      );
+    }
+  }
+
   @override
   void dispose() {
+    _pauseTimer?.cancel();
     _animationController.dispose();
     super.dispose();
   }

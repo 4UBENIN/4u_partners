@@ -41,7 +41,7 @@ class CoursesViewModel extends BaseViewModel {
   Timer? _driversRefreshTimer;
   
   // Rayon maximum pour afficher les conducteurs (en km) - null = tous
-  double? _maxDriverDistanceKm = 10.0; // Par défaut 10km
+  final double? _maxDriverDistanceKm = 10.0; // Par défaut 10km
   double? get maxDriverDistanceKm => _maxDriverDistanceKm;
 
   // Polylines pour les trajets

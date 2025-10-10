@@ -536,6 +536,74 @@ class DriverService {
     }
   }
 
+  Future<String> answerPause(int courseId) async {
+    try {
+      final token = await sharedPreferencesService.getToken();
+      if (token == null) {
+        throw Exception('Token non disponible');
+      }
+
+      final url = Uri.parse('$baseUrl/conducteur/courses/$courseId/repondre');
+      print('Demande de pause - URL: $url');
+
+      final response = await http.post(
+        url,
+        headers: {
+          'Accept': 'application/json',
+          'Authorization': 'Bearer $token',
+        },
+      );
+
+      print("Réponse de la demande de pause - Statut: ${response.statusCode}");
+      print("Réponse de la demande de pause - Corps: ${response.body}");
+
+      if (response.statusCode == 200) {
+        final responseData = jsonDecode(response.body);
+        return responseData['message'] ?? 'Demande de pause effectuée avec succès';
+      } else {
+        throw Exception('Échec de la demande de pause: ${response.statusCode}');
+      }
+    } catch (e) {
+      print('Erreur lors de la demande de pause: $e');
+      rethrow;
+    }
+  }
+
+  Future<String> stopPause(int courseId) async {
+    try {
+      final token = await sharedPreferencesService.getToken();
+      if (token == null) {
+        throw Exception('Token non disponible');
+      }
+
+      final url = Uri.parse('$baseUrl/conducteur/courses/$courseId/stop_pause');
+      print('Demande de pause - URL: $url');
+
+      final response = await http.post(
+        url,
+        headers: {
+          'Accept': 'application/json',
+          'Authorization': 'Bearer $token',
+        },
+      );
+
+      print("Réponse de la demande de pause - Statut: ${response.statusCode}");
+      print("Réponse de la demande de pause - Corps: ${response.body}");
+
+      if (response.statusCode == 200) {
+        final responseData = jsonDecode(response.body);
+        return responseData['message'] ?? 'Demande de pause effectuée avec succès';
+      } else {
+        throw Exception('Échec de la demande de pause: ${response.statusCode}');
+      }
+    } catch (e) {
+      print('Erreur lors de la demande de pause: $e');
+      rethrow;
+    }
+  }
+
+
+
   // Récupérer les détails d'une course spécifique
   Future<Map<String, dynamic>> getCourseDetails(int courseId) async {
     final token = await sharedPreferencesService.getToken();

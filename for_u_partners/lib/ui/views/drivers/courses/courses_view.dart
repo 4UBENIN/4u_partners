@@ -37,7 +37,7 @@ class CoursesView extends StackedView<CoursesViewModel> {
                   children: [
                    LoadingAnimationWidget.fourRotatingDots(color: kcPrimaryColor, size: 60),
                    const SizedBox(height: 16),
-                    Text('Obtention de votre position...'),
+                    const Text('Obtention de votre position...'),
                   ],
                 ),
               )

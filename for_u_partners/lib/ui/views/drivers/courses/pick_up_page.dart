@@ -48,11 +48,11 @@ class _PickUpPageState extends State<PickUpPage> with TickerProviderStateMixin {
 
   // Google Maps
   GoogleMapController? _mapController;
-  LatLng _initialPosition = const LatLng(6.3703, 2.3912); // Centre Bénin
-  Set<Marker> _markers = {};
-  Set<Polyline> _polylines = {};
+  final LatLng _initialPosition = const LatLng(6.3703, 2.3912); // Centre Bénin
+  final Set<Marker> _markers = {};
+  final Set<Polyline> _polylines = {};
   List<LatLng> _polylineCoordinates = [];
-  PolylinePoints _polylinePoints = PolylinePoints(apiKey: AppConstants.googleApiKey);
+  final PolylinePoints _polylinePoints = PolylinePoints(apiKey: AppConstants.googleApiKey);
   
   // Informations sur le trajet
   String? _distance;

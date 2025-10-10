@@ -67,7 +67,7 @@ import 'package:for_u_partners/services/pickers_service.dart';
     MaterialRoute(page: DocumentsView),
 // @stacked-route
   ],
-  dependencies: const [
+  dependencies: [
     LazySingleton(classType: BottomSheetService),
     LazySingleton(classType: DialogService),
     LazySingleton(classType: NavigationService),
