@@ -17,7 +17,7 @@ class MesVehiculesViewModel extends BaseViewModel {
   static const String baseUrl = 'https://foryou.cilassocies.com';
 
   Vehicle? get vehiculeActif => _vehiculeActif;
-  List<Vehicle> get vehicules => _vehicules; // Ajout : retourner tous les véhicules
+  List<Vehicle> get vehicules => _vehicules;
   List<Vehicle> get vehiculesApprouves => _vehiculesApprouves;
   bool get isApprovedExpanded => _isApprovedExpanded;
   String? get errorMessage => _errorMessage;
@@ -75,11 +75,14 @@ class MesVehiculesViewModel extends BaseViewModel {
               statut: vehicleData['statut']?.toString(),
               categorie: vehicleData['categorie']?.toString() ?? 'standard',
               couleur: vehicleData['couleur']?.toString() ?? 'Noire',
-              courseHeure: false,
-              clim: false,
+              courseHeure: vehicleData['course_heure'] == true || vehicleData['course_heure'] == 1,
+              clim: vehicleData['clim'] == true || vehicleData['clim'] == 1,
+              basic: vehicleData['basic'] == true || vehicleData['basic'] == 1,
+              premium: vehicleData['premium'] == true || vehicleData['premium'] == 1,
             );
             
-            print('ℹ️ Catégorie du véhicule: ${vehicle.categorie}'); // Pour le débogage
+            print('ℹ️ Catégorie du véhicule: ${vehicle.categorie}');
+            print('ℹ️ Services - Course à l\'heure: ${vehicle.courseHeure}, Clim: ${vehicle.clim}, Basic: ${vehicle.basic}, Premium: ${vehicle.premium}');
             
             _vehicules = [vehicle];
             // Définir le véhicule actif
@@ -152,6 +155,7 @@ class MesVehiculesViewModel extends BaseViewModel {
       _vehiculeActif!.courseHeure = value;
       notifyListeners();
       // TODO: Appel API pour mettre à jour
+      _updateVehicleService('course_heure', value);
     }
   }
 
@@ -160,6 +164,80 @@ class MesVehiculesViewModel extends BaseViewModel {
       _vehiculeActif!.clim = value;
       notifyListeners();
       // TODO: Appel API pour mettre à jour
+      _updateVehicleService('clim', value);
+    }
+  }
+
+  void toggleBasic(bool value) {
+    if (_vehiculeActif != null) {
+      final categorie = _vehiculeActif!.categorie?.toLowerCase();
+      
+      // Vérifier que ce n'est pas un véhicule VIP (Basic est verrouillé pour VIP)
+      if (categorie == 'vip') {
+        print('⚠️ Basic est verrouillé pour les véhicules VIP');
+        return;
+      }
+      
+      _vehiculeActif!.basic = value;
+      notifyListeners();
+      print('🔄 Basic ${value ? "activé" : "désactivé"}');
+      // TODO: Appel API pour mettre à jour
+      _updateVehicleService('basic', value);
+    }
+  }
+
+  void togglePremium(bool value) {
+    if (_vehiculeActif != null) {
+      final categorie = _vehiculeActif!.categorie?.toLowerCase();
+      
+      // Vérifier que c'est bien un véhicule VIP
+      if (categorie != 'vip') {
+        print('⚠️ Premium est disponible uniquement pour les véhicules VIP');
+        return;
+      }
+      
+      _vehiculeActif!.premium = value;
+      notifyListeners();
+      print('🔄 Premium ${value ? "activé" : "désactivé"}');
+      // TODO: Appel API pour mettre à jour
+      _updateVehicleService('premium', value);
+    }
+  }
+
+  // Méthode privée pour mettre à jour un service du véhicule via l'API
+  Future<void> _updateVehicleService(String serviceName, bool value) async {
+    if (_vehiculeActif == null) return;
+    
+    try {
+      final token = await _getAuthToken();
+      final url = Uri.parse('$baseUrl/api/conducteur/vehicules/${_vehiculeActif!.id}/services');
+      
+      print('🔄 Mise à jour du service $serviceName vers ${value ? "activé" : "désactivé"}');
+      
+      final response = await http.put(
+        url,
+        headers: {
+          'Authorization': 'Bearer $token',
+          'Accept': 'application/json',
+          'Content-Type': 'application/json',
+        },
+        body: jsonEncode({
+          serviceName: value,
+        }),
+      );
+
+      if (response.statusCode == 200) {
+        print('✅ Service $serviceName mis à jour avec succès');
+      } else {
+        print('❌ Erreur lors de la mise à jour du service: ${response.statusCode}');
+        print('📦 Réponse: ${response.body}');
+        // Optionnel: Rétablir l'état précédent en cas d'erreur
+        // await fetchDashboardData();
+      }
+    } catch (e) {
+      print('❌ Erreur lors de la mise à jour du service $serviceName: $e');
+      // Optionnel: Rétablir l'état précédent en cas d'erreur
+      // await fetchDashboardData();
     }
   }
 

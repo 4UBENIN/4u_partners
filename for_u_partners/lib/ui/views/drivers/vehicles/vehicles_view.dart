@@ -314,6 +314,7 @@ class _MesVehiculesView extends StatelessWidget {
     }
 
     final vehicle = viewModel.vehiculeActif!;
+    final categorie = vehicle.categorie?.toLowerCase();
 
     return Container(
       padding: const EdgeInsets.all(20),
@@ -354,10 +355,8 @@ class _MesVehiculesView extends StatelessWidget {
                       ),
                     ),
                     const SizedBox(height: 8),
-                    // Deuxième ligne : Catégorie et Couleur
                     Row(
                       children: [
-                        // Catégorie
                         Icon(Icons.category, size: 14, color: Colors.grey[600]),
                         const SizedBox(width: 4),
                         Text(
@@ -369,7 +368,6 @@ class _MesVehiculesView extends StatelessWidget {
                           ),
                         ),
                         const SizedBox(width: 16),
-                        // Couleur
                         Icon(Icons.color_lens, size: 14, color: Colors.grey[600]),
                         const SizedBox(width: 4),
                         Text(
@@ -403,6 +401,8 @@ class _MesVehiculesView extends StatelessWidget {
           ),
           const Divider(),
           const SizedBox(height: 16),
+          
+          // Course à l'heure (toujours visible)
           _buildServiceToggle(
             icon: Icons.schedule,
             label: 'Course à l\'heure',
@@ -410,20 +410,49 @@ class _MesVehiculesView extends StatelessWidget {
             onToggle: (value) => viewModel.toggleCourseHeure(value),
           ),
           const SizedBox(height: 16),
-          _buildServiceOption(
-            icon: Icons.local_taxi,
-            label: 'Basic',
-            hasInfo: true,
-            isLocked: true,
-          ),
-          const SizedBox(height: 16),
-          _buildServiceToggle(
-            icon: Icons.ac_unit,
-            label: 'Clim',
-            isActive: vehicle.clim,
-            hasInfo: true,
-            onToggle: (value) => viewModel.toggleClim(value),
-          ),
+          
+          // Section Basic
+          if (categorie == 'vip')
+            // VIP : Basic verrouillé
+            _buildServiceOption(
+              icon: Icons.local_taxi,
+              label: 'Basic',
+              hasInfo: true,
+              isLocked: true,
+            )
+          else
+            // PREMIUM et STANDARD : Basic activable
+            _buildServiceToggle(
+              icon: Icons.local_taxi,
+              label: 'Basic',
+              isActive: vehicle.basic ?? false,
+              hasInfo: true,
+              onToggle: (value) => viewModel.toggleBasic(value),
+            ),
+          
+          // Section Premium (uniquement pour VIP)
+          if (categorie == 'vip') ...[
+            const SizedBox(height: 16),
+            _buildServiceToggle(
+              icon: Icons.workspace_premium,
+              label: 'Premium',
+              isActive: vehicle.premium ?? false,
+              hasInfo: true,
+              onToggle: (value) => viewModel.togglePremium(value),
+            ),
+          ],
+          
+          // Section Clim (PREMIUM et VIP uniquement)
+          if (categorie == 'premium' || categorie == 'vip') ...[
+            const SizedBox(height: 16),
+            _buildServiceToggle(
+              icon: Icons.ac_unit,
+              label: 'Clim',
+              isActive: vehicle.clim,
+              hasInfo: true,
+              onToggle: (value) => viewModel.toggleClim(value),
+            ),
+          ],
         ],
       ),
     );
@@ -452,7 +481,6 @@ class _MesVehiculesView extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                // Marque et modèle
                 Text(
                   '${vehicle.marque} ${vehicle.model}',
                   style: const TextStyle(
@@ -461,7 +489,6 @@ class _MesVehiculesView extends StatelessWidget {
                   ),
                 ),
                 const SizedBox(height: 4),
-                // Immatriculation
                 Text(
                   vehicle.immatriculation,
                   style: TextStyle(
@@ -470,10 +497,8 @@ class _MesVehiculesView extends StatelessWidget {
                   ),
                 ),
                 const SizedBox(height: 6),
-                // Ligne inférieure avec catégorie, couleur et statut
                 Row(
                   children: [
-                    // Catégorie
                     Icon(Icons.category, size: 14, color: Colors.grey[600]),
                     const SizedBox(width: 4),
                     if (vehicle.categorie?.isNotEmpty == true)
@@ -485,7 +510,6 @@ class _MesVehiculesView extends StatelessWidget {
                         ),
                       ),
                     const SizedBox(width: 12),
-                    // Couleur
                     Icon(Icons.color_lens, size: 14, color: Colors.grey[600]),
                     const SizedBox(width: 4),
                     if (vehicle.couleur?.isNotEmpty == true)
@@ -497,7 +521,6 @@ class _MesVehiculesView extends StatelessWidget {
                         ),
                       ),
                     const Spacer(),
-                    // Statut
                     Container(
                       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                       decoration: BoxDecoration(
@@ -549,38 +572,25 @@ class _MesVehiculesView extends StatelessWidget {
     bool hasInfo = false,
     required Function(bool) onToggle,
   }) {
-    final bool isClim = label.toLowerCase() == 'clim';
-    final String? categorie = viewModel.vehiculeActif?.categorie?.toLowerCase();
-    final bool isDisabled = isClim && categorie != 'vip' && categorie != 'premium';
-    
-    return Opacity(
-      opacity: isDisabled ? 0.5 : 1.0,
-      child: AbsorbPointer(
-        absorbing: isDisabled,
-        child: Row(
-          children: [
-            Icon(icon, size: 20, color: isDisabled ? Colors.grey[500] : Colors.grey[700]),
-            const SizedBox(width: 12),
-            Text(
-              label,
-              style: TextStyle(
-                fontSize: 15,
-                color: isDisabled ? Colors.grey[600] : null,
-              ),
-            ),
-            if (hasInfo) ...[
-              const SizedBox(width: 4),
-              Icon(Icons.info_outline, size: 16, color: isDisabled ? Colors.grey[500] : Colors.blue[400]),
-            ],
-            const Spacer(),
-            Switch(
-              value: isActive,
-              onChanged: isDisabled ? null : onToggle,
-              activeColor: isDisabled ? Colors.grey : const Color(0xFF184E9C),
-            ),
-          ],
+    return Row(
+      children: [
+        Icon(icon, size: 20, color: Colors.grey[700]),
+        const SizedBox(width: 12),
+        Text(
+          label,
+          style: const TextStyle(fontSize: 15),
         ),
-      ),
+        if (hasInfo) ...[
+          const SizedBox(width: 4),
+          Icon(Icons.info_outline, size: 16, color: Colors.blue[400]),
+        ],
+        const Spacer(),
+        Switch(
+          value: isActive,
+          onChanged: onToggle,
+          activeColor: const Color(0xFF184E9C),
+        ),
+      ],
     );
   }
 
@@ -608,5 +618,4 @@ class _MesVehiculesView extends StatelessWidget {
       ],
     );
   }
-
-  }
+}

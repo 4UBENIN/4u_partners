@@ -8,6 +8,8 @@ class Vehicle {
   final String? couleur; // Couleur du véhicule
   bool courseHeure;
   bool clim;
+  bool? basic;
+  bool? premium;
 
   Vehicle({
     required this.id,
@@ -18,7 +20,9 @@ class Vehicle {
     this.categorie,
     this.couleur,
     this.courseHeure = false,
-    this.clim = false,
+    this.clim = false, 
+    this.basic,
+    this.premium,
   });
 
   factory Vehicle.fromJson(Map<String, dynamic> json) {
@@ -32,6 +36,8 @@ class Vehicle {
       couleur: json['couleur']?.toString() ?? 'Noire',
       courseHeure: json['courseHeure'] as bool? ?? false,
       clim: json['clim'] as bool? ?? false,
+      basic: json['basic'] as bool? ?? false,
+      premium: json['premium'] as bool? ?? false,
     );
   }
 
