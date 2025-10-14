@@ -1,12 +1,12 @@
-
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart'; // ✅ à importer pour le contrôle de saisie
 import 'package:for_u_partners/app/app.locator.dart';
 import 'package:for_u_partners/services/driver_service.dart';
 import 'package:for_u_partners/ui/common/app_colors.dart';
 
 class WalletWidget extends StatefulWidget {
   final double balance;
-  
+
   const WalletWidget({required this.balance, super.key});
 
   @override
@@ -77,7 +77,6 @@ class _WalletWidgetState extends State<WalletWidget> {
                   icon: Icons.add,
                   onTap: _showRechargeBottomSheet,
                 ),
-              
               ],
             ),
           ],
@@ -147,22 +146,18 @@ class _WalletWidgetState extends State<WalletWidget> {
               TextFormField(
                 controller: _amountController,
                 keyboardType: TextInputType.number,
+                inputFormatters: [
+                  FilteringTextInputFormatter.digitsOnly, // ✅ Accepte uniquement les chiffres
+                ],
                 decoration: const InputDecoration(
                   focusedBorder: OutlineInputBorder(
-                    borderSide: BorderSide(
-                      color: kcPrimaryColor
-                    )
+                    borderSide: BorderSide(color: kcPrimaryColor),
                   ),
                   labelText: 'Montant (FCFA)',
-                  labelStyle: TextStyle(
-                    color: kcPrimaryColor
-                  ),
-                  border: OutlineInputBorder(
-
-                  ),
+                  labelStyle: TextStyle(color: kcPrimaryColor),
+                  border: OutlineInputBorder(),
                   prefixText: 'FCFA ',
                 ),
-                
                 validator: (value) {
                   if (value == null || value.isEmpty) {
                     return 'Veuillez entrer un montant';
@@ -225,7 +220,6 @@ class _WalletWidgetState extends State<WalletWidget> {
         await _driverService.updateWallet(amount, context);
         if (mounted) {
           Navigator.pop(context);
-          // Show success message
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(
               content: Text('Redirection vers le paiement...'),
@@ -250,4 +244,3 @@ class _WalletWidgetState extends State<WalletWidget> {
     }
   }
 }
-

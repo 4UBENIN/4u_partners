@@ -676,46 +676,90 @@ class CoursesViewModel extends BaseViewModel {
   // Courses services functions
 
   Future<void> acceptCourseService(int courseId, BuildContext context) async {
-    bool canAccept = false;
-    try {
-      setBusy(true);
-      print("🔄 Début acceptation course...");
-      await driverservice.acceptCourse(courseId);
-      canAccept = true;
-      print("✅ Course acceptée avec succès");
-    } catch (e) {
-      print('❌ Erreur acceptation course: $e');
-      canAccept = false;
-      CustomToast.showError(context, message: e.toString());
-
-      // En cas d'erreur, réinitialiser l'état
-      _isGoingToPickup = false;
-      _currentCourse = null;
-      _polylines.clear();
-      _markers.clear();
-      _addUserLocationMarker();
-    } finally {
-      setBusy(false);
-      print("🔄 setBusy(false) appelé");
-
-      if (canAccept) {
-        setBottomSheetType(BottomSheetAppType.pickup);
-
-        // Recentrer la carte sur le point de ramassage si possible
-        if (_currentCourse != null &&
-            _currentCourse!.depLat != null &&
-            _currentCourse!.depLong != null) {
-          final pickupLatLng =
-              LatLng(_currentCourse!.depLat!, _currentCourse!.depLong!);
-          _mapController?.animateCamera(
-            CameraUpdate.newLatLngZoom(pickupLatLng, 15.0),
-          );
-        }
-      } else {
-        hideBottomSheet();
+  bool canAccept = false;
+  try {
+    setBusy(true);
+    print("🔄 Début acceptation course $courseId...");
+    
+    await driverservice.acceptCourse(courseId);
+    
+    canAccept = true;
+    print("✅ Course $courseId acceptée avec succès");
+    
+  } catch (e) {
+    final errorMessage = e.toString().toLowerCase();
+    print('❌ Erreur acceptation course $courseId: $e');
+    canAccept = false;
+    
+    // Détecter le type d'erreur
+    if (errorMessage.contains('déjà prise') || 
+        errorMessage.contains('introuvable') ||
+        errorMessage.contains('conflict')) {
+      
+      // Course déjà prise par quelqu'un d'autre
+      print('ℹ️ Course $courseId déjà prise, suppression locale');
+      
+      // Supprimer de la liste et du cache
+      removeCourse(courseId.toString());
+      
+      // Message approprié
+      if (context.mounted) {
+        CustomToast.showWarning(
+          context, 
+          message: "Cette course a été prise par un autre chauffeur"
+        );
+      }
+      
+    } else if (errorMessage.contains('timeout') || 
+               errorMessage.contains('network')) {
+      
+      // Problème de connexion
+      if (context.mounted) {
+        CustomToast.showError(
+          context, 
+          message: "Problème de connexion. Vérifiez votre internet"
+        );
+      }
+      
+    } else {
+      // Autre erreur
+      if (context.mounted) {
+        CustomToast.showError(
+          context, 
+          message: "Impossible d'accepter la course"
+        );
       }
     }
+
+    // Réinitialiser l'état
+    _isGoingToPickup = false;
+    _currentCourse = null;
+    _polylines.clear();
+    _markers.clear();
+    _addUserLocationMarker();
+    
+  } finally {
+    setBusy(false);
+    print("🔄 setBusy(false) appelé");
+
+    if (canAccept) {
+      setBottomSheetType(BottomSheetAppType.pickup);
+
+      // Recentrer la carte
+      if (_currentCourse != null &&
+          _currentCourse!.depLat != null &&
+          _currentCourse!.depLong != null) {
+        final pickupLatLng =
+            LatLng(_currentCourse!.depLat!, _currentCourse!.depLong!);
+        _mapController?.animateCamera(
+          CameraUpdate.newLatLngZoom(pickupLatLng, 15.0),
+        );
+      }
+    } else {
+      hideBottomSheet();
+    }
   }
+}
 
   Future<void> rejectCourseService(int courseId, BuildContext context) async {
     bool canReject = false;
