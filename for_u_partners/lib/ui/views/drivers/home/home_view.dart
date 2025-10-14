@@ -28,7 +28,7 @@ class HomeView extends StackedView<HomeViewModel> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  WalletWidget(balance: viewModel.solde.toDouble()),
+                  WalletWidget(balance: viewModel.balance),
                   const SizedBox(height: 24),
                   SummaryWidget(
                     todayCourses: viewModel.todayCourses,

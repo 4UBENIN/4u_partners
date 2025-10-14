@@ -330,7 +330,7 @@ class DriverService {
     }
   }
 
-  // Récupérer le solde du portefeuille
+  // Récupérer la balance du portefeuille
   Future<double> fetchWalletSold() async {
     final token = await sharedPreferencesService.getToken();
     final headers = {
@@ -343,7 +343,7 @@ class DriverService {
     print("wallet-body: ${response.body}");
     if (response.statusCode == 200) {
       final data = jsonDecode(response.body);
-      return (data['solde'] as num).toDouble();
+      return (data['balance'] as num).toDouble();
     } else {
       throw Exception("Erreur ${response.body}");
     }

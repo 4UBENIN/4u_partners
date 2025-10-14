@@ -19,41 +19,41 @@ class HomeViewModel extends BaseViewModel {
   double montantGainToday = 0.0;
   // Données utilisateur
   String? name;
-  double solde = 0;
+  double balance = 0.0;
 
   // Statistiques quotidiennes
   DailyStats? dailyStats;
   String? errorMessage;
 
   bool _isOnline = true;
-  
+
   bool get isOnline => _isOnline;
-  
+
   HomeViewModel() {
     initialise();
     _loadOnlineStatus();
   }
-  
+
   // Charger l'état enregistré
   Future<void> _loadOnlineStatus() async {
     _isOnline = await _sharedpreferencesService.getOnlineStatus() ?? true;
     notifyListeners();
   }
-  
+
   // Basculer entre en ligne/hors ligne
   Future<void> toggleOnlineStatus() async {
     try {
       setBusy(true);
       _isOnline = !_isOnline;
       await _sharedpreferencesService.setOnlineStatus(_isOnline);
-      
+
       // Appeler l'API appropriée
       if (_isOnline) {
         await driverService.goOnline();
       } else {
         await driverService.goOffline();
       }
-      
+
       notifyListeners();
     } catch (e) {
       // En cas d'erreur, on revient à l'état précédent
@@ -71,12 +71,12 @@ class HomeViewModel extends BaseViewModel {
     try {
       await Future.wait([
         getUserName(),
-        getWalletSold(),
+        getWalletBalance(),
         getDailyStats(),
         registerDriverToken(),
         trackingService.demarrerTrackingContinu(),
       ]);
-      
+
       // Démarrer le timer des heartbeats après l'initialisation
       _startHeartbeatTimer();
     } catch (e) {
@@ -126,15 +126,15 @@ class HomeViewModel extends BaseViewModel {
     }
   }
 
-  // Récupère le solde du portefeuille
-  Future<void> getWalletSold() async {
+  // Récupère la balance du portefeuille
+  Future<void> getWalletBalance() async {
     try {
-      solde = await driverService.fetchWalletSold();
-      print("WALLET SOLD: $solde");
+      balance = await driverService.fetchWalletSold();
+      print("WALLET BALANCE: $balance");
       notifyListeners();
     } catch (e) {
-      print("Erreur lors du chargement du solde: $e");
-      errorMessage = "Impossible de charger le solde";
+      print("Erreur lors du chargement de la balance: $e");
+      errorMessage = "Impossible de charger la balance";
       rethrow;
     }
   }
@@ -154,31 +154,29 @@ class HomeViewModel extends BaseViewModel {
   void _startHeartbeatTimer() {
     // Annuler le timer existant s'il y en a un
     _heartbeatTimer?.cancel();
-    
+
     // Exécuter immédiatement le premier appel
     _sendHeartbeat();
-    
+
     // Puis programmer un appel toutes les 5 minutes
     _heartbeatTimer = Timer.periodic(const Duration(minutes: 3), (timer) {
       print("Heartbeat envoyé avec succès");
       _sendHeartbeat();
     });
   }
-  
+
   // Envoyer un heartbeat avec la position actuelle
   Future<void> _sendHeartbeat() async {
     try {
       final location = await _location.getLocation();
       await driverService.postdriverheartbeat(
-        location.latitude ?? 0.0, 
-        location.longitude ?? 0.0
-      );
+          location.latitude ?? 0.0, location.longitude ?? 0.0);
       print('Heartbeat envoyé avec succès');
     } catch (e) {
       print('Erreur lors de l\'envoi du heartbeat: $e');
     }
   }
-  
+
   @override
   void dispose() {
     _heartbeatTimer?.cancel();

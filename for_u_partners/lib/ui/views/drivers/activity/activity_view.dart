@@ -1,14 +1,14 @@
-import 'package:for_u_partners/ui/common/app_colors.dart';
-import 'package:loading_animation_widget/loading_animation_widget.dart';
-
-import 'activity_viewmodel.dart';
-import 'package:stacked/stacked.dart';
 import 'package:flutter/material.dart';
 import 'package:for_u_partners/app/app.locator.dart';
-import 'package:stacked_services/stacked_services.dart';
+import 'package:for_u_partners/ui/common/app_colors.dart';
 import 'package:for_u_partners/ui/views/drivers/activity/models/activity_model.dart';
+import 'package:for_u_partners/ui/views/drivers/activity/activity_viewmodel.dart';
 import 'package:for_u_partners/ui/views/drivers/activitydetails/activitydetails_view.dart';
+import 'package:for_u_partners/ui/views/drivers/courses/courses_view.dart';
+import 'package:loading_animation_widget/loading_animation_widget.dart';
 import 'package:pull_to_refresh/pull_to_refresh.dart';
+import 'package:stacked/stacked.dart';
+import 'package:stacked_services/stacked_services.dart';
 
 class ActivityView extends StackedView<ActivityViewModel> {
   const ActivityView({Key? key}) : super(key: key);
@@ -468,7 +468,15 @@ class ActivityView extends StackedView<ActivityViewModel> {
 
   void _onActivityTap(ActivityModel activity) {
     final navigationService = locator<NavigationService>();
-    navigationService.navigateToView(ActivitydetailsView(activity: activity));
+    
+    // Si la course est en cours, on redirige vers la page de course
+    if (activity.status == ActivityStatus.inprogress) {
+      // Utilisation de la navigation standard
+      navigationService.navigateToView(const CoursesView());
+    } else {
+      // Pour les autres statuts, on affiche les détails standards
+      navigationService.navigateToView(ActivitydetailsView(activity: activity));
+    }
   }
 
   @override

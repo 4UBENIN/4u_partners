@@ -8,8 +8,8 @@ import 'package:for_u_partners/services/auth_service.dart';
 class WalletService {
   final _authService = locator<AuthService>();
 
-  //* GET WALLET SOLD
-  // Récupérer le détail complet d'un dépot avec toutes les infos
+  //* GET WALLET BALANCE
+  // Récupérer le solde du portefeuille
   Future<WalletModel> getWalletSold() async {
     try {
       final url = Uri.parse("https://foryou.cilassocies.com/api/wallet_solde/");
@@ -23,7 +23,11 @@ class WalletService {
 
       if (response.statusCode == 200) {
         final jsonData = jsonDecode(response.body);
-        // TODO: Récupérer les détails du ramassage
+        // Vérifier si la réponse contient 'balance' ou 'solde'
+        if (jsonData['balance'] == null && jsonData['solde'] != null) {
+          // Si 'balance' n'existe pas mais 'solde' existe, créer un nouvel objet avec 'balance'
+          jsonData['balance'] = jsonData['solde'];
+        }
         return WalletModel.fromJson(jsonData);
       } else if (response.statusCode == 401) {
         await _authService.logOut();
@@ -31,7 +35,7 @@ class WalletService {
       } else if (response.statusCode == 404) {
         throw Exception('Wallet non trouvé');
       } else {
-        throw Exception('Erreur lors du chargement du solde');
+        throw Exception('Erreur lors du chargement de la balance');
       }
     } catch (e) {
       print("Erreur wallet: $e");

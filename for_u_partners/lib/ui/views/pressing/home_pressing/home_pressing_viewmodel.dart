@@ -135,11 +135,11 @@ class HomePressingViewModel extends FormViewModel {
     try {
       final response = await _walletService.getWalletSold();
       // ignore: unnecessary_null_comparison
-      if (response != null && response.solde != null) {
-        _wallet = response.solde.toString();
+      if (response != null && response.balance != null) {
+        _wallet = response.balance.toString();
         _errorMessage = null;
       } else {
-        _errorMessage = "Aucun solde trouvé";
+        _errorMessage = "Aucune balance trouvée";
       }
     } catch (e) {
       _errorMessage = e.toString();

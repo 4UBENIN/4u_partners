@@ -1,15 +1,15 @@
 class WalletModel {
-  int? solde;
+  int? balance;
 
-  WalletModel({this.solde});
+  WalletModel({this.balance});
 
   WalletModel.fromJson(Map<String, dynamic> json) {
-    solde = json['solde'];
+    balance = json['balance'];
   }
 
   Map<String, dynamic> toJson() {
     final Map<String, dynamic> data = <String, dynamic>{};
-    data['solde'] = solde;
+    data['balance'] = balance;
     return data;
   }
 }
