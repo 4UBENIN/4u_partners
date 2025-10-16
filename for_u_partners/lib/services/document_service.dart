@@ -22,7 +22,7 @@ class DocumentService {
       if (token == null) throw Exception('Non authentifié');
 
       final response = await _dio.post(
-        '$_baseUrl/conducteur/documents/upload',
+        '$_baseUrl/conducteur/documents',
         data: formData,
         options: Options(
           headers: {
@@ -33,11 +33,16 @@ class DocumentService {
       );
 
       if (response.statusCode == 200) {
-        return response.data['file_url'];
+        final fileUrl = response.data?['file_url']?.toString();
+        if (fileUrl == null || fileUrl.isEmpty) {
+          throw Exception('URL du document manquante dans la réponse du serveur');
+        }
+        return fileUrl;
       } else {
-        throw Exception('Échec du téléchargement du fichier');
+        throw Exception('Échec du téléchargement du fichier: ${response.statusCode}');
       }
     } catch (e) {
+      print('Erreur uploadDocument: $e');
       throw Exception('Erreur lors du téléchargement du document: ${e.toString()}');
     }
   }
@@ -171,7 +176,7 @@ class DocumentService {
       });
 
       final response = await _dio.post(
-        '$_baseUrl/documents/$documentId/update',
+        '$_baseUrl/conducteur/documents/$documentId',
         data: formData,
         options: Options(
           headers: {
