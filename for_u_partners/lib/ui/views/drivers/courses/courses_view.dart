@@ -221,47 +221,49 @@ class CoursesView extends StackedView<CoursesViewModel> {
                     ),
                   ),
 
-                  if (viewModel.currentBottomSheetType == BottomSheetAppType.pickup || viewModel.currentBottomSheetType == BottomSheetAppType.inprogress)
-                   Positioned(
-                    top: 112,
-                    right: 20,
-                    child: Column(
-                      children: [
-                        // Bouton pour recentrer sur la position actuelle
-                        InkWell(
-                          onTap: () {
-                            if (viewModel.currentBottomSheetType == BottomSheetAppType.pickup) {
-                              viewModel.redirectPickupToGoogleMaps();
-                            } else {
-                              viewModel.redirectDestinationToGoogleMaps();
-                            }
-                          },
-                          child: Container(
-                            height: 48,
-                            width: 48,
-                            decoration: BoxDecoration(
-                              color: Colors.white,
-                              shape: BoxShape.circle,
-                              boxShadow: [
-                                BoxShadow(
-                                  color: Colors.black.withOpacity(0.1),
-                                  blurRadius: 4,
-                                  offset: const Offset(0, 2),
-                                ),
-                              ],
-                            ),
-                            child: const Icon(
-                              Icons.navigation,
-                              size: 20,
-                              color: kcPrimaryColor,
+                  if (viewModel.currentBottomSheetType ==
+                          BottomSheetAppType.pickup ||
+                      viewModel.currentBottomSheetType ==
+                          BottomSheetAppType.inprogress)
+                    Positioned(
+                      top: 112,
+                      right: 20,
+                      child: Column(
+                        children: [
+                          // Bouton pour recentrer sur la position actuelle
+                          InkWell(
+                            onTap: () {
+                              if (viewModel.currentBottomSheetType ==
+                                  BottomSheetAppType.pickup) {
+                                viewModel.redirectPickupToGoogleMaps();
+                              } else {
+                                viewModel.redirectDestinationToGoogleMaps();
+                              }
+                            },
+                            child: Container(
+                              height: 48,
+                              width: 48,
+                              decoration: BoxDecoration(
+                                color: Colors.white,
+                                shape: BoxShape.circle,
+                                boxShadow: [
+                                  BoxShadow(
+                                    color: Colors.black.withOpacity(0.1),
+                                    blurRadius: 4,
+                                    offset: const Offset(0, 2),
+                                  ),
+                                ],
+                              ),
+                              child: const Icon(
+                                Icons.navigation,
+                                size: 20,
+                                color: kcPrimaryColor,
+                              ),
                             ),
                           ),
-                        ),
-                      ],
+                        ],
+                      ),
                     ),
-                  ),
-
-
                 ],
               ),
       ),

@@ -263,7 +263,7 @@ class StackedRouter extends _i1.RouterBase {
     },
     _i5.CoursesView: (data) {
       return _i27.MaterialPageRoute<dynamic>(
-        builder: (context) => const _i5.CoursesView(),
+        builder: (context) => _i5.CoursesView(),
         settings: data,
       );
     },

@@ -468,7 +468,7 @@ class ActivityView extends StackedView<ActivityViewModel> {
 
   void _onActivityTap(ActivityModel activity) {
     final navigationService = locator<NavigationService>();
-    
+
     // Si la course est en cours, on redirige vers la page de course
     if (activity.status == ActivityStatus.inprogress) {
       // Utilisation de la navigation standard

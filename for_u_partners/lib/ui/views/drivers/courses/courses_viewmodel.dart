@@ -20,7 +20,7 @@ import 'package:for_u_partners/ui/views/drivers/homemain/homemain_viewmodel.dart
 
 class CoursesViewModel extends BaseViewModel {
   final _driverService = locator<DriverService>();
-  
+
   GoogleMapController? _mapController;
   GoogleMapController? get mapController => _mapController;
 
@@ -32,11 +32,11 @@ class CoursesViewModel extends BaseViewModel {
 
   final Set<Marker> _markers = <Marker>{};
   Set<Marker> get markers => _markers;
-  
+
   // Liste des conducteurs en ligne
   List<DriverLocation> _onlineDrivers = [];
   List<DriverLocation> get onlineDrivers => _onlineDrivers;
-  
+
   // Timer pour le rafraîchissement des conducteurs en ligne
   Timer? _driversRefreshTimer;
 
@@ -75,11 +75,9 @@ class CoursesViewModel extends BaseViewModel {
   // Référence au ViewModel principal
   HomemainViewModel? _homeMainViewModel;
 
-
   void setHomeMainViewModel(HomemainViewModel viewModel) {
     _homeMainViewModel = viewModel;
   }
-
 
   // Mettre à jour le compteur de courses en attente
   void _updatePendingCoursesCount() {
@@ -132,7 +130,7 @@ class CoursesViewModel extends BaseViewModel {
     ]);
 
     _setupCourseListeners();
-    
+
     // Démarrer le rafraîchissement des conducteurs en ligne
     startDriversRefresh();
 
@@ -181,7 +179,7 @@ class CoursesViewModel extends BaseViewModel {
       } else {
         // Convertir les notifications en ClientData
         final validCourseIds = <String>[];
-        
+
         for (final notification in storedNotifications) {
           final clientData = notification.toClientData();
           validCourseIds.add(notification.courseId);
@@ -202,13 +200,12 @@ class CoursesViewModel extends BaseViewModel {
         }
 
         // Supprimer les courses qui ne sont plus dans le stockage
-        _availableCourses.removeWhere((course) => 
-          course.courseId != null && 
-          !validCourseIds.contains(course.courseId));
+        _availableCourses.removeWhere((course) =>
+            course.courseId != null &&
+            !validCourseIds.contains(course.courseId));
 
         // Trier par courseId (plus récent en premier)
-        _availableCourses.sort((a, b) => 
-          b.courseId!.compareTo(a.courseId!));
+        _availableCourses.sort((a, b) => b.courseId!.compareTo(a.courseId!));
 
         // Mettre à jour le compteur de courses en attente
         _updatePendingCoursesCount();
@@ -218,7 +215,7 @@ class CoursesViewModel extends BaseViewModel {
       notifyListeners();
 
       print('✅ ${_availableCourses.length} courses chargées au total');
-      
+
       // Si aucune course disponible, cacher le bottom sheet
       if (_availableCourses.isEmpty) {
         hideBottomSheet();
@@ -551,8 +548,6 @@ class CoursesViewModel extends BaseViewModel {
         courseId: courseId,
       );
 
-     
-
       // Tracer la polyligne jusqu'au point de départ
       if (_currentPosition != null &&
           course.depLat != null &&
@@ -676,90 +671,78 @@ class CoursesViewModel extends BaseViewModel {
   // Courses services functions
 
   Future<void> acceptCourseService(int courseId, BuildContext context) async {
-  bool canAccept = false;
-  try {
-    setBusy(true);
-    print("🔄 Début acceptation course $courseId...");
-    
-    await driverservice.acceptCourse(courseId);
-    
-    canAccept = true;
-    print("✅ Course $courseId acceptée avec succès");
-    
-  } catch (e) {
-    final errorMessage = e.toString().toLowerCase();
-    print('❌ Erreur acceptation course $courseId: $e');
-    canAccept = false;
-    
-    // Détecter le type d'erreur
-    if (errorMessage.contains('déjà prise') || 
-        errorMessage.contains('introuvable') ||
-        errorMessage.contains('conflict')) {
-      
-      // Course déjà prise par quelqu'un d'autre
-      print('ℹ️ Course $courseId déjà prise, suppression locale');
-      
-      // Supprimer de la liste et du cache
-      removeCourse(courseId.toString());
-      
-      // Message approprié
-      if (context.mounted) {
-        CustomToast.showWarning(
-          context, 
-          message: "Cette course a été prise par un autre chauffeur"
-        );
-      }
-      
-    } else if (errorMessage.contains('timeout') || 
-               errorMessage.contains('network')) {
-      
-      // Problème de connexion
-      if (context.mounted) {
-        CustomToast.showError(
-          context, 
-          message: "Problème de connexion. Vérifiez votre internet"
-        );
-      }
-      
-    } else {
-      // Autre erreur
-      if (context.mounted) {
-        CustomToast.showError(
-          context, 
-          message: "Impossible d'accepter la course"
-        );
-      }
-    }
+    bool canAccept = false;
+    try {
+      setBusy(true);
+      print("🔄 Début acceptation course $courseId...");
 
-    // Réinitialiser l'état
-    _isGoingToPickup = false;
-    _currentCourse = null;
-    _polylines.clear();
-    _markers.clear();
-    _addUserLocationMarker();
-    
-  } finally {
-    setBusy(false);
-    print("🔄 setBusy(false) appelé");
+      await driverservice.acceptCourse(courseId);
 
-    if (canAccept) {
-      setBottomSheetType(BottomSheetAppType.pickup);
+      canAccept = true;
+      print("✅ Course $courseId acceptée avec succès");
+    } catch (e) {
+      final errorMessage = e.toString().toLowerCase();
+      print('❌ Erreur acceptation course $courseId: $e');
+      canAccept = false;
 
-      // Recentrer la carte
-      if (_currentCourse != null &&
-          _currentCourse!.depLat != null &&
-          _currentCourse!.depLong != null) {
-        final pickupLatLng =
-            LatLng(_currentCourse!.depLat!, _currentCourse!.depLong!);
-        _mapController?.animateCamera(
-          CameraUpdate.newLatLngZoom(pickupLatLng, 15.0),
-        );
+      // Détecter le type d'erreur
+      if (errorMessage.contains('déjà prise') ||
+          errorMessage.contains('introuvable') ||
+          errorMessage.contains('conflict')) {
+        // Course déjà prise par quelqu'un d'autre
+        print('ℹ️ Course $courseId déjà prise, suppression locale');
+
+        // Supprimer de la liste et du cache
+        removeCourse(courseId.toString());
+
+        // Message approprié
+        if (context.mounted) {
+          CustomToast.showWarning(context,
+              message: "Cette course a été prise par un autre chauffeur");
+        }
+      } else if (errorMessage.contains('timeout') ||
+          errorMessage.contains('network')) {
+        // Problème de connexion
+        if (context.mounted) {
+          CustomToast.showError(context,
+              message: "Problème de connexion. Vérifiez votre internet");
+        }
+      } else {
+        // Autre erreur
+        if (context.mounted) {
+          CustomToast.showError(context,
+              message: "Impossible d'accepter la course");
+        }
       }
-    } else {
-      hideBottomSheet();
+
+      // Réinitialiser l'état
+      _isGoingToPickup = false;
+      _currentCourse = null;
+      _polylines.clear();
+      _markers.clear();
+      _addUserLocationMarker();
+    } finally {
+      setBusy(false);
+      print("🔄 setBusy(false) appelé");
+
+      if (canAccept) {
+        setBottomSheetType(BottomSheetAppType.pickup);
+
+        // Recentrer la carte
+        if (_currentCourse != null &&
+            _currentCourse!.depLat != null &&
+            _currentCourse!.depLong != null) {
+          final pickupLatLng =
+              LatLng(_currentCourse!.depLat!, _currentCourse!.depLong!);
+          _mapController?.animateCamera(
+            CameraUpdate.newLatLngZoom(pickupLatLng, 15.0),
+          );
+        }
+      } else {
+        hideBottomSheet();
+      }
     }
   }
-}
 
   Future<void> rejectCourseService(int courseId, BuildContext context) async {
     bool canReject = false;
@@ -864,57 +847,56 @@ class CoursesViewModel extends BaseViewModel {
     }
   }
 
-String buildGoogleMapsUrlFlexible({
-  double? originLat,
-  double? originLng,
-  String? originAddress,
-  required String destAddress,
-  String travelMode = "driving",
-}) {
-  // Détermine l'origine : adresse ou coordonnées
-  final String origin = originAddress != null
-      ? Uri.encodeComponent(originAddress)
-      : (originLat != null && originLng != null
-          ? "$originLat,$originLng"
-          : throw ArgumentError("Il faut soit originAddress, soit originLat+originLng"));
+  String buildGoogleMapsUrlFlexible({
+    double? originLat,
+    double? originLng,
+    String? originAddress,
+    required String destAddress,
+    String travelMode = "driving",
+  }) {
+    // Détermine l'origine : adresse ou coordonnées
+    final String origin = originAddress != null
+        ? Uri.encodeComponent(originAddress)
+        : (originLat != null && originLng != null
+            ? "$originLat,$originLng"
+            : throw ArgumentError(
+                "Il faut soit originAddress, soit originLat+originLng"));
 
-  // Encode la destination
-  final String encodedDestination = Uri.encodeComponent(destAddress);
+    // Encode la destination
+    final String encodedDestination = Uri.encodeComponent(destAddress);
 
-  return "https://www.google.com/maps/dir/?api=1"
-      "&origin=$origin"
-      "&destination=$encodedDestination"
-      "&travelmode=$travelMode";
-}
-
-Future<void> redirectPickupToGoogleMaps() async {
-  try {
-    final Uri uri = Uri.parse(buildGoogleMapsUrlFlexible(
-      originLat: _currentPosition!.latitude,
-      originLng: _currentPosition!.longitude,
-      destAddress: _currentCourse!.adresseDepart!,
-    ));
-
-    await launchUrl(uri, mode: LaunchMode.externalApplication);
-  } catch (e) {
-    throw "❌ Impossible d’ouvrir Google Maps: $e";
+    return "https://www.google.com/maps/dir/?api=1"
+        "&origin=$origin"
+        "&destination=$encodedDestination"
+        "&travelmode=$travelMode";
   }
-}
 
-Future<void> redirectDestinationToGoogleMaps() async {
-  try {
-    final Uri uri = Uri.parse(buildGoogleMapsUrlFlexible(
-      originAddress: _currentCourse!.adresseDepart,
-      destAddress: _currentCourse!.destination,
-    ));
+  Future<void> redirectPickupToGoogleMaps() async {
+    try {
+      final Uri uri = Uri.parse(buildGoogleMapsUrlFlexible(
+        originLat: _currentPosition!.latitude,
+        originLng: _currentPosition!.longitude,
+        destAddress: _currentCourse!.adresseDepart!,
+      ));
 
-    await launchUrl(uri, mode: LaunchMode.externalApplication);
-  } catch (e) {
-    throw "❌ Impossible d’ouvrir Google Maps: $e";
+      await launchUrl(uri, mode: LaunchMode.externalApplication);
+    } catch (e) {
+      throw "❌ Impossible d’ouvrir Google Maps: $e";
+    }
   }
-}
 
+  Future<void> redirectDestinationToGoogleMaps() async {
+    try {
+      final Uri uri = Uri.parse(buildGoogleMapsUrlFlexible(
+        originAddress: _currentCourse!.adresseDepart,
+        destAddress: _currentCourse!.destination,
+      ));
 
+      await launchUrl(uri, mode: LaunchMode.externalApplication);
+    } catch (e) {
+      throw "❌ Impossible d’ouvrir Google Maps: $e";
+    }
+  }
 
   // Tracer la route jusqu'au point de ramassage
   Future<void> _drawRouteToPickup() async {
@@ -1307,7 +1289,7 @@ Future<void> redirectDestinationToGoogleMaps() async {
   Future<void> _resetCourseState() async {
     // Sauvegarder l'ID de la course avant de la supprimer
     final currentCourseId = _currentCourse?.courseId;
-    
+
     _currentCourse = null;
     _isGoingToPickup = false;
     _isOnTrip = false;
@@ -1331,11 +1313,12 @@ Future<void> redirectDestinationToGoogleMaps() async {
 
     // Réinitialiser l'état de la course dans le stockage
     await RidePersistenceService.clearRideState();
-    
+
     // Supprimer la course du cache si elle existe
     if (currentCourseId != null) {
       await CourseNotificationStorage.removeNotification(currentCourseId);
-      print('🗑️ Course supprimée du cache lors de la réinitialisation: $currentCourseId');
+      print(
+          '🗑️ Course supprimée du cache lors de la réinitialisation: $currentCourseId');
     }
   }
 
@@ -1536,12 +1519,13 @@ Future<void> redirectDestinationToGoogleMaps() async {
       debugPrint('Erreur lors de la récupération des conducteurs en ligne: $e');
     }
   }
-  
+
   // Mettre à jour les marqueurs des conducteurs
   void _updateDriverMarkers() {
     // Supprimer les anciens marqueurs de conducteurs
-    _markers.removeWhere((marker) => marker.markerId.value.startsWith('driver_'));
-    
+    _markers
+        .removeWhere((marker) => marker.markerId.value.startsWith('driver_'));
+
     // Ajouter les nouveaux marqueurs
     for (var driver in _onlineDrivers) {
       final markerId = 'driver_${driver.id}';
@@ -1557,19 +1541,19 @@ Future<void> redirectDestinationToGoogleMaps() async {
       _markers.add(marker);
     }
   }
-  
+
   // Démarrer le rafraîchissement périodique des conducteurs
   void startDriversRefresh() {
     // Récupérer immédiatement
     fetchOnlineDrivers();
-    
+
     // Puis toutes les 30 secondes
     _driversRefreshTimer?.cancel();
     _driversRefreshTimer = Timer.periodic(const Duration(seconds: 30), (timer) {
       fetchOnlineDrivers();
     });
   }
-  
+
   // Arrêter le rafraîchissement
   void stopDriversRefresh() {
     _driversRefreshTimer?.cancel();

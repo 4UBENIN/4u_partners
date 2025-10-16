@@ -1,11 +1,13 @@
 // mes_vehicules_viewmodel.dart
 import 'dart:convert';
+
+import 'package:stacked/stacked.dart';
+import 'package:stacked_services/stacked_services.dart';
 import 'package:for_u_partners/app/app.locator.dart';
+import 'package:for_u_partners/ui/views/drivers/vehicles/add_vehicles.dart';
 import 'package:for_u_partners/services/sharedpreferences_service.dart';
 import 'package:for_u_partners/models/vehicle_model.dart';
 import 'package:http/http.dart' as http;
-import 'package:stacked/stacked.dart';
-
 class MesVehiculesViewModel extends BaseViewModel {
   Vehicle? _vehiculeActif;
   List<Vehicle> _vehicules = [];
@@ -241,8 +243,9 @@ class MesVehiculesViewModel extends BaseViewModel {
     }
   }
 
+  final NavigationService _navigationService = locator<NavigationService>();
+
   void addNewVehicle() {
-    // TODO: Navigation vers la page d'ajout de véhicule
-    print('Ajouter un nouveau véhicule');
+    _navigationService.navigateToView(AddVehiclesView());
   }
 }
