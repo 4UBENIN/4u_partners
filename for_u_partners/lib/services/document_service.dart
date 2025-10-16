@@ -22,7 +22,7 @@ class DocumentService {
       if (token == null) throw Exception('Non authentifié');
 
       final response = await _dio.post(
-        '$_baseUrl/documents/upload',
+        '$_baseUrl/conducteur/documents/upload',
         data: formData,
         options: Options(
           headers: {
@@ -53,7 +53,7 @@ class DocumentService {
       if (token == null) throw Exception('Non authentifié');
 
       final response = await _dio.post(
-        '$_baseUrl/documents',
+        '$_baseUrl/conducteur/documents',
         data: {
           'document': {
             'type': type,
@@ -86,21 +86,38 @@ class DocumentService {
       if (token == null) throw Exception('Non authentifié');
 
       final response = await _dio.get(
-        '$_baseUrl/documents',
+        '$_baseUrl/conducteur/documents', 
         options: Options(
-          headers: {'Authorization': 'Bearer $token'},
+          headers: {
+            'Authorization': 'Bearer $token',
+            'Accept': 'application/json',
+          },
+          validateStatus: (status) => status! < 500, 
         ),
       );
 
       if (response.statusCode == 200) {
-        return (response.data['data'] as List)
-            .map((doc) => Document.fromJson(doc))
-            .toList();
+        if (response.data is List) {
+          return (response.data as List).map((doc) => Document.fromJson(doc)).toList();
+        } else if (response.data['data'] != null) {
+          return (response.data['data'] as List).map((doc) => Document.fromJson(doc)).toList();
+        } else {
+          return [];
+        }
+      } else if (response.statusCode == 404) {
+        
+        return [];
       } else {
-        throw Exception('Échec du chargement des documents');
+        throw Exception('Échec du chargement des documents: ${response.statusCode}');
       }
+    } on DioException catch (e) {
+      if (e.response?.statusCode == 404) {
+       
+        return [];
+      }
+      throw Exception('Erreur lors de la récupération des documents: ${e.message}');
     } catch (e) {
-      throw Exception('Erreur lors de la récupération des documents: ${e.toString()}');
+      throw Exception('Erreur inattendue: ${e.toString()}');
     }
   }
 
@@ -111,7 +128,7 @@ class DocumentService {
       if (token == null) throw Exception('Non authentifié');
 
       final response = await _dio.delete(
-        '$_baseUrl/documents/$documentId',
+        '$_baseUrl/conducteur/documents/$documentId',
         options: Options(headers: {'Authorization': 'Bearer $token'}),
       );
 

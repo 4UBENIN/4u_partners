@@ -68,17 +68,16 @@ class DocumentsViewModel extends BaseViewModel {
       setBusy(false);
     }
   }
-
+  // recuperer les documents de la base de données
   Future<void> fetchDocuments() async {
     try {
       final documents = await _documentService.getDriverDocuments();
       
-      // Since the Document model doesn't have category info, we'll create a single category
-      // You might want to update this logic based on how you want to categorize documents
+      
       final defaultCategory = DocumentCategory( 
         id: 'default',
         name: 'Documents',
-        iconPath: 'assets/documents_icon.png', // Make sure this asset exists
+        iconPath: 'assets/app_icon.png', 
         documents: documents,
       );
       
