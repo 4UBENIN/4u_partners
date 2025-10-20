@@ -3,7 +3,6 @@ import 'package:stacked/stacked.dart';
 import 'package:for_u_partners/models/document_model.dart';
 import 'package:for_u_partners/ui/common/app_colors.dart';
 import 'package:webview_flutter/webview_flutter.dart';
-import 'package:url_launcher/url_launcher_string.dart';
 
 class DocumentViewerView extends StatefulWidget {
   final Document document;
@@ -79,33 +78,6 @@ class _DocumentViewerViewState extends State<DocumentViewerView> {
     }
   }
 
-  Future<void> _openInBrowser() async {
-    final url = widget.document.fileUrl;
-    if (url != null && url.isNotEmpty) {
-      if (await canLaunchUrlString(url)) {
-        await launchUrlString(
-          url,
-          mode: LaunchMode.externalApplication,
-        );
-      } else {
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('Impossible d\'ouvrir le document dans le navigateur'),
-              backgroundColor: Colors.red,
-            ),
-          );
-        }
-      }
-    }
-  }
-
-  Future<void> _downloadDocument() async {
-    // Implémentez ici la logique de téléchargement si nécessaire
-    // Par exemple, vous pouvez utiliser le plugin flutter_downloader
-    // ou ouvrir le lien de téléchargement dans le navigateur
-    await _openInBrowser();
-  }
 
   @override
   Widget build(BuildContext context) {
@@ -116,18 +88,6 @@ class _DocumentViewerViewState extends State<DocumentViewerView> {
           maxLines: 1,
           overflow: TextOverflow.ellipsis,
         ),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.open_in_browser),
-            onPressed: _openInBrowser,
-            tooltip: 'Ouvrir dans le navigateur',
-          ),
-          IconButton(
-            icon: const Icon(Icons.download),
-            onPressed: _downloadDocument,
-            tooltip: 'Télécharger',
-          ),
-        ],
       ),
       body: _buildBody(),
     );

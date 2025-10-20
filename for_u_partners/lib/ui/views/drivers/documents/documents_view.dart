@@ -433,26 +433,6 @@ class DocumentsView extends StackedView<DocumentsViewModel> {
                 ],
               ),
             ),
-            const PopupMenuItem(
-              value: 'download',
-              child: Row(
-                children: [
-                  Icon(Icons.download, size: 20, color: Colors.green),
-                  SizedBox(width: 12),
-                  Text('Télécharger'),
-                ],
-              ),
-            ),
-            const PopupMenuItem(
-              value: 'delete',
-              child: Row(
-                children: [
-                  Icon(Icons.delete, size: 20, color: Colors.red),
-                  SizedBox(width: 12),
-                  Text('Supprimer'),
-                ],
-              ),
-            ),
           ],
           onSelected: (value) {
             switch (value) {
@@ -461,12 +441,6 @@ class DocumentsView extends StackedView<DocumentsViewModel> {
                 break;
               case 'update':
                 viewModel.modifyDocument(doc);
-                break;
-              case 'download':
-                viewModel.downloadDocument(doc);
-                break;
-              case 'delete':
-                viewModel.deleteDocument(doc);
                 break;
             }
           },
