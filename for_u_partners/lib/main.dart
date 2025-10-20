@@ -28,16 +28,31 @@ Future<void> firebaseMessagingBackgroundHandler(RemoteMessage message) async {
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  await setupLocator();
+  
+  // Load environment variables first
+  await dotenv.load(fileName: ".env");
+  
+  // Initialize Firebase
   await Firebase.initializeApp();
+  
+  // Set up dependency injection
+  await setupLocator();
+  
+  // Set up Firebase Messaging
   await FirebaseMessaging.instance.setAutoInitEnabled(true);
   FirebaseMessaging.onBackgroundMessage(firebaseMessagingBackgroundHandler);
-  await FirebaseMessagingService().init();
-  await FirebaseMessaging.instance.requestPermission();
-  await FirebaseMessagingService().setupFlutterNotifications();
-  setupDialogUi();
-  await dotenv.load(fileName: ".env");
+  
+  // Initialize date formatting
   await initializeDateFormatting('fr_FR');
+  
+  // Set up UI
+  setupDialogUi();
+  
+  // Initialize Firebase Messaging Service
+  final messagingService = FirebaseMessagingService();
+  await messagingService.init();
+  await FirebaseMessaging.instance.requestPermission();
+  await messagingService.setupFlutterNotifications();
 
   runApp(const MainApp());
 }

@@ -106,7 +106,7 @@ class ProfilView extends StackedView<ProfilViewModel> {
                             icon: _buildCarIcon(),
                             text: 'Mes véhicules',
                             onTap: () {
-                              viewModel.navigationService.navigateToVehiclesView();
+                              viewModel.navigationService.navigateToMesVehiculesView();
                             },
                           ),
                           _buildMenuItem(

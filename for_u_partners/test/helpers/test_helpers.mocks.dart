@@ -1181,6 +1181,17 @@ class MockAuthService extends _i1.Mock implements _i23.AuthService {
       ) as _i20.Future<Map<String, String>>);
 
   @override
+  _i20.Future<bool> checkPhoneNumberExists(String? phoneNumber) =>
+      (super.noSuchMethod(
+        Invocation.method(
+          #checkPhoneNumberExists,
+          [phoneNumber],
+        ),
+        returnValue: _i20.Future<bool>.value(false),
+        returnValueForMissingStub: _i20.Future<bool>.value(false),
+      ) as _i20.Future<bool>);
+
+  @override
   _i2.MediaType getMediaTypeFromFileName(String? filePath) =>
       (super.noSuchMethod(
         Invocation.method(

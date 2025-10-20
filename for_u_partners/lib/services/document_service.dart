@@ -1,195 +1,275 @@
-import 'dart:io';
+// document_service.dart
 import 'package:dio/dio.dart';
 import 'package:for_u_partners/models/document_model.dart';
-import 'package:for_u_partners/services/sharedpreferences_service.dart';
-import 'package:image_picker/image_picker.dart';
+import 'dart:io';
 import 'package:path_provider/path_provider.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class DocumentService {
   final Dio _dio = Dio();
-  final SharedpreferencesService _prefs = SharedpreferencesService();
-  final String _baseUrl = 'https://foryou.cilassocies.com/api'; // 🔹 Ton URL backend
+  final String _baseUrl = 'https://foryou.cilassocies.com/api';
 
-  /// 🔹 1. Upload d’un document (fichier image ou PDF)
-  Future<String> uploadDocument(XFile file) async {
+  DocumentService() {
+    // Ajouter un interceptor pour logger les requêtes et réponses
+    _dio.interceptors.add(
+      InterceptorsWrapper(
+        onRequest: (options, handler) {
+          print('===== REQUEST =====');
+          print('URL: ${options.method} ${options.path}');
+          print('Headers: ${options.headers}');
+          print('Data: ${options.data}');
+          return handler.next(options);
+        },
+        onResponse: (response, handler) {
+          print('===== RESPONSE =====');
+          print('Status: ${response.statusCode}');
+          print('Data: ${response.data}');
+          return handler.next(response);
+        },
+        onError: (error, handler) {
+          print('===== ERROR =====');
+          print('Status: ${error.response?.statusCode}');
+          print('Response: ${error.response?.data}');
+          print('Message: ${error.message}');
+          return handler.next(error);
+        },
+      ),
+    );
+  }
+
+  // Récupérer le token d'authentification
+  Future<String?> _getAuthToken() async {
+    final prefs = await SharedPreferences.getInstance();
+    return prefs.getString('auth_token');
+  }
+
+  // Récupérer tous les documents
+  Future<List<Document>> getUserDocuments(String userId) async {
     try {
-      final String fileName = file.path.split('/').last;
-      FormData formData = FormData.fromMap({
-        'file': await MultipartFile.fromFile(file.path, filename: fileName),
-      });
+      final token = await _getAuthToken();
+      
+      final response = await _dio.get(
+        '$_baseUrl/conducteur/documents',
+        options: Options(
+          headers: {
+            'Content-Type': 'application/json',
+            if (token != null) 'Authorization': 'Bearer $token',
+          },
+        ),
+      );
 
-      final token = await _prefs.getToken();
-      if (token == null) throw Exception('Non authentifié');
+      if (response.statusCode == 200) {
+        final responseData = response.data;
+        
+        if (responseData is Map && responseData.containsKey('conducteur')) {
+          final conducteur = responseData['conducteur'];
+          if (conducteur is List) {
+            return List<Document>.from(
+              conducteur.map((doc) => Document.fromJson(doc)),
+            );
+          }
+        } else if (responseData is List) {
+          return List<Document>.from(
+            responseData.map((doc) => Document.fromJson(doc)),
+          );
+        } else if (responseData is Map && responseData.containsKey('data')) {
+          List<dynamic> data = responseData['data'];
+          return List<Document>.from(
+            data.map((doc) => Document.fromJson(doc)),
+          );
+        }
+        
+        throw Exception('Format de réponse inattendu');
+      }
+      throw Exception('Erreur ${response.statusCode}');
+    } catch (e) {
+      print('Erreur lors de la récupération des documents: $e');
+      throw Exception('Impossible de récupérer les documents: $e');
+    }
+  }
+
+  // Récupérer un document spécifique
+  Future<Document?> getDocument(String documentId) async {
+    try {
+      final token = await _getAuthToken();
+      
+      final response = await _dio.get(
+        '$_baseUrl/conducteur/documents/$documentId',
+        options: Options(
+          headers: {
+            'Content-Type': 'application/json',
+            if (token != null) 'Authorization': 'Bearer $token',
+          },
+        ),
+      );
+
+      if (response.statusCode == 200) {
+        return Document.fromJson(response.data['data'] ?? response.data);
+      }
+      return null;
+    } catch (e) {
+      print('Erreur lors de la récupération du document: $e');
+      return null;
+    }
+  }
+
+  // Ajouter un nouveau document
+  Future<bool> addDocument({
+    required String userId,
+    required String type,
+    required String category,
+    required File file,
+    DateTime? expirationDate,
+  }) async {
+    try {
+      final token = await _getAuthToken();
+      
+      // Vérifier que le fichier existe
+      if (!file.existsSync()) {
+        print('Erreur: Le fichier n\'existe pas');
+        return false;
+      }
+
+      print('=== AJOUT DOCUMENT ===');
+      print('Fichier: ${file.path}');
+      print('Taille: ${await file.length() / 1024 / 1024}MB');
+      print('Type: $type');
+      print('Catégorie: $category');
+      print('UserId: $userId');
+      print('Date expiration: ${expirationDate?.toIso8601String()}');
+
+      // Créer FormData avec les champs
+      FormData formData = FormData.fromMap({
+        'userId': userId,
+        'type': type,
+        'category': category,
+        'file': await MultipartFile.fromFile(
+          file.path,
+          filename: file.path.split('/').last,
+        ),
+        if (expirationDate != null)
+          'expirationDate': expirationDate.toIso8601String(),
+      });
 
       final response = await _dio.post(
         '$_baseUrl/conducteur/documents',
         data: formData,
         options: Options(
           headers: {
-            'Authorization': 'Bearer $token',
-            'Content-Type': 'multipart/form-data',
+            if (token != null) 'Authorization': 'Bearer $token',
+            // Ne pas définir Content-Type, Dio le fera automatiquement pour FormData
           },
         ),
       );
 
-      if (response.statusCode == 200) {
-        final fileUrl = response.data?['file_url']?.toString();
-        if (fileUrl == null || fileUrl.isEmpty) {
-          throw Exception('URL du document manquante dans la réponse du serveur');
-        }
-        return fileUrl;
-      } else {
-        throw Exception('Échec du téléchargement du fichier: ${response.statusCode}');
-      }
+      print('Réponse status: ${response.statusCode}');
+      print('Réponse data: ${response.data}');
+      
+      return response.statusCode == 201 || response.statusCode == 200;
     } catch (e) {
-      print('Erreur uploadDocument: $e');
-      throw Exception('Erreur lors du téléchargement du document: ${e.toString()}');
-    }
-  }
-
-  /// 🔹 2. Création d’un document (après upload)
-  Future<Document> createDocument({
-    required String type,
-    required String fileUrl,
-    required DateTime expirationDate,
-  }) async {
-    try {
-      final token = await _prefs.getToken();
-      if (token == null) throw Exception('Non authentifié');
-
-      final response = await _dio.post(
-        '$_baseUrl/conducteur/documents',
-        data: {
-          'document': {
-            'type': type,
-            'file_url': fileUrl,
-            'expiration_date': expirationDate.toIso8601String(),
-          }
-        },
-        options: Options(
-          headers: {
-            'Authorization': 'Bearer $token',
-            'Content-Type': 'application/json',
-          },
-        ),
-      );
-
-      if (response.statusCode == 201) {
-        return Document.fromJson(response.data['document'] ?? response.data);
-      } else {
-        throw Exception('Échec de la création du document');
-      }
-    } catch (e) {
-      throw Exception('Erreur lors de la création du document: ${e.toString()}');
-    }
-  }
-
-  /// 🔹 3. Récupération de tous les documents du conducteur
-  Future<List<Document>> getDriverDocuments() async {
-    try {
-      final token = await _prefs.getToken();
-      if (token == null) throw Exception('Non authentifié');
-
-      final response = await _dio.get(
-        '$_baseUrl/conducteur/documents', 
-        options: Options(
-          headers: {
-            'Authorization': 'Bearer $token',
-            'Accept': 'application/json',
-          },
-          validateStatus: (status) => status! < 500, 
-        ),
-      );
-
-      if (response.statusCode == 200) {
-        if (response.data is List) {
-          return (response.data as List).map((doc) => Document.fromJson(doc)).toList();
-        } else if (response.data['data'] != null) {
-          return (response.data['data'] as List).map((doc) => Document.fromJson(doc)).toList();
-        } else {
-          return [];
-        }
-      } else if (response.statusCode == 404) {
-        
-        return [];
-      } else {
-        throw Exception('Échec du chargement des documents: ${response.statusCode}');
-      }
-    } on DioException catch (e) {
-      if (e.response?.statusCode == 404) {
-       
-        return [];
-      }
-      throw Exception('Erreur lors de la récupération des documents: ${e.message}');
-    } catch (e) {
-      throw Exception('Erreur inattendue: ${e.toString()}');
-    }
-  }
-
-  /// 🔹 4. Suppression d’un document
-  Future<bool> deleteDocument(String documentId) async {
-    try {
-      final token = await _prefs.getToken();
-      if (token == null) throw Exception('Non authentifié');
-
-      final response = await _dio.delete(
-        '$_baseUrl/conducteur/documents/$documentId',
-        options: Options(headers: {'Authorization': 'Bearer $token'}),
-      );
-
-      return response.statusCode == 200;
-    } catch (e) {
-      print('Erreur lors de la suppression du document: ${e.toString()}');
+      print('Erreur lors de l\'ajout du document: $e');
       return false;
     }
   }
 
-  /// 🔹 5. Téléchargement d’un document sur le téléphone (pour affichage ou stockage local)
-  Future<bool> downloadDocument(Document doc) async {
-    try {
-      final dir = await getApplicationDocumentsDirectory();
-      final filePath = "${dir.path}/${doc.type.toLowerCase().replaceAll(' ', '_')}.pdf";
-
-      await _dio.download(doc.fileUrl, filePath);
-      print("✅ Document téléchargé à : $filePath");
-      return true;
-    } catch (e) {
-      print("❌ Erreur lors du téléchargement du document : $e");
-      return false;
-    }
-  }
-
-  /// 🔹 6. Mise à jour d’un document expiré ou rejeté
+  // Mettre à jour un document
   Future<bool> updateDocument({
     required String documentId,
-    required XFile newFile,
-    required DateTime newExpirationDate,
+    File? newFile,
+    DateTime? expirationDate,
+    String? status,
   }) async {
     try {
-      final token = await _prefs.getToken();
-      if (token == null) throw Exception('Non authentifié');
-
-      final fileName = newFile.path.split('/').last;
-      final formData = FormData.fromMap({
-        'file': await MultipartFile.fromFile(newFile.path, filename: fileName),
-        'expiration_date': newExpirationDate.toIso8601String(),
+      final token = await _getAuthToken();
+      
+      FormData formData = FormData.fromMap({
+        if (newFile != null)
+          'file': await MultipartFile.fromFile(
+            newFile.path,
+            filename: newFile.path.split('/').last,
+          ),
+        if (expirationDate != null)
+          'expirationDate': expirationDate.toIso8601String(),
+        if (status != null) 'status': status,
       });
 
-      final response = await _dio.post(
+      final response = await _dio.put(
         '$_baseUrl/conducteur/documents/$documentId',
         data: formData,
         options: Options(
           headers: {
-            'Authorization': 'Bearer $token',
-            'Content-Type': 'multipart/form-data',
+            if (token != null) 'Authorization': 'Bearer $token',
           },
         ),
       );
 
       return response.statusCode == 200;
     } catch (e) {
-      print("Erreur updateDocument: $e");
+      print('Erreur lors de la mise à jour du document: $e');
       return false;
+    }
+  }
+
+  // Supprimer un document
+  Future<bool> deleteDocument(String documentId) async {
+    try {
+      final token = await _getAuthToken();
+      
+      final response = await _dio.delete(
+        '$_baseUrl/conducteur/documents/$documentId',
+        options: Options(
+          headers: {
+            if (token != null) 'Authorization': 'Bearer $token',
+          },
+        ),
+      );
+
+      return response.statusCode == 200;
+    } catch (e) {
+      print('Erreur lors de la suppression du document: $e');
+      return false;
+    }
+  }
+
+  // Télécharger un document
+  Future<bool> downloadDocument(Document doc) async {
+    try {
+      if (doc.fileUrl == null || doc.fileUrl!.isEmpty) {
+        return false;
+      }
+
+      final token = await _getAuthToken();
+      final directory = await getApplicationDocumentsDirectory();
+      final filePath = '${directory.path}/${doc.fileName ?? 'document.pdf'}';
+
+      await _dio.download(
+        doc.fileUrl!,
+        filePath,
+        options: Options(
+          headers: {
+            if (token != null) 'Authorization': 'Bearer $token',
+          },
+        ),
+      );
+
+      return true;
+    } catch (e) {
+      print('Erreur lors du téléchargement: $e');
+      return false;
+    }
+  }
+
+  // Stream pour écouter les changements
+  Stream<List<Document>> getUserDocumentsStream(String userId) async* {
+    while (true) {
+      try {
+        final documents = await getUserDocuments(userId);
+        yield documents;
+        await Future.delayed(Duration(seconds: 2));
+      } catch (e) {
+        print('Erreur dans le stream: $e');
+        yield [];
+      }
     }
   }
 }

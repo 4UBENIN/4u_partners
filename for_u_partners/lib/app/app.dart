@@ -1,4 +1,5 @@
 import 'package:for_u_partners/ui/views/drivers/documents/documents_viewmodel.dart';
+import 'package:for_u_partners/ui/views/drivers/documents/add_document.dart';
 import 'package:for_u_partners/ui/views/drivers/homemain/homemain_viewmodel.dart';
 import 'package:for_u_partners/ui/views/drivers/vehicles/vehicles_viewmodel.dart' as vehicle_vm;
 import 'package:stacked/stacked_annotations.dart';
@@ -35,6 +36,7 @@ import 'package:for_u_partners/services/driver_service.dart';
 import 'package:for_u_partners/services/wallet_service.dart';
 import 'package:for_u_partners/services/chat_service.dart';
 import 'package:for_u_partners/services/pickers_service.dart';
+
 // @stacked-import
 
 @StackedApp(
@@ -63,12 +65,14 @@ import 'package:for_u_partners/services/pickers_service.dart';
     MaterialRoute(page: CoursesDeliveryView),
     MaterialRoute(page: MesVehiculesView),
     MaterialRoute(page: DocumentsView),
+    MaterialRoute(page: AddDocumentView),
 // @stacked-route
   ],
   dependencies: const [
     LazySingleton(classType: BottomSheetService),
     LazySingleton(classType: DialogService),
     LazySingleton(classType: NavigationService),
+    LazySingleton(classType: SnackbarService),
     LazySingleton(classType: SharedpreferencesService),
     LazySingleton(classType: AuthService),
     LazySingleton(classType: DriverService),

@@ -10,7 +10,7 @@ class ViewDocumentView extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text(document.type),
+        title: Text(document.type!),
       ),
       body: Center(
         child: Column(
@@ -19,7 +19,7 @@ class ViewDocumentView extends StatelessWidget {
             const Icon(Icons.description, size: 100, color: Colors.blueGrey),
             const SizedBox(height: 20),
             Text(
-              document.type,
+              document.type!,
               style: const TextStyle(
                 fontSize: 18,
                 fontWeight: FontWeight.bold,

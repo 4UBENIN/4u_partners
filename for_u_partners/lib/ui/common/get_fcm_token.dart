@@ -350,27 +350,36 @@ class FirebaseMessagingService {
 /// Handler pour les messages en arrière-plan
 @pragma('vm:entry-point')
 Future<void> firebaseMessagingBackgroundHandler(RemoteMessage message) async {
+  // Initialize Firebase
   await Firebase.initializeApp();
-  print("Message en arrière-plan: ${message.messageId}");
-
-  // ✨ Traiter aussi les messages en arrière-plan
+  
   try {
+    // Set up dependency injection
+    await setupLocator();
+    
+    print("Message en arrière-plan: ${message.messageId}");
+
+    // Process message data if available
     final data = message.data;
-    if (data.containsKey('course_id') && data.containsKey('client_nom')) {
-      print('📱 Course reçue en arrière-plan: $data');
-
-      // ✨ Créer et sauvegarder la notification avec timestamp actuel
-      final courseData = CourseNotificationData.fromFirebaseData(
-        data,
-        receivedAt: DateTime.now(), // ✨ Timestamp de réception en background
-      );
-
-      // ✨ Sauvegarder en mémoire même en arrière-plan
-      await CourseNotificationStorage.saveNotification(courseData);
-
-      print('✅ Notification background sauvée: ${courseData.courseId}');
+    if (data.isNotEmpty) {
+      print('Données du message: $data');
+      
+      // Handle course notifications if the required data is present
+      if (data.containsKey('course_id') && data.containsKey('client_nom')) {
+        try {
+          // Try to save the notification
+          final courseData = CourseNotificationData.fromFirebaseData(
+            data,
+            receivedAt: DateTime.now(),
+          );
+          await CourseNotificationStorage.saveNotification(courseData);
+          print('Notification background sauvée: ${data['course_id']}');
+        } catch (e) {
+          print('Erreur lors du traitement de la notification de course: $e');
+        }
+      }
     }
   } catch (e) {
-    print('❌ Erreur traitement background: $e');
+    print('Erreur traitement background: $e');
   }
 }

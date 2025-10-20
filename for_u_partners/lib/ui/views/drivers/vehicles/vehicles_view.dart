@@ -100,10 +100,12 @@ class _MesVehiculesView extends StatelessWidget {
                     children: [
                       // Header avec image
                       Container(
-                        width: double.infinity,
-                        height: 120,
-                        decoration: const BoxDecoration(
-                          gradient: LinearGradient(
+                        margin: const EdgeInsets.symmetric(horizontal: 16), // espace à gauche et à droite
+                        padding: const EdgeInsets.all(12),
+                        height: 170,
+                        decoration:  BoxDecoration(
+                          borderRadius: BorderRadius.circular(12),
+                          gradient: const LinearGradient(
                             colors: [Color(0xFF184E9C), Color(0xFF2A5BB8)],
                             begin: Alignment.topLeft,
                             end: Alignment.bottomRight,
@@ -360,7 +362,7 @@ class _MesVehiculesView extends StatelessWidget {
                         Icon(Icons.category, size: 14, color: Colors.grey[600]),
                         const SizedBox(width: 4),
                         Text(
-                          '${vehicle.categorie?.toUpperCase() ?? 'N/A'}',
+                          vehicle.categorie?.toUpperCase() ?? 'N/A',
                           style: TextStyle(
                             fontSize: 11,
                             color: Colors.grey[800],

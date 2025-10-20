@@ -27,7 +27,7 @@ class ComptePressingViewModel extends BaseViewModel {
 
   //* METHODS
   void viewProfile() {
-    _navigationService.navigateToProfilPressingView();
+    _navigationService.navigateTo('profil_pressing_view');
   }
 
   Future<void> fetchPressingInfo() async {
