@@ -17,8 +17,17 @@ if (keystorePropertiesFile.exists()) {
 
 android {
     namespace = "com.foryou.driver"
-    compileSdk = 36
-    ndkVersion = "27.0.12077973"
+    compileSdk = 34
+    ndkVersion = "25.1.8937393"
+    
+    defaultConfig {
+        applicationId = "com.foryou.driver"
+        minSdk = 21
+        targetSdk = 34
+        versionCode = 1
+        versionName = "1.0.0"
+        multiDexEnabled = true
+    }
 
     compileOptions {
         isCoreLibraryDesugaringEnabled = true
@@ -48,11 +57,22 @@ android {
     kotlinOptions {
         jvmTarget = JavaVersion.VERSION_17.toString()
     }
+    
+    buildTypes {
+        release {
+            signingConfig = signingConfigs.getByName("release")
+            isMinifyEnabled = true
+            proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro")
+        }
+        debug {
+            signingConfig = signingConfigs.getByName("debug")
+        }
+    }
 
     defaultConfig {
         applicationId = "com.foryou.driver"
         minSdk = flutter.minSdkVersion
-        targetSdk = 36
+        targetSdk = flutter.targetSdkVersion
         versionCode = flutter.versionCode
         versionName = flutter.versionName
     }
@@ -70,6 +90,9 @@ android {
 }
 
 dependencies {
+    implementation("androidx.webkit:webkit:1.8.0")  // Pour le support WebView moderne
+    implementation("com.google.android.material:material:1.11.0")  // Pour les composants Material Design
+    implementation("androidx.multidex:multidex:2.0.1")  // Pour le support multidex
     implementation(platform("com.google.firebase:firebase-bom:34.0.0"))
     implementation("com.google.firebase:firebase-messaging")
     coreLibraryDesugaring("com.android.tools:desugar_jdk_libs:2.1.4")

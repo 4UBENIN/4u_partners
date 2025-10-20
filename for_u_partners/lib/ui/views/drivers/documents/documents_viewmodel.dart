@@ -1,5 +1,6 @@
 // documents_viewmodel.dart
 import 'package:for_u_partners/ui/views/drivers/documents/add_document.dart';
+import 'package:for_u_partners/ui/views/drivers/documents/document_viewer_view.dart';
 import 'package:stacked/stacked.dart';
 import 'package:for_u_partners/models/document_model.dart';
 import 'package:for_u_partners/services/document_service.dart';
@@ -129,9 +130,8 @@ class DocumentsViewModel extends BaseViewModel {
       }
 
       // Naviguer vers la page de visualisation du document
-      await _navigationService.navigateTo(
-        '/document-viewer',
-        arguments: doc,
+      await _navigationService.navigateToView(
+        DocumentViewerView(document: doc),
       );
     } catch (e) {
       print('Erreur lors de la visualisation: $e');

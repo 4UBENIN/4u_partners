@@ -22,6 +22,7 @@ import 'package:for_u_partners/ui/views/auth/register_profile/register_profile_v
 import 'package:for_u_partners/ui/views/drivers/activitydetails/activitydetails_view.dart';
 import 'package:for_u_partners/ui/views/drivers/vehicles/vehicles_view.dart';
 import 'package:for_u_partners/ui/views/drivers/documents/documents_view.dart';
+import 'package:for_u_partners/ui/views/drivers/documents/document_viewer_view.dart';
 import 'package:for_u_partners/ui/views/pressing/compte_pressing/compte_pressing_view.dart';
 import 'package:for_u_partners/ui/views/delivery/compte_delivery/compte_delivery_view.dart';
 import 'package:for_u_partners/ui/views/delivery/delivery_nav_bar/delivery_nav_bar_view.dart';
@@ -67,6 +68,7 @@ import 'package:for_u_partners/services/vehicle_service.dart';
     MaterialRoute(page: MesVehiculesView),
     MaterialRoute(page: DocumentsView),
     MaterialRoute(page: AddDocumentView),
+    MaterialRoute(page: DocumentViewerView),
 // @stacked-route
   ],
   dependencies: const [
