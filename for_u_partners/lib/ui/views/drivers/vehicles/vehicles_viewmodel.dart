@@ -1,6 +1,7 @@
 // mes_vehicules_viewmodel.dart
 import 'dart:convert';
 
+import 'package:flutter/material.dart';
 import 'package:stacked/stacked.dart';
 import 'package:stacked_services/stacked_services.dart';
 import 'package:for_u_partners/app/app.locator.dart';
@@ -245,7 +246,28 @@ class MesVehiculesViewModel extends BaseViewModel {
 
   final NavigationService _navigationService = locator<NavigationService>();
 
-  void addNewVehicle() {
-    _navigationService.navigateToView(AddVehiclesView());
+  Future<void> addNewVehicle() async {
+    final BuildContext? context = _navigationService.navigatorKey?.currentContext;
+    if (context == null) return;
+    
+    final result = await Navigator.of(context).push<Vehicle?>(
+      MaterialPageRoute(builder: (context) => AddVehiclesView()),
+    );
+    
+    // Si un véhicule a été ajouté avec succès, on rafraîchit les données
+    if (result != null) {
+      // Afficher un message de succès
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Véhicule ajouté avec succès'),
+            backgroundColor: Colors.green,
+          ),
+        );
+      }
+      
+      // Rafraîchir les données
+      await fetchDashboardData();
+    }
   }
 }

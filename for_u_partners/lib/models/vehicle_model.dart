@@ -6,6 +6,7 @@ class Vehicle {
   final String? statut; // Ajout du champ statut pour le filtrage
   final String? categorie; // Catégorie du véhicule (ex: standard, premium)
   final String? couleur; // Couleur du véhicule
+  final String? type; // Type du véhicule (ex: moto, voiture)
   bool courseHeure;
   bool clim;
   bool? basic;
@@ -19,6 +20,7 @@ class Vehicle {
     this.statut,
     this.categorie,
     this.couleur,
+    this.type,
     this.courseHeure = false,
     this.clim = false, 
     this.basic,
@@ -34,6 +36,7 @@ class Vehicle {
       statut: json['statut']?.toString(),
       categorie: json['categorie']?.toString() ?? 'standard',
       couleur: json['couleur']?.toString() ?? 'Noire',
+      type: json['type']?.toString() ?? 'standard',
       courseHeure: json['courseHeure'] as bool? ?? false,
       clim: json['clim'] as bool? ?? false,
       basic: json['basic'] as bool? ?? false,
@@ -49,6 +52,7 @@ class Vehicle {
         'statut': statut,
         'categorie': categorie,
         'couleur': couleur,
+        'type': type,
         'courseHeure': courseHeure,
         'clim': clim,
       };

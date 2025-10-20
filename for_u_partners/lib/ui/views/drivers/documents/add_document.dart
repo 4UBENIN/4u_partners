@@ -16,6 +16,31 @@ class AddDocumentView extends StatelessWidget {
   Widget build(BuildContext context) {
     return ViewModelBuilder<AddDocumentViewModel>.reactive(
       viewModelBuilder: () => AddDocumentViewModel(),
+      onViewModelReady: (model) {
+        // Écouter les changements d'état pour afficher un message de succès
+        model.addListener(() {
+          if (model.showSuccessMessage) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: const Row(
+                  children: [
+                    Icon(Icons.check_circle, color: Colors.white),
+                    SizedBox(width: 10),
+                    Text('Document ajouté avec succès', style: TextStyle(color: Colors.white)),
+                  ],
+                ),
+                backgroundColor: Colors.green,
+                behavior: SnackBarBehavior.floating,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                duration: const Duration(seconds: 3),
+              ),
+            );
+            model.resetSuccessMessage();
+          }
+        });
+      },
       builder: (context, model, child) => Scaffold(
         appBar: AppBar(
           title: const Text('Ajouter un document'),

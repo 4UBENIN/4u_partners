@@ -1,6 +1,5 @@
 // add_document_viewmodel.dart
 import 'dart:io';
-
 import 'package:flutter/material.dart';
 import 'package:for_u_partners/app/app.locator.dart';
 import 'package:for_u_partners/enums/document_type.dart';
@@ -25,6 +24,20 @@ class AddDocumentViewModel extends BaseViewModel {
   File? selectedFile;
   bool isUploading = false;
   DateTime? expirationDate;
+  String? dateError;
+  bool _showSuccessMessage = false;
+
+  bool get showSuccessMessage => _showSuccessMessage;
+
+  void resetSuccessMessage() {
+    _showSuccessMessage = false;
+    notifyListeners();
+  }
+
+  void _setSuccessMessage() {
+    _showSuccessMessage = true;
+    notifyListeners();
+  }
 
   void updateSelectedType(DocumentType? type) {
     selectedType = type;
@@ -33,7 +46,6 @@ class AddDocumentViewModel extends BaseViewModel {
 
   Future<void> pickFile() async {
     try {
-      // Utiliser FilePicker au lieu de ImagePicker pour tous types de fichiers
       final result = await FilePicker.platform.pickFiles(
         type: FileType.custom,
         allowedExtensions: ['pdf', 'jpg', 'jpeg', 'png', 'doc', 'docx'],
@@ -43,7 +55,6 @@ class AddDocumentViewModel extends BaseViewModel {
       if (result != null && result.files.single.path != null) {
         final file = File(result.files.single.path!);
         
-        // Vérifier la taille du fichier (max 5MB)
         final fileSize = await file.length() / 1024 / 1024;
         if (fileSize > 5) {
           _snackbarService.showSnackbar(
@@ -53,9 +64,6 @@ class AddDocumentViewModel extends BaseViewModel {
           return;
         }
         
-        print('Fichier sélectionné: ${file.path}');
-        print('Taille du fichier: ${fileSize.toStringAsFixed(2)}MB');
-        
         selectedFile = file;
         notifyListeners();
       }
@@ -64,7 +72,6 @@ class AddDocumentViewModel extends BaseViewModel {
         message: 'Erreur lors de la sélection du fichier: ${e.toString()}',
         duration: const Duration(seconds: 3),
       );
-      print('Erreur pickFile: $e');
     }
   }
 
@@ -98,12 +105,13 @@ class AddDocumentViewModel extends BaseViewModel {
       return;
     }
 
-    // Vérifier si la date d'expiration est dans le futur
     if (expirationDate!.isBefore(DateTime.now())) {
       _snackbarService.showSnackbar(
         message: 'La date d\'expiration doit être dans le futur',
         duration: const Duration(seconds: 3),
       );
+      dateError = 'La date ne peut pas être dans le passé';
+      notifyListeners();
       return;
     }
 
@@ -116,13 +124,6 @@ class AddDocumentViewModel extends BaseViewModel {
         throw Exception('Utilisateur non connecté');
       }
 
-      print('=== Paramètres d\'upload ===');
-      print('UserId: $userId');
-      print('Type: ${selectedType.toString().split('.').last}');
-      print('Catégorie: ${_getCategoryForType(selectedType!)}');
-      print('Fichier: ${selectedFile!.path}');
-      print('Date expiration: ${expirationDate!.toIso8601String()}');
-
       final success = await _documentService.addDocument(
         userId: userId,
         type: selectedType.toString().split('.').last,
@@ -132,13 +133,8 @@ class AddDocumentViewModel extends BaseViewModel {
       );
 
       if (success) {
-        _snackbarService.showSnackbar(
-          message: 'Document enregistré avec succès',
-          duration: const Duration(seconds: 3),
-        );
-        // Réinitialiser les champs
+        _setSuccessMessage();
         _resetForm();
-        _navigationService.back();
       } else {
         _snackbarService.showSnackbar(
           message: 'Échec de l\'enregistrement du document',
@@ -146,7 +142,6 @@ class AddDocumentViewModel extends BaseViewModel {
         );
       }
     } catch (e) {
-      print('Erreur uploadDocument: $e');
       _snackbarService.showSnackbar(
         message: 'Erreur lors de l\'enregistrement: ${e.toString()}',
         duration: const Duration(seconds: 5),
@@ -163,6 +158,7 @@ class AddDocumentViewModel extends BaseViewModel {
     descriptionController.clear();
     dateController.clear();
     expirationDate = null;
+    dateError = null;
     notifyListeners();
   }
 
@@ -179,7 +175,6 @@ class AddDocumentViewModel extends BaseViewModel {
     }
   }
 
-  // Vérifier si le type de document nécessite une date d'expiration
   bool needsExpirationDate() {
     if (selectedType == null) return false;
     
@@ -194,34 +189,53 @@ class AddDocumentViewModel extends BaseViewModel {
   }
 
   Future<void> selectExpirationDate(BuildContext context) async {
-    final DateTime? picked = await showDatePicker(
-      context: context,
-      initialDate: DateTime.now().add(const Duration(days: 30)),
-      firstDate: DateTime.now(),
-      lastDate: DateTime(2100),
-      builder: (context, child) {
-        return Theme(
-          data: Theme.of(context).copyWith(
-            colorScheme: const ColorScheme.light(
-              primary: kcPrimaryColor,
-              onPrimary: Colors.white,
-              onSurface: Colors.black,
-            ),
-            textButtonTheme: TextButtonThemeData(
-              style: TextButton.styleFrom(
-                foregroundColor: kcPrimaryColor,
+    try {
+      final DateTime now = DateTime.now();
+      final DateTime today = DateTime(now.year, now.month, now.day);
+
+      final DateTime? picked = await showDatePicker(
+        context: context,
+        initialDate: today.add(const Duration(days: 1)),
+        firstDate: today,
+        lastDate: DateTime(2100),
+        builder: (context, child) {
+          return Theme(
+            data: Theme.of(context).copyWith(
+              colorScheme: const ColorScheme.light(
+                primary: kcPrimaryColor,
+                onPrimary: Colors.white,
+                onSurface: Colors.black,
+              ),
+              textButtonTheme: TextButtonThemeData(
+                style: TextButton.styleFrom(
+                  foregroundColor: kcPrimaryColor,
+                ),
               ),
             ),
-          ),
-          child: child!,
-        );
-      },
-    );
+            child: child!,
+          );
+        },
+      );
 
-    if (picked != null && picked != expirationDate) {
-      expirationDate = picked;
-      dateController.text = '${picked.day}/${picked.month}/${picked.year}';
-      notifyListeners();
+      if (picked != null) {
+        if (picked.isBefore(today)) {
+          dateError = 'Vous ne pouvez pas choisir une date passée.';
+          _snackbarService.showSnackbar(
+            message: dateError!,
+            duration: const Duration(seconds: 3),
+          );
+          notifyListeners();
+          return;
+        }
+
+        expirationDate = DateTime(picked.year, picked.month, picked.day, 23, 59, 59);
+        dateController.text =
+            '${picked.day.toString().padLeft(2, '0')}/${picked.month.toString().padLeft(2, '0')}/${picked.year}';
+        dateError = null; // On enlève le message d’erreur si tout va bien
+        notifyListeners();
+      }
+    } catch (e) {
+      print('Erreur lors de la sélection de la date: $e');
     }
   }
 

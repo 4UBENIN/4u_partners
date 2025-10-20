@@ -4,7 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:dio/dio.dart';
 import 'package:for_u_partners/models/vehicle_model.dart';
-import 'package:for_u_partners/services/sharedpreferences_service.dart';
+import 'package:for_u_partners/services/vehicle_service.dart';
 import 'package:for_u_partners/app/app.locator.dart';
 import 'package:image_picker/image_picker.dart';
 
@@ -17,14 +17,15 @@ class AddVehiclesView extends StatefulWidget {
 
 class _AddVehiclesViewState extends State<AddVehiclesView> {
   final AddVehiclesViewModel viewModel = AddVehiclesViewModel();
-  
+
   final _formKey = GlobalKey<FormState>();
   final _marqueController = TextEditingController();
   final _modeleController = TextEditingController();
   final _immatriculationController = TextEditingController();
   final _couleurController = TextEditingController();
   final _anneeController = TextEditingController();
-  
+  final _nombrePlacesController = TextEditingController(text: '4'); // Valeur par défaut
+
   @override
   void dispose() {
     _marqueController.dispose();
@@ -32,15 +33,23 @@ class _AddVehiclesViewState extends State<AddVehiclesView> {
     _immatriculationController.dispose();
     _couleurController.dispose();
     _anneeController.dispose();
+    _nombrePlacesController.dispose();
     super.dispose();
   }
-  
+
+  @override
+  void initState() {
+    super.initState();
+    // Définir la valeur par défaut (voiture = 4 places)
+    _nombrePlacesController.text = '4';
+  }
+
   void _handleSubmit() {
     if (!_formKey.currentState!.validate()) {
       _showErrorSnackBar('Veuillez corriger les erreurs dans le formulaire');
       return;
     }
-    
+
     // Validation des fichiers requis
     String missingFiles = '';
     if (viewModel.selectedVehicleType == 'voiture') {
@@ -51,23 +60,27 @@ class _AddVehiclesViewState extends State<AddVehiclesView> {
       if (viewModel.carteGrise == null) missingFiles += 'Carte grise, ';
       if (viewModel.assurance == null) missingFiles += 'Assurance, ';
     }
-    
+
     if (missingFiles.isNotEmpty) {
       missingFiles = missingFiles.replaceAll(RegExp(r', $'), '');
       _showErrorSnackBar('Fichiers manquants: $missingFiles');
       return;
     }
-    
+
     final vehicle = Vehicle(
       id: DateTime.now().millisecondsSinceEpoch.toString(),
       marque: _marqueController.text.trim(),
       model: _modeleController.text.trim(),
+      type: viewModel.selectedVehicleType,
       immatriculation: _immatriculationController.text.trim().toUpperCase(),
-      couleur: _couleurController.text.isNotEmpty ? _couleurController.text.trim() : 'Non spécifiée',
+      couleur: _couleurController.text.isNotEmpty
+          ? _couleurController.text.trim()
+          : 'Non spécifiée',
       statut: 'en_attente',
       categorie: viewModel.selectedCategory,
+      courseHeure: _nombrePlacesController.text == '2', // Si 2 places, c'est une course à l'heure
     );
-    
+
     viewModel.addVehicle(
       vehicle,
       context,
@@ -78,8 +91,9 @@ class _AddVehiclesViewState extends State<AddVehiclesView> {
       annee: _anneeController.text.trim(),
     );
   }
-  
-  InputDecoration _buildInputDecoration(String label, String hint, IconData icon) {
+
+  InputDecoration _buildInputDecoration(
+      String label, String hint, IconData icon) {
     return InputDecoration(
       labelText: label,
       hintText: hint,
@@ -112,7 +126,7 @@ class _AddVehiclesViewState extends State<AddVehiclesView> {
       errorMaxLines: 2,
     );
   }
-  
+
   void _showErrorSnackBar(String message) {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
@@ -125,7 +139,7 @@ class _AddVehiclesViewState extends State<AddVehiclesView> {
       ),
     );
   }
-  
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -177,7 +191,6 @@ class _AddVehiclesViewState extends State<AddVehiclesView> {
                 ),
               ),
               const SizedBox(height: 32),
-
               Form(
                 key: _formKey,
                 autovalidateMode: AutovalidateMode.onUserInteraction,
@@ -199,7 +212,10 @@ class _AddVehiclesViewState extends State<AddVehiclesView> {
                         Expanded(
                           child: GestureDetector(
                             onTap: () {
-                              setState(() => viewModel.selectedVehicleType = 'moto');
+                              setState(() {
+                                viewModel.selectedVehicleType = 'moto';
+                                _nombrePlacesController.text = '2'; // 2 places pour une moto
+                              });
                             },
                             child: Container(
                               padding: const EdgeInsets.symmetric(vertical: 12),
@@ -232,17 +248,22 @@ class _AddVehiclesViewState extends State<AddVehiclesView> {
                         Expanded(
                           child: GestureDetector(
                             onTap: () {
-                              setState(() => viewModel.selectedVehicleType = 'tricycle');
+                              setState(() {
+                                viewModel.selectedVehicleType = 'tricycle';
+                                _nombrePlacesController.text = '3'; // 3 places pour un tricycle
+                              });
                             },
                             child: Container(
                               padding: const EdgeInsets.symmetric(vertical: 12),
                               decoration: BoxDecoration(
-                                color: viewModel.selectedVehicleType == 'tricycle'
-                                    ? const Color(0xFF184E9C)
-                                    : Colors.grey[100],
+                                color:
+                                    viewModel.selectedVehicleType == 'tricycle'
+                                        ? const Color(0xFF184E9C)
+                                        : Colors.grey[100],
                                 borderRadius: BorderRadius.circular(10),
                                 border: Border.all(
-                                  color: viewModel.selectedVehicleType == 'tricycle'
+                                  color: viewModel.selectedVehicleType ==
+                                          'tricycle'
                                       ? const Color(0xFF184E9C)
                                       : Colors.grey[300]!,
                                   width: 2,
@@ -252,7 +273,8 @@ class _AddVehiclesViewState extends State<AddVehiclesView> {
                                 'Tricycle',
                                 textAlign: TextAlign.center,
                                 style: TextStyle(
-                                  color: viewModel.selectedVehicleType == 'tricycle'
+                                  color: viewModel.selectedVehicleType ==
+                                          'tricycle'
                                       ? Colors.white
                                       : Colors.black87,
                                   fontWeight: FontWeight.w600,
@@ -265,19 +287,24 @@ class _AddVehiclesViewState extends State<AddVehiclesView> {
                         Expanded(
                           child: GestureDetector(
                             onTap: () {
-                              setState(() => viewModel.selectedVehicleType = 'voiture');
+                              setState(() {
+                                viewModel.selectedVehicleType = 'voiture';
+                                _nombrePlacesController.text = '4'; // 4 places pour une voiture
+                              });
                             },
                             child: Container(
                               padding: const EdgeInsets.symmetric(vertical: 12),
                               decoration: BoxDecoration(
-                                color: viewModel.selectedVehicleType == 'voiture'
-                                    ? const Color(0xFF184E9C)
-                                    : Colors.grey[100],
+                                color:
+                                    viewModel.selectedVehicleType == 'voiture'
+                                        ? const Color(0xFF184E9C)
+                                        : Colors.grey[100],
                                 borderRadius: BorderRadius.circular(10),
                                 border: Border.all(
-                                  color: viewModel.selectedVehicleType == 'voiture'
-                                      ? const Color(0xFF184E9C)
-                                      : Colors.grey[300]!,
+                                  color:
+                                      viewModel.selectedVehicleType == 'voiture'
+                                          ? const Color(0xFF184E9C)
+                                          : Colors.grey[300]!,
                                   width: 2,
                                 ),
                               ),
@@ -285,9 +312,10 @@ class _AddVehiclesViewState extends State<AddVehiclesView> {
                                 'Voiture',
                                 textAlign: TextAlign.center,
                                 style: TextStyle(
-                                  color: viewModel.selectedVehicleType == 'voiture'
-                                      ? Colors.white
-                                      : Colors.black87,
+                                  color:
+                                      viewModel.selectedVehicleType == 'voiture'
+                                          ? Colors.white
+                                          : Colors.black87,
                                   fontWeight: FontWeight.w600,
                                 ),
                               ),
@@ -303,7 +331,8 @@ class _AddVehiclesViewState extends State<AddVehiclesView> {
                       controller: _marqueController,
                       textCapitalization: TextCapitalization.words,
                       inputFormatters: [
-                        FilteringTextInputFormatter.allow(RegExp(r'[a-zA-ZÀ-ÿ\s-]')),
+                        FilteringTextInputFormatter.allow(
+                            RegExp(r'[a-zA-ZÀ-ÿ\s-]')),
                         LengthLimitingTextInputFormatter(50),
                       ],
                       decoration: _buildInputDecoration(
@@ -321,7 +350,8 @@ class _AddVehiclesViewState extends State<AddVehiclesView> {
                         if (value.trim().length > 50) {
                           return 'La marque est trop longue (max 50 caractères)';
                         }
-                        if (!RegExp(r'^[a-zA-ZÀ-ÿ\s-]+$').hasMatch(value.trim())) {
+                        if (!RegExp(r'^[a-zA-ZÀ-ÿ\s-]+$')
+                            .hasMatch(value.trim())) {
                           return 'La marque ne peut contenir que des lettres';
                         }
                         return null;
@@ -368,7 +398,8 @@ class _AddVehiclesViewState extends State<AddVehiclesView> {
                       controller: _couleurController,
                       textCapitalization: TextCapitalization.words,
                       inputFormatters: [
-                        FilteringTextInputFormatter.allow(RegExp(r'[a-zA-ZÀ-ÿ\s-]')),
+                        FilteringTextInputFormatter.allow(
+                            RegExp(r'[a-zA-ZÀ-ÿ\s-]')),
                         LengthLimitingTextInputFormatter(30),
                       ],
                       decoration: _buildInputDecoration(
@@ -386,7 +417,8 @@ class _AddVehiclesViewState extends State<AddVehiclesView> {
                         if (value.trim().length > 30) {
                           return 'La couleur est trop longue (max 30 caractères)';
                         }
-                        if (!RegExp(r'^[a-zA-ZÀ-ÿ\s-]+$').hasMatch(value.trim())) {
+                        if (!RegExp(r'^[a-zA-ZÀ-ÿ\s-]+$')
+                            .hasMatch(value.trim())) {
                           return 'La couleur ne peut contenir que des lettres';
                         }
                         return null;
@@ -397,12 +429,25 @@ class _AddVehiclesViewState extends State<AddVehiclesView> {
                     ),
                     const SizedBox(height: 20),
 
+                    // Nombre de places (défini automatiquement selon le type de véhicule)
+                    TextFormField(
+                      controller: _nombrePlacesController,
+                      enabled: false, // Désactivé car défini automatiquement
+                      decoration: _buildInputDecoration(
+                        'Nombre de places',
+                        'Défini automatiquement',
+                        Icons.people_outline,
+                      ),
+                    ),
+                    const SizedBox(height: 20),
+
                     // Immatriculation
                     TextFormField(
                       controller: _immatriculationController,
                       textCapitalization: TextCapitalization.characters,
                       inputFormatters: [
-                        FilteringTextInputFormatter.allow(RegExp(r'[A-Za-z0-9\s-]')),
+                        FilteringTextInputFormatter.allow(
+                            RegExp(r'[A-Za-z0-9\s-]')),
                         LengthLimitingTextInputFormatter(15),
                         TextInputFormatter.withFunction((oldValue, newValue) {
                           return TextEditingValue(
@@ -432,7 +477,8 @@ class _AddVehiclesViewState extends State<AddVehiclesView> {
                           return 'Format invalide (lettres, chiffres, tirets uniquement)';
                         }
                         // Vérifie qu'il y a au moins une lettre ET un chiffre
-                        if (!RegExp(r'[A-Z]').hasMatch(cleanValue) || !RegExp(r'[0-9]').hasMatch(cleanValue)) {
+                        if (!RegExp(r'[A-Z]').hasMatch(cleanValue) ||
+                            !RegExp(r'[0-9]').hasMatch(cleanValue)) {
                           return 'L\'immatriculation doit contenir des lettres et des chiffres';
                         }
                         return null;
@@ -544,7 +590,8 @@ class _AddVehiclesViewState extends State<AddVehiclesView> {
                       ),
                       child: Row(
                         children: [
-                          Icon(Icons.info_outline, color: Colors.blue[700], size: 20),
+                          Icon(Icons.info_outline,
+                              color: Colors.blue[700], size: 20),
                           const SizedBox(width: 12),
                           Expanded(
                             child: Text(
@@ -631,12 +678,13 @@ class _AddVehiclesViewState extends State<AddVehiclesView> {
             decoration: BoxDecoration(
               borderRadius: BorderRadius.circular(12),
               border: Border.all(
-                color: file != null
-                    ? const Color(0xFF184E9C)
-                    : Colors.grey[300]!,
+                color:
+                    file != null ? const Color(0xFF184E9C) : Colors.grey[300]!,
                 width: 2,
               ),
-              color: file != null ? const Color(0xFF184E9C).withOpacity(0.05) : Colors.grey[50],
+              color: file != null
+                  ? const Color(0xFF184E9C).withOpacity(0.05)
+                  : Colors.grey[50],
             ),
             child: file != null
                 ? Stack(
@@ -698,20 +746,18 @@ class _AddVehiclesViewState extends State<AddVehiclesView> {
 class AddVehiclesViewModel extends ChangeNotifier {
   bool _isLoading = false;
   bool get isLoading => _isLoading;
-  
+
   String selectedVehicleType = 'voiture';
   String selectedCategory = 'standard';
   final List<String> categories = ['standard', 'premium', 'vip'];
-  
+
   XFile? carteGrise;
   XFile? assurance;
   XFile? permis;
-  
-  final _sharedPreferencesService = locator<SharedpreferencesService>();
-  final Dio _dio = Dio();
-  final String _baseUrl = 'https://foryou.cilassocies.com/api';
+
+  final _vehicleService = locator<VehicleService>();
   final ImagePicker _picker = ImagePicker();
-  
+
   Future<void> pickFile(Function(XFile) onFilePicked) async {
     try {
       final XFile? file = await _picker.pickImage(
@@ -733,7 +779,7 @@ class AddVehiclesViewModel extends ChangeNotifier {
       rethrow;
     }
   }
-  
+
   Future<void> addVehicle(
     Vehicle vehicle,
     BuildContext context, {
@@ -745,90 +791,53 @@ class AddVehiclesViewModel extends ChangeNotifier {
   }) async {
     _isLoading = true;
     notifyListeners();
-    
+
     try {
-      final token = await _sharedPreferencesService.getToken();
-      final userId = await _sharedPreferencesService.getUserId();
-      
-      if (token == null || token.isEmpty) {
-        _showErrorSnackBar(context, 'Authentification requise');
-        _isLoading = false;
-        notifyListeners();
-        return;
+      // Convertir XFile en File
+      File? carteGriseFile = carteGrise != null ? File(carteGrise.path) : null;
+      File? assuranceFile = assurance != null ? File(assurance.path) : null;
+      File? permisFile = permis != null ? File(permis.path) : null;
+
+      // Appeler le service pour ajouter le véhicule
+      final addedVehicle = await _vehicleService.addVehicleWithDocuments(
+        marque: vehicle.marque,
+        modele: vehicle.model,
+        immatriculation: vehicle.immatriculation,
+        couleur: vehicle.couleur ?? 'Noire',
+        type: vehicleType,
+        nombrePlaces: vehicle.courseHeure ? 2 : 4,
+        annee: annee,
+        categorie: selectedCategory,
+        carteGrise: carteGriseFile,
+        assurance: assuranceFile,
+        permis: permisFile,
+      );
+      // Ajuster selon le type de véhicule
+      if (selectedCategory == 'moto') {
+      } else if (selectedCategory == 'tricycle') {
+      } else if (selectedCategory == 'voiture') {
       }
-      
-      final cleanToken = token.replaceAll('"', '').trim();
-      
-      // Créer FormData pour upload avec fichiers
-      final formData = FormData();
-      
-      formData.fields.addAll([
-        MapEntry('marque', vehicle.marque),
-        MapEntry('modele', vehicle.model),
-        MapEntry('immatriculation', vehicle.immatriculation),
-        MapEntry('couleur', vehicle.couleur ?? 'Noire'),
-        MapEntry('statut', 'en_attente'),
-        MapEntry('annee', annee),
-      ]);
-      
-      if (carteGrise != null) {
-        formData.files.add(
-          MapEntry(
-            'carte_grise',
-            await MultipartFile.fromFile(carteGrise.path),
-          ),
-        );
-      }
-      
-      if (assurance != null) {
-        formData.files.add(
-          MapEntry(
-            'assurance',
-            await MultipartFile.fromFile(assurance.path),
-          ),
-        );
-      }
-      
-      if (permis != null) {
-        formData.files.add(
-          MapEntry(
-            'permis_conduire',
-            await MultipartFile.fromFile(permis.path),
-          ),
-        );
-      }
-      
-      final response = await _dio.post(
-        '$_baseUrl/vehicules',
-        data: formData,
-        options: Options(
-          headers: {
-            'Authorization': 'Bearer $cleanToken',
-            'Accept': 'application/json',
-          },
-        ),
-      ).timeout(const Duration(seconds: 30));
-      
-      if (response.statusCode == 200 || response.statusCode == 201) {
+
+      if (addedVehicle != null) {
         _showSuccessSnackBar(context, 'Véhicule ajouté avec succès');
         if (context.mounted) {
-          Navigator.pop(context, vehicle);
+          Navigator.pop(context, addedVehicle);
         }
       } else {
         _showErrorSnackBar(context, 'Erreur lors de l\'ajout du véhicule');
       }
-      
     } on DioException catch (e) {
       String errorMessage = _formatDioError(e);
       _showErrorSnackBar(context, errorMessage);
     } catch (e) {
+      print('Erreur addVehicle: $e');
       _showErrorSnackBar(context, 'Erreur: ${e.toString()}');
     } finally {
       _isLoading = false;
       notifyListeners();
     }
   }
-  
+
   String _formatDioError(DioException e) {
     switch (e.type) {
       case DioExceptionType.connectionTimeout:
@@ -853,7 +862,7 @@ class AddVehiclesViewModel extends ChangeNotifier {
         return 'Une erreur est survenue.';
     }
   }
-  
+
   void _showSuccessSnackBar(BuildContext context, String message) {
     if (!context.mounted) return;
     ScaffoldMessenger.of(context).showSnackBar(
@@ -873,7 +882,7 @@ class AddVehiclesViewModel extends ChangeNotifier {
       ),
     );
   }
-  
+
   void _showErrorSnackBar(BuildContext context, String message) {
     if (!context.mounted) return;
     ScaffoldMessenger.of(context).showSnackBar(
@@ -899,7 +908,7 @@ class AddVehiclesViewModel extends ChangeNotifier {
 class FileSystemException implements Exception {
   final String message;
   FileSystemException(this.message);
-  
+
   @override
   String toString() => message;
 }

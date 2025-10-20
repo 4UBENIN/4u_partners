@@ -382,6 +382,17 @@ class _MesVehiculesView extends StatelessWidget {
                             fontWeight: FontWeight.w500,
                           ),
                         ),
+                        const SizedBox(width: 16),
+                        Icon(Icons.people_outline, size: 14, color: Colors.grey[600]),
+                        const SizedBox(width: 4),
+                        Text(
+                          vehicle.courseHeure ? '2' : vehicle.categorie?.toLowerCase() == 'tricycle' ? '3' : '4',
+                          style: TextStyle(
+                            fontSize: 11,
+                            color: Colors.grey[800],
+                            fontWeight: FontWeight.w500,
+                          ),
+                        ),
                       ],
                     ),
                   ],
@@ -497,6 +508,20 @@ class _MesVehiculesView extends StatelessWidget {
                     fontSize: 14,
                     color: Colors.grey[600],
                   ),
+                ),
+                const SizedBox(height: 4),
+                Row(
+                  children: [
+                    Icon(Icons.people_outline, size: 14, color: Colors.grey[600]),
+                    const SizedBox(width: 4),
+                    Text(
+                      '${vehicle.courseHeure ? '2' : vehicle.categorie?.toLowerCase() == 'tricycle' ? '3' : '4'} places',
+                      style: TextStyle(
+                        fontSize: 12,
+                        color: Colors.grey[600],
+                      ),
+                    ),
+                  ],
                 ),
                 const SizedBox(height: 6),
                 Row(

@@ -10,6 +10,7 @@ import 'package:http_parser/http_parser.dart';
 import 'package:for_u_partners/app/app.router.dart';
 import 'package:for_u_partners/app/app.locator.dart';
 import 'package:for_u_partners/app/api_constant.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:stacked_services/stacked_services.dart';
 import 'package:for_u_partners/app/models/login_model.dart';
 import 'package:for_u_partners/app/models/register_model.dart';
