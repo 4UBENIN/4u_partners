@@ -117,6 +117,7 @@ class FirebaseMessagingService {
     }
   }
 
+  
   /// Configure l'écoute des mises à jour de token
   void _setupTokenListener() {
     _messaging.onTokenRefresh.listen((newToken) async {

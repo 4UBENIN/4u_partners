@@ -798,7 +798,7 @@ class _InProgressRideBottomSheetState extends State<InProgressRideBottomSheet>
                       const SizedBox(width: 8),
                       Text(
                         _isPaused ? 'Pause en cours' : 'Course en cours',
-                        style: TextStyle(
+                        style: const TextStyle(
                           fontSize: 16,
                           fontWeight: FontWeight.w600,
                           color: Colors.black87,
@@ -936,7 +936,7 @@ class _InProgressRideBottomSheetState extends State<InProgressRideBottomSheet>
                       onPressed: _isPaused ? _endPause : _requestPause,
                       style: OutlinedButton.styleFrom(
                         foregroundColor: kcPrimaryColor,
-                        side: BorderSide(color: kcPrimaryColor, width: 1.5),
+                        side: const BorderSide(color: kcPrimaryColor, width: 1.5),
                         backgroundColor: Colors.white,
                         elevation: 0,
                         shape: RoundedRectangleBorder(
@@ -950,10 +950,10 @@ class _InProgressRideBottomSheetState extends State<InProgressRideBottomSheet>
                             _isPaused ? Icons.play_circle_outline : Icons.pause_circle_outline,
                             size: 22,
                           ),
-                          SizedBox(width: 8),
+                          const SizedBox(width: 8),
                           Text(
                             _isPaused ? 'Terminer la pause' : 'Demander une pause',
-                            style: TextStyle(
+                            style: const TextStyle(
                               fontSize: 16,
                               fontWeight: FontWeight.w600,
                               letterSpacing: 0.3,
