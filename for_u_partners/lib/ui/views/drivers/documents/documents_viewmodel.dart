@@ -18,16 +18,12 @@ class DocumentsViewModel extends BaseViewModel {
   List<DocumentCategory> _documentCategories = [];
   List<DocumentCategory> get documentCategories => _documentCategories;
 
-  int get pendingCount => _getAllDocuments()
-      .where((doc) => doc.status == DocumentStatus.enAttente)
+  int get validCount => _getAllDocuments()
+      .where((doc) => doc.status == DocumentStatus.valide)
       .length;
 
-  int get approvedCount => _getAllDocuments()
-      .where((doc) => doc.status == DocumentStatus.approuve)
-      .length;
-
-  int get rejectedCount => _getAllDocuments()
-      .where((doc) => doc.status == DocumentStatus.rejete)
+  int get expiredCount => _getAllDocuments()
+      .where((doc) => doc.status == DocumentStatus.expire)
       .length;
 
   List<Document> _getAllDocuments() {

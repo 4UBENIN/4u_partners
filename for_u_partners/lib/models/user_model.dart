@@ -68,6 +68,7 @@ class UserModel {
     String? email,
     String? telephone,
     String? adresse,
+    String? photoProfil,
     String? dateNaissance,
     String? genre,
   }) {
@@ -80,7 +81,7 @@ class UserModel {
       role: role,
       telephone: telephone ?? this.telephone,
       adresse: adresse ?? this.adresse,
-      photoProfil: photoProfil,
+      photoProfil: photoProfil ?? this.photoProfil,
       dateNaissance: dateNaissance ?? this.dateNaissance,
       genre: genre ?? this.genre,
       isVerified: isVerified,

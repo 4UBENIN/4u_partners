@@ -38,7 +38,6 @@ import 'package:for_u_partners/services/wallet_service.dart';
 import 'package:for_u_partners/services/chat_service.dart';
 import 'package:for_u_partners/services/pickers_service.dart';
 import 'package:for_u_partners/services/vehicle_service.dart';
-
 // @stacked-import
 
 @StackedApp(

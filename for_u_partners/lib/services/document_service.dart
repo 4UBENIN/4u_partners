@@ -63,6 +63,7 @@ class DocumentService {
     }
   }
 
+
   Future<void> debugCheckToken() async {
     try {
       final token = await _sharedPreferencesServices.getToken();
@@ -118,17 +119,24 @@ class DocumentService {
               type: 'Document d\'identité',
               category: 'Conducteur',
               fileUrl: conducteur['document_identite'],
+              status: DocumentStatus.valide, // Document existant = valide
             ));
           }
 
           if (conducteur['permis_conduire'] != null) {
+            final expirationDate = conducteur['date_expiration_permis'] != null 
+                ? DateTime.tryParse(conducteur['date_expiration_permis'])
+                : null;
+            
+            // Vérifier si le permis est expiré
+            final isExpired = expirationDate != null && DateTime.now().isAfter(expirationDate);
+            
             documents.add(Document(
               type: 'Permis de conduire',
               category: 'Conducteur',
               fileUrl: conducteur['permis_conduire'],
-              expirationDate: conducteur['date_expiration_permis'] != null 
-                  ? DateTime.tryParse(conducteur['date_expiration_permis'])
-                  : null,
+              expirationDate: expirationDate,
+              status: isExpired ? DocumentStatus.expire : DocumentStatus.valide,
             ));
           }
 
@@ -139,17 +147,24 @@ class DocumentService {
                 type: 'Carte grise',
                 category: 'Véhicule',
                 fileUrl: vehicule['carte_grise'],
+                status: DocumentStatus.valide, // Document existant = valide
               ));
             }
 
             if (vehicule['assurance'] != null) {
+              final expirationDate = vehicule['expiration_assurance'] != null
+                  ? DateTime.tryParse(vehicule['expiration_assurance'])
+                  : null;
+              
+              // Vérifier si l'assurance est expirée
+              final isExpired = expirationDate != null && DateTime.now().isAfter(expirationDate);
+              
               documents.add(Document(
                 type: 'Assurance',
                 category: 'Véhicule',
                 fileUrl: vehicule['assurance'],
-                expirationDate: vehicule['expiration_assurance'] != null
-                    ? DateTime.tryParse(vehicule['expiration_assurance'])
-                    : null,
+                expirationDate: expirationDate,
+                status: isExpired ? DocumentStatus.expire : DocumentStatus.valide,
               ));
             }
           }

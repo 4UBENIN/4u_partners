@@ -173,24 +173,17 @@ class DocumentsView extends StackedView<DocumentsViewModel> {
         mainAxisAlignment: MainAxisAlignment.spaceAround,
         children: [
           _buildStatItem(
-            'En attente',
-            viewModel.pendingCount,
-            Icons.schedule,
-            Colors.orange.shade400,
-          ),
-          _buildStatDivider(),
-          _buildStatItem(
-            'Validés',
-            viewModel.approvedCount,
+            'Valides',
+            viewModel.validCount,
             Icons.check_circle,
             Colors.green.shade400,
           ),
           _buildStatDivider(),
           _buildStatItem(
-            'Rejetés',
-            viewModel.rejectedCount,
-            Icons.cancel,
-            Colors.red.shade400,
+            'Expirés',
+            viewModel.expiredCount,
+            Icons.warning,
+            Colors.orange.shade400,
           ),
         ],
       ),
@@ -483,17 +476,11 @@ class DocumentsView extends StackedView<DocumentsViewModel> {
 
   Map<String, dynamic> _getStatusConfig(DocumentStatus status) {
     switch (status) {
-      case DocumentStatus.approuve:
+      case DocumentStatus.valide:
         return {
           'color': Colors.green.shade600,
           'icon': Icons.check_circle,
-          'text': 'Validé',
-        };
-      case DocumentStatus.rejete:
-        return {
-          'color': Colors.red.shade600,
-          'icon': Icons.cancel,
-          'text': 'Rejeté',
+          'text': 'Valide',
         };
       case DocumentStatus.expire:
         return {
@@ -501,14 +488,7 @@ class DocumentsView extends StackedView<DocumentsViewModel> {
           'icon': Icons.warning,
           'text': 'Expiré',
         };
-      case DocumentStatus.enAttente:
-      default:
-        return {
-          'color': Colors.blue.shade600,
-          'icon': Icons.schedule,
-          'text': 'En attente',
-        };
-    }
+      }
   }
 
   Widget _buildEmptyState() {

@@ -4,7 +4,7 @@ class Vehicle {
   final String marque; // Marque du véhicule
   final String immatriculation;
   final String? statut; // Ajout du champ statut pour le filtrage
-  final String? categorie; // Catégorie du véhicule (ex: standard, premium)
+  String? categorie; // Catégorie du véhicule (ex: standard, premium) - mutable pour permettre les changements
   final String? couleur; // Couleur du véhicule
   final String? type; // Type du véhicule (ex: moto, voiture)
   bool courseHeure;

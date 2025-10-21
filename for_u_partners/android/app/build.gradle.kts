@@ -17,15 +17,15 @@ if (keystorePropertiesFile.exists()) {
 
 android {
     namespace = "com.foryou.driver"
-    compileSdk = 34
-    ndkVersion = "25.1.8937393"
+    compileSdk = 36
+    ndkVersion = "27.0.12077973"
     
     defaultConfig {
         applicationId = "com.foryou.driver"
-        minSdk = 21
-        targetSdk = 34
-        versionCode = 1
-        versionName = "1.0.0"
+        minSdk = flutter.minSdkVersion
+        targetSdk = 35
+        versionCode = flutter.versionCode
+        versionName = flutter.versionName
         multiDexEnabled = true
     }
 
@@ -65,25 +65,6 @@ android {
             proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro")
         }
         debug {
-            signingConfig = signingConfigs.getByName("debug")
-        }
-    }
-
-    defaultConfig {
-        applicationId = "com.foryou.driver"
-        minSdk = flutter.minSdkVersion
-        targetSdk = flutter.targetSdkVersion
-        versionCode = flutter.versionCode
-        versionName = flutter.versionName
-    }
-
-    buildTypes {
-        getByName("release") {
-            signingConfig = signingConfigs.getByName("release")
-            isMinifyEnabled = true
-            proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro")
-        }
-        getByName("debug") {
             signingConfig = signingConfigs.getByName("debug")
         }
     }

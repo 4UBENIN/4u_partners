@@ -100,8 +100,8 @@ class VehicleService {
     required String immatriculation,
     required String couleur,
     required String annee,
-    required String type, // 🔥 TYPE OBLIGATOIRE
-    required int nombrePlaces, // 🔥 NOMBRE DE PLACES OBLIGATOIRE
+    required String type, 
+    required int nombrePlaces, 
     String categorie = 'standard',
     File? carteGrise,
     File? assurance,
@@ -119,13 +119,13 @@ class VehicleService {
       // Créer FormData pour upload avec fichiers
       final formData = FormData();
       formData.fields.addAll([
-        MapEntry('type', type), // 🔥 TYPE EN PREMIER
+        MapEntry('type', type), 
         MapEntry('marque', marque),
         MapEntry('modele', modele),
         MapEntry('immatriculation', immatriculation),
         MapEntry('couleur', couleur),
         MapEntry('categorie', categorie),
-        MapEntry('nombre_places', nombrePlaces.toString()), // 🔥 NOMBRE DE PLACES
+        MapEntry('nombre_places', nombrePlaces.toString()), 
         const MapEntry('statut', 'en_attente'),
         MapEntry('annee', annee),
       ]);
@@ -207,8 +207,8 @@ class VehicleService {
     required String marque,
     required String modele,
     required String immatriculation,
-    required String type, // 🔥 TYPE OBLIGATOIRE
-    required int nombrePlaces, // 🔥 NOMBRE DE PLACES OBLIGATOIRE
+    required String type, 
+    required int nombrePlaces, 
     String categorie = 'standard',
     String? couleur,
     bool courseHeure = false,
@@ -237,12 +237,12 @@ class VehicleService {
           },
         ),
         data: {
-          'type': type, // 🔥 TYPE EN PREMIER
+          'type': type, 
           'marque': marque,
           'modele': modele,
           'immatriculation': immatriculation,
           'categorie': categorie,
-          'nombre_places': nombrePlaces, // 🔥 NOMBRE DE PLACES
+          'nombre_places': nombrePlaces, 
           'couleur': couleur ?? 'Noire',
           'course_heure': courseHeure,
           'clim': clim,
@@ -286,6 +286,51 @@ class VehicleService {
       rethrow;
     }
   }
+// 🆕 Changer la catégorie d'un véhicule
+Future<bool> changerCategorie({
+  required String vehiculeId,
+  required String nouvelleCategorie,
+}) async {
+  try {
+    final token = await _getAuthToken();
+    if (token == null || token.isEmpty) {
+      throw Exception('Utilisateur non authentifié.');
+    }
+
+    print('📤 Changement de catégorie du véhicule $vehiculeId vers $nouvelleCategorie...');
+
+    final response = await _dio.post(
+      '$baseUrl/api/conducteur/changer-categorie',
+      options: Options(
+        headers: {
+          'Authorization': 'Bearer $token',
+          'Content-Type': 'application/json',
+          'Accept': 'application/json',
+        },
+      ),
+      data: {
+        'vehicule_id': vehiculeId,
+        'nouvelle_categorie': nouvelleCategorie,
+      },
+    );
+
+    if (response.statusCode == 200) {
+      print('✅ Catégorie changée avec succès vers $nouvelleCategorie');
+      return true;
+    }
+    
+    print('⚠️ Réponse inattendue: ${response.statusCode}');
+    return false;
+  } catch (e, stack) {
+    print('❌ Erreur lors du changement de catégorie: $e');
+    if (e is DioException) {
+      print('Détails de l\'erreur Dio: ${e.response?.data}');
+      print('Status Code: ${e.response?.statusCode}');
+    }
+    print(stack);
+    return false;
+  }
+}
 
   // Récupérer tous les véhicules
   Future<List<Vehicle>> getVehicles() async {

@@ -2,11 +2,8 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 
 enum DocumentStatus {
-  enAttente,
-  approuve,
-  rejete,
-  expire,
   valide,
+  expire,
 }
 
 class Document {
@@ -31,7 +28,7 @@ class Document {
     this.fileUrl,
     this.fileName,
     this.fileType,
-    this.status = DocumentStatus.enAttente,
+    this.status = DocumentStatus.valide,
     this.expirationDate,
     this.createdAt,
     this.updatedAt,
@@ -130,20 +127,22 @@ class Document {
 
   // Parser le status depuis une chaîne
   static DocumentStatus _parseStatus(String? statusString) {
-    if (statusString == null) return DocumentStatus.enAttente;
+    if (statusString == null) return DocumentStatus.valide;
 
     switch (statusString) {
-      case 'DocumentStatus.approuve':
-        return DocumentStatus.approuve;
-      case 'DocumentStatus.rejete':
-        return DocumentStatus.rejete;
       case 'DocumentStatus.expire':
+      case 'expire':
+      case 'expiré':
+      case 'expired':
         return DocumentStatus.expire;
       case 'DocumentStatus.valide':
-        return DocumentStatus.valide;
-      case 'DocumentStatus.enAttente':
+      case 'valide':
+      case 'valid':
+      case 'approuve':
+      case 'approuvé':
+      case 'approved':
       default:
-        return DocumentStatus.enAttente;
+        return DocumentStatus.valide;
     }
   }
 
@@ -207,15 +206,11 @@ class DocumentCategory {
   // Nombre de documents dans la catégorie
   int get count => documents.length;
 
-  // Documents en attente
-  int get pendingCount =>
-      documents.where((doc) => doc.status == DocumentStatus.enAttente).length;
+  // Documents valides
+  int get validCount =>
+      documents.where((doc) => doc.status == DocumentStatus.valide).length;
 
-  // Documents approuvés
-  int get approvedCount =>
-      documents.where((doc) => doc.status == DocumentStatus.approuve).length;
-
-  // Documents rejetés
-  int get rejectedCount =>
-      documents.where((doc) => doc.status == DocumentStatus.rejete).length;
+  // Documents expirés
+  int get expiredCount =>
+      documents.where((doc) => doc.status == DocumentStatus.expire).length;
 }
