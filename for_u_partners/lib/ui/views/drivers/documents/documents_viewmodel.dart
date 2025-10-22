@@ -139,89 +139,10 @@ class DocumentsViewModel extends BaseViewModel {
   }
 
   // Modifier un document
-  Future<void> modifyDocument(Document doc) async {
-    await _navigationService.navigateTo(
-      '/document-update',
-      arguments: doc,
+  Future<void> modifyDocument() async {
+    await _navigationService.navigateToView(
+      const AddDocumentView()
     );
-  }
-
-  // Télécharger un document
-  Future<void> downloadDocument(Document doc) async {
-    try {
-      setBusy(true);
-      
-      final success = await _documentService.downloadDocument(doc);
-      
-      if (success) {
-        _snackbarService.showSnackbar(
-          message: 'Document téléchargé avec succès',
-          duration: const Duration(seconds: 2),
-        );
-      } else {
-        _snackbarService.showSnackbar(
-          message: 'Échec du téléchargement',
-          duration: const Duration(seconds: 2),
-        );
-      }
-    } catch (e) {
-      print('Erreur lors du téléchargement: $e');
-      _snackbarService.showSnackbar(
-        message: 'Erreur lors du téléchargement',
-        duration: const Duration(seconds: 2),
-      );
-    } finally {
-    }
-  }
-
-  // Supprimer un document
-  Future<void> deleteDocument(Document doc) async {
-    // Afficher une boîte de dialogue de confirmation
-    final response = await _dialogService.showConfirmationDialog(
-      title: 'Supprimer le document',
-      description: 'Êtes-vous sûr de vouloir supprimer ce document ?',
-      confirmationTitle: 'Supprimer',
-      cancelTitle: 'Annuler',
-    );
-
-    if (response?.confirmed == true) {
-      try {
-        if (doc.id == null) {
-          _snackbarService.showSnackbar(
-            message: 'Erreur: ID du document manquant',
-            duration: const Duration(seconds: 2),
-          );
-          return;
-        }
-
-        setBusy(true);
-        
-        final success = await _documentService.deleteDocument(doc.id!);
-        
-        if (success) {
-          _snackbarService.showSnackbar(
-            message: 'Document supprimé avec succès',
-            duration: const Duration(seconds: 2),
-          );
-          
-          // Rafraîchir la liste
-          await fetchDocuments();
-        } else {
-          _snackbarService.showSnackbar(
-            message: 'Échec de la suppression',
-            duration: const Duration(seconds: 2),
-          );
-        }
-      } catch (e) {
-        print('Erreur lors de la suppression: $e');
-        _snackbarService.showSnackbar(
-          message: 'Erreur lors de la suppression',
-          duration: const Duration(seconds: 2),
-        );
-      } finally {
-        setBusy(false);
-      }
-    }
   }
 
   // Ajouter un nouveau document

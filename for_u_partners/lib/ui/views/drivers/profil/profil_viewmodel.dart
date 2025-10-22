@@ -19,7 +19,7 @@ class ProfilViewModel extends BaseViewModel {
   final _driverService = locator<DriverService>();
   final _profilePhotoService = locator<ProfilePhotoService>();
   final _imagePicker = ImagePicker();
-  final _snackbarService = locator<SnackbarService>(); // Ajoutez ceci
+  final _snackbarService = locator<SnackbarService>(); 
 
   GlobalStats? _globalStats;
   UserModel? _user;
@@ -49,7 +49,6 @@ class ProfilViewModel extends BaseViewModel {
     ]);
   }
 
-  // =============== PHOTO METHODS (CORRIGÉS) ===============
   Future<void> pickAndUploadPhoto(BuildContext context) async {
     try {
       // Afficher les options : Caméra ou Galerie
@@ -80,7 +79,7 @@ class ProfilViewModel extends BaseViewModel {
       _isUploadingPhoto = false;
       notifyListeners();
 
-      // ✅ Afficher le SnackBar APRÈS avoir mis à jour l'état
+      //  Afficher le SnackBar APRÈS avoir mis à jour l'état
       if (context.mounted) {
         _showSuccessSnackBar(context, 'Photo de profil mise à jour avec succès');
       }
@@ -88,7 +87,7 @@ class ProfilViewModel extends BaseViewModel {
       _isUploadingPhoto = false;
       notifyListeners();
       
-      // ✅ Vérifier que le context est toujours monté
+      //  Vérifier que le context est toujours monté
       if (context.mounted) {
         _showErrorSnackBar(context, 'Erreur lors de la mise à jour de la photo: $e');
       }
@@ -164,7 +163,7 @@ class ProfilViewModel extends BaseViewModel {
       _isUploadingPhoto = false;
       notifyListeners();
 
-      // ✅ Vérifier que le context est toujours monté
+      // Vérifier que le context est toujours monté
       if (context.mounted) {
         _showSuccessSnackBar(context, 'Photo de profil supprimée');
       }
@@ -172,7 +171,7 @@ class ProfilViewModel extends BaseViewModel {
       _isUploadingPhoto = false;
       notifyListeners();
       
-      // ✅ Vérifier que le context est toujours monté
+      // Vérifier que le context est toujours monté
       if (context.mounted) {
         _showErrorSnackBar(context, 'Erreur lors de la suppression: $e');
       }
@@ -222,7 +221,7 @@ class ProfilViewModel extends BaseViewModel {
   }
 
   void _showSuccessSnackBar(BuildContext context, String message) {
-    // ✅ Double vérification avant d'afficher
+    // Double vérification avant d'afficher
     if (!context.mounted) return;
     
     ScaffoldMessenger.of(context).showSnackBar(
@@ -236,7 +235,7 @@ class ProfilViewModel extends BaseViewModel {
   }
 
   void _showErrorSnackBar(BuildContext context, String message) {
-    // ✅ Double vérification avant d'afficher
+    // Double vérification avant d'afficher
     if (!context.mounted) return;
     
     ScaffoldMessenger.of(context).showSnackBar(
@@ -249,7 +248,6 @@ class ProfilViewModel extends BaseViewModel {
     );
   }
 
-  // =============== EXISTING METHODS ===============
   void showLogoutConfirmationDialog(BuildContext context) {
     if (Platform.isIOS) {
       _showCupertinoLogoutDialog(context);

@@ -433,7 +433,7 @@ class DocumentsView extends StackedView<DocumentsViewModel> {
                 viewModel.viewDocument(doc);
                 break;
               case 'update':
-                viewModel.modifyDocument(doc);
+                viewModel.modifyDocument();
                 break;
             }
           },

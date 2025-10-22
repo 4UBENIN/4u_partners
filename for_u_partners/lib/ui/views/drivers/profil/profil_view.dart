@@ -205,7 +205,7 @@ class ProfilView extends StackedView<ProfilViewModel> {
                     ),
                   ),
                 ),
-                // 🔑 IMPORTANT: Force le rechargement de l'image
+                // Force le rechargement de l'image
                 cacheKey: '${viewModel.user!.photoUrl}_${DateTime.now().millisecondsSinceEpoch}',
               ),
             )
