@@ -5,7 +5,7 @@
 // **************************************************************************
 
 // ignore_for_file: no_leading_underscores_for_library_prefixes
-import 'package:flutter/material.dart' as _i27;
+import 'package:flutter/material.dart' as _i26;
 import 'package:flutter/material.dart';
 import 'package:for_u_partners/ui/views/auth/login/login_view.dart' as _i10;
 import 'package:for_u_partners/ui/views/auth/register/register_view.dart'
@@ -27,13 +27,13 @@ import 'package:for_u_partners/ui/views/delivery/notifications_delivery/notifica
 import 'package:for_u_partners/ui/views/drivers/activity/activity_view.dart'
     as _i4;
 import 'package:for_u_partners/ui/views/drivers/activity/models/activity_model.dart'
-    as _i28;
+    as _i27;
 import 'package:for_u_partners/ui/views/drivers/activitydetails/activitydetails_view.dart'
     as _i9;
 import 'package:for_u_partners/ui/views/drivers/courses/courses_view.dart'
     as _i5;
 import 'package:for_u_partners/ui/views/drivers/documents/documents_view.dart'
-    as _i26;
+    as _i25;
 import 'package:for_u_partners/ui/views/drivers/home/home_view.dart' as _i3;
 import 'package:for_u_partners/ui/views/drivers/homemain/homemain_view.dart'
     as _i8;
@@ -41,13 +41,11 @@ import 'package:for_u_partners/ui/views/drivers/notifications/notifications_view
     as _i6;
 import 'package:for_u_partners/ui/views/drivers/profil/profil_view.dart' as _i7;
 import 'package:for_u_partners/ui/views/drivers/vehicles/vehicles_view.dart'
-    as _i25;
+    as _i24;
 import 'package:for_u_partners/ui/views/pressing/activites_pressing/activites_pressing_view.dart'
     as _i15;
 import 'package:for_u_partners/ui/views/pressing/compte_pressing/compte_pressing_view.dart'
     as _i17;
-import 'package:for_u_partners/ui/views/pressing/compte_pressing/profil_pressing/profil_pressing_view.dart'
-    as _i24;
 import 'package:for_u_partners/ui/views/pressing/home_pressing/home_pressing_view.dart'
     as _i13;
 import 'package:for_u_partners/ui/views/pressing/nav_bar_pressing/nav_bar_pressing_view.dart'
@@ -56,7 +54,7 @@ import 'package:for_u_partners/ui/views/pressing/notifications_pressing/notifica
     as _i16;
 import 'package:for_u_partners/ui/views/startup/startup_view.dart' as _i2;
 import 'package:stacked/stacked.dart' as _i1;
-import 'package:stacked_services/stacked_services.dart' as _i29;
+import 'package:stacked_services/stacked_services.dart' as _i28;
 
 class Routes {
   static const startupView = '/startup-view';
@@ -103,9 +101,7 @@ class Routes {
 
   static const coursesDeliveryView = '/courses-delivery-view';
 
-  static const profilPressingView = '/profil-pressing-view';
-
-  static const vehiclesView = '/vehicles-view';
+  static const mesVehiculesView = '/mes-vehicules-view';
 
   static const documentsView = '/documents-view';
 
@@ -132,8 +128,7 @@ class Routes {
     compteDeliveryView,
     activitiesDeliveryView,
     coursesDeliveryView,
-    profilPressingView,
-    vehiclesView,
+    mesVehiculesView,
     documentsView,
   };
 }
@@ -229,58 +224,54 @@ class StackedRouter extends _i1.RouterBase {
       page: _i23.CoursesDeliveryView,
     ),
     _i1.RouteDef(
-      Routes.profilPressingView,
-      page: _i24.ProfilPressingView,
-    ),
-    _i1.RouteDef(
-      Routes.vehiclesView,
-      page: _i25.MesVehiculesView,
+      Routes.mesVehiculesView,
+      page: _i24.MesVehiculesView,
     ),
     _i1.RouteDef(
       Routes.documentsView,
-      page: _i26.DocumentsView,
+      page: _i25.DocumentsView,
     ),
   ];
 
   final _pagesMap = <Type, _i1.StackedRouteFactory>{
     _i2.StartupView: (data) {
-      return _i27.MaterialPageRoute<dynamic>(
+      return _i26.MaterialPageRoute<dynamic>(
         builder: (context) => const _i2.StartupView(),
         settings: data,
       );
     },
     _i3.HomeView: (data) {
-      return _i27.MaterialPageRoute<dynamic>(
+      return _i26.MaterialPageRoute<dynamic>(
         builder: (context) => const _i3.HomeView(),
         settings: data,
       );
     },
     _i4.ActivityView: (data) {
-      return _i27.MaterialPageRoute<dynamic>(
+      return _i26.MaterialPageRoute<dynamic>(
         builder: (context) => const _i4.ActivityView(),
         settings: data,
       );
     },
     _i5.CoursesView: (data) {
-      return _i27.MaterialPageRoute<dynamic>(
-        builder: (context) => _i5.CoursesView(),
+      return _i26.MaterialPageRoute<dynamic>(
+        builder: (context) => const _i5.CoursesView(),
         settings: data,
       );
     },
     _i6.NotificationsView: (data) {
-      return _i27.MaterialPageRoute<dynamic>(
+      return _i26.MaterialPageRoute<dynamic>(
         builder: (context) => const _i6.NotificationsView(),
         settings: data,
       );
     },
     _i7.ProfilView: (data) {
-      return _i27.MaterialPageRoute<dynamic>(
+      return _i26.MaterialPageRoute<dynamic>(
         builder: (context) => const _i7.ProfilView(),
         settings: data,
       );
     },
     _i8.HomemainView: (data) {
-      return _i27.MaterialPageRoute<dynamic>(
+      return _i26.MaterialPageRoute<dynamic>(
         builder: (context) => const _i8.HomemainView(),
         settings: data,
       );
@@ -289,27 +280,27 @@ class StackedRouter extends _i1.RouterBase {
       final args = data.getArgs<ActivitydetailsViewArguments>(
         orElse: () => const ActivitydetailsViewArguments(),
       );
-      return _i27.MaterialPageRoute<dynamic>(
+      return _i26.MaterialPageRoute<dynamic>(
         builder: (context) =>
             _i9.ActivitydetailsView(key: args.key, activity: args.activity),
         settings: data,
       );
     },
     _i10.LoginView: (data) {
-      return _i27.MaterialPageRoute<dynamic>(
+      return _i26.MaterialPageRoute<dynamic>(
         builder: (context) => const _i10.LoginView(),
         settings: data,
       );
     },
     _i11.RegisterView: (data) {
-      return _i27.MaterialPageRoute<dynamic>(
+      return _i26.MaterialPageRoute<dynamic>(
         builder: (context) => const _i11.RegisterView(),
         settings: data,
       );
     },
     _i12.RegisterProfileView: (data) {
       final args = data.getArgs<RegisterProfileViewArguments>(nullOk: false);
-      return _i27.MaterialPageRoute<dynamic>(
+      return _i26.MaterialPageRoute<dynamic>(
         builder: (context) => _i12.RegisterProfileView(
             args.selectedProfile, args.phoneNumber, args.mail, args.password,
             key: args.key),
@@ -317,86 +308,80 @@ class StackedRouter extends _i1.RouterBase {
       );
     },
     _i13.HomePressingView: (data) {
-      return _i27.MaterialPageRoute<dynamic>(
+      return _i26.MaterialPageRoute<dynamic>(
         builder: (context) => const _i13.HomePressingView(),
         settings: data,
       );
     },
     _i14.NavBarPressingView: (data) {
-      return _i27.MaterialPageRoute<dynamic>(
+      return _i26.MaterialPageRoute<dynamic>(
         builder: (context) => const _i14.NavBarPressingView(),
         settings: data,
       );
     },
     _i15.ActivitesPressingView: (data) {
-      return _i27.MaterialPageRoute<dynamic>(
+      return _i26.MaterialPageRoute<dynamic>(
         builder: (context) => const _i15.ActivitesPressingView(),
         settings: data,
       );
     },
     _i16.NotificationsPressingView: (data) {
-      return _i27.MaterialPageRoute<dynamic>(
+      return _i26.MaterialPageRoute<dynamic>(
         builder: (context) => const _i16.NotificationsPressingView(),
         settings: data,
       );
     },
     _i17.ComptePressingView: (data) {
-      return _i27.MaterialPageRoute<dynamic>(
+      return _i26.MaterialPageRoute<dynamic>(
         builder: (context) => const _i17.ComptePressingView(),
         settings: data,
       );
     },
     _i18.DeliveryNavBarView: (data) {
-      return _i27.MaterialPageRoute<dynamic>(
+      return _i26.MaterialPageRoute<dynamic>(
         builder: (context) => const _i18.DeliveryNavBarView(),
         settings: data,
       );
     },
     _i19.DeliveryHomeView: (data) {
-      return _i27.MaterialPageRoute<dynamic>(
+      return _i26.MaterialPageRoute<dynamic>(
         builder: (context) => const _i19.DeliveryHomeView(),
         settings: data,
       );
     },
     _i20.NotificationsDeliveryView: (data) {
-      return _i27.MaterialPageRoute<dynamic>(
+      return _i26.MaterialPageRoute<dynamic>(
         builder: (context) => const _i20.NotificationsDeliveryView(),
         settings: data,
       );
     },
     _i21.CompteDeliveryView: (data) {
-      return _i27.MaterialPageRoute<dynamic>(
+      return _i26.MaterialPageRoute<dynamic>(
         builder: (context) => const _i21.CompteDeliveryView(),
         settings: data,
       );
     },
     _i22.ActivitiesDeliveryView: (data) {
-      return _i27.MaterialPageRoute<dynamic>(
+      return _i26.MaterialPageRoute<dynamic>(
         builder: (context) => const _i22.ActivitiesDeliveryView(),
         settings: data,
       );
     },
     _i23.CoursesDeliveryView: (data) {
-      return _i27.MaterialPageRoute<dynamic>(
+      return _i26.MaterialPageRoute<dynamic>(
         builder: (context) => const _i23.CoursesDeliveryView(),
         settings: data,
       );
     },
-    _i24.ProfilPressingView: (data) {
-      return _i27.MaterialPageRoute<dynamic>(
-        builder: (context) => const _i24.ProfilPressingView(),
+    _i24.MesVehiculesView: (data) {
+      return _i26.MaterialPageRoute<dynamic>(
+        builder: (context) => const _i24.MesVehiculesView(),
         settings: data,
       );
     },
-    _i25.MesVehiculesView: (data) {
-      return _i27.MaterialPageRoute<dynamic>(
-        builder: (context) => const _i25.MesVehiculesView(),
-        settings: data,
-      );
-    },
-    _i26.DocumentsView: (data) {
-      return _i27.MaterialPageRoute<dynamic>(
-        builder: (context) => const _i26.DocumentsView(),
+    _i25.DocumentsView: (data) {
+      return _i26.MaterialPageRoute<dynamic>(
+        builder: (context) => const _i25.DocumentsView(),
         settings: data,
       );
     },
@@ -415,9 +400,9 @@ class ActivitydetailsViewArguments {
     this.activity,
   });
 
-  final _i27.Key? key;
+  final _i26.Key? key;
 
-  final _i28.ActivityModel? activity;
+  final _i27.ActivityModel? activity;
 
   @override
   String toString() {
@@ -453,7 +438,7 @@ class RegisterProfileViewArguments {
 
   final String password;
 
-  final _i27.Key? key;
+  final _i26.Key? key;
 
   @override
   String toString() {
@@ -480,7 +465,7 @@ class RegisterProfileViewArguments {
   }
 }
 
-extension NavigatorStateExtension on _i29.NavigationService {
+extension NavigatorStateExtension on _i28.NavigationService {
   Future<dynamic> navigateToStartupView([
     int? routerId,
     bool preventDuplicates = true,
@@ -580,8 +565,8 @@ extension NavigatorStateExtension on _i29.NavigationService {
   }
 
   Future<dynamic> navigateToActivitydetailsView({
-    _i27.Key? key,
-    _i28.ActivityModel? activity,
+    _i26.Key? key,
+    _i27.ActivityModel? activity,
     int? routerId,
     bool preventDuplicates = true,
     Map<String, String>? parameters,
@@ -629,7 +614,7 @@ extension NavigatorStateExtension on _i29.NavigationService {
     required String phoneNumber,
     required String mail,
     required String password,
-    _i27.Key? key,
+    _i26.Key? key,
     int? routerId,
     bool preventDuplicates = true,
     Map<String, String>? parameters,
@@ -803,28 +788,14 @@ extension NavigatorStateExtension on _i29.NavigationService {
         transition: transition);
   }
 
-  Future<dynamic> navigateToProfilPressingView([
+  Future<dynamic> navigateToMesVehiculesView([
     int? routerId,
     bool preventDuplicates = true,
     Map<String, String>? parameters,
     Widget Function(BuildContext, Animation<double>, Animation<double>, Widget)?
         transition,
   ]) async {
-    return navigateTo<dynamic>(Routes.profilPressingView,
-        id: routerId,
-        preventDuplicates: preventDuplicates,
-        parameters: parameters,
-        transition: transition);
-  }
-
-  Future<dynamic> navigateToVehiclesView([
-    int? routerId,
-    bool preventDuplicates = true,
-    Map<String, String>? parameters,
-    Widget Function(BuildContext, Animation<double>, Animation<double>, Widget)?
-        transition,
-  ]) async {
-    return navigateTo<dynamic>(Routes.vehiclesView,
+    return navigateTo<dynamic>(Routes.mesVehiculesView,
         id: routerId,
         preventDuplicates: preventDuplicates,
         parameters: parameters,
@@ -944,8 +915,8 @@ extension NavigatorStateExtension on _i29.NavigationService {
   }
 
   Future<dynamic> replaceWithActivitydetailsView({
-    _i27.Key? key,
-    _i28.ActivityModel? activity,
+    _i26.Key? key,
+    _i27.ActivityModel? activity,
     int? routerId,
     bool preventDuplicates = true,
     Map<String, String>? parameters,
@@ -993,7 +964,7 @@ extension NavigatorStateExtension on _i29.NavigationService {
     required String phoneNumber,
     required String mail,
     required String password,
-    _i27.Key? key,
+    _i26.Key? key,
     int? routerId,
     bool preventDuplicates = true,
     Map<String, String>? parameters,
@@ -1167,28 +1138,14 @@ extension NavigatorStateExtension on _i29.NavigationService {
         transition: transition);
   }
 
-  Future<dynamic> replaceWithProfilPressingView([
+  Future<dynamic> replaceWithMesVehiculesView([
     int? routerId,
     bool preventDuplicates = true,
     Map<String, String>? parameters,
     Widget Function(BuildContext, Animation<double>, Animation<double>, Widget)?
         transition,
   ]) async {
-    return replaceWith<dynamic>(Routes.profilPressingView,
-        id: routerId,
-        preventDuplicates: preventDuplicates,
-        parameters: parameters,
-        transition: transition);
-  }
-
-  Future<dynamic> replaceWithVehiclesView([
-    int? routerId,
-    bool preventDuplicates = true,
-    Map<String, String>? parameters,
-    Widget Function(BuildContext, Animation<double>, Animation<double>, Widget)?
-        transition,
-  ]) async {
-    return replaceWith<dynamic>(Routes.vehiclesView,
+    return replaceWith<dynamic>(Routes.mesVehiculesView,
         id: routerId,
         preventDuplicates: preventDuplicates,
         parameters: parameters,

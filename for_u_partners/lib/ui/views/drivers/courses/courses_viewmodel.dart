@@ -17,9 +17,12 @@ import 'package:flutter_polyline_points/flutter_polyline_points.dart';
 import 'package:for_u_partners/services/local_notif_service.dart';
 import 'package:for_u_partners/services/ride/ride_persistence_service.dart';
 import 'package:for_u_partners/ui/views/drivers/homemain/homemain_viewmodel.dart';
+import 'package:for_u_partners/services/course_restoration_service.dart';
+import 'package:for_u_partners/services/arrival_state_service.dart';
 
 class CoursesViewModel extends BaseViewModel {
   final _driverService = locator<DriverService>();
+  final _arrivalStateService = locator<ArrivalStateService>();
 
   GoogleMapController? _mapController;
   GoogleMapController? get mapController => _mapController;
@@ -114,6 +117,11 @@ class CoursesViewModel extends BaseViewModel {
   final navigationService = locator<NavigationService>();
 
   static const String _googleApiKey = 'AIzaSyAVtrvygnbsdnL6VMEJS_DB0JfEa0piHqM';
+  static const Set<String> _allowedCourseStatuses = {
+    'en_attente_chauffeur',
+    'attente',
+    'en_attente',
+  };
 
   String? _error;
 
@@ -134,6 +142,9 @@ class CoursesViewModel extends BaseViewModel {
     // Démarrer le rafraîchissement des conducteurs en ligne
     startDriversRefresh();
 
+    // Check for pending course restoration
+    await _checkPendingRestoration();
+
     // Afficher le bottom sheet s'il y a des courses
     print(
         '🔍 État après _loadStoredNotifications - availableCourses: ${_availableCourses.length}');
@@ -144,6 +155,21 @@ class CoursesViewModel extends BaseViewModel {
       setBottomSheetType(BottomSheetAppType.clients);
     }
     print("currentBottomSheetType: $_currentBottomSheetType");
+  }
+
+  /// Check for pending course restoration from app resume
+  Future<void> _checkPendingRestoration() async {
+    try {
+      final restorationService = locator<CourseRestorationService>();
+      final pendingCourse = restorationService.consumePendingRestoration();
+
+      if (pendingCourse != null) {
+        debugPrint('📦 Found pending course restoration, restoring...');
+        await restoreActiveCourse(pendingCourse);
+      }
+    } catch (e) {
+      debugPrint('❌ Error checking pending restoration: $e');
+    }
   }
 
   // ✨ Charger les notifications stockées au démarrage
@@ -528,7 +554,6 @@ class CoursesViewModel extends BaseViewModel {
     notifyListeners();
   }
 
-  // ✨ Accepter une course (et la supprimer du storage)
   void acceptCourse(String courseId, BuildContext context) async {
     final courseIndex = _availableCourses.indexWhere(
       (course) => course.courseId == courseId,
@@ -536,6 +561,16 @@ class CoursesViewModel extends BaseViewModel {
 
     if (courseIndex != -1) {
       final course = _availableCourses[courseIndex];
+      final courseNumericId = int.tryParse(courseId);
+      if (courseNumericId == null) {
+        print('❌ Identifiant de course invalide: $courseId');
+        return;
+      }
+      final canProceed =
+          await _ensureCourseIsAcceptable(courseNumericId, context);
+      if (!canProceed) {
+        return;
+      }
       _currentCourse = course;
       _isGoingToPickup = true;
       _isOnTrip = false;
@@ -559,7 +594,7 @@ class CoursesViewModel extends BaseViewModel {
       await CourseNotificationStorage.removeNotification(courseId);
 
       // Appeler le service
-      await acceptCourseService(int.parse(courseId), context);
+      await acceptCourseService(courseNumericId, context);
 
       // Sauvegarder l'état de la course
       await _saveRideState('accepted');
@@ -670,6 +705,56 @@ class CoursesViewModel extends BaseViewModel {
 
   // Courses services functions
 
+  Future<bool> _ensureCourseIsAcceptable(
+      int courseId, BuildContext context) async {
+    try {
+      final details = await driverservice.getRideDetails(courseId);
+      final status = _extractCourseStatus(details).toLowerCase();
+      print('ℹ️ Statut actuel de la course $courseId: $status');
+      if (status.isEmpty) {
+        return true;
+      }
+      if (_allowedCourseStatuses.contains(status)) {
+        return true;
+      }
+      print('⚠️ Course $courseId indisponible avec le statut $status');
+      removeCourse(courseId.toString());
+      if (context.mounted) {
+        CustomToast.showWarning(context,
+            message: "Cette course n'est plus disponible");
+      }
+      return false;
+    } catch (e) {
+      print('⚠️ Impossible de vérifier le statut de la course $courseId: $e');
+      return true;
+    }
+  }
+
+  String _extractCourseStatus(dynamic payload) {
+    if (payload is Map) {
+      for (final key in ['statut', 'status']) {
+        final value = payload[key];
+        if (value is String && value.trim().isNotEmpty) {
+          return value;
+        }
+      }
+      for (final value in payload.values) {
+        final nestedStatus = _extractCourseStatus(value);
+        if (nestedStatus.isNotEmpty) {
+          return nestedStatus;
+        }
+      }
+    } else if (payload is Iterable) {
+      for (final item in payload) {
+        final nestedStatus = _extractCourseStatus(item);
+        if (nestedStatus.isNotEmpty) {
+          return nestedStatus;
+        }
+      }
+    }
+    return '';
+  }
+
   Future<void> acceptCourseService(int courseId, BuildContext context) async {
     bool canAccept = false;
     try {
@@ -749,6 +834,7 @@ class CoursesViewModel extends BaseViewModel {
     try {
       setBusy(true);
       print("🔄 Début refus course...");
+      await _arrivalStateService.clearCourseState(courseId);
       await driverservice.rejectCourse(courseId);
       canReject = true;
       print("✅ Course refusée avec succès");
@@ -778,6 +864,7 @@ class CoursesViewModel extends BaseViewModel {
     try {
       setBusy(true);
       print("🔄 Début démarrage course...");
+      await _arrivalStateService.clearCourseState(courseId);
       await driverservice.startCourse(courseId);
       canStart = true;
       print("✅ Course démarrée avec succès");
@@ -1511,22 +1598,41 @@ class CoursesViewModel extends BaseViewModel {
   // Récupérer les conducteurs en ligne
   Future<void> fetchOnlineDrivers() async {
     try {
-      _onlineDrivers = await _driverService.getOnlineDrivers();
-      print("onlineDrivers: $_onlineDrivers");
-      _updateDriverMarkers();
-      notifyListeners();
+      final newDrivers = await _driverService.getOnlineDrivers();
+
+      if (_onlineDrivers.length != newDrivers.length) {
+        _onlineDrivers = newDrivers;
+        _updateDriverMarkers();
+        notifyListeners();
+        return;
+      }
+
+      bool hasChanges = false;
+      for (int i = 0; i < _onlineDrivers.length; i++) {
+        if (i >= newDrivers.length ||
+            _onlineDrivers[i].id != newDrivers[i].id ||
+            _onlineDrivers[i].latitude != newDrivers[i].latitude ||
+            _onlineDrivers[i].longitude != newDrivers[i].longitude) {
+          hasChanges = true;
+          break;
+        }
+      }
+
+      if (hasChanges) {
+        _onlineDrivers = newDrivers;
+        _updateDriverMarkers();
+        notifyListeners();
+      }
     } catch (e) {
       debugPrint('Erreur lors de la récupération des conducteurs en ligne: $e');
     }
   }
 
   // Mettre à jour les marqueurs des conducteurs
-  void _updateDriverMarkers() {
-    // Supprimer les anciens marqueurs de conducteurs
+  void _updateDriverMarkers() async {
     _markers
         .removeWhere((marker) => marker.markerId.value.startsWith('driver_'));
 
-    // Ajouter les nouveaux marqueurs
     for (var driver in _onlineDrivers) {
       final markerId = 'driver_${driver.id}';
       final marker = Marker(
@@ -1562,5 +1668,132 @@ class CoursesViewModel extends BaseViewModel {
   // Méthode pour initialiser la position actuelle
   Future<void> initializeLocation() async {
     await RidePersistenceService.clearRideState();
+  }
+
+  /// Restore active course state when app resumes
+  /// Called from main app lifecycle manager
+  Future<void> restoreActiveCourse(Map<String, dynamic> courseDetails) async {
+    try {
+      debugPrint('🔄 Restoring active course...');
+      _isRestoringState = true;
+      notifyListeners();
+
+      // Parse course details from API response
+      final courseId = courseDetails['course_id']?.toString();
+      final status = courseDetails['statut'] as String?;
+
+      if (courseId == null || status == null) {
+        debugPrint('❌ Invalid course data for restoration');
+        _isRestoringState = false;
+        notifyListeners();
+        return;
+      }
+
+      // Parse client data
+      final clientData = courseDetails['client'] as Map<String, dynamic>?;
+      final clientName = clientData != null
+          ? '${clientData['prenom'] ?? ''} ${clientData['nom'] ?? ''}'.trim()
+          : 'Client';
+
+      // Parse coordinates (handle both String and double types)
+      final pointDepart = courseDetails['point_depart'] as Map<String, dynamic>?;
+      final pointArrivee = courseDetails['point_arrivee'] as Map<String, dynamic>?;
+
+      double? depLat;
+      double? depLong;
+      double? arrLat;
+      double? arrLong;
+
+      if (pointDepart != null) {
+        depLat = pointDepart['lat'] is String
+            ? double.tryParse(pointDepart['lat'])
+            : (pointDepart['lat'] as num?)?.toDouble();
+        depLong = pointDepart['lng'] is String
+            ? double.tryParse(pointDepart['lng'])
+            : (pointDepart['lng'] as num?)?.toDouble();
+      }
+
+      if (pointArrivee != null) {
+        arrLat = pointArrivee['lat'] is String
+            ? double.tryParse(pointArrivee['lat'])
+            : (pointArrivee['lat'] as num?)?.toDouble();
+        arrLong = pointArrivee['lng'] is String
+            ? double.tryParse(pointArrivee['lng'])
+            : (pointArrivee['lng'] as num?)?.toDouble();
+      }
+
+      // Create ClientData object
+      final restoredCourse = ClientData(
+        courseId: courseId,
+        name: clientName,
+        timeInfo: 'En cours',
+        destination: pointArrivee?['adresse'] ?? 'Arrivée',
+        initials: clientName.isNotEmpty ? clientName[0].toUpperCase() : 'C',
+        adresseDepart: pointDepart?['adresse'] ?? 'Départ',
+        depLat: depLat,
+        depLong: depLong,
+        destLat: arrLat,
+        destLong: arrLong,
+        distance: (courseDetails['distance_km'] as num?)?.toDouble(),
+        prix: (courseDetails['montant'] as num?)?.toDouble(),
+      );
+
+      _currentCourse = restoredCourse;
+
+      // Set state based on course status
+      switch (status) {
+        case 'chauffeur_en_route':
+        case 'en_route_vers_client':
+          _isGoingToPickup = true;
+          _isOnTrip = false;
+          setBottomSheetType(BottomSheetAppType.pickup);
+
+          // Draw route to pickup
+          if (_currentPosition != null && depLat != null && depLong != null) {
+            await _drawRouteToPickup();
+          }
+          break;
+
+        case 'arrive_au_point_depart':
+          _isGoingToPickup = true;
+          _isOnTrip = false;
+          setBottomSheetType(BottomSheetAppType.pickup);
+          break;
+
+        case 'en_cours':
+          _isGoingToPickup = false;
+          _isOnTrip = true;
+          setBottomSheetType(BottomSheetAppType.inprogress);
+
+          // Draw route to destination
+          if (_currentPosition != null && arrLat != null && arrLong != null) {
+            await _drawRouteToDestination();
+          }
+          break;
+
+        case 'en_pause':
+          _isGoingToPickup = false;
+          _isOnTrip = true;
+          setBottomSheetType(BottomSheetAppType.inprogress);
+          break;
+
+        case 'en_attente_paiement':
+          _isGoingToPickup = false;
+          _isOnTrip = false;
+          setBottomSheetType(BottomSheetAppType.inprogress);
+          break;
+
+        default:
+          debugPrint('⚠️ Unknown status: $status');
+      }
+
+      debugPrint('✅ Active course restored: $courseId ($status)');
+      _isRestoringState = false;
+      notifyListeners();
+    } catch (e) {
+      debugPrint('❌ Error restoring active course: $e');
+      _isRestoringState = false;
+      notifyListeners();
+    }
   }
 }

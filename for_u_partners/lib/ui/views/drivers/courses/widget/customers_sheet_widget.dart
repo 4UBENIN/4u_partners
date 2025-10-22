@@ -2,6 +2,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:for_u_partners/app/app.locator.dart';
 import 'package:for_u_partners/services/driver_service.dart';
+import 'package:for_u_partners/services/arrival_state_service.dart';
 import 'package:for_u_partners/ui/common/app_colors.dart';
 import 'package:for_u_partners/ui/views/drivers/courses/model/client_model.dart';
 import 'package:for_u_partners/ui/views/drivers/courses/widget/dialog_widget.dart';
@@ -13,9 +14,9 @@ class ClientsBottomSheet extends StatelessWidget {
   final Function() onDecline;
   const ClientsBottomSheet(
       {Key? key,
-      required this.getClientsList,
-      required this.onAccept,
-      required this.onDecline})
+        required this.getClientsList,
+        required this.onAccept,
+        required this.onDecline})
       : super(key: key);
 
   @override
@@ -104,9 +105,9 @@ class ClientCard extends StatelessWidget {
 
   const ClientCard(
       {Key? key,
-      required this.client,
-      required this.onAccept,
-      required this.onDecline})
+        required this.client,
+        required this.onAccept,
+        required this.onDecline})
       : super(key: key);
 
   @override
@@ -247,399 +248,83 @@ class AcceptedClientBottomSheet extends StatefulWidget {
       _AcceptedClientBottomSheetState();
 }
 
-class _AcceptedClientBottomSheetState extends State<AcceptedClientBottomSheet>
-    with SingleTickerProviderStateMixin {
-  bool _clientPickedUp = false;
-  final bool _isLoading = false; // État du toggle switch
-  bool _showTimer = false;
-  bool _arrivalConfirmed =
-      false; // Pour suivre si la confirmation d'arrivée a été faite
-  late AnimationController _controller;
-  int _countdown = 300; // 5 minutes en secondes
-  Timer? _countdownTimer;
+class _AcceptedClientBottomSheetState extends State<AcceptedClientBottomSheet> {
+  final _arrivalStateService = locator<ArrivalStateService>();
   Timer? _waitingTimer;
-  int _waitingTime = 0; // Track waiting time in seconds
+  bool _arrivalConfirmed = false;
+  int _waitingTime = 0;
 
   @override
   void initState() {
     super.initState();
-    _controller = AnimationController(
-      vsync: this,
-      duration: const Duration(milliseconds: 500),
-    );
+    _loadState();
+  }
+
+  Future<void> _loadState() async {
+    _arrivalConfirmed = await _arrivalStateService.isArrivalConfirmed(widget.courseId);
+    _waitingTime = await _arrivalStateService.getWaitingTime(widget.courseId);
+
+    if (mounted) {
+      setState(() {});
+      if (_arrivalConfirmed) {
+        _startWaitingTimer();
+      }
+    }
   }
 
   @override
   void dispose() {
-    _controller.dispose();
-    _countdownTimer?.cancel();
     _waitingTimer?.cancel();
     super.dispose();
   }
 
   void _startWaitingTimer() {
-    // Annuler le timer existant s'il y en a un
     _waitingTimer?.cancel();
 
-    // Réinitialiser le temps d'attente
-    setState(() {
-      _waitingTime = 0;
-    });
-
-    // Démarrer un nouveau timer qui s'incrémente chaque seconde
     _waitingTimer = Timer.periodic(const Duration(seconds: 1), (timer) {
       if (mounted) {
-        setState(() {
-          _waitingTime++;
-        });
+        _waitingTime++;
+        _arrivalStateService.setWaitingTime(widget.courseId, _waitingTime);
+        setState(() {});
       } else {
         timer.cancel();
       }
     });
   }
 
-  void _startCountdown() {
-    setState(() {
-      _showTimer = true;
-      _controller.forward();
-    });
-
-    _countdownTimer = Timer.periodic(const Duration(seconds: 1), (timer) {
-      if (mounted) {
-        setState(() {
-          if (_countdown > 0) {
-            _countdown--;
-          } else {
-            timer.cancel();
-          }
-        });
-      }
-    });
-  }
-
-  Widget _buildTimerWidget() {
-    // SUPPRIMER CES LIGNES - elles écrasent les variables de classe !
-    // int _waitingTime = 0;
-    // Timer? _waitingTimer;
-
-    // Use 0 as default if _waitingTime is null
-    final waitingTime = _waitingTime ?? 0;
-    final hours = (waitingTime ~/ 3600).toString().padLeft(2, '0');
-    final minutes = ((waitingTime % 3600) ~/ 60).toString().padLeft(2, '0');
-    final seconds = (waitingTime % 60).toString().padLeft(2, '0');
-
-    // Calcul du prix d'attente
-    final double waitingPrice = _calculateWaitingPrice();
-
-    return Container(
-      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-      padding:
-          const EdgeInsets.all(20), // Réduire le padding pour éviter l'overflow
-      decoration: BoxDecoration(
-        gradient: LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-          colors: [
-            Colors.white,
-            Colors.grey[50]!,
-          ],
-        ),
-        borderRadius: BorderRadius.circular(20),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.08),
-            blurRadius: 20,
-            offset: const Offset(0, 4),
-            spreadRadius: 0,
-          ),
-          BoxShadow(
-            color: Colors.black.withOpacity(0.04),
-            blurRadius: 4,
-            offset: const Offset(0, 1),
-            spreadRadius: 0,
-          ),
-        ],
-      ),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          // Header avec icône et titre
-          Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Container(
-                padding: const EdgeInsets.all(8),
-                decoration: BoxDecoration(
-                  color: kcPrimaryColor.withOpacity(0.1),
-                  borderRadius: BorderRadius.circular(10),
-                ),
-                child: const Icon(
-                  Icons.schedule_rounded,
-                  color: kcPrimaryColor,
-                  size: 20,
-                ),
-              ),
-              const SizedBox(width: 12),
-              Flexible(
-                // Utiliser Flexible pour éviter l'overflow
-                child: Text(
-                  'Temps d\'attente',
-                  style: TextStyle(
-                    fontSize: 18,
-                    color: Colors.grey[700],
-                    fontWeight: FontWeight.w600,
-                    letterSpacing: 0.5,
-                  ),
-                ),
-              ),
-            ],
-          ),
-
-          const SizedBox(height: 16), // Réduire l'espace
-
-          // Timer principal
-          Container(
-            padding: const EdgeInsets.symmetric(
-                horizontal: 16, vertical: 12), // Réduire le padding
-            decoration: BoxDecoration(
-              color: kcPrimaryColor.withOpacity(0.05),
-              borderRadius: BorderRadius.circular(16),
-              border: Border.all(
-                color: kcPrimaryColor.withOpacity(0.1),
-                width: 1,
-              ),
-            ),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              mainAxisSize: MainAxisSize.min, // Ajouter pour éviter l'overflow
-              children: [
-                _buildTimeSegment(hours, 'H'),
-                _buildTimeSeparator(),
-                _buildTimeSegment(minutes, 'MIN'),
-                _buildTimeSeparator(),
-                _buildTimeSegment(seconds, 'SEC'),
-              ],
-            ),
-          ),
-
-          const SizedBox(height: 16), // Réduire l'espace
-
-          // Section prix d'attente
-          Container(
-            width: double.infinity,
-            padding: const EdgeInsets.all(14), // Réduire le padding
-            decoration: BoxDecoration(
-              gradient: LinearGradient(
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-                colors: [Colors.orange[100]!, Colors.orange[50]!],
-              ),
-              borderRadius: BorderRadius.circular(14),
-              border: Border.all(
-                color: Colors.orange[200]!,
-                width: 1,
-              ),
-            ),
-            child: Row(
-              children: [
-                Container(
-                  padding:
-                      const EdgeInsets.all(8), // Réduire le padding de l'icône
-                  decoration: BoxDecoration(
-                    color: Colors.orange,
-                    borderRadius: BorderRadius.circular(10),
-                  ),
-                  child: const Icon(
-                    Icons.payments_rounded,
-                    color: Colors.white,
-                    size: 18, // Réduire la taille de l'icône
-                  ),
-                ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        'Frais d\'attente',
-                        style: TextStyle(
-                          fontSize: 14,
-                          color: Colors.orange[700],
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
-                      const SizedBox(height: 2),
-                      Text(
-                        'Facturation dès la première minute',
-                        style: TextStyle(
-                          fontSize:
-                              11, // Réduire la taille pour éviter l'overflow
-                          color: Colors.grey[600],
-                          fontWeight: FontWeight.w400,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-                Container(
-                  padding: const EdgeInsets.symmetric(
-                      horizontal: 14, vertical: 6), // Réduire le padding
-                  decoration: BoxDecoration(
-                    color: Colors.orange,
-                    borderRadius: BorderRadius.circular(20),
-                  ),
-                  child: Text(
-                    '+${waitingPrice.toStringAsFixed(0)} FCFA',
-                    style: const TextStyle(
-                      fontSize: 14, // Réduire la taille de police
-                      fontWeight: FontWeight.bold,
-                      color: Colors.white,
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          ),
-
-          const SizedBox(height: 12), // Réduire l'espace
-
-          // Status indicator
-          Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Container(
-                width: 6, // Réduire la taille
-                height: 6,
-                decoration: BoxDecoration(
-                  color: Colors.orange,
-                  shape: BoxShape.circle,
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.orange.withOpacity(0.4),
-                      blurRadius: 6,
-                      spreadRadius: 1,
-                    ),
-                  ],
-                ),
-              ),
-              const SizedBox(width: 8),
-              Flexible(
-                // Utiliser Flexible pour éviter l'overflow
-                child: Text(
-                  'Facturation en cours',
-                  style: TextStyle(
-                    color: Colors.orange[700],
-                    fontWeight: FontWeight.w500,
-                    fontSize: 13, // Réduire la taille de police
-                  ),
-                ),
-              ),
-            ],
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildTimeSegment(String value, String label) {
-    return Column(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        Container(
-          padding: const EdgeInsets.symmetric(
-              horizontal: 8, vertical: 6), // Réduire le padding
-          decoration: BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.circular(10),
-            border: Border.all(
-              color: kcPrimaryColor.withOpacity(0.1),
-              width: 1,
-            ),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withOpacity(0.04),
-                blurRadius: 4,
-                offset: const Offset(0, 2),
-              ),
-            ],
-          ),
-          child: Text(
-            value,
-            style: const TextStyle(
-              fontSize: 24, // Réduire la taille de police
-              fontWeight: FontWeight.bold,
-              color: kcPrimaryColor,
-              fontFeatures: [FontFeature.tabularFigures()],
-              height: 1.0,
-            ),
-          ),
-        ),
-        const SizedBox(height: 4),
-        Text(
-          label,
-          style: TextStyle(
-            fontSize: 10, // Réduire la taille
-            color: Colors.grey[600],
-            fontWeight: FontWeight.w500,
-            letterSpacing: 0.5,
-          ),
-        ),
-      ],
-    );
-  }
-
-  Widget _buildTimeSeparator() {
-    return Padding(
-      padding:
-          const EdgeInsets.symmetric(horizontal: 6), // Réduire l'espacement
-      child: Text(
-        ':',
-        style: TextStyle(
-          fontSize: 24, // Réduire la taille
-          fontWeight: FontWeight.bold,
-          color: kcPrimaryColor.withOpacity(0.6),
-          height: 1.0,
-        ),
-      ),
-    );
-  }
-
-// Méthode pour calculer le prix d'attente
   double _calculateWaitingPrice() {
-    // Utiliser directement _waitingTime qui est déjà en secondes
-    // Convertir en minutes (arrondi au supérieur)
     final int minutes = (_waitingTime / 60).ceil();
-
-    // Calculer le prix (50 FCFA par minute)
     return minutes * 50.0;
   }
 
-  // Widget _buildCancelButton() {
-  //   return ElevatedButton(
-  //     onPressed: () => _showCancelDialog(context),
-  //     style: ElevatedButton.styleFrom(
-  //       backgroundColor: Colors.red[50],
-  //       foregroundColor: Colors.red,
-  //       shape: RoundedRectangleBorder(
-  //         borderRadius: BorderRadius.circular(12),
-  //       ),
-  //       padding: const EdgeInsets.symmetric(vertical: 16),
-  //       elevation: 0,
-  //     ),
-  //     child: const Text(
-  //       'Annuler la course',
-  //       style: TextStyle(
-  //         fontSize: 16,
-  //         fontWeight: FontWeight.w600,
-  //       ),
-  //     ),
-  //   );
-  // }
+  Future<void> _confirmArrival() async {
+    if (_arrivalConfirmed) return;
+
+    final driverservice = locator<DriverService>();
+    try {
+      await driverservice.notifyClient(widget.courseId);
+
+      await Future.delayed(const Duration(milliseconds: 500));
+
+      if (mounted) {
+        _arrivalConfirmed = true;
+        _waitingTime = 0;
+        await _arrivalStateService.setArrivalConfirmed(widget.courseId, true);
+        await _arrivalStateService.setWaitingTime(widget.courseId, 0);
+        setState(() {});
+        _startWaitingTimer();
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Erreur: ${e.toString()}')),
+        );
+      }
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
-    final driverservice = locator<DriverService>();
-
     return DraggableScrollableSheet(
       initialChildSize: 0.45,
       minChildSize: 0.25,
@@ -828,85 +513,30 @@ class _AcceptedClientBottomSheetState extends State<AcceptedClientBottomSheet>
 
                   const SizedBox(height: 30),
 
-                  // Question avec Slider Button
-                  Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Container(
-                        decoration: BoxDecoration(
-                          color: Colors.grey[200],
-                          borderRadius: BorderRadius.circular(30),
-                          boxShadow: [
-                            BoxShadow(
-                              color: Colors.black.withOpacity(0.1),
-                              blurRadius: 4,
-                              offset: const Offset(0, 2),
-                            ),
-                          ],
-                        ),
-                        child: _showTimer
-                            ? _buildTimerWidget()
-                            : SlideAction(
-                                height: 60,
-                                sliderButtonIcon: const Icon(
-                                  Icons.double_arrow_rounded,
-                                  color: Colors.white,
-                                  size: 24,
-                                ),
-                                sliderButtonYOffset: -1,
-                                borderRadius: 30,
-                                elevation: 0,
-                                outerColor: Colors.grey[200]!,
-                                innerColor: kcPrimaryColor,
-                                text: 'Glissez pour confirmer votre arrivée',
-                                textStyle: TextStyle(
-                                  color: Colors.grey[700],
-                                  fontWeight: FontWeight.w500,
-                                  fontSize: 16,
-                                ),
-                                onSubmit: () async {
-                                  // Éviter les déclenchements multiples
-                                  if (_arrivalConfirmed) return;
-
-                                  // Démarrer le minuteur d'attente
-                                  _startWaitingTimer();
-
-                                  // Démarrer le compte à rebours
-                                  _startCountdown();
-
-                                  // Ensuite gérer la notification
-                                  try {
-                                    await driverservice
-                                        .notifyClient(widget.courseId);
-
-                                    if (mounted) {
-                                      setState(() {
-                                        _clientPickedUp = true;
-                                        _arrivalConfirmed = true; // Marquer comme confirmé
-                                      });
-                                    }
-                                  } catch (e) {
-                                    // En cas d'erreur, annuler les timers
-                                    if (mounted) {
-                                      setState(() {
-                                        _showTimer = false;
-                                      });
-                                      _countdownTimer?.cancel();
-                                      _waitingTimer?.cancel();
-                                    }
-                                    // Relancer le slider en cas d'erreur
-                                    if (mounted) {
-                                      setState(() {
-                                        _arrivalConfirmed = false;
-                                      });
-                                    }
-                                    rethrow;
-                                  }
-                                },
-                              ),
+                  // Arrival Confirmation Slider
+                  if (!_arrivalConfirmed)
+                    SlideAction(
+                      onSubmit: _confirmArrival,
+                      height: 60,
+                      borderRadius: 30,
+                      elevation: 0,
+                      innerColor: kcPrimaryColor,
+                      outerColor: Colors.grey[200]!,
+                      sliderButtonIcon: const Icon(
+                        Icons.location_on,
+                        color: Colors.white,
                       ),
-                    ],
-                  ),
+                      text: 'Glisser pour confirmer mon arrivée',
+                      textStyle: TextStyle(
+                        color: Colors.grey[700],
+                        fontWeight: FontWeight.w600,
+                        fontSize: 16,
+                      ),
+                    ),
+
+                  // Waiting Timer Widget
+                  if (_arrivalConfirmed)
+                    _buildWaitingTimer(),
 
                   const SizedBox(height: 20),
 
@@ -915,22 +545,22 @@ class _AcceptedClientBottomSheetState extends State<AcceptedClientBottomSheet>
                     width: double.infinity,
                     height: 50,
                     child: ElevatedButton(
-                      onPressed: _clientPickedUp ? widget.onStartRide : null,
+                      onPressed: _arrivalConfirmed ? widget.onStartRide : null,
                       style: ElevatedButton.styleFrom(
                         backgroundColor:
-                            _clientPickedUp ? kcPrimaryColor : Colors.grey[400],
+                        _arrivalConfirmed ? kcPrimaryColor : Colors.grey[400],
                         foregroundColor: Colors.white,
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(25),
                         ),
-                        elevation: _clientPickedUp ? 2 : 0,
+                        elevation: _arrivalConfirmed ? 2 : 0,
                         disabledBackgroundColor: Colors.grey[400],
                         disabledForegroundColor: Colors.grey[600],
                       ),
                       child: Row(
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
-                          if (!_clientPickedUp) ...[
+                          if (!_arrivalConfirmed) ...[
                             Icon(
                               Icons.lock_outline,
                               size: 20,
@@ -939,13 +569,13 @@ class _AcceptedClientBottomSheetState extends State<AcceptedClientBottomSheet>
                             const SizedBox(width: 8),
                           ],
                           Text(
-                            _clientPickedUp
+                            _arrivalConfirmed
                                 ? 'Démarrer la course'
                                 : 'Récupérez d\'abord le client',
                             style: TextStyle(
                               fontSize: 16,
                               fontWeight: FontWeight.w600,
-                              color: _clientPickedUp
+                              color: _arrivalConfirmed
                                   ? Colors.white
                                   : Colors.grey[600],
                             ),
@@ -996,6 +626,185 @@ class _AcceptedClientBottomSheetState extends State<AcceptedClientBottomSheet>
           ],
         );
       },
+    );
+  }
+
+  Widget _buildWaitingTimer() {
+    final waitingTime = _waitingTime;
+    final hours = (waitingTime ~/ 3600).toString().padLeft(2, '0');
+    final minutes = ((waitingTime % 3600) ~/ 60).toString().padLeft(2, '0');
+    final seconds = (waitingTime % 60).toString().padLeft(2, '0');
+    final waitingPrice = _calculateWaitingPrice();
+
+    return Container(
+      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [Colors.white, Colors.grey[50]!],
+        ),
+        borderRadius: BorderRadius.circular(20),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.08),
+            blurRadius: 20,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Container(
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  color: kcPrimaryColor.withOpacity(0.1),
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                child: const Icon(
+                  Icons.schedule_rounded,
+                  color: kcPrimaryColor,
+                  size: 20,
+                ),
+              ),
+              const SizedBox(width: 12),
+              Text(
+                'Temps d\'attente',
+                style: TextStyle(
+                  fontSize: 18,
+                  color: Colors.grey[700],
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 16),
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+            decoration: BoxDecoration(
+              color: kcPrimaryColor.withOpacity(0.05),
+              borderRadius: BorderRadius.circular(16),
+            ),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                _buildTimeSegment(hours, 'H'),
+                _buildTimeSeparator(),
+                _buildTimeSegment(minutes, 'MIN'),
+                _buildTimeSeparator(),
+                _buildTimeSegment(seconds, 'SEC'),
+              ],
+            ),
+          ),
+          const SizedBox(height: 16),
+          Container(
+            width: double.infinity,
+            padding: const EdgeInsets.all(14),
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                colors: [Colors.orange[100]!, Colors.orange[50]!],
+              ),
+              borderRadius: BorderRadius.circular(14),
+            ),
+            child: Row(
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(8),
+                  decoration: BoxDecoration(
+                    color: Colors.orange,
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                  child: const Icon(
+                    Icons.payments_rounded,
+                    color: Colors.white,
+                    size: 18,
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Text(
+                    'Frais d\'attente',
+                    style: TextStyle(
+                      fontSize: 14,
+                      color: Colors.orange[700],
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ),
+                Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 14,
+                    vertical: 6,
+                  ),
+                  decoration: BoxDecoration(
+                    color: Colors.orange,
+                    borderRadius: BorderRadius.circular(20),
+                  ),
+                  child: Text(
+                    '+${waitingPrice.toStringAsFixed(0)} FCFA',
+                    style: const TextStyle(
+                      fontSize: 14,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.white,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildTimeSegment(String value, String label) {
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Container(
+          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(10),
+          ),
+          child: Text(
+            value,
+            style: const TextStyle(
+              fontSize: 24,
+              fontWeight: FontWeight.bold,
+              color: kcPrimaryColor,
+            ),
+          ),
+        ),
+        const SizedBox(height: 4),
+        Text(
+          label,
+          style: TextStyle(
+            fontSize: 10,
+            color: Colors.grey[600],
+            fontWeight: FontWeight.w500,
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildTimeSeparator() {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 6),
+      child: Text(
+        ':',
+        style: TextStyle(
+          fontSize: 24,
+          fontWeight: FontWeight.bold,
+          color: kcPrimaryColor.withOpacity(0.6),
+        ),
+      ),
     );
   }
 }
@@ -1545,7 +1354,7 @@ class _InProgressRideBottomSheetState extends State<InProgressRideBottomSheet>
               borderRadius: BorderRadius.circular(14),
               border: Border.all(
                 color:
-                    waitingPrice > 0 ? Colors.orange[200]! : Colors.green[200]!,
+                waitingPrice > 0 ? Colors.orange[200]! : Colors.green[200]!,
                 width: 1,
               ),
             ),
@@ -1598,7 +1407,7 @@ class _InProgressRideBottomSheetState extends State<InProgressRideBottomSheet>
                 ),
                 Container(
                   padding:
-                      const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                  const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                   decoration: BoxDecoration(
                     color: waitingPrice > 0 ? Colors.orange : Colors.green,
                     borderRadius: BorderRadius.circular(20),
@@ -1635,8 +1444,8 @@ class _InProgressRideBottomSheetState extends State<InProgressRideBottomSheet>
                   boxShadow: [
                     BoxShadow(
                       color: ((_waitingTime ?? 0) > 120
-                              ? Colors.orange
-                              : kcPrimaryColor)
+                          ? Colors.orange
+                          : kcPrimaryColor)
                           .withOpacity(0.4),
                       blurRadius: 8,
                       spreadRadius: 2,
@@ -1764,7 +1573,7 @@ class _InProgressRideBottomSheetState extends State<InProgressRideBottomSheet>
         return AlertDialog(
           title: const Text('Annuler la course'),
           content:
-              const Text('Êtes-vous sûr de vouloir annuler cette course ?'),
+          const Text('Êtes-vous sûr de vouloir annuler cette course ?'),
           actions: <Widget>[
             TextButton(
               onPressed: () => Navigator.of(context).pop(),

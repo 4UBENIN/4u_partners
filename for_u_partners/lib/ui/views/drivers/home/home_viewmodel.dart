@@ -79,12 +79,35 @@ class HomeViewModel extends BaseViewModel {
 
       // Démarrer le timer des heartbeats après l'initialisation
       _startHeartbeatTimer();
+
+      _debugLogCourses();
     } catch (e) {
       print("Erreur lors de l'initialisation: $e");
       errorMessage = "Erreur lors du chargement des données";
       notifyListeners();
     } finally {
       setBusy(false);
+    }
+  }
+
+  Future<void> _debugLogCourses() async {
+    try {
+      print('🔍 DEBUG: Fetching courses list...');
+      final courses = await driverService.getCoursesList();
+
+      final activeCourse = courses.firstWhere(
+        (course) => course['statut'] == 'chauffeur_en_route',
+        orElse: () => {},
+      );
+
+      if (activeCourse.isNotEmpty) {
+        print('🔍 DEBUG: Found active course, fetching full details...');
+        await driverService.getCourseDetails(activeCourse['id']);
+      } else {
+        print('🔍 DEBUG: No active course found');
+      }
+    } catch (e) {
+      print('🔍 DEBUG: Error fetching courses: $e');
     }
   }
 
