@@ -1,3 +1,4 @@
+import 'package:for_u_partners/services/profile_photo_service.dart';
 import 'package:for_u_partners/ui/views/drivers/documents/documents_viewmodel.dart';
 import 'package:for_u_partners/ui/views/drivers/documents/add_document.dart';
 import 'package:for_u_partners/ui/views/drivers/homemain/homemain_viewmodel.dart';
@@ -85,6 +86,7 @@ import 'package:for_u_partners/services/vehicle_service.dart';
     Singleton(classType: HomemainViewModel),
     Singleton(classType: vehicle_vm.MesVehiculesViewModel),
     Singleton(classType: DocumentsViewModel),
+    LazySingleton(classType: ProfilePhotoService),
 // @stacked-service
   ],
   bottomsheets: [

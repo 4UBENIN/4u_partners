@@ -36,6 +36,12 @@
 	<true/>
 	<key>NSLocationAlwaysAndWhenInUseUsageDescription</key>
 	<string>Cette application utilise votre position pour vous fournir des fonctionnalités de localisation améliorées.</string>
+	<key>NSCameraUsageDescription</key>
+    <string>Cette application utilise votre caméra pour prendre des photos de profil</string>
+    <key>NSPhotoLibraryUsageDescription</key>
+    <string>Cette application a besoin d'accéder à vos photos pour choisir une photo de profil</string>
+	<key>NSPhotoLibraryAddUsageDescription</key>
+    <string>Cette application a besoin d'accéder à vos photos pour sauvegarder des images</string>
 	<key>NSLocationAlwaysUsageDescription</key>
 	<string>Cette application utilise votre localisation pour assurer un suivi précis de vos déplacements même en arrière-plan.</string>
 	<key>NSLocationTemporaryUsageDescriptionDictionary</key>

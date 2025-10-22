@@ -4,24 +4,25 @@
 
 // ignore_for_file: no_leading_underscores_for_library_prefixes
 import 'dart:async' as _i20;
+import 'dart:io' as _i24;
 import 'dart:ui' as _i21;
 
-import 'package:cloud_firestore/cloud_firestore.dart' as _i33;
+import 'package:cloud_firestore/cloud_firestore.dart' as _i34;
 import 'package:dio/dio.dart' as _i3;
 import 'package:flutter/material.dart' as _i19;
 import 'package:for_u_partners/app/models/course_model.dart' as _i5;
-import 'package:for_u_partners/app/models/login_model.dart' as _i24;
+import 'package:for_u_partners/app/models/login_model.dart' as _i25;
 import 'package:for_u_partners/app/models/pressing_depot_models/depot_detail_model.dart'
     as _i11;
 import 'package:for_u_partners/app/models/pressing_depot_models/depot_model.dart'
-    as _i30;
+    as _i31;
 import 'package:for_u_partners/app/models/pressing_depot_models/planned_depot_model.dart'
     as _i12;
-import 'package:for_u_partners/app/models/pressing_model.dart' as _i28;
+import 'package:for_u_partners/app/models/pressing_model.dart' as _i29;
 import 'package:for_u_partners/app/models/pressing_ramassage_models/ramassage_detail_model.dart'
     as _i9;
 import 'package:for_u_partners/app/models/pressing_ramassage_models/ramassage_model.dart'
-    as _i29;
+    as _i30;
 import 'package:for_u_partners/app/models/pressing_ramassage_models/ramassage_statut_model.dart'
     as _i10;
 import 'package:for_u_partners/app/models/ramasseur_models/facture_ramassage_model.dart'
@@ -30,18 +31,18 @@ import 'package:for_u_partners/app/models/ramasseur_models/ramasseur_demand_deta
     as _i15;
 import 'package:for_u_partners/app/models/ramasseur_models/ramasseur_demand_model.dart'
     as _i14;
-import 'package:for_u_partners/app/models/register_model.dart' as _i25;
+import 'package:for_u_partners/app/models/register_model.dart' as _i26;
 import 'package:for_u_partners/app/models/wallet_model.dart' as _i13;
 import 'package:for_u_partners/models/daily_stats_model.dart' as _i6;
 import 'package:for_u_partners/models/global_stats_model.dart' as _i7;
 import 'package:for_u_partners/models/user_model.dart' as _i8;
 import 'package:for_u_partners/services/auth_service.dart' as _i23;
-import 'package:for_u_partners/services/chat_service.dart' as _i32;
-import 'package:for_u_partners/services/driver_service.dart' as _i26;
-import 'package:for_u_partners/services/pickers_service.dart' as _i34;
-import 'package:for_u_partners/services/pressing_service.dart' as _i27;
+import 'package:for_u_partners/services/chat_service.dart' as _i33;
+import 'package:for_u_partners/services/driver_service.dart' as _i27;
+import 'package:for_u_partners/services/pickers_service.dart' as _i35;
+import 'package:for_u_partners/services/pressing_service.dart' as _i28;
 import 'package:for_u_partners/services/sharedpreferences_service.dart' as _i4;
-import 'package:for_u_partners/services/wallet_service.dart' as _i31;
+import 'package:for_u_partners/services/wallet_service.dart' as _i32;
 import 'package:for_u_partners/ui/views/delivery/courses_delivery/courses_delivery_viewmodel.dart'
     as _i22;
 import 'package:http_parser/http_parser.dart' as _i2;
@@ -1152,8 +1153,27 @@ class MockSharedpreferencesService extends _i1.Mock
 /// See the documentation for Mockito's code generation for more information.
 class MockAuthService extends _i1.Mock implements _i23.AuthService {
   @override
+  _i20.Future<Map<String, dynamic>> updateProfilePicture(
+    _i24.File? imageFile,
+    String? token,
+  ) =>
+      (super.noSuchMethod(
+        Invocation.method(
+          #updateProfilePicture,
+          [
+            imageFile,
+            token,
+          ],
+        ),
+        returnValue:
+            _i20.Future<Map<String, dynamic>>.value(<String, dynamic>{}),
+        returnValueForMissingStub:
+            _i20.Future<Map<String, dynamic>>.value(<String, dynamic>{}),
+      ) as _i20.Future<Map<String, dynamic>>);
+
+  @override
   _i20.Future<void> login(
-    _i24.LoginModel? loginModel,
+    _i25.LoginModel? loginModel,
     _i19.BuildContext? context,
   ) =>
       (super.noSuchMethod(
@@ -1216,7 +1236,7 @@ class MockAuthService extends _i1.Mock implements _i23.AuthService {
 
   @override
   _i20.Future<_i3.FormData> registrationModelToFormData(
-          _i25.RegistrationModel? model) =>
+          _i26.RegistrationModel? model) =>
       (super.noSuchMethod(
         Invocation.method(
           #registrationModelToFormData,
@@ -1241,7 +1261,7 @@ class MockAuthService extends _i1.Mock implements _i23.AuthService {
 
   @override
   _i20.Future<void> register(
-    _i25.RegistrationModel? registrationModel,
+    _i26.RegistrationModel? registrationModel,
     _i19.BuildContext? context,
   ) =>
       (super.noSuchMethod(
@@ -1270,7 +1290,7 @@ class MockAuthService extends _i1.Mock implements _i23.AuthService {
 /// A class which mocks [DriverService].
 ///
 /// See the documentation for Mockito's code generation for more information.
-class MockDriverService extends _i1.Mock implements _i26.DriverService {
+class MockDriverService extends _i1.Mock implements _i27.DriverService {
   @override
   _i4.SharedpreferencesService get sharedPreferencesService =>
       (super.noSuchMethod(
@@ -1306,17 +1326,17 @@ class MockDriverService extends _i1.Mock implements _i26.DriverService {
       ) as _i20.Future<void>);
 
   @override
-  _i20.Future<List<_i26.DriverLocation>> getOnlineDrivers() =>
+  _i20.Future<List<_i27.DriverLocation>> getOnlineDrivers() =>
       (super.noSuchMethod(
         Invocation.method(
           #getOnlineDrivers,
           [],
         ),
-        returnValue: _i20.Future<List<_i26.DriverLocation>>.value(
-            <_i26.DriverLocation>[]),
-        returnValueForMissingStub: _i20.Future<List<_i26.DriverLocation>>.value(
-            <_i26.DriverLocation>[]),
-      ) as _i20.Future<List<_i26.DriverLocation>>);
+        returnValue: _i20.Future<List<_i27.DriverLocation>>.value(
+            <_i27.DriverLocation>[]),
+        returnValueForMissingStub: _i20.Future<List<_i27.DriverLocation>>.value(
+            <_i27.DriverLocation>[]),
+      ) as _i20.Future<List<_i27.DriverLocation>>);
 
   @override
   _i20.Future<void> acceptCourse(int? courseId) => (super.noSuchMethod(
@@ -1660,28 +1680,28 @@ class MockDriverService extends _i1.Mock implements _i26.DriverService {
 /// A class which mocks [PressingService].
 ///
 /// See the documentation for Mockito's code generation for more information.
-class MockPressingService extends _i1.Mock implements _i27.PressingService {
+class MockPressingService extends _i1.Mock implements _i28.PressingService {
   @override
-  _i20.Future<_i28.PressingResponse?> getPressingInfo() => (super.noSuchMethod(
+  _i20.Future<_i29.PressingResponse?> getPressingInfo() => (super.noSuchMethod(
         Invocation.method(
           #getPressingInfo,
           [],
         ),
-        returnValue: _i20.Future<_i28.PressingResponse?>.value(),
-        returnValueForMissingStub: _i20.Future<_i28.PressingResponse?>.value(),
-      ) as _i20.Future<_i28.PressingResponse?>);
+        returnValue: _i20.Future<_i29.PressingResponse?>.value(),
+        returnValueForMissingStub: _i20.Future<_i29.PressingResponse?>.value(),
+      ) as _i20.Future<_i29.PressingResponse?>);
 
   @override
-  _i20.Future<List<_i29.Ramassage>> getRamassagesList() => (super.noSuchMethod(
+  _i20.Future<List<_i30.Ramassage>> getRamassagesList() => (super.noSuchMethod(
         Invocation.method(
           #getRamassagesList,
           [],
         ),
         returnValue:
-            _i20.Future<List<_i29.Ramassage>>.value(<_i29.Ramassage>[]),
+            _i20.Future<List<_i30.Ramassage>>.value(<_i30.Ramassage>[]),
         returnValueForMissingStub:
-            _i20.Future<List<_i29.Ramassage>>.value(<_i29.Ramassage>[]),
-      ) as _i20.Future<List<_i29.Ramassage>>);
+            _i20.Future<List<_i30.Ramassage>>.value(<_i30.Ramassage>[]),
+      ) as _i20.Future<List<_i30.Ramassage>>);
 
   @override
   _i20.Future<_i9.RamassageDetail> getRamassageDetailComplet(int? id) =>
@@ -1734,28 +1754,28 @@ class MockPressingService extends _i1.Mock implements _i27.PressingService {
       ) as _i20.Future<_i10.RamassageStatutModel>);
 
   @override
-  _i20.Future<List<_i29.Ramassage>> getFinishedRamassageList() =>
+  _i20.Future<List<_i30.Ramassage>> getFinishedRamassageList() =>
       (super.noSuchMethod(
         Invocation.method(
           #getFinishedRamassageList,
           [],
         ),
         returnValue:
-            _i20.Future<List<_i29.Ramassage>>.value(<_i29.Ramassage>[]),
+            _i20.Future<List<_i30.Ramassage>>.value(<_i30.Ramassage>[]),
         returnValueForMissingStub:
-            _i20.Future<List<_i29.Ramassage>>.value(<_i29.Ramassage>[]),
-      ) as _i20.Future<List<_i29.Ramassage>>);
+            _i20.Future<List<_i30.Ramassage>>.value(<_i30.Ramassage>[]),
+      ) as _i20.Future<List<_i30.Ramassage>>);
 
   @override
-  _i20.Future<List<_i30.Depot>> getDepotList() => (super.noSuchMethod(
+  _i20.Future<List<_i31.Depot>> getDepotList() => (super.noSuchMethod(
         Invocation.method(
           #getDepotList,
           [],
         ),
-        returnValue: _i20.Future<List<_i30.Depot>>.value(<_i30.Depot>[]),
+        returnValue: _i20.Future<List<_i31.Depot>>.value(<_i31.Depot>[]),
         returnValueForMissingStub:
-            _i20.Future<List<_i30.Depot>>.value(<_i30.Depot>[]),
-      ) as _i20.Future<List<_i30.Depot>>);
+            _i20.Future<List<_i31.Depot>>.value(<_i31.Depot>[]),
+      ) as _i20.Future<List<_i31.Depot>>);
 
   @override
   _i20.Future<_i11.Rdv> getDepotDetailComplet(int? id) => (super.noSuchMethod(
@@ -1805,26 +1825,26 @@ class MockPressingService extends _i1.Mock implements _i27.PressingService {
       ) as _i20.Future<_i12.PlannedDepotModel>);
 
   @override
-  _i20.Future<List<_i30.Depot>> getPlanifiedDepotList() => (super.noSuchMethod(
+  _i20.Future<List<_i31.Depot>> getPlanifiedDepotList() => (super.noSuchMethod(
         Invocation.method(
           #getPlanifiedDepotList,
           [],
         ),
-        returnValue: _i20.Future<List<_i30.Depot>>.value(<_i30.Depot>[]),
+        returnValue: _i20.Future<List<_i31.Depot>>.value(<_i31.Depot>[]),
         returnValueForMissingStub:
-            _i20.Future<List<_i30.Depot>>.value(<_i30.Depot>[]),
-      ) as _i20.Future<List<_i30.Depot>>);
+            _i20.Future<List<_i31.Depot>>.value(<_i31.Depot>[]),
+      ) as _i20.Future<List<_i31.Depot>>);
 
   @override
-  _i20.Future<List<_i30.Depot>> getFinishedDepotList() => (super.noSuchMethod(
+  _i20.Future<List<_i31.Depot>> getFinishedDepotList() => (super.noSuchMethod(
         Invocation.method(
           #getFinishedDepotList,
           [],
         ),
-        returnValue: _i20.Future<List<_i30.Depot>>.value(<_i30.Depot>[]),
+        returnValue: _i20.Future<List<_i31.Depot>>.value(<_i31.Depot>[]),
         returnValueForMissingStub:
-            _i20.Future<List<_i30.Depot>>.value(<_i30.Depot>[]),
-      ) as _i20.Future<List<_i30.Depot>>);
+            _i20.Future<List<_i31.Depot>>.value(<_i31.Depot>[]),
+      ) as _i20.Future<List<_i31.Depot>>);
 
   @override
   _i20.Future<dynamic> getActivityDetails({
@@ -1848,7 +1868,7 @@ class MockPressingService extends _i1.Mock implements _i27.PressingService {
 /// A class which mocks [WalletService].
 ///
 /// See the documentation for Mockito's code generation for more information.
-class MockWalletService extends _i1.Mock implements _i31.WalletService {
+class MockWalletService extends _i1.Mock implements _i32.WalletService {
   @override
   _i20.Future<_i13.WalletModel> getWalletSold() => (super.noSuchMethod(
         Invocation.method(
@@ -1876,7 +1896,7 @@ class MockWalletService extends _i1.Mock implements _i31.WalletService {
 /// A class which mocks [ChatService].
 ///
 /// See the documentation for Mockito's code generation for more information.
-class MockChatService extends _i1.Mock implements _i32.ChatService {
+class MockChatService extends _i1.Mock implements _i33.ChatService {
   @override
   _i20.Future<Map<String, dynamic>?> getCurrentUserInfo() =>
       (super.noSuchMethod(
@@ -1935,17 +1955,17 @@ class MockChatService extends _i1.Mock implements _i32.ChatService {
       ) as _i20.Future<void>);
 
   @override
-  _i20.Stream<_i33.QuerySnapshot<Object?>> getMessages(
+  _i20.Stream<_i34.QuerySnapshot<Object?>> getMessages(
           String? conversationId) =>
       (super.noSuchMethod(
         Invocation.method(
           #getMessages,
           [conversationId],
         ),
-        returnValue: _i20.Stream<_i33.QuerySnapshot<Object?>>.empty(),
+        returnValue: _i20.Stream<_i34.QuerySnapshot<Object?>>.empty(),
         returnValueForMissingStub:
-            _i20.Stream<_i33.QuerySnapshot<Object?>>.empty(),
-      ) as _i20.Stream<_i33.QuerySnapshot<Object?>>);
+            _i20.Stream<_i34.QuerySnapshot<Object?>>.empty(),
+      ) as _i20.Stream<_i34.QuerySnapshot<Object?>>);
 
   @override
   _i20.Future<void> markMessagesAsRead({
@@ -2002,17 +2022,17 @@ class MockChatService extends _i1.Mock implements _i32.ChatService {
       ) as _i20.Future<void>);
 
   @override
-  _i20.Stream<_i33.DocumentSnapshot<Object?>> getTypingStatus(
+  _i20.Stream<_i34.DocumentSnapshot<Object?>> getTypingStatus(
           String? conversationId) =>
       (super.noSuchMethod(
         Invocation.method(
           #getTypingStatus,
           [conversationId],
         ),
-        returnValue: _i20.Stream<_i33.DocumentSnapshot<Object?>>.empty(),
+        returnValue: _i20.Stream<_i34.DocumentSnapshot<Object?>>.empty(),
         returnValueForMissingStub:
-            _i20.Stream<_i33.DocumentSnapshot<Object?>>.empty(),
-      ) as _i20.Stream<_i33.DocumentSnapshot<Object?>>);
+            _i20.Stream<_i34.DocumentSnapshot<Object?>>.empty(),
+      ) as _i20.Stream<_i34.DocumentSnapshot<Object?>>);
 
   @override
   bool isOtherUserTyping({
@@ -2056,7 +2076,7 @@ class MockChatService extends _i1.Mock implements _i32.ChatService {
 /// A class which mocks [PickersService].
 ///
 /// See the documentation for Mockito's code generation for more information.
-class MockPickersService extends _i1.Mock implements _i34.PickersService {
+class MockPickersService extends _i1.Mock implements _i35.PickersService {
   @override
   _i20.Future<Map<String, String>> getAuthenticatedHeaders() =>
       (super.noSuchMethod(

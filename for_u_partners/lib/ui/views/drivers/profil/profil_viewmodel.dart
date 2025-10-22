@@ -1,34 +1,40 @@
 import 'dart:io';
-
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:for_u_partners/models/global_stats_model.dart';
 import 'package:for_u_partners/models/user_model.dart';
 import 'package:for_u_partners/services/driver_service.dart';
+import 'package:for_u_partners/services/profile_photo_service.dart';
 import 'package:for_u_partners/services/sharedpreferences_service.dart';
 import 'package:for_u_partners/ui/views/drivers/profil/edit_profile_view.dart';
-import 'package:for_u_partners/ui/views/drivers/profil/profil_viewmodel.dart' as navigationService;
 import 'package:stacked/stacked.dart';
 import 'package:for_u_partners/app/app.router.dart';
 import 'package:for_u_partners/app/app.locator.dart';
 import 'package:stacked_services/stacked_services.dart';
+import 'package:image_picker/image_picker.dart';
 
 class ProfilViewModel extends BaseViewModel {
   final navigationService = locator<NavigationService>();
   final _sharedPreferencesServices = locator<SharedpreferencesService>();
   final _driverService = locator<DriverService>();
+  final _profilePhotoService = locator<ProfilePhotoService>();
+  final _imagePicker = ImagePicker();
+  final _snackbarService = locator<SnackbarService>(); // Ajoutez ceci
 
   GlobalStats? _globalStats;
   UserModel? _user;
   bool _isLoading = false;
   bool _isEditing = false;
+  bool _isUploadingPhoto = false;
   String? _errorMessage;
   String _initials = '';
+
   // Getters
   GlobalStats? get globalStats => _globalStats;
   UserModel? get user => _user;
   bool get isLoading => _isLoading;
   bool get isEditing => _isEditing;
+  bool get isUploadingPhoto => _isUploadingPhoto;
   String? get errorMessage => _errorMessage;
   String get initials => _initials;
 
@@ -43,6 +49,207 @@ class ProfilViewModel extends BaseViewModel {
     ]);
   }
 
+  // =============== PHOTO METHODS (CORRIGÉS) ===============
+  Future<void> pickAndUploadPhoto(BuildContext context) async {
+    try {
+      // Afficher les options : Caméra ou Galerie
+      final source = await _showImageSourceDialog(context);
+      if (source == null) return;
+
+      // Sélectionner l'image
+      final XFile? pickedFile = await _imagePicker.pickImage(
+        source: source,
+        maxWidth: 1024,
+        maxHeight: 1024,
+        imageQuality: 85,
+      );
+
+      if (pickedFile == null) return;
+
+      // Upload de la photo
+      _isUploadingPhoto = true;
+      notifyListeners();
+
+      final result = await _profilePhotoService.updateProfilePhoto(
+        File(pickedFile.path),
+      );
+
+      // Mettre à jour l'utilisateur avec la nouvelle URL
+      await loadUserProfile();
+
+      _isUploadingPhoto = false;
+      notifyListeners();
+
+      // ✅ Afficher le SnackBar APRÈS avoir mis à jour l'état
+      if (context.mounted) {
+        _showSuccessSnackBar(context, 'Photo de profil mise à jour avec succès');
+      }
+    } catch (e) {
+      _isUploadingPhoto = false;
+      notifyListeners();
+      
+      // ✅ Vérifier que le context est toujours monté
+      if (context.mounted) {
+        _showErrorSnackBar(context, 'Erreur lors de la mise à jour de la photo: $e');
+      }
+    }
+  }
+
+  Future<ImageSource?> _showImageSourceDialog(BuildContext context) async {
+    if (Platform.isIOS) {
+      return await showCupertinoModalPopup<ImageSource>(
+        context: context,
+        builder: (BuildContext context) => CupertinoActionSheet(
+          title: const Text('Choisir une photo'),
+          actions: [
+            CupertinoActionSheetAction(
+              onPressed: () => Navigator.pop(context, ImageSource.camera),
+              child: const Text('Prendre une photo'),
+            ),
+            CupertinoActionSheetAction(
+              onPressed: () => Navigator.pop(context, ImageSource.gallery),
+              child: const Text('Choisir dans la galerie'),
+            ),
+          ],
+          cancelButton: CupertinoActionSheetAction(
+            onPressed: () => Navigator.pop(context),
+            isDefaultAction: true,
+            child: const Text('Annuler'),
+          ),
+        ),
+      );
+    } else {
+      return await showModalBottomSheet<ImageSource>(
+        context: context,
+        shape: const RoundedRectangleBorder(
+          borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+        ),
+        builder: (BuildContext context) {
+          return SafeArea(
+            child: Padding(
+              padding: const EdgeInsets.symmetric(vertical: 20),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  ListTile(
+                    leading: const Icon(Icons.camera_alt),
+                    title: const Text('Prendre une photo'),
+                    onTap: () => Navigator.pop(context, ImageSource.camera),
+                  ),
+                  ListTile(
+                    leading: const Icon(Icons.photo_library),
+                    title: const Text('Choisir dans la galerie'),
+                    onTap: () => Navigator.pop(context, ImageSource.gallery),
+                  ),
+                ],
+              ),
+            ),
+          );
+        },
+      );
+    }
+  }
+
+  Future<void> deleteProfilePhoto(BuildContext context) async {
+    try {
+      final confirmed = await _showDeletePhotoConfirmation(context);
+      if (!confirmed) return;
+
+      _isUploadingPhoto = true;
+      notifyListeners();
+
+      await _profilePhotoService.deleteProfilePhoto();
+      await loadUserProfile();
+
+      _isUploadingPhoto = false;
+      notifyListeners();
+
+      // ✅ Vérifier que le context est toujours monté
+      if (context.mounted) {
+        _showSuccessSnackBar(context, 'Photo de profil supprimée');
+      }
+    } catch (e) {
+      _isUploadingPhoto = false;
+      notifyListeners();
+      
+      // ✅ Vérifier que le context est toujours monté
+      if (context.mounted) {
+        _showErrorSnackBar(context, 'Erreur lors de la suppression: $e');
+      }
+    }
+  }
+
+  Future<bool> _showDeletePhotoConfirmation(BuildContext context) async {
+    if (Platform.isIOS) {
+      return await showCupertinoDialog<bool>(
+        context: context,
+        builder: (context) => CupertinoAlertDialog(
+          title: const Text('Supprimer la photo'),
+          content: const Text('Voulez-vous vraiment supprimer votre photo de profil ?'),
+          actions: [
+            CupertinoDialogAction(
+              onPressed: () => Navigator.pop(context, false),
+              child: const Text('Annuler'),
+            ),
+            CupertinoDialogAction(
+              isDestructiveAction: true,
+              onPressed: () => Navigator.pop(context, true),
+              child: const Text('Supprimer'),
+            ),
+          ],
+        ),
+      ) ?? false;
+    } else {
+      return await showDialog<bool>(
+        context: context,
+        builder: (context) => AlertDialog(
+          title: const Text('Supprimer la photo'),
+          content: const Text('Voulez-vous vraiment supprimer votre photo de profil ?'),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context, false),
+              child: const Text('Annuler'),
+            ),
+            TextButton(
+              onPressed: () => Navigator.pop(context, true),
+              style: TextButton.styleFrom(foregroundColor: Colors.red),
+              child: const Text('Supprimer'),
+            ),
+          ],
+        ),
+      ) ?? false;
+    }
+  }
+
+  void _showSuccessSnackBar(BuildContext context, String message) {
+    // ✅ Double vérification avant d'afficher
+    if (!context.mounted) return;
+    
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(message),
+        backgroundColor: Colors.green,
+        behavior: SnackBarBehavior.floating,
+        duration: const Duration(seconds: 2),
+      ),
+    );
+  }
+
+  void _showErrorSnackBar(BuildContext context, String message) {
+    // ✅ Double vérification avant d'afficher
+    if (!context.mounted) return;
+    
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(message),
+        backgroundColor: Colors.red,
+        behavior: SnackBarBehavior.floating,
+        duration: const Duration(seconds: 3),
+      ),
+    );
+  }
+
+  // =============== EXISTING METHODS ===============
   void showLogoutConfirmationDialog(BuildContext context) {
     if (Platform.isIOS) {
       _showCupertinoLogoutDialog(context);
@@ -51,7 +258,6 @@ class ProfilViewModel extends BaseViewModel {
     }
   }
 
-  //* AUTH METHODS
   void logOut() {
     _sharedPreferencesServices.removeToken();
     navigationService.replaceWithLoginView();
@@ -68,19 +274,9 @@ class ProfilViewModel extends BaseViewModel {
           ),
           title: Row(
             children: [
-              Icon(
-                Icons.logout_rounded,
-                color: Colors.red[600],
-                size: 24,
-              ),
+              Icon(Icons.logout_rounded, color: Colors.red[600], size: 24),
               const SizedBox(width: 12),
-              const Text(
-                'Déconnexion',
-                style: TextStyle(
-                  fontSize: 20,
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
+              const Text('Déconnexion', style: TextStyle(fontSize: 20, fontWeight: FontWeight.w600)),
             ],
           ),
           content: const Text(
@@ -94,13 +290,9 @@ class ProfilViewModel extends BaseViewModel {
               onPressed: () => Navigator.of(context).pop(),
               style: TextButton.styleFrom(
                 foregroundColor: Colors.grey[600],
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+                padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
               ),
-              child: const Text(
-                'Annuler',
-                style: TextStyle(fontWeight: FontWeight.w500),
-              ),
+              child: const Text('Annuler', style: TextStyle(fontWeight: FontWeight.w500)),
             ),
             ElevatedButton(
               onPressed: () {
@@ -110,16 +302,10 @@ class ProfilViewModel extends BaseViewModel {
               style: ElevatedButton.styleFrom(
                 backgroundColor: Colors.red[600],
                 foregroundColor: Colors.white,
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(8),
-                ),
+                padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
               ),
-              child: const Text(
-                'Se déconnecter',
-                style: TextStyle(fontWeight: FontWeight.w600),
-              ),
+              child: const Text('Se déconnecter', style: TextStyle(fontWeight: FontWeight.w600)),
             ),
           ],
         );
@@ -127,20 +313,13 @@ class ProfilViewModel extends BaseViewModel {
     );
   }
 
-// Style Cupertino (iOS)
   void _showCupertinoLogoutDialog(BuildContext context) {
     showCupertinoDialog(
       context: context,
       barrierDismissible: false,
       builder: (BuildContext context) {
         return CupertinoAlertDialog(
-          title: const Text(
-            'Déconnexion',
-            style: TextStyle(
-              fontSize: 17,
-              fontWeight: FontWeight.w600,
-            ),
-          ),
+          title: const Text('Déconnexion', style: TextStyle(fontSize: 17, fontWeight: FontWeight.w600)),
           content: const Padding(
             padding: EdgeInsets.only(top: 8),
             child: Text(
@@ -151,13 +330,7 @@ class ProfilViewModel extends BaseViewModel {
           actions: [
             CupertinoDialogAction(
               onPressed: () => Navigator.of(context).pop(),
-              child: const Text(
-                'Annuler',
-                style: TextStyle(
-                  color: CupertinoColors.activeBlue,
-                  fontWeight: FontWeight.w400,
-                ),
-              ),
+              child: const Text('Annuler', style: TextStyle(color: CupertinoColors.activeBlue, fontWeight: FontWeight.w400)),
             ),
             CupertinoDialogAction(
               isDestructiveAction: true,
@@ -165,12 +338,7 @@ class ProfilViewModel extends BaseViewModel {
                 Navigator.of(context).pop();
                 logOut();
               },
-              child: const Text(
-                'Se déconnecter',
-                style: TextStyle(
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
+              child: const Text('Se déconnecter', style: TextStyle(fontWeight: FontWeight.w600)),
             ),
           ],
         );
@@ -178,7 +346,6 @@ class ProfilViewModel extends BaseViewModel {
     );
   }
 
-  //* PROFILE METHODS
   Future<void> loadUserProfile() async {
     _isLoading = true;
     _errorMessage = null;
@@ -232,7 +399,6 @@ class ProfilViewModel extends BaseViewModel {
     notifyListeners();
   }
 
-  //* STATS METHODS
   Future<void> loadGlobalStats() async {
     _isLoading = true;
     _errorMessage = null;
@@ -257,11 +423,4 @@ class ProfilViewModel extends BaseViewModel {
       );
     }
   }
-}
-void navigateToVehiclesView() {
-  navigationService.navigateToVehiclesView();
-}
-
-void navigateToDocumentsView() {
-  navigationService.navigateToDocumentsView();
 }

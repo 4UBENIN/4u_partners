@@ -5,9 +5,9 @@
 // **************************************************************************
 
 // ignore_for_file: no_leading_underscores_for_library_prefixes
-import 'package:flutter/material.dart' as _i29;
+import 'package:flutter/material.dart' as _i28;
 import 'package:flutter/material.dart';
-import 'package:for_u_partners/models/document_model.dart' as _i31;
+import 'package:for_u_partners/models/document_model.dart' as _i30;
 import 'package:for_u_partners/ui/views/auth/login/login_view.dart' as _i10;
 import 'package:for_u_partners/ui/views/auth/register/register_view.dart'
     as _i11;
@@ -28,7 +28,7 @@ import 'package:for_u_partners/ui/views/delivery/notifications_delivery/notifica
 import 'package:for_u_partners/ui/views/drivers/activity/activity_view.dart'
     as _i4;
 import 'package:for_u_partners/ui/views/drivers/activity/models/activity_model.dart'
-    as _i30;
+    as _i29;
 import 'package:for_u_partners/ui/views/drivers/activitydetails/activitydetails_view.dart'
     as _i9;
 import 'package:for_u_partners/ui/views/drivers/courses/courses_view.dart'
@@ -59,7 +59,7 @@ import 'package:for_u_partners/ui/views/pressing/notifications_pressing/notifica
     as _i16;
 import 'package:for_u_partners/ui/views/startup/startup_view.dart' as _i2;
 import 'package:stacked/stacked.dart' as _i1;
-import 'package:stacked_services/stacked_services.dart' as _i32;
+import 'package:stacked_services/stacked_services.dart' as _i31;
 
 class Routes {
   static const startupView = '/startup-view';
@@ -114,8 +114,6 @@ class Routes {
 
   static const documentViewerView = '/document-viewer-view';
 
-  static const changePasswordView = '/change-password-view';
-
   static const all = <String>{
     startupView,
     homeView,
@@ -143,7 +141,6 @@ class Routes {
     documentsView,
     addDocumentView,
     documentViewerView,
-    changePasswordView,
   };
 }
 
@@ -257,43 +254,43 @@ class StackedRouter extends _i1.RouterBase {
 
   final _pagesMap = <Type, _i1.StackedRouteFactory>{
     _i2.StartupView: (data) {
-      return _i29.MaterialPageRoute<dynamic>(
+      return _i28.MaterialPageRoute<dynamic>(
         builder: (context) => const _i2.StartupView(),
         settings: data,
       );
     },
     _i3.HomeView: (data) {
-      return _i29.MaterialPageRoute<dynamic>(
+      return _i28.MaterialPageRoute<dynamic>(
         builder: (context) => const _i3.HomeView(),
         settings: data,
       );
     },
     _i4.ActivityView: (data) {
-      return _i29.MaterialPageRoute<dynamic>(
+      return _i28.MaterialPageRoute<dynamic>(
         builder: (context) => const _i4.ActivityView(),
         settings: data,
       );
     },
     _i5.CoursesView: (data) {
-      return _i29.MaterialPageRoute<dynamic>(
+      return _i28.MaterialPageRoute<dynamic>(
         builder: (context) => const _i5.CoursesView(),
         settings: data,
       );
     },
     _i6.NotificationsView: (data) {
-      return _i29.MaterialPageRoute<dynamic>(
+      return _i28.MaterialPageRoute<dynamic>(
         builder: (context) => const _i6.NotificationsView(),
         settings: data,
       );
     },
     _i7.ProfilView: (data) {
-      return _i29.MaterialPageRoute<dynamic>(
+      return _i28.MaterialPageRoute<dynamic>(
         builder: (context) => const _i7.ProfilView(),
         settings: data,
       );
     },
     _i8.HomemainView: (data) {
-      return _i29.MaterialPageRoute<dynamic>(
+      return _i28.MaterialPageRoute<dynamic>(
         builder: (context) => const _i8.HomemainView(),
         settings: data,
       );
@@ -302,27 +299,27 @@ class StackedRouter extends _i1.RouterBase {
       final args = data.getArgs<ActivitydetailsViewArguments>(
         orElse: () => const ActivitydetailsViewArguments(),
       );
-      return _i29.MaterialPageRoute<dynamic>(
+      return _i28.MaterialPageRoute<dynamic>(
         builder: (context) =>
             _i9.ActivitydetailsView(key: args.key, activity: args.activity),
         settings: data,
       );
     },
     _i10.LoginView: (data) {
-      return _i29.MaterialPageRoute<dynamic>(
+      return _i28.MaterialPageRoute<dynamic>(
         builder: (context) => const _i10.LoginView(),
         settings: data,
       );
     },
     _i11.RegisterView: (data) {
-      return _i29.MaterialPageRoute<dynamic>(
+      return _i28.MaterialPageRoute<dynamic>(
         builder: (context) => const _i11.RegisterView(),
         settings: data,
       );
     },
     _i12.RegisterProfileView: (data) {
       final args = data.getArgs<RegisterProfileViewArguments>(nullOk: false);
-      return _i29.MaterialPageRoute<dynamic>(
+      return _i28.MaterialPageRoute<dynamic>(
         builder: (context) => _i12.RegisterProfileView(
             args.selectedProfile, args.phoneNumber, args.mail, args.password,
             key: args.key),
@@ -330,98 +327,97 @@ class StackedRouter extends _i1.RouterBase {
       );
     },
     _i13.HomePressingView: (data) {
-      return _i29.MaterialPageRoute<dynamic>(
+      return _i28.MaterialPageRoute<dynamic>(
         builder: (context) => const _i13.HomePressingView(),
         settings: data,
       );
     },
     _i14.NavBarPressingView: (data) {
-      return _i29.MaterialPageRoute<dynamic>(
+      return _i28.MaterialPageRoute<dynamic>(
         builder: (context) => const _i14.NavBarPressingView(),
         settings: data,
       );
     },
     _i15.ActivitesPressingView: (data) {
-      return _i29.MaterialPageRoute<dynamic>(
+      return _i28.MaterialPageRoute<dynamic>(
         builder: (context) => const _i15.ActivitesPressingView(),
         settings: data,
       );
     },
     _i16.NotificationsPressingView: (data) {
-      return _i29.MaterialPageRoute<dynamic>(
+      return _i28.MaterialPageRoute<dynamic>(
         builder: (context) => const _i16.NotificationsPressingView(),
         settings: data,
       );
     },
     _i17.ComptePressingView: (data) {
-      return _i29.MaterialPageRoute<dynamic>(
+      return _i28.MaterialPageRoute<dynamic>(
         builder: (context) => const _i17.ComptePressingView(),
         settings: data,
       );
     },
     _i18.DeliveryNavBarView: (data) {
-      return _i29.MaterialPageRoute<dynamic>(
+      return _i28.MaterialPageRoute<dynamic>(
         builder: (context) => const _i18.DeliveryNavBarView(),
         settings: data,
       );
     },
     _i19.DeliveryHomeView: (data) {
-      return _i29.MaterialPageRoute<dynamic>(
+      return _i28.MaterialPageRoute<dynamic>(
         builder: (context) => const _i19.DeliveryHomeView(),
         settings: data,
       );
     },
     _i20.NotificationsDeliveryView: (data) {
-      return _i29.MaterialPageRoute<dynamic>(
+      return _i28.MaterialPageRoute<dynamic>(
         builder: (context) => const _i20.NotificationsDeliveryView(),
         settings: data,
       );
     },
     _i21.CompteDeliveryView: (data) {
-      return _i29.MaterialPageRoute<dynamic>(
+      return _i28.MaterialPageRoute<dynamic>(
         builder: (context) => const _i21.CompteDeliveryView(),
         settings: data,
       );
     },
     _i22.ActivitiesDeliveryView: (data) {
-      return _i29.MaterialPageRoute<dynamic>(
+      return _i28.MaterialPageRoute<dynamic>(
         builder: (context) => const _i22.ActivitiesDeliveryView(),
         settings: data,
       );
     },
     _i23.CoursesDeliveryView: (data) {
-      return _i29.MaterialPageRoute<dynamic>(
+      return _i28.MaterialPageRoute<dynamic>(
         builder: (context) => const _i23.CoursesDeliveryView(),
         settings: data,
       );
     },
     _i24.MesVehiculesView: (data) {
-      return _i29.MaterialPageRoute<dynamic>(
+      return _i28.MaterialPageRoute<dynamic>(
         builder: (context) => const _i24.MesVehiculesView(),
         settings: data,
       );
     },
     _i25.DocumentsView: (data) {
-      return _i29.MaterialPageRoute<dynamic>(
+      return _i28.MaterialPageRoute<dynamic>(
         builder: (context) => const _i25.DocumentsView(),
         settings: data,
       );
     },
     _i26.AddDocumentView: (data) {
-      return _i29.MaterialPageRoute<dynamic>(
+      return _i28.MaterialPageRoute<dynamic>(
         builder: (context) => const _i26.AddDocumentView(),
         settings: data,
       );
     },
     _i27.DocumentViewerView: (data) {
       final args = data.getArgs<DocumentViewerViewArguments>(nullOk: false);
-      return _i29.MaterialPageRoute<dynamic>(
+      return _i28.MaterialPageRoute<dynamic>(
         builder: (context) =>
             _i27.DocumentViewerView(key: args.key, document: args.document),
         settings: data,
       );
     },
-    
   };
 
   @override
@@ -437,9 +433,9 @@ class ActivitydetailsViewArguments {
     this.activity,
   });
 
-  final _i29.Key? key;
+  final _i28.Key? key;
 
-  final _i30.ActivityModel? activity;
+  final _i29.ActivityModel? activity;
 
   @override
   String toString() {
@@ -475,7 +471,7 @@ class RegisterProfileViewArguments {
 
   final String password;
 
-  final _i29.Key? key;
+  final _i28.Key? key;
 
   @override
   String toString() {
@@ -508,9 +504,9 @@ class DocumentViewerViewArguments {
     required this.document,
   });
 
-  final _i29.Key? key;
+  final _i28.Key? key;
 
-  final _i31.Document document;
+  final _i30.Document document;
 
   @override
   String toString() {
@@ -529,7 +525,7 @@ class DocumentViewerViewArguments {
   }
 }
 
-extension NavigatorStateExtension on _i32.NavigationService {
+extension NavigatorStateExtension on _i31.NavigationService {
   Future<dynamic> navigateToStartupView([
     int? routerId,
     bool preventDuplicates = true,
@@ -629,8 +625,8 @@ extension NavigatorStateExtension on _i32.NavigationService {
   }
 
   Future<dynamic> navigateToActivitydetailsView({
-    _i29.Key? key,
-    _i30.ActivityModel? activity,
+    _i28.Key? key,
+    _i29.ActivityModel? activity,
     int? routerId,
     bool preventDuplicates = true,
     Map<String, String>? parameters,
@@ -678,7 +674,7 @@ extension NavigatorStateExtension on _i32.NavigationService {
     required String phoneNumber,
     required String mail,
     required String password,
-    _i29.Key? key,
+    _i28.Key? key,
     int? routerId,
     bool preventDuplicates = true,
     Map<String, String>? parameters,
@@ -895,8 +891,8 @@ extension NavigatorStateExtension on _i32.NavigationService {
   }
 
   Future<dynamic> navigateToDocumentViewerView({
-    _i29.Key? key,
-    required _i31.Document document,
+    _i28.Key? key,
+    required _i30.Document document,
     int? routerId,
     bool preventDuplicates = true,
     Map<String, String>? parameters,
@@ -905,20 +901,6 @@ extension NavigatorStateExtension on _i32.NavigationService {
   }) async {
     return navigateTo<dynamic>(Routes.documentViewerView,
         arguments: DocumentViewerViewArguments(key: key, document: document),
-        id: routerId,
-        preventDuplicates: preventDuplicates,
-        parameters: parameters,
-        transition: transition);
-  }
-
-  Future<dynamic> navigateToChangePasswordView([
-    int? routerId,
-    bool preventDuplicates = true,
-    Map<String, String>? parameters,
-    Widget Function(BuildContext, Animation<double>, Animation<double>, Widget)?
-        transition,
-  ]) async {
-    return navigateTo<dynamic>(Routes.changePasswordView,
         id: routerId,
         preventDuplicates: preventDuplicates,
         parameters: parameters,
@@ -1024,8 +1006,8 @@ extension NavigatorStateExtension on _i32.NavigationService {
   }
 
   Future<dynamic> replaceWithActivitydetailsView({
-    _i29.Key? key,
-    _i30.ActivityModel? activity,
+    _i28.Key? key,
+    _i29.ActivityModel? activity,
     int? routerId,
     bool preventDuplicates = true,
     Map<String, String>? parameters,
@@ -1073,7 +1055,7 @@ extension NavigatorStateExtension on _i32.NavigationService {
     required String phoneNumber,
     required String mail,
     required String password,
-    _i29.Key? key,
+    _i28.Key? key,
     int? routerId,
     bool preventDuplicates = true,
     Map<String, String>? parameters,
@@ -1290,8 +1272,8 @@ extension NavigatorStateExtension on _i32.NavigationService {
   }
 
   Future<dynamic> replaceWithDocumentViewerView({
-    _i29.Key? key,
-    required _i31.Document document,
+    _i28.Key? key,
+    required _i30.Document document,
     int? routerId,
     bool preventDuplicates = true,
     Map<String, String>? parameters,
@@ -1300,20 +1282,6 @@ extension NavigatorStateExtension on _i32.NavigationService {
   }) async {
     return replaceWith<dynamic>(Routes.documentViewerView,
         arguments: DocumentViewerViewArguments(key: key, document: document),
-        id: routerId,
-        preventDuplicates: preventDuplicates,
-        parameters: parameters,
-        transition: transition);
-  }
-
-  Future<dynamic> replaceWithChangePasswordView([
-    int? routerId,
-    bool preventDuplicates = true,
-    Map<String, String>? parameters,
-    Widget Function(BuildContext, Animation<double>, Animation<double>, Widget)?
-        transition,
-  ]) async {
-    return replaceWith<dynamic>(Routes.changePasswordView,
         id: routerId,
         preventDuplicates: preventDuplicates,
         parameters: parameters,

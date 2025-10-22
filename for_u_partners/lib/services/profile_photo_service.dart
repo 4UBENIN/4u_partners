@@ -15,7 +15,7 @@ class ProfilePhotoService {
         throw Exception('Token non disponible');
       }
 
-      final uri = Uri.parse('$baseUrl/api/user/photo-profil');
+      final uri = Uri.parse('$baseUrl/user/photo-profil');
       final request = http.MultipartRequest('POST', uri);
 
       // Ajouter les headers
@@ -61,7 +61,7 @@ class ProfilePhotoService {
       }
 
       final response = await http.delete(
-        Uri.parse('$baseUrl/api/user/photo-profil'),
+        Uri.parse('$baseUrl/user/photo-profil'),
         headers: {
           'Authorization': 'Bearer $token',
           'Accept': 'application/json',
