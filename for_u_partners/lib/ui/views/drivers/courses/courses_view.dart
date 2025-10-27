@@ -415,17 +415,17 @@ class CoursesView extends StackedView<CoursesViewModel> {
         print(
             '🔄 Contenu de availableCourses: ${viewModel.availableCourses.map((c) => '${c.courseId}: ${c.name}').toList()}');
         print('🔄 Current course: ${viewModel.currentCourse?.courseId}');
-        if (viewModel.availableCourses.isEmpty) {
+        if (viewModel.currentCourse == null) {
           print(
-              '❌ Aucune course disponible pour afficher le bottom sheet pickup');
+              '❌ Aucune course active pour afficher le bottom sheet pickup');
           return const SizedBox.shrink(key: ValueKey('no-pickup'));
         }
 
-        final pickupCourse = viewModel.availableCourses.first;
+        final pickupCourse = viewModel.currentCourse!;
         final chatService = locator<ChatService>();
 
         return AcceptedClientBottomSheet(
-            key: const ValueKey('pickup'),
+            key: ValueKey('pickup-${pickupCourse.courseId}'),
             client: pickupCourse,
             clientId: pickupCourse.clientId,
             courseId: int.tryParse(pickupCourse.courseId!)!,

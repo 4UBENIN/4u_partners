@@ -39,6 +39,10 @@ import 'package:for_u_partners/services/wallet_service.dart';
 import 'package:for_u_partners/services/chat_service.dart';
 import 'package:for_u_partners/services/pickers_service.dart';
 import 'package:for_u_partners/services/vehicle_service.dart';
+import 'package:for_u_partners/services/active_course_checker_service.dart';
+import 'package:for_u_partners/services/course_restoration_service.dart';
+import 'package:for_u_partners/services/arrival_state_service.dart';
+import 'package:for_u_partners/services/pause_state_service.dart';
 // @stacked-import
 
 @StackedApp(
@@ -83,6 +87,10 @@ import 'package:for_u_partners/services/vehicle_service.dart';
     LazySingleton(classType: ChatService),
     LazySingleton(classType: PickersService),
     LazySingleton(classType: VehicleService),
+    LazySingleton(classType: ActiveCourseCheckerService),
+    LazySingleton(classType: CourseRestorationService),
+    LazySingleton(classType: ArrivalStateService),
+    LazySingleton(classType: PauseStateService),
     Singleton(classType: HomemainViewModel),
     Singleton(classType: vehicle_vm.MesVehiculesViewModel),
     Singleton(classType: DocumentsViewModel),
