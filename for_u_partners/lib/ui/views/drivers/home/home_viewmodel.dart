@@ -1,13 +1,15 @@
+import 'dart:async';
+
+import 'package:for_u_partners/app/app.locator.dart';
 import 'package:for_u_partners/models/daily_stats_model.dart';
 import 'package:for_u_partners/services/driver_service.dart';
 import 'package:for_u_partners/services/sharedpreferences_service.dart';
 import 'package:for_u_partners/ui/common/api_constant.dart';
-import 'package:stacked/stacked.dart';
 import 'package:for_u_partners/ui/common/get_fcm_token.dart';
-import 'package:for_u_partners/app/app.locator.dart';
-import 'dart:async';
+import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:for_u_partners/services/tracking_service.dart';
 import 'package:location/location.dart';
+import 'package:stacked/stacked.dart';
 
 class HomeViewModel extends BaseViewModel {
   Timer? _heartbeatTimer;
@@ -28,6 +30,12 @@ class HomeViewModel extends BaseViewModel {
   bool _isOnline = true;
 
   bool get isOnline => _isOnline;
+  LatLng? _currentPosition;
+  LatLng? get currentPosition => _currentPosition;
+  bool get hasLocation => _currentPosition != null;
+  GoogleMapController? _mapController;
+  GoogleMapController? get mapController => _mapController;
+  StreamSubscription<LocationData>? _locationSubscription;
 
   HomeViewModel() {
     initialise();
@@ -79,6 +87,8 @@ class HomeViewModel extends BaseViewModel {
 
       // Démarrer le timer des heartbeats après l'initialisation
       _startHeartbeatTimer();
+
+      await _initialiseLocationTracking();
 
       _debugLogCourses();
     } catch (e) {
@@ -200,10 +210,137 @@ class HomeViewModel extends BaseViewModel {
     }
   }
 
+  Future<void> _initialiseLocationTracking() async {
+    try {
+      bool serviceEnabled = await _location.serviceEnabled();
+      if (!serviceEnabled) {
+        serviceEnabled = await _location.requestService();
+        if (!serviceEnabled) {
+          errorMessage = "Activez la localisation pour afficher la carte";
+          notifyListeners();
+          return;
+        }
+      }
+
+      PermissionStatus permissionGranted = await _location.hasPermission();
+      if (permissionGranted == PermissionStatus.denied) {
+        permissionGranted = await _location.requestPermission();
+        if (permissionGranted != PermissionStatus.granted) {
+          errorMessage = "Autorisez l'accès à la localisation";
+          notifyListeners();
+          return;
+        }
+      }
+
+      if (permissionGranted == PermissionStatus.deniedForever) {
+        errorMessage =
+            "Autorisez la localisation depuis les réglages de l'appareil";
+        notifyListeners();
+        return;
+      }
+
+      await _location.changeSettings(
+        accuracy: LocationAccuracy.high,
+        interval: 4000,
+        distanceFilter: 10,
+      );
+
+      final currentLocation = await _location.getLocation();
+      _setCurrentLocation(currentLocation);
+
+      if (_mapController != null && _currentPosition != null) {
+        await _mapController!.animateCamera(
+          CameraUpdate.newCameraPosition(
+            CameraPosition(
+              target: _currentPosition!,
+              zoom: 15.5,
+            ),
+          ),
+        );
+      }
+
+      _locationSubscription?.cancel();
+      _locationSubscription = _location.onLocationChanged.listen((event) {
+        _setCurrentLocation(event, animate: true);
+      });
+    } catch (e) {
+      print('Erreur lors de l\'initialisation de la localisation: $e');
+      errorMessage = "Impossible de récupérer votre position";
+      notifyListeners();
+    }
+  }
+
+  void _setCurrentLocation(LocationData data, {bool animate = false}) {
+    final latitude = data.latitude;
+    final longitude = data.longitude;
+    if (latitude == null || longitude == null) {
+      return;
+    }
+
+    final newPosition = LatLng(latitude, longitude);
+    final hadError = errorMessage != null;
+    final hasMoved = _currentPosition == null ||
+        _currentPosition!.latitude != newPosition.latitude ||
+        _currentPosition!.longitude != newPosition.longitude;
+
+    _currentPosition = newPosition;
+
+    if (animate && _mapController != null) {
+      _mapController!.animateCamera(
+        CameraUpdate.newCameraPosition(
+          CameraPosition(
+            target: newPosition,
+            zoom: 16,
+          ),
+        ),
+      );
+    }
+
+    if (hadError) {
+      errorMessage = null;
+    }
+
+    if (hasMoved || hadError) {
+      notifyListeners();
+    }
+  }
+
+  void onMapCreated(GoogleMapController controller) {
+    _mapController = controller;
+    if (_currentPosition != null) {
+      _mapController!.moveCamera(
+        CameraUpdate.newCameraPosition(
+          CameraPosition(
+            target: _currentPosition!,
+            zoom: 15.5,
+          ),
+        ),
+      );
+    }
+  }
+
+  Future<void> recenterOnDriver() async {
+    if (_mapController == null || _currentPosition == null) {
+      return;
+    }
+    await _mapController!.animateCamera(
+      CameraUpdate.newCameraPosition(
+        CameraPosition(
+          target: _currentPosition!,
+          zoom: 16,
+        ),
+      ),
+    );
+  }
+
   @override
   void dispose() {
     _heartbeatTimer?.cancel();
     _heartbeatTimer = null;
+    _locationSubscription?.cancel();
+    _locationSubscription = null;
+    _mapController?.dispose();
+    _mapController = null;
     super.dispose();
   }
 }

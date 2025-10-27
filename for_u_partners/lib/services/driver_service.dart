@@ -295,7 +295,22 @@ class DriverService {
       print("complete-course-response: ${response.body}");
 
       if (response.statusCode != 200) {
-        throw Exception('Échec de la finalisation de la course');
+        // Try to parse error message from response
+        try {
+          final responseData = jsonDecode(response.body);
+          final errorMessage = responseData['message'] ?? responseData['error'];
+
+          if (errorMessage != null && errorMessage.toString().contains('pause')) {
+            throw Exception('Impossible de terminer la course : une pause est en cours. Veuillez reprendre la course avant de la terminer.');
+          }
+
+          throw Exception(errorMessage ?? 'Échec de la finalisation de la course');
+        } catch (e) {
+          if (e.toString().contains('pause')) {
+            rethrow;
+          }
+          throw Exception('Échec de la finalisation de la course');
+        }
       }
     } catch (e) {
       debugPrint('Erreur lors de la finalisation de la course: $e');

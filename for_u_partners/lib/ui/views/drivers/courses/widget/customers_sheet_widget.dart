@@ -1517,41 +1517,90 @@ class _InProgressRideBottomSheetState extends State<InProgressRideBottomSheet>
 
                   const SizedBox(height: 20),
 
+                  // Warning message when paused
+                  if (_isPaused)
+                    Container(
+                      margin: const EdgeInsets.only(bottom: 12),
+                      padding: const EdgeInsets.all(12),
+                      decoration: BoxDecoration(
+                        color: Colors.orange[50],
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(
+                          color: Colors.orange[200]!,
+                          width: 1.5,
+                        ),
+                      ),
+                      child: Row(
+                        children: [
+                          Icon(
+                            Icons.warning_amber_rounded,
+                            color: Colors.orange[700],
+                            size: 22,
+                          ),
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: Text(
+                              'Reprenez la course avant de la terminer',
+                              style: TextStyle(
+                                fontSize: 14,
+                                color: Colors.orange[900],
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+
                   // Bouton Terminer avec effet de chargement
                   SizedBox(
                     width: double.infinity,
                     height: 50,
                     child: ElevatedButton(
-                      onPressed: widget.onCancelRide,
+                      onPressed: _isPaused ? null : widget.onCancelRide,
                       style: ElevatedButton.styleFrom(
-                        backgroundColor: kcPrimaryColor,
+                        backgroundColor: _isPaused ? Colors.grey[400] : kcPrimaryColor,
                         foregroundColor: Colors.white,
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(25),
                         ),
-                        elevation: 2,
+                        elevation: _isPaused ? 0 : 2,
+                        disabledBackgroundColor: Colors.grey[400],
+                        disabledForegroundColor: Colors.grey[600],
                       ),
                       child: Row(
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
-                          AnimatedBuilder(
-                            animation: _progressController,
-                            builder: (context, child) {
-                              return Transform.rotate(
-                                angle: _progressController.value * 2 * 3.14159,
-                                child: const Icon(
-                                  Icons.check_circle_outline,
-                                  size: 20,
-                                ),
-                              );
-                            },
-                          ),
-                          const SizedBox(width: 8),
-                          const Text(
-                            'Terminer la course',
+                          if (_isPaused) ...[
+                            Icon(
+                              Icons.lock_outline,
+                              size: 20,
+                              color: Colors.grey[600],
+                            ),
+                            const SizedBox(width: 8),
+                          ] else
+                            AnimatedBuilder(
+                              animation: _progressController,
+                              builder: (context, child) {
+                                return Transform.rotate(
+                                  angle: _progressController.value * 2 * 3.14159,
+                                  child: const Icon(
+                                    Icons.check_circle_outline,
+                                    size: 20,
+                                  ),
+                                );
+                              },
+                            ),
+                          if (!_isPaused)
+                            const SizedBox(width: 8),
+                          Text(
+                            _isPaused
+                                ? 'Course en pause'
+                                : 'Terminer la course',
                             style: TextStyle(
                               fontSize: 16,
                               fontWeight: FontWeight.w600,
+                              color: _isPaused ? Colors.grey[600] : Colors.white,
                             ),
                           ),
                         ],
