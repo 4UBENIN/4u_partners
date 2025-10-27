@@ -11,6 +11,7 @@ class ActiveCourseCheckerService {
     'chauffeur_en_route', // Driver heading to pickup
     'en_route_vers_client', // Driver heading to client
     'arrive_au_point_depart', // Driver arrived at pickup
+    'chauffeur_arrive', // Driver confirmed arrival
     'en_cours', // Trip in progress
     'en_pause', // Trip paused
     'en_attente_paiement', // Waiting for payment

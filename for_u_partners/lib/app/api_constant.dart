@@ -8,6 +8,10 @@ String rejectCourseUrl(int courseId) =>
     "$baseUrl/conducteur/courses/$courseId/deny";
 String startCourseUrl(int courseId) =>
     "$baseUrl/conducteur/courses/$courseId/start";
+String startPauseUrl(int courseId) =>
+    "$baseUrl/conducteur/courses/$courseId/start_pause";
+String stopPauseUrl(int courseId) =>
+    "$baseUrl/conducteur/courses/$courseId/stop_pause";
 String completeCourseUrl(int courseId) =>
     "$baseUrl/conducteur/courses/$courseId/finish";
 String factureCourseUrl(int courseId) =>

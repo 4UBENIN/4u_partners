@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:for_u_partners/app/app.locator.dart';
 import 'package:for_u_partners/services/driver_service.dart';
 import 'package:for_u_partners/services/arrival_state_service.dart';
+import 'package:for_u_partners/services/pause_state_service.dart';
 import 'package:for_u_partners/ui/common/app_colors.dart';
 import 'package:for_u_partners/ui/views/drivers/courses/model/client_model.dart';
 import 'package:for_u_partners/ui/views/drivers/courses/widget/dialog_widget.dart';
@@ -231,6 +232,7 @@ class AcceptedClientBottomSheet extends StatefulWidget {
   final Function() onStartRide;
   final Function() onCallClients;
   final Function() onChatClients;
+  final String? vehicleType;
 
   const AcceptedClientBottomSheet({
     Key? key,
@@ -241,6 +243,7 @@ class AcceptedClientBottomSheet extends StatefulWidget {
     required this.onChatClients,
     this.clientId,
     required this.courseId,
+    this.vehicleType,
   }) : super(key: key);
 
   @override
@@ -293,8 +296,37 @@ class _AcceptedClientBottomSheetState extends State<AcceptedClientBottomSheet> {
   }
 
   double _calculateWaitingPrice() {
-    final int minutes = (_waitingTime / 60).ceil();
-    return minutes * 50.0;
+    // First 5 minutes are free
+    if (_waitingTime <= 300) return 0.0;
+
+    // Calculate billable minutes (after first 5 minutes)
+    final int totalMinutes = (_waitingTime / 60).ceil();
+    final int billableMinutes = totalMinutes - 5;
+
+    // Get rate based on vehicle type
+    final int ratePerMinute = _getRatePerMinute(widget.vehicleType);
+
+    return billableMinutes * ratePerMinute.toDouble();
+  }
+
+  int _getRatePerMinute(String? vehicleType) {
+    if (vehicleType == null) return 25; // Default to Voiture Std
+
+    switch (vehicleType.toLowerCase()) {
+      case 'moto':
+        return 10;
+      case 'tricycle':
+        return 20;
+      case 'voiture std':
+      case 'voiture standard':
+        return 25;
+      case 'voiture premium':
+        return 50;
+      case 'voiture vip':
+        return 80;
+      default:
+        return 25; // Default to Voiture Std
+    }
   }
 
   Future<void> _confirmArrival() async {
@@ -302,6 +334,7 @@ class _AcceptedClientBottomSheetState extends State<AcceptedClientBottomSheet> {
 
     final driverservice = locator<DriverService>();
     try {
+      // Notify client of arrival (updates status to "chauffeur_arrive")
       await driverservice.notifyClient(widget.courseId);
 
       await Future.delayed(const Duration(milliseconds: 500));
@@ -635,6 +668,7 @@ class _AcceptedClientBottomSheetState extends State<AcceptedClientBottomSheet> {
     final minutes = ((waitingTime % 3600) ~/ 60).toString().padLeft(2, '0');
     final seconds = (waitingTime % 60).toString().padLeft(2, '0');
     final waitingPrice = _calculateWaitingPrice();
+    final isFree = waitingTime <= 300;
 
     return Container(
       margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
@@ -643,13 +677,19 @@ class _AcceptedClientBottomSheetState extends State<AcceptedClientBottomSheet> {
         gradient: LinearGradient(
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
-          colors: [Colors.white, Colors.grey[50]!],
+          colors: isFree
+            ? [Colors.green[50]!, Colors.green[100]!]
+            : [Colors.orange[50]!, Colors.orange[100]!],
         ),
         borderRadius: BorderRadius.circular(20),
+        border: Border.all(
+          color: isFree ? Colors.green[300]! : Colors.orange[300]!,
+          width: 2,
+        ),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.08),
-            blurRadius: 20,
+            color: (isFree ? Colors.green : Colors.orange).withOpacity(0.3),
+            blurRadius: 15,
             offset: const Offset(0, 4),
           ),
         ],
@@ -663,12 +703,12 @@ class _AcceptedClientBottomSheetState extends State<AcceptedClientBottomSheet> {
               Container(
                 padding: const EdgeInsets.all(8),
                 decoration: BoxDecoration(
-                  color: kcPrimaryColor.withOpacity(0.1),
+                  color: isFree ? Colors.green : Colors.orange,
                   borderRadius: BorderRadius.circular(10),
                 ),
-                child: const Icon(
-                  Icons.schedule_rounded,
-                  color: kcPrimaryColor,
+                child: Icon(
+                  isFree ? Icons.timer_outlined : Icons.schedule_rounded,
+                  color: Colors.white,
                   size: 20,
                 ),
               ),
@@ -677,7 +717,7 @@ class _AcceptedClientBottomSheetState extends State<AcceptedClientBottomSheet> {
                 'Temps d\'attente',
                 style: TextStyle(
                   fontSize: 18,
-                  color: Colors.grey[700],
+                  color: isFree ? Colors.green[900] : Colors.orange[900],
                   fontWeight: FontWeight.w600,
                 ),
               ),
@@ -687,7 +727,7 @@ class _AcceptedClientBottomSheetState extends State<AcceptedClientBottomSheet> {
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
             decoration: BoxDecoration(
-              color: kcPrimaryColor.withOpacity(0.05),
+              color: Colors.white,
               borderRadius: BorderRadius.circular(16),
             ),
             child: Row(
@@ -706,9 +746,7 @@ class _AcceptedClientBottomSheetState extends State<AcceptedClientBottomSheet> {
             width: double.infinity,
             padding: const EdgeInsets.all(14),
             decoration: BoxDecoration(
-              gradient: LinearGradient(
-                colors: [Colors.orange[100]!, Colors.orange[50]!],
-              ),
+              color: isFree ? Colors.green : Colors.orange,
               borderRadius: BorderRadius.circular(14),
             ),
             child: Row(
@@ -716,22 +754,22 @@ class _AcceptedClientBottomSheetState extends State<AcceptedClientBottomSheet> {
                 Container(
                   padding: const EdgeInsets.all(8),
                   decoration: BoxDecoration(
-                    color: Colors.orange,
+                    color: Colors.white,
                     borderRadius: BorderRadius.circular(10),
                   ),
-                  child: const Icon(
-                    Icons.payments_rounded,
-                    color: Colors.white,
+                  child: Icon(
+                    isFree ? Icons.check_circle : Icons.payments_rounded,
+                    color: isFree ? Colors.green[700] : Colors.orange[700],
                     size: 18,
                   ),
                 ),
                 const SizedBox(width: 12),
                 Expanded(
                   child: Text(
-                    'Frais d\'attente',
-                    style: TextStyle(
+                    isFree ? 'Attente gratuite' : 'Frais d\'attente',
+                    style: const TextStyle(
                       fontSize: 14,
-                      color: Colors.orange[700],
+                      color: Colors.white,
                       fontWeight: FontWeight.w600,
                     ),
                   ),
@@ -742,15 +780,17 @@ class _AcceptedClientBottomSheetState extends State<AcceptedClientBottomSheet> {
                     vertical: 6,
                   ),
                   decoration: BoxDecoration(
-                    color: Colors.orange,
+                    color: Colors.white,
                     borderRadius: BorderRadius.circular(20),
                   ),
                   child: Text(
-                    '+${waitingPrice.toStringAsFixed(0)} FCFA',
-                    style: const TextStyle(
+                    isFree
+                      ? '5 min gratuites'
+                      : '+${waitingPrice.toStringAsFixed(0)} FCFA',
+                    style: TextStyle(
                       fontSize: 14,
                       fontWeight: FontWeight.bold,
-                      color: Colors.white,
+                      color: isFree ? Colors.green[700] : Colors.orange[700],
                     ),
                   ),
                 ),
@@ -815,6 +855,7 @@ class InProgressRideBottomSheet extends StatefulWidget {
   final Function() onAddPenalty;
   final Function() onCallClients;
   final double price;
+  final String? vehicleType;
 
   const InProgressRideBottomSheet({
     Key? key,
@@ -823,6 +864,7 @@ class InProgressRideBottomSheet extends StatefulWidget {
     required this.onAddPenalty,
     required this.onCallClients,
     required this.price,
+    this.vehicleType,
   }) : super(key: key);
 
   @override
@@ -832,16 +874,26 @@ class InProgressRideBottomSheet extends StatefulWidget {
 
 class _InProgressRideBottomSheetState extends State<InProgressRideBottomSheet>
     with TickerProviderStateMixin {
+  final _pauseStateService = locator<PauseStateService>();
+  final _driverService = locator<DriverService>();
+
   late AnimationController _pulseController;
   late AnimationController _progressController;
   late Animation<double> _pulseAnimation;
   late Animation<double> _progressAnimation;
+
+  Timer? _pauseTimer;
+  bool _isPaused = false;
+  int _pauseTime = 0;
+  int? _pauseStartTimestamp;
+
   int _countdown = 300; // 5 minutes en secondes
   int? _waitingTime; // Track waiting time in seconds
 
   @override
   void initState() {
     super.initState();
+    _loadPauseState();
 
     // Animation pour le pouls du prix
     _pulseController = AnimationController(
@@ -874,8 +926,278 @@ class _InProgressRideBottomSheetState extends State<InProgressRideBottomSheet>
     _progressController.repeat();
   }
 
+  Future<void> _loadPauseState() async {
+    if (widget.client.courseId == null) return;
+
+    final courseId = int.tryParse(widget.client.courseId!);
+    if (courseId == null) return;
+
+    _isPaused = await _pauseStateService.isPaused(courseId);
+    _pauseStartTimestamp = await _pauseStateService.getPauseStartTimestamp(courseId);
+
+    if (mounted) {
+      setState(() {});
+      if (_isPaused && _pauseStartTimestamp != null) {
+        _startPauseTimer();
+      }
+    }
+  }
+
+  void _startPauseTimer() {
+    _pauseTimer?.cancel();
+
+    _pauseTimer = Timer.periodic(const Duration(seconds: 1), (timer) {
+      if (mounted) {
+        if (widget.client.courseId != null) {
+          final courseId = int.tryParse(widget.client.courseId!);
+          if (courseId != null) {
+            _pauseTime = _pauseStateService.getPauseElapsedTime(courseId);
+          }
+        }
+        setState(() {});
+      } else {
+        timer.cancel();
+      }
+    });
+  }
+
+  Future<void> _togglePause() async {
+    if (widget.client.courseId == null) return;
+
+    final courseId = int.tryParse(widget.client.courseId!);
+    if (courseId == null) return;
+
+    try {
+      if (_isPaused) {
+        // Reprendre la course
+        final pauseData = await _driverService.stopPause(courseId);
+        _pauseTimer?.cancel();
+        _isPaused = false;
+        await _pauseStateService.setPaused(courseId, false);
+        await _pauseStateService.clearPauseState(courseId);
+        _pauseStartTimestamp = null;
+        _pauseTime = 0;
+
+        if (mounted) {
+          setState(() {});
+
+          // Show pause summary
+          final pauseSeconds = pauseData['pause_seconds'] as int;
+          final montantPause = pauseData['montant_pause'] as int;
+
+          final minutes = (pauseSeconds / 60).floor();
+          final seconds = pauseSeconds % 60;
+
+          _showPauseSummaryDialog(
+            duration: '$minutes min ${seconds}s',
+            amount: montantPause,
+          );
+        }
+      } else {
+        // Mettre en pause
+        final response = await _driverService.startPause(courseId);
+        final timestamp = response['timestamp'] as int;
+
+        _pauseStartTimestamp = timestamp;
+        _isPaused = true;
+        _pauseTime = 0;
+        await _pauseStateService.setPaused(courseId, true);
+        await _pauseStateService.setPauseStartTimestamp(courseId, timestamp);
+        _startPauseTimer();
+
+        if (mounted) {
+          setState(() {});
+        }
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Erreur: ${e.toString()}')),
+        );
+      }
+    }
+  }
+
+  void _showPauseSummaryDialog({
+    required String duration,
+    required int amount,
+  }) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(16),
+        ),
+        title: Row(
+          children: [
+            Container(
+              padding: const EdgeInsets.all(8),
+              decoration: BoxDecoration(
+                color: Colors.green.withOpacity(0.1),
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: const Icon(
+                Icons.play_arrow,
+                color: Colors.green,
+                size: 24,
+              ),
+            ),
+            const SizedBox(width: 12),
+            const Text(
+              'Course reprise',
+              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+            ),
+          ],
+        ),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text(
+              'Résumé de la pause',
+              style: TextStyle(
+                fontSize: 14,
+                fontWeight: FontWeight.w600,
+                color: Colors.grey,
+              ),
+            ),
+            const SizedBox(height: 16),
+            Container(
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                color: Colors.grey[100],
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: Column(
+                children: [
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Row(
+                        children: [
+                          Icon(Icons.timer_outlined, size: 20, color: Colors.grey[700]),
+                          const SizedBox(width: 8),
+                          const Text(
+                            'Durée de la pause',
+                            style: TextStyle(fontSize: 14),
+                          ),
+                        ],
+                      ),
+                      Text(
+                        duration,
+                        style: const TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 12),
+                  const Divider(),
+                  const SizedBox(height: 12),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Row(
+                        children: [
+                          Icon(Icons.payments, size: 20, color: Colors.orange[700]),
+                          const SizedBox(width: 8),
+                          const Text(
+                            'Frais de pause',
+                            style: TextStyle(fontSize: 14),
+                          ),
+                        ],
+                      ),
+                      Text(
+                        '$amount FCFA',
+                        style: TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.bold,
+                          color: amount > 0 ? Colors.orange[700] : Colors.green,
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+            if (amount == 0)
+              Padding(
+                padding: const EdgeInsets.only(top: 12),
+                child: Row(
+                  children: [
+                    Icon(Icons.check_circle, size: 16, color: Colors.green[600]),
+                    const SizedBox(width: 6),
+                    Expanded(
+                      child: Text(
+                        'Pause gratuite (moins de 5 minutes)',
+                        style: TextStyle(
+                          fontSize: 12,
+                          color: Colors.green[600],
+                          fontStyle: FontStyle.italic,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(),
+            style: TextButton.styleFrom(
+              backgroundColor: kcPrimaryColor,
+              foregroundColor: Colors.white,
+              padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(8),
+              ),
+            ),
+            child: const Text('Continuer'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  double _calculatePausePrice() {
+    // First 5 minutes are free
+    if (_pauseTime <= 300) return 0.0;
+
+    // Calculate billable minutes (after first 5 minutes)
+    final int totalMinutes = (_pauseTime / 60).ceil();
+    final int billableMinutes = totalMinutes - 5;
+
+    // Get rate based on vehicle type
+    final int ratePerMinute = _getRatePerMinute(widget.vehicleType);
+
+    return billableMinutes * ratePerMinute.toDouble();
+  }
+
+  int _getRatePerMinute(String? vehicleType) {
+    if (vehicleType == null) return 25; // Default to Voiture Std
+
+    switch (vehicleType.toLowerCase()) {
+      case 'moto':
+        return 10;
+      case 'tricycle':
+        return 20;
+      case 'voiture std':
+      case 'voiture standard':
+        return 25;
+      case 'voiture premium':
+        return 50;
+      case 'voiture vip':
+        return 80;
+      default:
+        return 25; // Default to Voiture Std
+    }
+  }
+
   @override
   void dispose() {
+    _pauseTimer?.cancel();
     _pulseController.dispose();
     _progressController.dispose();
     super.dispose();
@@ -958,12 +1280,12 @@ class _InProgressRideBottomSheetState extends State<InProgressRideBottomSheet>
                             },
                           ),
                         ),
-                        const Text(
-                          'Course en cours',
+                        Text(
+                          _isPaused ? 'Course en pause' : 'Course en cours',
                           style: TextStyle(
                             fontSize: 18,
                             fontWeight: FontWeight.bold,
-                            color: Colors.black87,
+                            color: _isPaused ? Colors.orange : Colors.black87,
                           ),
                         ),
                       ],
@@ -1025,18 +1347,18 @@ class _InProgressRideBottomSheetState extends State<InProgressRideBottomSheet>
                             ],
                           ),
                         ),
-                        // Bouton téléphone
+                        // Bouton pause/reprendre
                         Container(
                           width: 50,
                           height: 50,
-                          decoration: const BoxDecoration(
-                            color: kcPrimaryColor,
+                          decoration: BoxDecoration(
+                            color: _isPaused ? Colors.green : Colors.orange,
                             shape: BoxShape.circle,
                           ),
                           child: IconButton(
-                            onPressed: widget.onCallClients,
-                            icon: const Icon(
-                              Icons.pause,
+                            onPressed: _togglePause,
+                            icon: Icon(
+                              _isPaused ? Icons.play_arrow : Icons.pause,
                               color: Colors.white,
                               size: 24,
                             ),
@@ -1082,6 +1404,13 @@ class _InProgressRideBottomSheetState extends State<InProgressRideBottomSheet>
                   ),
 
                   const SizedBox(height: 20),
+
+                  // Pause Timer Widget
+                  if (_isPaused)
+                    _buildPauseTimer(),
+
+                  if (_isPaused)
+                    const SizedBox(height: 20),
 
                   // OPTION 1: Container avec bordure animée et prix qui pulse
                   AnimatedBuilder(
@@ -1239,6 +1568,146 @@ class _InProgressRideBottomSheetState extends State<InProgressRideBottomSheet>
           ),
         );
       },
+    );
+  }
+
+  Widget _buildPauseTimer() {
+    final pauseTime = _pauseTime;
+    final hours = (pauseTime ~/ 3600).toString().padLeft(2, '0');
+    final minutes = ((pauseTime % 3600) ~/ 60).toString().padLeft(2, '0');
+    final seconds = (pauseTime % 60).toString().padLeft(2, '0');
+    final pausePrice = _calculatePausePrice();
+    final isFree = pauseTime <= 300;
+
+    return Container(
+      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: isFree
+            ? [Colors.green[50]!, Colors.green[100]!]
+            : [Colors.orange[50]!, Colors.orange[100]!],
+        ),
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(
+          color: isFree ? Colors.green[300]! : Colors.orange[300]!,
+          width: 2,
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: (isFree ? Colors.green : Colors.orange).withOpacity(0.3),
+            blurRadius: 15,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Container(
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  color: isFree ? Colors.green : Colors.orange,
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                child: Icon(
+                  isFree ? Icons.timer_outlined : Icons.pause_circle_filled,
+                  color: Colors.white,
+                  size: 20,
+                ),
+              ),
+              const SizedBox(width: 12),
+              Text(
+                'Temps de pause',
+                style: TextStyle(
+                  fontSize: 18,
+                  color: isFree ? Colors.green[900] : Colors.orange[900],
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 16),
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(16),
+            ),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                _buildTimeSegment(hours, 'H'),
+                _buildTimeSeparator(),
+                _buildTimeSegment(minutes, 'MIN'),
+                _buildTimeSeparator(),
+                _buildTimeSegment(seconds, 'SEC'),
+              ],
+            ),
+          ),
+          const SizedBox(height: 16),
+          Container(
+            width: double.infinity,
+            padding: const EdgeInsets.all(14),
+            decoration: BoxDecoration(
+              color: isFree ? Colors.green : Colors.orange,
+              borderRadius: BorderRadius.circular(14),
+            ),
+            child: Row(
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(8),
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                  child: Icon(
+                    isFree ? Icons.check_circle : Icons.payments_rounded,
+                    color: isFree ? Colors.green[700] : Colors.orange[700],
+                    size: 18,
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Text(
+                    isFree ? 'Pause gratuite' : 'Frais de pause',
+                    style: const TextStyle(
+                      fontSize: 14,
+                      color: Colors.white,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ),
+                Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 14,
+                    vertical: 6,
+                  ),
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(20),
+                  ),
+                  child: Text(
+                    isFree
+                      ? '5 min gratuites'
+                      : '+${pausePrice.toStringAsFixed(0)} FCFA',
+                    style: TextStyle(
+                      fontSize: 14,
+                      fontWeight: FontWeight.bold,
+                      color: isFree ? Colors.green[700] : Colors.orange[700],
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
     );
   }
 

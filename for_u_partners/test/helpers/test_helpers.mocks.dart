@@ -1339,9 +1339,39 @@ class MockDriverService extends _i1.Mock implements _i26.DriverService {
       ) as _i20.Future<void>);
 
   @override
+  _i20.Future<void> confirmArrival(int? courseId) => (super.noSuchMethod(
+        Invocation.method(
+          #confirmArrival,
+          [courseId],
+        ),
+        returnValue: _i20.Future<void>.value(),
+        returnValueForMissingStub: _i20.Future<void>.value(),
+      ) as _i20.Future<void>);
+
+  @override
   _i20.Future<void> startCourse(int? courseId) => (super.noSuchMethod(
         Invocation.method(
           #startCourse,
+          [courseId],
+        ),
+        returnValue: _i20.Future<void>.value(),
+        returnValueForMissingStub: _i20.Future<void>.value(),
+      ) as _i20.Future<void>);
+
+  @override
+  _i20.Future<void> startPause(int? courseId) => (super.noSuchMethod(
+        Invocation.method(
+          #startPause,
+          [courseId],
+        ),
+        returnValue: _i20.Future<void>.value(),
+        returnValueForMissingStub: _i20.Future<void>.value(),
+      ) as _i20.Future<void>);
+
+  @override
+  _i20.Future<void> stopPause(int? courseId) => (super.noSuchMethod(
+        Invocation.method(
+          #stopPause,
           [courseId],
         ),
         returnValue: _i20.Future<void>.value(),

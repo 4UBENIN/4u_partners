@@ -210,6 +210,72 @@ class DriverService {
     }
   }
 
+  // Démarrer une pause
+  Future<Map<String, dynamic>> startPause(int courseId) async {
+    final token = await sharedPreferencesService.getToken();
+    final url = Uri.parse(startPauseUrl(courseId));
+    print("start-pause-url: $url");
+    try {
+      final response = await http.post(
+        url,
+        headers: {
+          'Accept': 'application/json',
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer $token',
+        },
+      );
+
+      print("start-pause-response: ${response.body}");
+
+      if (response.statusCode == 200 || response.statusCode == 201) {
+        final data = jsonDecode(response.body);
+        return {
+          'timestamp': data['timestamp'] as int,
+          'pause_start': data['pause_start'] as String,
+        };
+      } else {
+        throw Exception('Échec du démarrage de la pause');
+      }
+    } catch (e) {
+      debugPrint('Erreur lors du démarrage de la pause: $e');
+      rethrow;
+    }
+  }
+
+  // Arrêter une pause
+  Future<Map<String, dynamic>> stopPause(int courseId) async {
+    final token = await sharedPreferencesService.getToken();
+    final url = Uri.parse(stopPauseUrl(courseId));
+    print("stop-pause-url: $url");
+    try {
+      final response = await http.post(
+        url,
+        headers: {
+          'Accept': 'application/json',
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer $token',
+        },
+      );
+
+      print("stop-pause-response: ${response.body}");
+
+      if (response.statusCode == 200 || response.statusCode == 201) {
+        final data = jsonDecode(response.body);
+        return {
+          'pause_seconds': data['pause_seconds'] as int,
+          'total_pause': data['total_pause'] as int,
+          'montant_pause': data['montant_pause'] as int,
+          'message': data['message'] as String,
+        };
+      } else {
+        throw Exception('Échec de l\'arrêt de la pause');
+      }
+    } catch (e) {
+      debugPrint('Erreur lors de l\'arrêt de la pause: $e');
+      rethrow;
+    }
+  }
+
   // Terminer une course
   Future<void> completeCourse(int courseId) async {
     print("Debut de la fin de la course dans le service");
@@ -578,17 +644,26 @@ class DriverService {
         }),
       );
 
-      print('🔔 Notification response status: ${response.statusCode}');
-      print('🔔 Notification response body: ${response.body}');
+      debugPrint('=== NOTIFY CLIENT RESPONSE ===');
+      debugPrint('Status Code: ${response.statusCode}');
+      debugPrint('Response Headers: ${response.headers}');
+      debugPrint('Full Response Body: ${response.body}');
 
       if (response.statusCode == 200 || response.statusCode == 201) {
         final responseData = jsonDecode(response.body);
-        print('✅ Notification successful: $responseData');
+        debugPrint('Parsed Response Data: $responseData');
+
+        // Log each field separately for clarity
+        responseData.forEach((key, value) {
+          debugPrint('  $key: $value');
+        });
+
+        debugPrint('✅ Notification successful');
       } else {
-        print(
-          '⚠️ Notification responded with ${response.statusCode}, continuing workflow.',
-        );
+        debugPrint('⚠️ Notification responded with ${response.statusCode}, continuing workflow.');
       }
+
+      debugPrint('=== END NOTIFY CLIENT RESPONSE ===');
     } catch (e) {
       print('❌ Error in notifyClient (non-blocking): $e');
     }
