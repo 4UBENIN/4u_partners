@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'dart:io';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:for_u_partners/ui/common/profil_validation_page.dart';
@@ -7,6 +8,7 @@ import 'package:http/http.dart' as http;
 import 'package:dio/dio.dart';
 import 'package:path/path.dart' as path;
 import 'package:http_parser/http_parser.dart';
+import 'package:mime/mime.dart';
 import 'package:for_u_partners/app/app.router.dart';
 import 'package:for_u_partners/app/app.locator.dart';
 import 'package:for_u_partners/app/api_constant.dart';
@@ -19,10 +21,54 @@ class AuthService {
   final _sharedPreferencesServices = locator<SharedpreferencesService>();
   final _navigationService = locator<NavigationService>();
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
+  final Dio _dio = Dio();
+  
+  //* Mettre à jour la photo de profil
+  Future<Map<String, dynamic>> updateProfilePicture(
+      File imageFile, String token) async {
+    try {
+      String fileName = path.basename(imageFile.path);
+      String? mimeType = lookupMimeType(imageFile.path);
+      String type = mimeType?.split('/')[0] ?? '';
+      String subtype = mimeType?.split('/')[1] ?? '';
+
+      FormData formData = FormData.fromMap({
+        'photo_profil': await MultipartFile.fromFile(
+          imageFile.path,
+          filename: fileName,
+          contentType: MediaType(type, subtype),
+        ),
+      });
+
+      final response = await _dio.post(
+        'https://foryou.cilassocies.com/api/user/photo-profil',
+        data: formData,
+        options: Options(
+          headers: {
+            'Authorization': 'Bearer $token',
+            'Accept': 'application/json',
+          },
+        ),
+      );
+
+      if (response.statusCode == 200) {
+        return {'success': true, 'data': response.data};
+      } else {
+        return {
+          'success': false,
+          'message': 'Erreur lors de la mise à jour de la photo de profil'
+        };
+      }
+    } catch (e) {
+      print('Erreur lors de l\'upload de la photo: $e');
+      return {'success': false, 'message': 'Erreur: $e'};
+    }
+  }
 
   //* LOGIN FUNCTION
   Future<void> login(LoginModel loginModel, BuildContext context) async {
-    final url = Uri.parse("https://foryou.cilassocies.com/api/partenaire/login");
+    final url =
+        Uri.parse("https://foryou.cilassocies.com/api/partenaire/login");
 
     try {
       final response = await http.post(
@@ -116,8 +162,8 @@ class AuthService {
   }
 
   //* Synchroniser l'utilisateur avec Firestore
-  Future<void> _syncUserToFirestore(
-      Map<String, dynamic> userData, String type, String firestoreUserId) async {
+  Future<void> _syncUserToFirestore(Map<String, dynamic> userData, String type,
+      String firestoreUserId) async {
     try {
       final userDoc = _firestore.collection('users').doc(firestoreUserId);
       final docSnapshot = await userDoc.get();
@@ -170,8 +216,8 @@ class AuthService {
   //* VÉRIFICATION DU NUMÉRO DE TÉLÉPHONE
   Future<bool> checkPhoneNumberExists(String phoneNumber) async {
     try {
-      final url =
-          Uri.parse("https://foryou.cilassocies.com/api/partenaire/check-phone");
+      final url = Uri.parse(
+          "https://foryou.cilassocies.com/api/partenaire/check-phone");
 
       final response = await http.post(
         url,
@@ -222,23 +268,29 @@ class AuthService {
       MapEntry('adresse', model.adresse),
     ]);
 
-    if (model.prenom != null) formData.fields.add(MapEntry('prenom', model.prenom!));
-    if (model.genre != null) formData.fields.add(MapEntry('genre', model.genre!));
+    if (model.prenom != null)
+      formData.fields.add(MapEntry('prenom', model.prenom!));
+    if (model.genre != null)
+      formData.fields.add(MapEntry('genre', model.genre!));
     if (model.dateNaissance != null && model.dateNaissance!.isNotEmpty) {
       formData.fields.add(MapEntry('date_naissance', model.dateNaissance!));
     }
 
     if (model.numeroPermis != null) {
-      formData.fields.add(MapEntry('numero_permis', model.numeroPermis ?? 'TEMP_PERMIS'));
+      formData.fields
+          .add(MapEntry('numero_permis', model.numeroPermis ?? 'TEMP_PERMIS'));
     }
     if (model.dateExpirationPermis != null) {
-      formData.fields.add(MapEntry('date_expiration_permis', model.dateExpirationPermis ?? '2030-12-31'));
+      formData.fields.add(MapEntry('date_expiration_permis',
+          model.dateExpirationPermis ?? '2030-12-31'));
     }
     if (model.possedeVehicule != null) {
-      formData.fields.add(MapEntry('possedevehicule', model.possedeVehicule.toString()));
+      formData.fields
+          .add(MapEntry('possedevehicule', model.possedeVehicule.toString()));
     }
     if (model.typeConducteurId != null) {
-      formData.fields.add(MapEntry('type_conducteur_id', model.typeConducteurId.toString()));
+      formData.fields.add(
+          MapEntry('type_conducteur_id', model.typeConducteurId.toString()));
     }
 
     if (model.documentIdentite != null) {
@@ -294,7 +346,8 @@ class AuthService {
     return formData;
   }
 
-  Future<void> register(RegistrationModel registrationModel, BuildContext context) async {
+  Future<void> register(
+      RegistrationModel registrationModel, BuildContext context) async {
     final dio = Dio();
     const url = 'https://foryou.cilassocies.com/api/partenaire/register';
 
@@ -310,11 +363,13 @@ class AuthService {
       print("=== DEBUT DE L'INSCRIPTION ===");
 
       // ✅ Vérifier si le numéro existe déjà
-      final phoneExists = await checkPhoneNumberExists(registrationModel.telephone);
+      final phoneExists =
+          await checkPhoneNumberExists(registrationModel.telephone);
       if (phoneExists) {
         CustomToast.showError(
           context,
-          message: "Ce numéro de téléphone est déjà associé à un compte. Veuillez vous connecter.",
+          message:
+              "Ce numéro de téléphone est déjà associé à un compte. Veuillez vous connecter.",
         );
 
         // Redirection automatique vers la page de connexion
@@ -331,7 +386,10 @@ class AuthService {
         url,
         data: formData,
         options: Options(
-          headers: {'accept': 'application/json', 'Content-Type': 'multipart/form-data'},
+          headers: {
+            'accept': 'application/json',
+            'Content-Type': 'multipart/form-data'
+          },
           validateStatus: (status) => status != null && status < 500,
         ),
       );
@@ -350,11 +408,13 @@ class AuthService {
 
         await _sharedPreferencesServices.saveUserId(responseJson['data']['id']);
         await _sharedPreferencesServices.saveUserType(registerType);
-        await _sharedPreferencesServices.saveUserName(responseJson['data']['nom']);
+        await _sharedPreferencesServices
+            .saveUserName(responseJson['data']['nom']);
 
         String firestoreUserId;
         if (responseJson['data']['conducteur'] != null) {
-          final conducteurId = responseJson['data']['conducteur']['id'].toString();
+          final conducteurId =
+              responseJson['data']['conducteur']['id'].toString();
           await _sharedPreferencesServices.saveUserTypeId(conducteurId);
           firestoreUserId = conducteurId;
         } else {
@@ -377,7 +437,8 @@ class AuthService {
             }
             Navigator.push(
               context,
-              MaterialPageRoute(builder: (context) => const ProfileValidationPage()),
+              MaterialPageRoute(
+                  builder: (context) => const ProfileValidationPage()),
             );
             break;
 

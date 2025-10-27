@@ -61,6 +61,105 @@ class _EditProfileViewState extends State<EditProfileView> {
     super.dispose();
   }
 
+  void _showPhotoOptions() {
+    showModalBottomSheet(
+      context: context,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (context) {
+        return SafeArea(
+          child: Padding(
+            padding: const EdgeInsets.symmetric(vertical: 20),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+                  child: const Text(
+                    'Photo de profil',
+                    style: TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.w600,
+                      color: Colors.black87,
+                    ),
+                  ),
+                ),
+                const Divider(),
+                if (widget.viewModel.user?.photoUrl == null)
+                  ListTile(
+                    leading: const Icon(Icons.add_a_photo, color: kcPrimaryColor),
+                    title: const Text('Ajouter une photo'),
+                    onTap: () {
+                      Navigator.pop(context);
+                      widget.viewModel.pickAndUploadPhoto(context);
+                    },
+                  )
+                else ...[
+                  ListTile(
+                    leading: const Icon(Icons.remove_red_eye, color: kcPrimaryColor),
+                    title: const Text('Voir la photo'),
+                    onTap: () {
+                      Navigator.pop(context);
+                      _showFullScreenImage();
+                    },
+                  ),
+                  ListTile(
+                    leading: const Icon(Icons.edit, color: kcPrimaryColor),
+                    title: const Text('Modifier la photo'),
+                    onTap: () {
+                      Navigator.pop(context);
+                      widget.viewModel.pickAndUploadPhoto(context);
+                    },
+                  ),
+                  ListTile(
+                    leading: const Icon(Icons.delete, color: Colors.red),
+                    title: const Text('Supprimer la photo', style: TextStyle(color: Colors.red)),
+                    onTap: () {
+                      Navigator.pop(context);
+                      widget.viewModel.deleteProfilePhoto(context);
+                    },
+                  ),
+                ],
+              ],
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  void _showFullScreenImage() {
+    if (widget.viewModel.user?.photoUrl == null) return;
+    
+    showDialog(
+      context: context,
+      builder: (context) => Dialog(
+        backgroundColor: Colors.transparent,
+        child: Stack(
+          children: [
+            Center(
+              child: InteractiveViewer(
+                child: Image.network(
+                  widget.viewModel.user!.photoUrl!,
+                  fit: BoxFit.contain,
+                ),
+              ),
+            ),
+            Positioned(
+              top: 20,
+              right: 20,
+              child: IconButton(
+                icon: const Icon(Icons.close, color: Colors.white, size: 30),
+                onPressed: () => Navigator.pop(context),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -99,15 +198,58 @@ class _EditProfileViewState extends State<EditProfileView> {
               ),
               child: Column(
                 children: [
-                  Container(
-                    width: 80,
-                    height: 80,
-                    decoration: BoxDecoration(
-                      color: kcPrimaryColor.withValues(alpha: 0.4),
-                      shape: BoxShape.circle,
+                  // Avatar avec photo
+                  GestureDetector(
+                    onTap: _showPhotoOptions,
+                    child: Stack(
+                      children: [
+                        Container(
+                          width: 100,
+                          height: 100,
+                          decoration: BoxDecoration(
+                            color: widget.viewModel.user?.photoUrl == null
+                                ? kcPrimaryColor.withValues(alpha: 0.4)
+                                : null,
+                            shape: BoxShape.circle,
+                            image: widget.viewModel.user?.photoUrl != null
+                                ? DecorationImage(
+                                    image: NetworkImage(widget.viewModel.user!.photoUrl!),
+                                    fit: BoxFit.cover,
+                                  )
+                                : null,
+                          ),
+                          child: widget.viewModel.user?.photoUrl == null
+                              ? const Icon(Icons.person, size: 50, color: kcPrimaryColor)
+                              : null,
+                        ),
+                        Positioned(
+                          right: 0,
+                          bottom: 0,
+                          child: Container(
+                            width: 32,
+                            height: 32,
+                            decoration: BoxDecoration(
+                              color: kcPrimaryColor,
+                              shape: BoxShape.circle,
+                              border: Border.all(color: Colors.white, width: 3),
+                            ),
+                            child: widget.viewModel.isUploadingPhoto
+                                ? const Padding(
+                                    padding: EdgeInsets.all(6),
+                                    child: CircularProgressIndicator(
+                                      strokeWidth: 2,
+                                      valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                                    ),
+                                  )
+                                : const Icon(
+                                    Icons.camera_alt,
+                                    size: 16,
+                                    color: Colors.white,
+                                  ),
+                          ),
+                        ),
+                      ],
                     ),
-                    child:
-                        const Icon(Icons.person, size: 40, color: kcPrimaryColor),
                   ),
                   const SizedBox(height: 12),
                   Text(
@@ -124,6 +266,19 @@ class _EditProfileViewState extends State<EditProfileView> {
                     style: TextStyle(
                       fontSize: 14,
                       color: Colors.grey.shade600,
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  TextButton.icon(
+                    onPressed: _showPhotoOptions,
+                    icon: const Icon(Icons.edit, size: 16),
+                    label: Text(
+                      widget.viewModel.user?.photoUrl == null
+                          ? 'Ajouter une photo'
+                          : 'Modifier la photo',
+                    ),
+                    style: TextButton.styleFrom(
+                      foregroundColor: kcPrimaryColor,
                     ),
                   ),
                 ],
@@ -204,7 +359,7 @@ class _EditProfileViewState extends State<EditProfileView> {
       ),
       child: TextFormField(
         controller: controller,
-        enabled: false, // lecture seule
+        enabled: false,
         decoration: InputDecoration(
           labelText: label,
           border: OutlineInputBorder(
@@ -213,8 +368,7 @@ class _EditProfileViewState extends State<EditProfileView> {
           ),
           filled: true,
           fillColor: Colors.white,
-          contentPadding:
-              const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+          contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
         ),
       ),
     );
@@ -239,7 +393,7 @@ class _EditProfileViewState extends State<EditProfileView> {
       ),
       child: TextFormField(
         controller: controller,
-        enabled: false, // lecture seule
+        enabled: false,
         decoration: InputDecoration(
           labelText: label,
           suffixIcon: Icon(Icons.calendar_today, color: Colors.grey.shade600),
@@ -249,8 +403,7 @@ class _EditProfileViewState extends State<EditProfileView> {
           ),
           filled: true,
           fillColor: Colors.white,
-          contentPadding:
-              const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+          contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
         ),
         readOnly: true,
       ),
@@ -283,15 +436,14 @@ class _EditProfileViewState extends State<EditProfileView> {
           ),
           filled: true,
           fillColor: Colors.white,
-          contentPadding:
-              const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+          contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
         ),
         child: DropdownButtonHideUnderline(
           child: DropdownButton<String>(
             value: value,
             isDense: true,
             items: items,
-            onChanged: null, // lecture seule
+            onChanged: null,
             isExpanded: true,
           ),
         ),

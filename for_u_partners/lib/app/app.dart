@@ -1,4 +1,6 @@
+import 'package:for_u_partners/services/profile_photo_service.dart';
 import 'package:for_u_partners/ui/views/drivers/documents/documents_viewmodel.dart';
+import 'package:for_u_partners/ui/views/drivers/documents/add_document.dart';
 import 'package:for_u_partners/ui/views/drivers/homemain/homemain_viewmodel.dart';
 import 'package:for_u_partners/ui/views/drivers/vehicles/vehicles_viewmodel.dart' as vehicle_vm;
 import 'package:stacked/stacked_annotations.dart';
@@ -21,6 +23,7 @@ import 'package:for_u_partners/ui/views/auth/register_profile/register_profile_v
 import 'package:for_u_partners/ui/views/drivers/activitydetails/activitydetails_view.dart';
 import 'package:for_u_partners/ui/views/drivers/vehicles/vehicles_view.dart';
 import 'package:for_u_partners/ui/views/drivers/documents/documents_view.dart';
+import 'package:for_u_partners/ui/views/drivers/documents/document_viewer_view.dart';
 import 'package:for_u_partners/ui/views/pressing/compte_pressing/compte_pressing_view.dart';
 import 'package:for_u_partners/ui/views/delivery/compte_delivery/compte_delivery_view.dart';
 import 'package:for_u_partners/ui/views/delivery/delivery_nav_bar/delivery_nav_bar_view.dart';
@@ -35,6 +38,7 @@ import 'package:for_u_partners/services/driver_service.dart';
 import 'package:for_u_partners/services/wallet_service.dart';
 import 'package:for_u_partners/services/chat_service.dart';
 import 'package:for_u_partners/services/pickers_service.dart';
+import 'package:for_u_partners/services/vehicle_service.dart';
 import 'package:for_u_partners/services/active_course_checker_service.dart';
 import 'package:for_u_partners/services/course_restoration_service.dart';
 import 'package:for_u_partners/services/arrival_state_service.dart';
@@ -67,6 +71,8 @@ import 'package:for_u_partners/services/pause_state_service.dart';
     MaterialRoute(page: CoursesDeliveryView),
     MaterialRoute(page: MesVehiculesView),
     MaterialRoute(page: DocumentsView),
+    MaterialRoute(page: AddDocumentView),
+    MaterialRoute(page: DocumentViewerView),
 // @stacked-route
   ],
   dependencies: const [
@@ -80,6 +86,7 @@ import 'package:for_u_partners/services/pause_state_service.dart';
     LazySingleton(classType: WalletService),
     LazySingleton(classType: ChatService),
     LazySingleton(classType: PickersService),
+    LazySingleton(classType: VehicleService),
     LazySingleton(classType: ActiveCourseCheckerService),
     LazySingleton(classType: CourseRestorationService),
     LazySingleton(classType: ArrivalStateService),
@@ -87,6 +94,7 @@ import 'package:for_u_partners/services/pause_state_service.dart';
     Singleton(classType: HomemainViewModel),
     Singleton(classType: vehicle_vm.MesVehiculesViewModel),
     Singleton(classType: DocumentsViewModel),
+    LazySingleton(classType: ProfilePhotoService),
 // @stacked-service
   ],
   bottomsheets: [

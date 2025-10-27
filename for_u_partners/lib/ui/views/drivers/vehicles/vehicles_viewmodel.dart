@@ -1,6 +1,7 @@
 // mes_vehicules_viewmodel.dart
 import 'dart:convert';
 
+import 'package:flutter/material.dart';
 import 'package:stacked/stacked.dart';
 import 'package:stacked_services/stacked_services.dart';
 import 'package:for_u_partners/app/app.locator.dart';
@@ -8,6 +9,7 @@ import 'package:for_u_partners/ui/views/drivers/vehicles/add_vehicles.dart';
 import 'package:for_u_partners/services/sharedpreferences_service.dart';
 import 'package:for_u_partners/models/vehicle_model.dart';
 import 'package:http/http.dart' as http;
+
 class MesVehiculesViewModel extends BaseViewModel {
   Vehicle? _vehiculeActif;
   List<Vehicle> _vehicules = [];
@@ -15,7 +17,6 @@ class MesVehiculesViewModel extends BaseViewModel {
   bool _isApprovedExpanded = true;
   String? _errorMessage;
 
-  // URL de base corrigée (sans /api à la fin)
   static const String baseUrl = 'https://foryou.cilassocies.com';
 
   Vehicle? get vehiculeActif => _vehiculeActif;
@@ -40,11 +41,9 @@ class MesVehiculesViewModel extends BaseViewModel {
 
   Future<void> fetchDashboardData() async {
     try {
-      // Récupération du token
       final token = await _getAuthToken();
       print('✅ Token récupéré: ${token.substring(0, 10)}...');
       
-      // URL corrigée
       final url = Uri.parse('$baseUrl/api/conducteur/dashboard');
       print('🌐 URL de l\'API: $url');
       
@@ -65,47 +64,57 @@ class MesVehiculesViewModel extends BaseViewModel {
           final data = jsonDecode(response.body);
           print('🔍 Données décodées: $data');
           
-          // Le champ 'vehicule' contient les données du véhicule
           if (data['vehicule'] != null) {
-            // Créer un véhicule à partir de l'objet vehicule
             final vehicleData = Map<String, dynamic>.from(data['vehicule']);
+            final categorie = vehicleData['categorie']?.toString()?.toLowerCase() ?? 'standard';
+            
+            // Déterminer les valeurs des switches en fonction de la catégorie
+            bool basicValue = false;
+            bool premiumValue = false;
+            
+            if (categorie == 'standard') {
+              basicValue = true;
+              premiumValue = false;
+            } else if (categorie == 'premium') {
+              basicValue = false;
+              premiumValue = true;
+            } else if (categorie == 'vip') {
+              basicValue = false;
+              premiumValue = true; // VIP est considéré comme Premium+
+            }
+            
             final vehicle = Vehicle(
               id: vehicleData['id']?.toString() ?? '',
               model: vehicleData['modele']?.toString() ?? 'Modèle non spécifié',
               marque: vehicleData['marque']?.toString() ?? 'Marque inconnue',
               immatriculation: vehicleData['immatriculation']?.toString() ?? '',
               statut: vehicleData['statut']?.toString(),
-              categorie: vehicleData['categorie']?.toString() ?? 'standard',
+              categorie: categorie,
               couleur: vehicleData['couleur']?.toString() ?? 'Noire',
               courseHeure: vehicleData['course_heure'] == true || vehicleData['course_heure'] == 1,
               clim: vehicleData['clim'] == true || vehicleData['clim'] == 1,
-              basic: vehicleData['basic'] == true || vehicleData['basic'] == 1,
-              premium: vehicleData['premium'] == true || vehicleData['premium'] == 1,
+              basic: basicValue,
+              premium: premiumValue,
             );
             
             print('ℹ️ Catégorie du véhicule: ${vehicle.categorie}');
             print('ℹ️ Services - Course à l\'heure: ${vehicle.courseHeure}, Clim: ${vehicle.clim}, Basic: ${vehicle.basic}, Premium: ${vehicle.premium}');
             
             _vehicules = [vehicle];
-            // Définir le véhicule actif
             _vehiculeActif = vehicle;
             print('✅ Véhicule récupéré: ID=${vehicle.id}, Modèle=${vehicle.model}, Statut="${vehicle.statut}"');
             
-            // On affiche le véhicule dans les deux sections, peu importe son statut
             _vehiculesApprouves = List<Vehicle>.from(_vehicules);
             
-            // Si le véhicule est en attente, on l'affiche avec un statut spécial
             if (vehicle.statut?.toLowerCase() == 'en_attente') {
               print('ℹ️ Le véhicule est en attente de validation mais sera affiché');
             }
           } else if (data['message'] != null) {
-            // Si pas de véhicule mais un message est présent
             _errorMessage = data['message'];
             print('ℹ️ Message du serveur: $_errorMessage');
             _vehicules = [];
             _vehiculesApprouves = [];
           } else {
-            // Aucun véhicule et pas de message d'erreur
             _errorMessage = 'Aucun véhicule trouvé';
             _vehicules = [];
             _vehiculesApprouves = [];
@@ -156,7 +165,6 @@ class MesVehiculesViewModel extends BaseViewModel {
     if (_vehiculeActif != null) {
       _vehiculeActif!.courseHeure = value;
       notifyListeners();
-      // TODO: Appel API pour mettre à jour
       _updateVehicleService('course_heure', value);
     }
   }
@@ -165,44 +173,155 @@ class MesVehiculesViewModel extends BaseViewModel {
     if (_vehiculeActif != null) {
       _vehiculeActif!.clim = value;
       notifyListeners();
-      // TODO: Appel API pour mettre à jour
       _updateVehicleService('clim', value);
     }
   }
 
+  // 🔥 NOUVELLE LOGIQUE: Toggle Basic = Passer en catégorie Standard
   void toggleBasic(bool value) {
-    if (_vehiculeActif != null) {
-      final categorie = _vehiculeActif!.categorie?.toLowerCase();
-      
-      // Vérifier que ce n'est pas un véhicule VIP (Basic est verrouillé pour VIP)
-      if (categorie == 'vip') {
-        print('⚠️ Basic est verrouillé pour les véhicules VIP');
+    if (_vehiculeActif == null) return;
+    
+    final categorieActuelle = _vehiculeActif!.categorie?.toLowerCase();
+    
+    // Si on active Basic, on passe en catégorie Standard
+    if (value) {
+      if (categorieActuelle == 'standard') {
+        print('ℹ️ Le véhicule est déjà en catégorie Standard');
         return;
       }
-      
-      _vehiculeActif!.basic = value;
-      notifyListeners();
-      print('🔄 Basic ${value ? "activé" : "désactivé"}');
-      // TODO: Appel API pour mettre à jour
-      _updateVehicleService('basic', value);
+      print('🔄 Changement de catégorie vers Standard...');
+      _changerCategorie('standard');
+    } else {
+      // Si on désactive Basic depuis Standard, on ne fait rien
+      // (ou vous pouvez définir un comportement spécifique)
+      print('⚠️ Désactivation de Basic depuis la catégorie $categorieActuelle');
     }
   }
 
+  // 🔥 NOUVELLE LOGIQUE: Toggle Premium = Passer en catégorie Premium
   void togglePremium(bool value) {
-    if (_vehiculeActif != null) {
-      final categorie = _vehiculeActif!.categorie?.toLowerCase();
-      
-      // Vérifier que c'est bien un véhicule VIP
-      if (categorie != 'vip') {
-        print('⚠️ Premium est disponible uniquement pour les véhicules VIP');
+    if (_vehiculeActif == null) return;
+    
+    final categorieActuelle = _vehiculeActif!.categorie?.toLowerCase();
+    
+    // Si on active Premium, on passe en catégorie Premium
+    if (value) {
+      if (categorieActuelle == 'premium' || categorieActuelle == 'vip') {
+        print('ℹ️ Le véhicule est déjà en catégorie $categorieActuelle');
+        _errorMessage = 'Le véhicule est déjà en catégorie ${categorieActuelle?.toUpperCase()}';
+        notifyListeners();
         return;
       }
+      print('🔄 Changement de catégorie vers Premium...');
+      _changerCategorie('premium');
+    } else {
+      // Si on désactive Premium, on peut revenir à Standard
+      if (categorieActuelle == 'premium') {
+        print('🔄 Retour à la catégorie Standard...');
+        _changerCategorie('standard');
+      } else if (categorieActuelle == 'vip') {
+        print('⚠️ Impossible de désactiver Premium depuis VIP');
+        _errorMessage = 'Impossible de modifier la catégorie VIP';
+        // Restaurer l'état du switch
+        _vehiculeActif!.premium = true;
+        notifyListeners();
+      }
+    }
+  }
+
+  // 🆕 NOUVELLE MÉTHODE: Changer la catégorie du véhicule via l'API
+  Future<void> _changerCategorie(String nouvelleCategorie) async {
+    if (_vehiculeActif == null) return;
+    
+    final categorieActuelle = _vehiculeActif!.categorie;
+    print('📊 Catégorie actuelle: $categorieActuelle → Nouvelle: $nouvelleCategorie');
+    
+    try {
+      final token = await _getAuthToken();
+      final url = Uri.parse('$baseUrl/api/conducteur/changer-categorie');
       
-      _vehiculeActif!.premium = value;
+      print('🔄 Changement de catégorie vers: $nouvelleCategorie');
+      
+      final response = await http.post(
+        url,
+        headers: {
+          'Authorization': 'Bearer $token',
+          'Accept': 'application/json',
+          'Content-Type': 'application/json',
+        },
+        body: jsonEncode({
+          'vehicule_id': _vehiculeActif!.id,
+          'nouvelle_categorie': nouvelleCategorie,
+        }),
+      );
+
+      print('📡 Statut de la réponse: ${response.statusCode}');
+      print('📦 Corps de la réponse: ${response.body}');
+
+      if (response.statusCode == 200) {
+        print('✅ Catégorie changée avec succès vers $nouvelleCategorie');
+        
+        // Mettre à jour la catégorie locale
+        _vehiculeActif!.categorie = nouvelleCategorie;
+        
+        // Mettre à jour les switches en fonction de la nouvelle catégorie
+        final catLower = nouvelleCategorie.toLowerCase();
+        if (catLower == 'standard') {
+          _vehiculeActif!.basic = true;
+          _vehiculeActif!.premium = false;
+        } else if (catLower == 'premium' || catLower == 'vip') {
+          _vehiculeActif!.basic = false;
+          _vehiculeActif!.premium = true;
+        }
+        
+        notifyListeners();
+        
+        // Rafraîchir les données pour être sûr
+        await fetchDashboardData();
+      } else {
+        print('❌ Erreur lors du changement de catégorie: ${response.statusCode}');
+        print('📦 Réponse: ${response.body}');
+        
+        // Parser le message d'erreur de l'API
+        String errorMsg = 'Erreur lors du changement de catégorie';
+        try {
+          final errorData = jsonDecode(response.body);
+          if (errorData['message'] != null) {
+            errorMsg = errorData['message'];
+          }
+        } catch (e) {
+          print('⚠️ Impossible de parser le message d\'erreur');
+        }
+        
+        _errorMessage = errorMsg;
+        
+        // Restaurer l'état des switches à leur valeur d'origine
+        final catLower = categorieActuelle?.toLowerCase();
+        if (catLower == 'standard') {
+          _vehiculeActif!.basic = true;
+          _vehiculeActif!.premium = false;
+        } else if (catLower == 'premium' || catLower == 'vip') {
+          _vehiculeActif!.basic = false;
+          _vehiculeActif!.premium = true;
+        }
+        
+        notifyListeners();
+      }
+    } catch (e) {
+      print('❌ Erreur lors du changement de catégorie: $e');
+      _errorMessage = 'Erreur de connexion lors du changement de catégorie';
+      
+      // Restaurer l'état des switches
+      final catLower = categorieActuelle?.toLowerCase();
+      if (catLower == 'standard') {
+        _vehiculeActif!.basic = true;
+        _vehiculeActif!.premium = false;
+      } else if (catLower == 'premium' || catLower == 'vip') {
+        _vehiculeActif!.basic = false;
+        _vehiculeActif!.premium = true;
+      }
+      
       notifyListeners();
-      print('🔄 Premium ${value ? "activé" : "désactivé"}');
-      // TODO: Appel API pour mettre à jour
-      _updateVehicleService('premium', value);
     }
   }
 
@@ -233,19 +352,33 @@ class MesVehiculesViewModel extends BaseViewModel {
       } else {
         print('❌ Erreur lors de la mise à jour du service: ${response.statusCode}');
         print('📦 Réponse: ${response.body}');
-        // Optionnel: Rétablir l'état précédent en cas d'erreur
-        // await fetchDashboardData();
       }
     } catch (e) {
       print('❌ Erreur lors de la mise à jour du service $serviceName: $e');
-      // Optionnel: Rétablir l'état précédent en cas d'erreur
-      // await fetchDashboardData();
     }
   }
 
   final NavigationService _navigationService = locator<NavigationService>();
 
-  void addNewVehicle() {
-    _navigationService.navigateToView(AddVehiclesView());
+  Future<void> addNewVehicle() async {
+    final BuildContext? context = _navigationService.navigatorKey?.currentContext;
+    if (context == null) return;
+    
+    final result = await Navigator.of(context).push<Vehicle?>(
+      MaterialPageRoute(builder: (context) => AddVehiclesView()),
+    );
+    
+    if (result != null) {
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Véhicule ajouté avec succès'),
+            backgroundColor: Colors.green,
+          ),
+        );
+      }
+      
+      await fetchDashboardData();
+    }
   }
 }

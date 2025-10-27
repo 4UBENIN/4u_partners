@@ -20,7 +20,9 @@ import '../services/course_restoration_service.dart';
 import '../services/driver_service.dart';
 import '../services/pause_state_service.dart';
 import '../services/pickers_service.dart';
+import '../services/profile_photo_service.dart';
 import '../services/sharedpreferences_service.dart';
+import '../services/vehicle_service.dart';
 import '../services/wallet_service.dart';
 import '../ui/views/drivers/documents/documents_viewmodel.dart';
 import '../ui/views/drivers/homemain/homemain_viewmodel.dart';
@@ -47,6 +49,7 @@ Future<void> setupLocator({
   locator.registerLazySingleton(() => WalletService());
   locator.registerLazySingleton(() => ChatService());
   locator.registerLazySingleton(() => PickersService());
+  locator.registerLazySingleton(() => VehicleService());
   locator.registerLazySingleton(() => ActiveCourseCheckerService());
   locator.registerLazySingleton(() => CourseRestorationService());
   locator.registerLazySingleton(() => ArrivalStateService());
@@ -54,4 +57,5 @@ Future<void> setupLocator({
   locator.registerSingleton(HomemainViewModel());
   locator.registerSingleton(MesVehiculesViewModel());
   locator.registerSingleton(DocumentsViewModel());
+  locator.registerLazySingleton(() => ProfilePhotoService());
 }

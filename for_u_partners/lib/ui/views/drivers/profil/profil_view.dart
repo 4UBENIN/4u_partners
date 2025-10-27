@@ -1,10 +1,10 @@
 import 'package:for_u_partners/app/app.router.dart';
 import 'package:for_u_partners/ui/common/app_colors.dart';
 import 'package:loading_animation_widget/loading_animation_widget.dart';
-
 import 'profil_viewmodel.dart';
 import 'package:stacked/stacked.dart';
 import 'package:flutter/material.dart';
+import 'package:cached_network_image/cached_network_image.dart';
 
 class ProfilView extends StackedView<ProfilViewModel> {
   const ProfilView({Key? key}) : super(key: key);
@@ -29,30 +29,54 @@ class ProfilView extends StackedView<ProfilViewModel> {
                 child: Column(
                   children: [
                     const SizedBox(height: 50),
-                    // Avatar
+                    // Avatar avec photo de profil
                     Container(
                       margin: const EdgeInsets.only(bottom: 40),
-                      child: Container(
-                        width: 120,
-                        height: 120,
-                        decoration: BoxDecoration(
-                          borderRadius: BorderRadius.circular(60),
-                          gradient: const LinearGradient(
-                            begin: Alignment.topLeft,
-                            end: Alignment.bottomRight,
-                            colors: [Color(0xFF184E9C), Color(0xFF2A5BB8)],
+                      child: Stack(
+                        children: [
+                          // Avatar principal
+                          GestureDetector(
+                            onTap: () => _showPhotoOptions(context, viewModel),
+                            child: _buildProfileAvatar(viewModel),
                           ),
-                        ),
-                        child: Center(
-                          child: Text(
-                            viewModel.initials,
-                            style: const TextStyle(
-                              fontSize: 48,
-                              fontWeight: FontWeight.bold,
-                              color: Colors.white,
+                          // Bouton d'édition
+                          Positioned(
+                            right: 0,
+                            bottom: 0,
+                            child: GestureDetector(
+                              onTap: () => _showPhotoOptions(context, viewModel),
+                              child: Container(
+                                width: 36,
+                                height: 36,
+                                decoration: BoxDecoration(
+                                  color: kcPrimaryColor,
+                                  shape: BoxShape.circle,
+                                  border: Border.all(color: Colors.white, width: 3),
+                                  boxShadow: [
+                                    BoxShadow(
+                                      color: Colors.black.withOpacity(0.2),
+                                      blurRadius: 8,
+                                      offset: const Offset(0, 2),
+                                    ),
+                                  ],
+                                ),
+                                child: viewModel.isUploadingPhoto
+                                    ? const Padding(
+                                        padding: EdgeInsets.all(8),
+                                        child: CircularProgressIndicator(
+                                          strokeWidth: 2,
+                                          valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                                        ),
+                                      )
+                                    : const Icon(
+                                        Icons.camera_alt,
+                                        size: 18,
+                                        color: Colors.white,
+                                      ),
+                              ),
                             ),
                           ),
-                        ),
+                        ],
                       ),
                     ),
 
@@ -63,26 +87,21 @@ class ProfilView extends StackedView<ProfilViewModel> {
                         children: [
                           Expanded(
                             child: _buildStatCard(
-                              viewModel.globalStats?.totalActivities
-                                      .toString() ??
-                                  '0',
+                              viewModel.globalStats?.totalActivities.toString() ?? '0',
                               'Courses',
                             ),
                           ),
                           const SizedBox(width: 15),
                           Expanded(
                             child: _buildStatCard(
-                              viewModel.globalStats?.totalNotes.toString() ??
-                                  '0',
+                              viewModel.globalStats?.totalNotes.toString() ?? '0',
                               'Note',
                             ),
                           ),
                           const SizedBox(width: 15),
                           Expanded(
                             child: _buildStatCard(
-                              _formatAmount(viewModel.globalStats?.totalEarnings
-                                      .toDouble() ??
-                                  0),
+                              _formatAmount(viewModel.globalStats?.totalEarnings.toDouble() ?? 0),
                               'Revenus',
                             ),
                           ),
@@ -98,9 +117,7 @@ class ProfilView extends StackedView<ProfilViewModel> {
                           _buildMenuItem(
                             icon: _buildUserIcon(),
                             text: 'Mon compte',
-                            onTap: () {
-                              viewModel.navigateToEditProfile(context);
-                            },
+                            onTap: () => viewModel.navigateToEditProfile(context),
                           ),
                           _buildMenuItem(
                             icon: _buildCarIcon(),
@@ -112,25 +129,18 @@ class ProfilView extends StackedView<ProfilViewModel> {
                           _buildMenuItem(
                             icon: _buildDocumentsIcon(),
                             text: 'Documents',
-                            onTap: () {
-                              viewModel.navigationService.navigateToDocumentsView();
-                            },
+                            onTap: () => viewModel.navigationService.navigateToDocumentsView(),
                           ),
                           _buildMenuItem(
                             icon: _buildHistoryIcon(),
                             text: 'Historique',
-                            onTap: () {
-                              viewModel.navigationService
-                                  .navigateToActivityView();
-                            },
+                            onTap: () => viewModel.navigationService.navigateToActivityView(),
                           ),
                           _buildMenuItem(
                             icon: _buildLogoutIcon(),
                             text: 'Déconnexion',
                             isLogout: true,
-                            onTap: () {
-                              viewModel.showLogoutConfirmationDialog(context);
-                            },
+                            onTap: () => viewModel.showLogoutConfirmationDialog(context),
                           ),
                         ],
                       ),
@@ -142,7 +152,126 @@ class ProfilView extends StackedView<ProfilViewModel> {
     );
   }
 
-  // Fonction utilitaire pour formater les montants
+  // 🎯 Nouvelle méthode pour gérer l'affichage de l'avatar
+  Widget _buildProfileAvatar(ProfilViewModel viewModel) {
+    return Container(
+      width: 120,
+      height: 120,
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(60),
+        gradient: viewModel.user?.photoUrl == null
+            ? const LinearGradient(
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+                colors: [Color(0xFF184E9C), Color(0xFF2A5BB8)],
+              )
+            : null,
+      ),
+      child: viewModel.user?.photoUrl != null
+          ? ClipRRect(
+              borderRadius: BorderRadius.circular(60),
+              child: CachedNetworkImage(
+                imageUrl: viewModel.user!.photoUrl!,
+                fit: BoxFit.cover,
+                placeholder: (context, url) => Container(
+                  decoration: const BoxDecoration(
+                    gradient: LinearGradient(
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
+                      colors: [Color(0xFF184E9C), Color(0xFF2A5BB8)],
+                    ),
+                  ),
+                  child: const Center(
+                    child: CircularProgressIndicator(
+                      color: Colors.white,
+                      strokeWidth: 2,
+                    ),
+                  ),
+                ),
+                errorWidget: (context, url, error) => Container(
+                  decoration: const BoxDecoration(
+                    gradient: LinearGradient(
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
+                      colors: [Color(0xFF184E9C), Color(0xFF2A5BB8)],
+                    ),
+                  ),
+                  child: Center(
+                    child: Text(
+                      viewModel.initials,
+                      style: const TextStyle(
+                        fontSize: 48,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.white,
+                      ),
+                    ),
+                  ),
+                ),
+                // Force le rechargement de l'image
+                cacheKey: '${viewModel.user!.photoUrl}_${DateTime.now().millisecondsSinceEpoch}',
+              ),
+            )
+          : Center(
+              child: Text(
+                viewModel.initials,
+                style: const TextStyle(
+                  fontSize: 48,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.white,
+                ),
+              ),
+            ),
+    );
+  }
+
+  void _showPhotoOptions(BuildContext context, ProfilViewModel viewModel) {
+    showModalBottomSheet(
+      context: context,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (context) {
+        return SafeArea(
+          child: Padding(
+            padding: const EdgeInsets.symmetric(vertical: 20),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                if (viewModel.user?.photoUrl == null)
+                  ListTile(
+                    leading: const Icon(Icons.add_a_photo, color: kcPrimaryColor),
+                    title: const Text('Ajouter une photo'),
+                    onTap: () {
+                      Navigator.pop(context);
+                      viewModel.pickAndUploadPhoto(context);
+                    },
+                  )
+                else ...[
+                  ListTile(
+                    leading: const Icon(Icons.edit, color: kcPrimaryColor),
+                    title: const Text('Modifier la photo'),
+                    onTap: () {
+                      Navigator.pop(context);
+                      viewModel.pickAndUploadPhoto(context);
+                    },
+                  ),
+                  ListTile(
+                    leading: const Icon(Icons.delete, color: Colors.red),
+                    title: const Text('Supprimer la photo'),
+                    onTap: () {
+                      Navigator.pop(context);
+                      viewModel.deleteProfilePhoto(context);
+                    },
+                  ),
+                ],
+              ],
+            ),
+          ),
+        );
+      },
+    );
+  }
+
   String _formatAmount(double amount) {
     if (amount >= 1000000) {
       return '${(amount / 1000000).toStringAsFixed(1).replaceAll('.0', '')}M F';
@@ -177,17 +306,12 @@ class ProfilView extends StackedView<ProfilViewModel> {
           const SizedBox(height: 4),
           Text(
             label,
-            style: TextStyle(
-              fontSize: 12,
-              color: Colors.grey[600],
-            ),
+            style: TextStyle(fontSize: 12, color: Colors.grey[600]),
           ),
         ],
       ),
     );
   }
-
-  
 
   Widget _buildMenuItem({
     required Widget icon,
@@ -208,20 +332,14 @@ class ProfilView extends StackedView<ProfilViewModel> {
           ),
           child: Row(
             children: [
-              SizedBox(
-                width: 20,
-                height: 20,
-                child: icon,
-              ),
+              SizedBox(width: 20, height: 20, child: icon),
               const SizedBox(width: 15),
               Expanded(
                 child: Text(
                   text,
                   style: TextStyle(
                     fontSize: 15,
-                    color: isLogout
-                        ? const Color(0xFFDC3545)
-                        : const Color(0xFF333333),
+                    color: isLogout ? const Color(0xFFDC3545) : const Color(0xFF333333),
                     fontWeight: FontWeight.w500,
                   ),
                 ),
@@ -230,9 +348,7 @@ class ProfilView extends StackedView<ProfilViewModel> {
                 '›',
                 style: TextStyle(
                   fontSize: 18,
-                  color: isLogout
-                      ? const Color(0xFFDC3545)
-                      : const Color(0xFF999999),
+                  color: isLogout ? const Color(0xFFDC3545) : const Color(0xFF999999),
                 ),
               ),
             ],
@@ -242,39 +358,12 @@ class ProfilView extends StackedView<ProfilViewModel> {
     );
   }
 
-  Widget _buildUserIcon() {
-    return const Icon(Icons.person_outline, size: 24);
-  }
-
-  Widget _buildWalletIcon() {
-    return const Icon(Icons.account_balance_wallet_outlined, size: 24);
-  }
-
-  Widget _buildCarIcon() {
-    return const Icon(Icons.directions_car_outlined, size: 24);
-  }
-
-  Widget _buildDocumentsIcon() {
-    return const Icon(Icons.description_outlined, size: 24);
-  }
-
-  Widget _buildHistoryIcon() {
-    return const Icon(Icons.history_outlined, size: 24);
-  }
-
-  Widget _buildHelpIcon() {
-    return const Icon(Icons.help_outline, size: 24);
-  }
-
-  Widget _buildLogoutIcon() {
-    return const Icon(Icons.logout_outlined, size: 24);
-  }
+  Widget _buildUserIcon() => const Icon(Icons.person_outline, size: 24);
+  Widget _buildCarIcon() => const Icon(Icons.directions_car_outlined, size: 24);
+  Widget _buildDocumentsIcon() => const Icon(Icons.description_outlined, size: 24);
+  Widget _buildHistoryIcon() => const Icon(Icons.history_outlined, size: 24);
+  Widget _buildLogoutIcon() => const Icon(Icons.logout_outlined, size: 24);
 
   @override
-  ProfilViewModel viewModelBuilder(
-    BuildContext context,
-  ) =>
-      ProfilViewModel();
+  ProfilViewModel viewModelBuilder(BuildContext context) => ProfilViewModel();
 }
-
-// Custom Icons using Material Icons

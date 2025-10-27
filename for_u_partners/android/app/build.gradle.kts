@@ -1,7 +1,9 @@
 plugins {
     id("com.android.application")
     id("kotlin-android")
+    // Le plugin Flutter doit rester après Android et Kotlin
     id("dev.flutter.flutter-gradle-plugin")
+    // ✅ Plugin Google Services pour générer google_services.xml à partir de google-services.json
     id("com.google.gms.google-services")
     id("com.google.firebase.crashlytics")
 }
@@ -16,62 +18,52 @@ if (keystorePropertiesFile.exists()) {
 }
 
 android {
-    namespace = "com.foryou.driver"
-    compileSdk = 36
+    namespace = "com.foru.driverapp"
+    compileSdk = flutter.compileSdkVersion
     ndkVersion = "27.0.12077973"
 
     compileOptions {
         isCoreLibraryDesugaringEnabled = true
-        sourceCompatibility = JavaVersion.VERSION_17
-        targetCompatibility = JavaVersion.VERSION_17
+        sourceCompatibility = JavaVersion.VERSION_11
+        targetCompatibility = JavaVersion.VERSION_11
     }
 
     signingConfigs {
-        if (keystorePropertiesFile.exists()) {
-            create("release") {
-                keyAlias = keystoreProperties.getProperty("keyAlias", "")
-                keyPassword = keystoreProperties.getProperty("keyPassword", "")
-                storeFile = file(keystoreProperties.getProperty("storeFile", ""))
-                storePassword = keystoreProperties.getProperty("storePassword", "")
-            }
-        } else {
-            // fallback → utilise le debug.keystore par défaut
-            create("release") {
-                storeFile = file("${System.getProperty("user.home")}/.android/debug.keystore")
-                storePassword = "android"
-                keyAlias = "androiddebugkey"
-                keyPassword = "android"
-            }
+        create("release") {
+            keyAlias = keystoreProperties["keyAlias"] as String
+            keyPassword = keystoreProperties["keyPassword"] as String
+            storeFile = file(keystoreProperties["storeFile"] as String)
+            storePassword = keystoreProperties["storePassword"] as String
         }
     }
 
     kotlinOptions {
-        jvmTarget = JavaVersion.VERSION_17.toString()
+        jvmTarget = JavaVersion.VERSION_11.toString()
     }
 
     defaultConfig {
-        applicationId = "com.foryou.driver"
+        applicationId = "com.foru.driverapp"
         minSdk = flutter.minSdkVersion
-        targetSdk = 36
+        targetSdk = flutter.targetSdkVersion
         versionCode = flutter.versionCode
         versionName = flutter.versionName
     }
 
     buildTypes {
-        getByName("release") {
+        release {
             signingConfig = signingConfigs.getByName("release")
             isMinifyEnabled = true
             proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro")
-        }
-        getByName("debug") {
-            signingConfig = signingConfigs.getByName("debug")
         }
     }
 }
 
 dependencies {
+    // ✅ Plateforme Firebase (BOM)
     implementation(platform("com.google.firebase:firebase-bom:34.0.0"))
     implementation("com.google.firebase:firebase-messaging")
+
+    // ✅ Kotlin DSL pour core library desugaring
     coreLibraryDesugaring("com.android.tools:desugar_jdk_libs:2.1.4")
 }
 
