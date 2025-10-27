@@ -864,8 +864,8 @@ class CoursesViewModel extends BaseViewModel {
     try {
       setBusy(true);
       print("🔄 Début démarrage course...");
-      await _arrivalStateService.clearCourseState(courseId);
       await driverservice.startCourse(courseId);
+      await _arrivalStateService.clearCourseState(courseId);
       canStart = true;
       print("✅ Course démarrée avec succès");
     } catch (e) {
@@ -873,12 +873,16 @@ class CoursesViewModel extends BaseViewModel {
       canStart = false;
       CustomToast.showError(context, message: e.toString());
 
-      // En cas d'erreur, réinitialiser l'état
-      _isGoingToPickup = false;
-      _currentCourse = null;
+      // En cas d'erreur, revenir à l'état d'attente du client
+      _isGoingToPickup = true;
+      _isOnTrip = false;
       _polylines.clear();
-      _markers.clear();
-      _addUserLocationMarker();
+
+      if (_currentCourse != null) {
+        setBottomSheetType(BottomSheetAppType.pickup);
+      } else {
+        hideBottomSheet();
+      }
     } finally {
       setBusy(false);
       print("🔄 setBusy(false) appelé");
@@ -1755,6 +1759,7 @@ class CoursesViewModel extends BaseViewModel {
           break;
 
         case 'arrive_au_point_depart':
+        case 'chauffeur_arrive':
           _isGoingToPickup = true;
           _isOnTrip = false;
           setBottomSheetType(BottomSheetAppType.pickup);
