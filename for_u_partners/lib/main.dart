@@ -71,7 +71,7 @@ Future<void> main() async {
   FirebaseMessaging.onBackgroundMessage(firebaseMessagingBackgroundHandler);
   
   // Lancer l'application
-  runApp(const MyApp());
+  runApp(const MainApp());
 }
 
 

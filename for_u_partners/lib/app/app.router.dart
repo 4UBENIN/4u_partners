@@ -6,7 +6,6 @@
 
 // ignore_for_file: no_leading_underscores_for_library_prefixes
 import 'package:flutter/material.dart' as _i28;
-import 'package:flutter/material.dart' as _i26;
 import 'package:flutter/material.dart';
 import 'package:for_u_partners/models/document_model.dart' as _i30;
 import 'package:for_u_partners/ui/views/auth/login/login_view.dart' as _i10;
@@ -30,7 +29,6 @@ import 'package:for_u_partners/ui/views/drivers/activity/activity_view.dart'
     as _i4;
 import 'package:for_u_partners/ui/views/drivers/activity/models/activity_model.dart'
     as _i29;
-    as _i27;
 import 'package:for_u_partners/ui/views/drivers/activitydetails/activitydetails_view.dart'
     as _i9;
 import 'package:for_u_partners/ui/views/drivers/courses/courses_view.dart'
@@ -62,7 +60,6 @@ import 'package:for_u_partners/ui/views/pressing/notifications_pressing/notifica
 import 'package:for_u_partners/ui/views/startup/startup_view.dart' as _i2;
 import 'package:stacked/stacked.dart' as _i1;
 import 'package:stacked_services/stacked_services.dart' as _i31;
-import 'package:stacked_services/stacked_services.dart' as _i28;
 
 class Routes {
   static const startupView = '/startup-view';
@@ -253,58 +250,47 @@ class StackedRouter extends _i1.RouterBase {
       Routes.documentViewerView,
       page: _i27.DocumentViewerView,
     ),
-    _i1.RouteDef(
-      Routes.documentsView,
-      page: _i25.DocumentsView,
-    ),
   ];
 
   final _pagesMap = <Type, _i1.StackedRouteFactory>{
     _i2.StartupView: (data) {
       return _i28.MaterialPageRoute<dynamic>(
-      return _i26.MaterialPageRoute<dynamic>(
         builder: (context) => const _i2.StartupView(),
         settings: data,
       );
     },
     _i3.HomeView: (data) {
       return _i28.MaterialPageRoute<dynamic>(
-      return _i26.MaterialPageRoute<dynamic>(
         builder: (context) => const _i3.HomeView(),
         settings: data,
       );
     },
     _i4.ActivityView: (data) {
       return _i28.MaterialPageRoute<dynamic>(
-      return _i26.MaterialPageRoute<dynamic>(
         builder: (context) => const _i4.ActivityView(),
         settings: data,
       );
     },
     _i5.CoursesView: (data) {
       return _i28.MaterialPageRoute<dynamic>(
-      return _i26.MaterialPageRoute<dynamic>(
         builder: (context) => const _i5.CoursesView(),
         settings: data,
       );
     },
     _i6.NotificationsView: (data) {
       return _i28.MaterialPageRoute<dynamic>(
-      return _i26.MaterialPageRoute<dynamic>(
         builder: (context) => const _i6.NotificationsView(),
         settings: data,
       );
     },
     _i7.ProfilView: (data) {
       return _i28.MaterialPageRoute<dynamic>(
-      return _i26.MaterialPageRoute<dynamic>(
         builder: (context) => const _i7.ProfilView(),
         settings: data,
       );
     },
     _i8.HomemainView: (data) {
       return _i28.MaterialPageRoute<dynamic>(
-      return _i26.MaterialPageRoute<dynamic>(
         builder: (context) => const _i8.HomemainView(),
         settings: data,
       );
@@ -314,7 +300,6 @@ class StackedRouter extends _i1.RouterBase {
         orElse: () => const ActivitydetailsViewArguments(),
       );
       return _i28.MaterialPageRoute<dynamic>(
-      return _i26.MaterialPageRoute<dynamic>(
         builder: (context) =>
             _i9.ActivitydetailsView(key: args.key, activity: args.activity),
         settings: data,
@@ -322,14 +307,12 @@ class StackedRouter extends _i1.RouterBase {
     },
     _i10.LoginView: (data) {
       return _i28.MaterialPageRoute<dynamic>(
-      return _i26.MaterialPageRoute<dynamic>(
         builder: (context) => const _i10.LoginView(),
         settings: data,
       );
     },
     _i11.RegisterView: (data) {
       return _i28.MaterialPageRoute<dynamic>(
-      return _i26.MaterialPageRoute<dynamic>(
         builder: (context) => const _i11.RegisterView(),
         settings: data,
       );
@@ -337,7 +320,6 @@ class StackedRouter extends _i1.RouterBase {
     _i12.RegisterProfileView: (data) {
       final args = data.getArgs<RegisterProfileViewArguments>(nullOk: false);
       return _i28.MaterialPageRoute<dynamic>(
-      return _i26.MaterialPageRoute<dynamic>(
         builder: (context) => _i12.RegisterProfileView(
             args.selectedProfile, args.phoneNumber, args.mail, args.password,
             key: args.key),
@@ -346,84 +328,72 @@ class StackedRouter extends _i1.RouterBase {
     },
     _i13.HomePressingView: (data) {
       return _i28.MaterialPageRoute<dynamic>(
-      return _i26.MaterialPageRoute<dynamic>(
         builder: (context) => const _i13.HomePressingView(),
         settings: data,
       );
     },
     _i14.NavBarPressingView: (data) {
       return _i28.MaterialPageRoute<dynamic>(
-      return _i26.MaterialPageRoute<dynamic>(
         builder: (context) => const _i14.NavBarPressingView(),
         settings: data,
       );
     },
     _i15.ActivitesPressingView: (data) {
       return _i28.MaterialPageRoute<dynamic>(
-      return _i26.MaterialPageRoute<dynamic>(
         builder: (context) => const _i15.ActivitesPressingView(),
         settings: data,
       );
     },
     _i16.NotificationsPressingView: (data) {
       return _i28.MaterialPageRoute<dynamic>(
-      return _i26.MaterialPageRoute<dynamic>(
         builder: (context) => const _i16.NotificationsPressingView(),
         settings: data,
       );
     },
     _i17.ComptePressingView: (data) {
       return _i28.MaterialPageRoute<dynamic>(
-      return _i26.MaterialPageRoute<dynamic>(
         builder: (context) => const _i17.ComptePressingView(),
         settings: data,
       );
     },
     _i18.DeliveryNavBarView: (data) {
       return _i28.MaterialPageRoute<dynamic>(
-      return _i26.MaterialPageRoute<dynamic>(
         builder: (context) => const _i18.DeliveryNavBarView(),
         settings: data,
       );
     },
     _i19.DeliveryHomeView: (data) {
       return _i28.MaterialPageRoute<dynamic>(
-      return _i26.MaterialPageRoute<dynamic>(
         builder: (context) => const _i19.DeliveryHomeView(),
         settings: data,
       );
     },
     _i20.NotificationsDeliveryView: (data) {
       return _i28.MaterialPageRoute<dynamic>(
-      return _i26.MaterialPageRoute<dynamic>(
         builder: (context) => const _i20.NotificationsDeliveryView(),
         settings: data,
       );
     },
     _i21.CompteDeliveryView: (data) {
       return _i28.MaterialPageRoute<dynamic>(
-      return _i26.MaterialPageRoute<dynamic>(
         builder: (context) => const _i21.CompteDeliveryView(),
         settings: data,
       );
     },
     _i22.ActivitiesDeliveryView: (data) {
       return _i28.MaterialPageRoute<dynamic>(
-      return _i26.MaterialPageRoute<dynamic>(
         builder: (context) => const _i22.ActivitiesDeliveryView(),
         settings: data,
       );
     },
     _i23.CoursesDeliveryView: (data) {
       return _i28.MaterialPageRoute<dynamic>(
-      return _i26.MaterialPageRoute<dynamic>(
         builder: (context) => const _i23.CoursesDeliveryView(),
         settings: data,
       );
     },
     _i24.MesVehiculesView: (data) {
       return _i28.MaterialPageRoute<dynamic>(
-      return _i26.MaterialPageRoute<dynamic>(
         builder: (context) => const _i24.MesVehiculesView(),
         settings: data,
       );
@@ -445,8 +415,6 @@ class StackedRouter extends _i1.RouterBase {
       return _i28.MaterialPageRoute<dynamic>(
         builder: (context) =>
             _i27.DocumentViewerView(key: args.key, document: args.document),
-      return _i26.MaterialPageRoute<dynamic>(
-        builder: (context) => const _i25.DocumentsView(),
         settings: data,
       );
     },
@@ -468,9 +436,6 @@ class ActivitydetailsViewArguments {
   final _i28.Key? key;
 
   final _i29.ActivityModel? activity;
-  final _i26.Key? key;
-
-  final _i27.ActivityModel? activity;
 
   @override
   String toString() {
@@ -507,7 +472,6 @@ class RegisterProfileViewArguments {
   final String password;
 
   final _i28.Key? key;
-  final _i26.Key? key;
 
   @override
   String toString() {
@@ -562,7 +526,6 @@ class DocumentViewerViewArguments {
 }
 
 extension NavigatorStateExtension on _i31.NavigationService {
-extension NavigatorStateExtension on _i28.NavigationService {
   Future<dynamic> navigateToStartupView([
     int? routerId,
     bool preventDuplicates = true,
@@ -664,8 +627,6 @@ extension NavigatorStateExtension on _i28.NavigationService {
   Future<dynamic> navigateToActivitydetailsView({
     _i28.Key? key,
     _i29.ActivityModel? activity,
-    _i26.Key? key,
-    _i27.ActivityModel? activity,
     int? routerId,
     bool preventDuplicates = true,
     Map<String, String>? parameters,
@@ -714,7 +675,6 @@ extension NavigatorStateExtension on _i28.NavigationService {
     required String mail,
     required String password,
     _i28.Key? key,
-    _i26.Key? key,
     int? routerId,
     bool preventDuplicates = true,
     Map<String, String>? parameters,
@@ -910,7 +870,6 @@ extension NavigatorStateExtension on _i28.NavigationService {
         transition,
   ]) async {
     return navigateTo<dynamic>(Routes.documentsView,
-    return navigateTo<dynamic>(Routes.mesVehiculesView,
         id: routerId,
         preventDuplicates: preventDuplicates,
         parameters: parameters,
@@ -1049,8 +1008,6 @@ extension NavigatorStateExtension on _i28.NavigationService {
   Future<dynamic> replaceWithActivitydetailsView({
     _i28.Key? key,
     _i29.ActivityModel? activity,
-    _i26.Key? key,
-    _i27.ActivityModel? activity,
     int? routerId,
     bool preventDuplicates = true,
     Map<String, String>? parameters,
@@ -1099,7 +1056,6 @@ extension NavigatorStateExtension on _i28.NavigationService {
     required String mail,
     required String password,
     _i28.Key? key,
-    _i26.Key? key,
     int? routerId,
     bool preventDuplicates = true,
     Map<String, String>? parameters,
@@ -1295,7 +1251,6 @@ extension NavigatorStateExtension on _i28.NavigationService {
         transition,
   ]) async {
     return replaceWith<dynamic>(Routes.documentsView,
-    return replaceWith<dynamic>(Routes.mesVehiculesView,
         id: routerId,
         preventDuplicates: preventDuplicates,
         parameters: parameters,

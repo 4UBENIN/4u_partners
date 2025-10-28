@@ -1359,16 +1359,6 @@ class MockDriverService extends _i1.Mock implements _i27.DriverService {
       ) as _i20.Future<void>);
 
   @override
-  _i20.Future<void> confirmArrival(int? courseId) => (super.noSuchMethod(
-        Invocation.method(
-          #confirmArrival,
-          [courseId],
-        ),
-        returnValue: _i20.Future<void>.value(),
-        returnValueForMissingStub: _i20.Future<void>.value(),
-      ) as _i20.Future<void>);
-
-  @override
   _i20.Future<void> startCourse(int? courseId) => (super.noSuchMethod(
         Invocation.method(
           #startCourse,
@@ -1379,24 +1369,30 @@ class MockDriverService extends _i1.Mock implements _i27.DriverService {
       ) as _i20.Future<void>);
 
   @override
-  _i20.Future<void> startPause(int? courseId) => (super.noSuchMethod(
+  _i20.Future<Map<String, dynamic>> startPause(int? courseId) =>
+      (super.noSuchMethod(
         Invocation.method(
           #startPause,
           [courseId],
         ),
-        returnValue: _i20.Future<void>.value(),
-        returnValueForMissingStub: _i20.Future<void>.value(),
-      ) as _i20.Future<void>);
+        returnValue:
+            _i20.Future<Map<String, dynamic>>.value(<String, dynamic>{}),
+        returnValueForMissingStub:
+            _i20.Future<Map<String, dynamic>>.value(<String, dynamic>{}),
+      ) as _i20.Future<Map<String, dynamic>>);
 
   @override
-  _i20.Future<void> stopPause(int? courseId) => (super.noSuchMethod(
+  _i20.Future<Map<String, dynamic>> stopPause(int? courseId) =>
+      (super.noSuchMethod(
         Invocation.method(
           #stopPause,
           [courseId],
         ),
-        returnValue: _i20.Future<void>.value(),
-        returnValueForMissingStub: _i20.Future<void>.value(),
-      ) as _i20.Future<void>);
+        returnValue:
+            _i20.Future<Map<String, dynamic>>.value(<String, dynamic>{}),
+        returnValueForMissingStub:
+            _i20.Future<Map<String, dynamic>>.value(<String, dynamic>{}),
+      ) as _i20.Future<Map<String, dynamic>>);
 
   @override
   _i20.Future<void> completeCourse(int? courseId) => (super.noSuchMethod(
