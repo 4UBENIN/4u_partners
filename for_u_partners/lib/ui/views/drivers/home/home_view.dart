@@ -195,6 +195,8 @@ Widget _buildBottomPanel(BuildContext context, HomeViewModel model) {
           ),
           const SizedBox(height: 16),
           _buildSimpleStartRideButton(context),
+          const SizedBox(height: 16),
+          _buildStatusToggle(model),
         ],
       ),
     ),
@@ -305,7 +307,6 @@ class _ErrorBanner extends StatelessWidget {
   }
 }
 
-// Bouton pour démarrer une nouvelle course
 Widget _buildSimpleStartRideButton(BuildContext context) {
   return Container(
     height: 56,
@@ -349,6 +350,68 @@ Widget _buildSimpleStartRideButton(BuildContext context) {
               fontWeight: FontWeight.w600,
               letterSpacing: 0.2,
             ),
+          ),
+        ],
+      ),
+    ),
+  );
+}
+
+Widget _buildStatusToggle(HomeViewModel model) {
+  return GestureDetector(
+    onTap: model.isBusy ? null : model.toggleOnlineStatus,
+    child: Container(
+      padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 18),
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          colors: model.isOnline
+              ? [
+                  const Color(0xFF10B981),
+                  const Color(0xFF059669),
+                ]
+              : [
+                  const Color(0xFF9CA3AF),
+                  const Color(0xFF6B7280),
+                ],
+        ),
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: [
+          BoxShadow(
+            color: (model.isOnline
+                    ? const Color(0xFF10B981)
+                    : const Color(0xFF9CA3AF))
+                .withOpacity(0.3),
+            blurRadius: 12,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Container(
+            width: 12,
+            height: 12,
+            decoration: const BoxDecoration(
+              color: Colors.white,
+              shape: BoxShape.circle,
+            ),
+          ),
+          const SizedBox(width: 12),
+          Text(
+            model.isOnline ? 'EN LIGNE' : 'HORS LIGNE',
+            style: const TextStyle(
+              color: Colors.white,
+              fontSize: 17,
+              fontWeight: FontWeight.w700,
+              letterSpacing: 0.5,
+            ),
+          ),
+          const SizedBox(width: 12),
+          Icon(
+            model.isOnline ? Icons.toggle_on : Icons.toggle_off,
+            color: Colors.white,
+            size: 32,
           ),
         ],
       ),

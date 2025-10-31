@@ -36,15 +36,24 @@ class HomemainView extends StackedView<HomemainViewModel> {
       ),
       _NavItemData(
         index: 3,
-        label: 'Notifications',
-        builder: (context) =>
-            viewModel.buildNavItem("assets/Bell.png", 3, viewModel),
+        label: 'Portefeuille',
+        builder: (context) => Icon(
+          Icons.account_balance_wallet_outlined,
+          color: viewModel.currentIndex == 3 ? kcPrimaryColor : kcLightGrey,
+          size: 24,
+        ),
       ),
       _NavItemData(
         index: 4,
+        label: 'Notifications',
+        builder: (context) =>
+            viewModel.buildNavItem("assets/Bell.png", 4, viewModel),
+      ),
+      _NavItemData(
+        index: 5,
         label: 'Compte',
         builder: (context) =>
-            viewModel.buildNavItem("assets/user.png", 4, viewModel),
+            viewModel.buildNavItem("assets/user.png", 5, viewModel),
       ),
     ];
 
@@ -293,74 +302,16 @@ class _DriverSideNavigation extends StatelessWidget {
           ),
           const SizedBox(width: 14),
           Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Text(
-                  userName?.isNotEmpty == true ? userName! : 'Conducteur',
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: const TextStyle(
-                    color: kcPrimaryColor,
-                    fontWeight: FontWeight.w700,
-                    fontSize: 16,
-                    letterSpacing: 0.2,
-                  ),
-                ),
-                const SizedBox(height: 6),
-                Container(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
-                  decoration: BoxDecoration(
-                    gradient: LinearGradient(
-                      colors: isOnline
-                          ? [
-                              const Color(0xFF10B981),
-                              const Color(0xFF059669),
-                            ]
-                          : [
-                              const Color(0xFF9CA3AF),
-                              const Color(0xFF6B7280),
-                            ],
-                    ),
-                    borderRadius: BorderRadius.circular(20),
-                    boxShadow: [
-                      BoxShadow(
-                        color: (isOnline
-                                ? const Color(0xFF10B981)
-                                : const Color(0xFF9CA3AF))
-                            .withOpacity(0.3),
-                        blurRadius: 6,
-                        offset: const Offset(0, 2),
-                      ),
-                    ],
-                  ),
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Container(
-                        width: 6,
-                        height: 6,
-                        decoration: const BoxDecoration(
-                          color: Colors.white,
-                          shape: BoxShape.circle,
-                        ),
-                      ),
-                      const SizedBox(width: 6),
-                      Text(
-                        isOnline ? 'EN LIGNE' : 'HORS LIGNE',
-                        style: const TextStyle(
-                          color: Colors.white,
-                          fontSize: 11,
-                          fontWeight: FontWeight.w600,
-                          letterSpacing: 0.5,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ],
+            child: Text(
+              userName?.isNotEmpty == true ? userName! : 'Conducteur',
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: const TextStyle(
+                color: kcPrimaryColor,
+                fontWeight: FontWeight.w700,
+                fontSize: 16,
+                letterSpacing: 0.2,
+              ),
             ),
           ),
         ],

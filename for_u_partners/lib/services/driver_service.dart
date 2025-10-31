@@ -763,4 +763,29 @@ class DriverService {
     }
     print("post-driver-heartbeat-response: ${response.body}");
   }
+
+  Future<void> updateStatus(bool status) async {
+    final token = await sharedPreferencesService.getToken();
+    const url = 'https://foryou.cilassocies.com/api/conducteur/status';
+
+    try {
+      print("update-status: $status");
+      final response = await http.post(
+        Uri.parse(url),
+        headers: {
+          'Accept': 'application/json',
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer $token',
+        },
+        body: jsonEncode({'status': status}),
+      );
+      print("update-status-response: ${response.body}");
+      if (response.statusCode != 200) {
+        throw Exception('Erreur lors de la mise à jour du statut');
+      }
+    } catch (e) {
+      debugPrint('Erreur updateStatus: $e');
+      rethrow;
+    }
+  }
 }

@@ -48,25 +48,22 @@ class HomeViewModel extends BaseViewModel {
     notifyListeners();
   }
 
-  // Basculer entre en ligne/hors ligne
   Future<void> toggleOnlineStatus() async {
     try {
       setBusy(true);
       _isOnline = !_isOnline;
+
+      print("toggle-online-status: $_isOnline");
+
+      await driverService.updateStatus(_isOnline);
       await _sharedpreferencesService.setOnlineStatus(_isOnline);
 
-      // Appeler l'API appropriée
-      if (_isOnline) {
-        await driverService.goOnline();
-      } else {
-        await driverService.goOffline();
-      }
-
+      print("status-updated-successfully: $_isOnline");
       notifyListeners();
     } catch (e) {
-      // En cas d'erreur, on revient à l'état précédent
       _isOnline = !_isOnline;
       errorMessage = "Erreur lors du changement d'état";
+      print("error-toggle-status: $e");
       notifyListeners();
       rethrow;
     } finally {
@@ -152,10 +149,38 @@ class HomeViewModel extends BaseViewModel {
   // Enregistre le token de notification
   Future<void> registerDriverToken() async {
     try {
-      await FirebaseMessagingService()
-          .sendCurrentTokenToBackend(ApiConstant.saveFcmTokenDriver);
+      print("🚀 [Driver] Début de l'enregistrement du token FCM pour le conducteur");
+
+      final fcmService = FirebaseMessagingService();
+
+      // Tenter d'envoyer le token actuel
+      print("🚀 [Driver] Tentative d'envoi du token actuel...");
+      bool success = await fcmService.sendCurrentTokenToBackend(
+        ApiConstant.saveFcmTokenDriver,
+        maxRetries: 3,
+      );
+
+      // Si échec, rafraîchir le token et réessayer
+      if (!success) {
+        print("⚠️ [Driver] Échec de l'envoi du token actuel, rafraîchissement...");
+        final refreshed = await fcmService.refreshToken();
+
+        if (refreshed) {
+          print("🔄 [Driver] Token rafraîchi, nouvelle tentative d'envoi...");
+          success = await fcmService.sendCurrentTokenToBackend(
+            ApiConstant.saveFcmTokenDriver,
+            maxRetries: 2,
+          );
+        }
+      }
+
+      if (success) {
+        print("✅ [Driver] Token FCM enregistré avec succès");
+      } else {
+        print("❌ [Driver] Échec définitif de l'enregistrement du token FCM");
+      }
     } catch (e) {
-      print("Erreur lors de l'enregistrement du token: $e");
+      print("❌ [Driver] Exception lors de l'enregistrement du token: $e");
     }
   }
 

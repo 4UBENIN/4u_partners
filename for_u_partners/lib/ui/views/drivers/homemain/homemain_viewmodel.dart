@@ -8,6 +8,7 @@ import 'package:for_u_partners/ui/views/drivers/profil/profil_view.dart';
 import 'package:for_u_partners/ui/views/drivers/courses/courses_view.dart';
 import 'package:for_u_partners/ui/views/drivers/activity/activity_view.dart';
 import 'package:for_u_partners/ui/views/drivers/notifications/notifications_view.dart';
+import 'package:for_u_partners/ui/views/drivers/wallet/wallet_view.dart';
 
 class HomemainViewModel extends IndexTrackingViewModel {
   final _sharedpreferencesService = locator<SharedpreferencesService>();
@@ -52,8 +53,10 @@ class HomemainViewModel extends IndexTrackingViewModel {
       case 2:
         return const CoursesView();
       case 3:
-        return const NotificationsView();
+        return const WalletView();
       case 4:
+        return const NotificationsView();
+      case 5:
         return const ProfilView();
       default:
         return const HomeView();

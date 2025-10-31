@@ -256,7 +256,15 @@ class ProfilViewModel extends BaseViewModel {
     }
   }
 
-  void logOut() {
+  Future<void> logOut() async {
+    try {
+      print("logout: setting status to false");
+      await _driverService.updateStatus(false);
+      await _sharedPreferencesServices.setOnlineStatus(false);
+      print("logout: status updated successfully");
+    } catch (e) {
+      print("logout: error updating status: $e");
+    }
     _sharedPreferencesServices.removeToken();
     navigationService.replaceWithLoginView();
   }

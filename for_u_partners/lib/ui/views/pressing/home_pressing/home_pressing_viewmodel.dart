@@ -115,13 +115,39 @@ class HomePressingViewModel extends FormViewModel {
   }
 
   Future<void> registerPressingToken() async {
-    // Enregistrer le token pour le pressing
-    bool success = await FirebaseMessagingService().sendCurrentTokenToBackend(
-        ApiConstant.saveFcmTokenPressing // URL spécifique pressing
-        );
+    try {
+      print("🚀 [Pressing] Début de l'enregistrement du token FCM pour le pressing");
 
-    if (success) {
-      print('Token pressing enregistré');
+      final fcmService = FirebaseMessagingService();
+
+      // Tenter d'envoyer le token actuel
+      print("🚀 [Pressing] Tentative d'envoi du token actuel...");
+      bool success = await fcmService.sendCurrentTokenToBackend(
+        ApiConstant.saveFcmTokenPressing,
+        maxRetries: 3,
+      );
+
+      // Si échec, rafraîchir le token et réessayer
+      if (!success) {
+        print("⚠️ [Pressing] Échec de l'envoi du token actuel, rafraîchissement...");
+        final refreshed = await fcmService.refreshToken();
+
+        if (refreshed) {
+          print("🔄 [Pressing] Token rafraîchi, nouvelle tentative d'envoi...");
+          success = await fcmService.sendCurrentTokenToBackend(
+            ApiConstant.saveFcmTokenPressing,
+            maxRetries: 2,
+          );
+        }
+      }
+
+      if (success) {
+        print("✅ [Pressing] Token FCM enregistré avec succès");
+      } else {
+        print("❌ [Pressing] Échec définitif de l'enregistrement du token FCM");
+      }
+    } catch (e) {
+      print("❌ [Pressing] Exception lors de l'enregistrement du token: $e");
     }
   }
 
