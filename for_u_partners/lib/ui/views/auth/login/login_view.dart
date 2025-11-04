@@ -196,10 +196,15 @@ class LoginView extends StackedView<LoginViewModel> with $LoginView {
                             isActive: viewModel.isFormValid,
                             onPressed: viewModel.isFormValid
                                 ? () async {
+                                    print("🔴 [LoginView] Bouton 'Se connecter' cliqué");
+                                    print("🔴 [LoginView] isFormValid: ${viewModel.isFormValid}");
+
                                     if (viewModel.validateForm(
                                       phoneNumberInputController.text,
                                       passwordInputController.text,
                                     )) {
+                                      print("🔴 [LoginView] Validation réussie - Création du LoginModel");
+
                                       LoginModel model = LoginModel(
                                         telephone:
                                             "+229${phoneNumberInputController.text}",
@@ -211,10 +216,15 @@ class LoginView extends StackedView<LoginViewModel> with $LoginView {
                                             : viewModel.selectedProfile,
                                       );
 
+                                      print("🔴 [LoginView] Appel de viewModel.login()...");
                                       await viewModel.login(model, context);
+                                      print("🔴 [LoginView] viewModel.login() terminé");
+                                    } else {
+                                      print("🔴 [LoginView] Validation échouée");
                                     }
                                   }
                                 : () {
+                                    print("🔴 [LoginView] Bouton cliqué mais formulaire invalide");
                                     // Déclencher la validation pour afficher les erreurs
                                     viewModel.validateForm(
                                       phoneNumberInputController.text,

@@ -8,6 +8,7 @@ import 'package:for_u_partners/services/wallet_service.dart';
 import 'package:for_u_partners/services/auth_service.dart';
 import 'package:for_u_partners/ui/common/app_colors.dart';
 import 'package:for_u_partners/ui/views/drivers/wallet/payment_webview.dart';
+import 'package:for_u_partners/app/api_constant.dart';
 
 class WalletViewModel extends BaseViewModel {
   final _walletService = locator<WalletService>();
@@ -221,7 +222,7 @@ class WalletViewModel extends BaseViewModel {
 
       final response = await http
           .post(
-            Uri.parse("https://foryou.cilassocies.com/api/wallet_recharge"),
+            Uri.parse("$baseUrl/wallet_recharge"),
             headers: headers,
             body: jsonEncode({
               'montant': amount,

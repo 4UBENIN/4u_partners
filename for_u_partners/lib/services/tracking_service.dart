@@ -3,6 +3,7 @@ import 'package:http/http.dart' as http;
 import 'package:geolocator/geolocator.dart';
 import 'package:geocoding/geocoding.dart';
 import 'package:for_u_partners/services/sharedpreferences_service.dart';
+import 'package:for_u_partners/app/api_constant.dart';
 
 class TrackingService {
   final _sharedPrefs = SharedpreferencesService();
@@ -101,7 +102,7 @@ class TrackingService {
       // Envoyer la requête POST
       final response = await http
           .post(
-            Uri.parse("https://foryou.cilassocies.com/api/conducteur/position"),
+            Uri.parse("$baseUrl/conducteur/position"),
             headers: {
               'Accept': 'application/json',
               'Content-Type': 'application/json',

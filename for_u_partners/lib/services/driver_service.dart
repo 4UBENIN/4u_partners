@@ -45,13 +45,12 @@ class DriverLocation {
 
 class DriverService {
   // URL de l'API pour les conducteurs en ligne
-  static const String onlineDriversUrl =
-      'https://foryou.cilassocies.com/api/conducteur/en-ligne';
+  static String get onlineDriversUrl => '$baseUrl/conducteur/en-ligne';
 
   // Passer en mode en ligne
   Future<void> goOnline() async {
     final token = await sharedPreferencesService.getToken();
-    const url = 'https://foryou.cilassocies.com/api/conducteur/online';
+    final url = '$baseUrl/conducteur/online';
 
     try {
       final response = await http.post(
@@ -74,7 +73,7 @@ class DriverService {
   // Passer en mode hors ligne
   Future<void> goOffline() async {
     final token = await sharedPreferencesService.getToken();
-    const url = 'https://foryou.cilassocies.com/api/conducteur/offline';
+    final url = '$baseUrl/conducteur/offline';
 
     try {
       final response = await http.post(
@@ -691,7 +690,7 @@ class DriverService {
 
       final response = await http
           .post(
-            Uri.parse("https://foryou.cilassocies.com/api/wallet_recharge"),
+            Uri.parse("$walletSoldUrl"),
             headers: {
               'Accept': 'application/json',
               'Authorization': 'Bearer $token',
@@ -766,7 +765,7 @@ class DriverService {
 
   Future<void> updateStatus(bool status) async {
     final token = await sharedPreferencesService.getToken();
-    const url = 'https://foryou.cilassocies.com/api/conducteur/status';
+    final url = '$baseUrl/conducteur/status';
 
     try {
       print("update-status: $status");

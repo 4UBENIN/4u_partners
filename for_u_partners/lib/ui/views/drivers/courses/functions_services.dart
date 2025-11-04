@@ -2,10 +2,11 @@ import 'dart:convert';
 import 'package:http/http.dart' as http;
 import 'package:http/http.dart' show Response;
 import 'package:for_u_partners/services/sharedpreferences_service.dart';
+import 'package:for_u_partners/app/api_constant.dart' as api;
 
 class FunctionsService {
   final SharedpreferencesService storage = SharedpreferencesService();
-  final String baseUrl = 'https://foryou.cilassocies.com/api';
+  String get baseUrl => api.baseUrl;
 
   // Helper method to handle HTTP requests
   Future<Response> _makeRequest(

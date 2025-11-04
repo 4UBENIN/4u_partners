@@ -9,14 +9,14 @@ import 'package:http/http.dart' as http;
 import 'package:for_u_partners/app/app.locator.dart';
 import 'package:for_u_partners/services/auth_service.dart';
 import 'package:for_u_partners/app/models/pressing_model.dart';
+import 'package:for_u_partners/app/api_constant.dart';
 
 class PressingService {
   final _authService = locator<AuthService>();
 
   //* GET PRESSING INFO
   Future<PressingResponse?> getPressingInfo() async {
-    final url =
-        Uri.parse("https://foryou.cilassocies.com/api/pressing/dashboard");
+    final url = Uri.parse("$baseUrl/pressing/dashboard");
 
     try {
       final response = await http.get(url,
@@ -56,7 +56,7 @@ class PressingService {
   Future<List<Ramassage>> getRamassagesList() async {
     try {
       final url =
-          Uri.parse("https://foryou.cilassocies.com/api/pressing/ramassages");
+          Uri.parse("$baseUrl/pressing/ramassages");
       final response = await http.get(
         url,
         headers: await _authService.getAuthenticatedHeaders(),
@@ -90,7 +90,7 @@ class PressingService {
   Future<RamassageDetail> getRamassageDetailComplet(int id) async {
     try {
       final url = Uri.parse(
-          "https://foryou.cilassocies.com/api/pressing/ramassages/$id");
+          "$baseUrl/pressing/ramassages/$id");
       final response = await http.get(
         url,
         headers: await _authService.getAuthenticatedHeaders(),
@@ -121,7 +121,7 @@ class PressingService {
   Future<RamassageStatutModel> updateRamassageStatut(int id) async {
     try {
       final url = Uri.parse(
-          "https://foryou.cilassocies.com/api/pressing/ramassages/$id/complete");
+          "$baseUrl/pressing/ramassages/$id/complete");
       final response = await http.post(
         url,
         headers: {
@@ -156,7 +156,7 @@ class PressingService {
   Future<List<Ramassage>> getFinishedRamassageList() async {
     try {
       final url = Uri.parse(
-          "https://foryou.cilassocies.com/api/pressing/ramassages/finish");
+          "$baseUrl/pressing/ramassages/finish");
       final response = await http.get(
         url,
         headers: await _authService.getAuthenticatedHeaders(),
@@ -192,7 +192,7 @@ class PressingService {
   Future<List<Depot>> getDepotList() async {
     try {
       final url =
-          Uri.parse("https://foryou.cilassocies.com/api/pressing/rendezvous");
+          Uri.parse("$baseUrl/pressing/rendezvous");
       final response = await http.get(
         url,
         headers: await _authService.getAuthenticatedHeaders(),
@@ -226,7 +226,7 @@ class PressingService {
   Future<Rdv> getDepotDetailComplet(int id) async {
     try {
       final url = Uri.parse(
-          "https://foryou.cilassocies.com/api/pressing/rendezvous/$id");
+          "$baseUrl/pressing/rendezvous/$id");
       final response = await http.get(
         url,
         headers: await _authService.getAuthenticatedHeaders(),
@@ -257,7 +257,7 @@ class PressingService {
   Future<PlannedDepotModel> planifierDepot(int id) async {
     try {
       final url = Uri.parse(
-          "https://foryou.cilassocies.com/api/pressing/rendezvous/$id/valider");
+          "$baseUrl/pressing/rendezvous/$id/valider");
       final response = await http.post(
         url,
         headers: await _authService.getAuthenticatedHeaders(),
@@ -288,7 +288,7 @@ class PressingService {
   Future<List<Depot>> getPlanifiedDepotList() async {
     try {
       final url = Uri.parse(
-          "https://foryou.cilassocies.com/api/pressing/rendezvous/planifier");
+          "$baseUrl/pressing/rendezvous/planifier");
 
       final response = await http.get(
         url,
@@ -320,7 +320,7 @@ class PressingService {
   Future<List<Depot>> getFinishedDepotList() async {
     try {
       final url = Uri.parse(
-          "https://foryou.cilassocies.com/api/pressing/rendezvous/finish");
+          "$baseUrl/pressing/rendezvous/finish");
       final response = await http.get(
         url,
         headers: await _authService.getAuthenticatedHeaders(),
@@ -356,7 +356,7 @@ class PressingService {
     required int id,
   }) async {
     final url =
-        Uri.parse("https://foryou.cilassocies.com/api/pressing/$type/$id");
+        Uri.parse("$baseUrl/pressing/$type/$id");
     final response = await http.get(
       url,
       headers: await _authService.getAuthenticatedHeaders(),

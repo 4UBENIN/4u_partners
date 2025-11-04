@@ -79,7 +79,7 @@ class FirebaseMessagingService {
   void _setupTokenListener() {
     _messaging.onTokenRefresh.listen((newToken) async {
       print('🔄 [FCM] Token rafraîchi automatiquement par Firebase');
-      print('🔄 [FCM] Nouveau token (premiers 20 car): ${newToken.substring(0, newToken.length < 20 ? newToken.length : 20)}...');
+      print('🔄 [FCM] Nouveau token : $newToken)...');
       _currentToken = newToken; // Mettre à jour le token stocké
       onTokenUpdate?.call(newToken);
       print('🔄 [FCM] Token mis en cache, prêt à être envoyé au backend');
@@ -123,15 +123,8 @@ class FirebaseMessagingService {
   }
 
   Future<void> _setupMessageHandlers() async {
-    // Messages en premier plan
-    FirebaseMessaging.onMessage.listen((message) {
-      print('Message reçu data: ${message.data}');
-      print('Message reçu body: ${message.notification?.body}');
-      print('Message reçu title: ${message.notification?.title}');
-
-      // ✨ Nouvelle logique : transmettre les données au service d'événements
-      _handleIncomingMessage(message);
-    });
+    // Messages en premier plan - DÉSACTIVÉ car géré par setupFlutterNotifications()
+    // La gestion est centralisée dans setupFlutterNotifications() pour éviter les doublons
 
     FirebaseMessaging.onMessageOpenedApp.listen((message) {
       print('Notification ouverte: ${message.notification?.body}');
@@ -154,7 +147,7 @@ class FirebaseMessagingService {
       print('🔐 [FCM] URL cible: $url');
 
       final authToken = await _sharedPreferencesServices.getToken();
-      print('🔐 [FCM] FCM Token (premiers 20 car): ${token.substring(0, token.length < 20 ? token.length : 20)}...');
+      print('🔐 [FCM] FCM Token : $token...');
       print('🔐 [FCM] Auth Token disponible: ${authToken != null && authToken.isNotEmpty}');
 
       if (authToken == null || authToken.isEmpty) {
@@ -282,7 +275,7 @@ class FirebaseMessagingService {
 
       if (_currentToken != null && _currentToken!.isNotEmpty) {
         print('✅ [FCM] Token rafraîchi avec succès');
-        print('🔄 [FCM] Nouveau token (premiers 20 car): ${_currentToken!.substring(0, _currentToken!.length < 20 ? _currentToken!.length : 20)}...');
+        print('🔄 [FCM] Nouveau token: ${_currentToken!}');
         return true;
       } else {
         print('⚠️ [FCM] Token rafraîchi mais vide ou null');

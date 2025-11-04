@@ -9,6 +9,7 @@ import 'package:for_u_partners/ui/views/drivers/vehicles/add_vehicles.dart';
 import 'package:for_u_partners/services/sharedpreferences_service.dart';
 import 'package:for_u_partners/models/vehicle_model.dart';
 import 'package:http/http.dart' as http;
+import 'package:for_u_partners/app/api_constant.dart' as api;
 
 class MesVehiculesViewModel extends BaseViewModel {
   Vehicle? _vehiculeActif;
@@ -17,7 +18,7 @@ class MesVehiculesViewModel extends BaseViewModel {
   bool _isApprovedExpanded = true;
   String? _errorMessage;
 
-  static const String baseUrl = 'https://foryou.cilassocies.com';
+  static String get baseUrl => api.baseUrl.replaceAll('/api', '');
 
   Vehicle? get vehiculeActif => _vehiculeActif;
   List<Vehicle> get vehicules => _vehicules;

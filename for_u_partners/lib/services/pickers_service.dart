@@ -83,8 +83,7 @@ class PickersService {
 
   //* Accepter une demande de ramassage
   Future<void> acceptRamassage(int id, BuildContext context) async {
-    final url = Uri.parse(
-        'https://foryou.cilassocies.com/api/conducteur/demandes-ramassage/$id/accept');
+    final url = Uri.parse('$baseUrl/conducteur/demandes-ramassage/$id/accept');
 
     print('🔵 Appel API - URL: $url');
     print('🆔 ID de la demande: $id');
@@ -125,7 +124,7 @@ class PickersService {
   Future<RamasseurDemandDetail> getCurrentRamassageDetails(
       int id, BuildContext context) async {
     final url = Uri.parse(
-        'https://foryou.cilassocies.com/api/conducteur/demandes-ramassage/$id/preview');
+        '$baseUrl/conducteur/demandes-ramassage/$id/preview');
 
     print('🔍 Récupération des détails de la demande $id...');
 
@@ -172,7 +171,7 @@ class PickersService {
 
   Future<FactureRamassageModel> getPickerFacture(int id, double poids) async {
     final url = Uri.parse(
-        'https://foryou.cilassocies.com/api/conducteur/demandes-ramassage/$id/facture');
+        '$baseUrl/conducteur/demandes-ramassage/$id/facture');
 
     print(
         '🔍 Envoi des éléments pour la récupération de la facture de la demande $id...');

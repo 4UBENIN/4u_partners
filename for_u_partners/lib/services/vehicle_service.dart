@@ -4,10 +4,11 @@ import 'package:dio/dio.dart';
 import 'package:for_u_partners/models/vehicle_model.dart';
 import 'package:for_u_partners/services/sharedpreferences_service.dart';
 import 'package:for_u_partners/app/app.locator.dart';
+import 'package:for_u_partners/app/api_constant.dart';
 
 class VehicleService {
   final Dio _dio = Dio();
-  static const String baseUrl = 'https://foryou.cilassocies.com';
+  static String get _baseUrl => baseUrl.replaceAll('/api', '');
   
   // 🔥 UTILISER LE MÊME SERVICE QUE AUTH_SERVICE
   final _sharedPreferencesServices = locator<SharedpreferencesService>();
@@ -155,7 +156,7 @@ class VehicleService {
       
       final response = await _dio
           .post(
-            '$baseUrl/api/conducteur/vehicule',
+            '$_baseUrl/api/conducteur/vehicule',
             data: formData,
             options: Options(
               headers: {
@@ -228,7 +229,7 @@ class VehicleService {
       print('📤 Envoi de la requête pour ajouter le véhicule...');
 
       final response = await _dio.post(
-        '$baseUrl/api/conducteur/vehicule',
+        '$_baseUrl/api/conducteur/vehicule',
         options: Options(
           headers: {
             'Authorization': 'Bearer $token',
@@ -300,7 +301,7 @@ Future<bool> changerCategorie({
     print('📤 Changement de catégorie du véhicule $vehiculeId vers $nouvelleCategorie...');
 
     final response = await _dio.post(
-      '$baseUrl/api/conducteur/changer-categorie',
+      '$_baseUrl/api/conducteur/changer-categorie',
       options: Options(
         headers: {
           'Authorization': 'Bearer $token',
@@ -344,7 +345,7 @@ Future<bool> changerCategorie({
       print('📤 Récupération des véhicules...');
 
       final response = await _dio.get(
-        '$baseUrl/api/conducteur/vehicule',
+        '$_baseUrl/api/conducteur/vehicule',
         options: Options(
           headers: {
             'Authorization': 'Bearer $token',
@@ -405,7 +406,7 @@ Future<bool> changerCategorie({
       print('📤 Mise à jour du véhicule $vehicleId...');
 
       final response = await _dio.put(
-        '$baseUrl/api/conducteur/vehicule/$vehicleId',
+        '$_baseUrl/api/conducteur/vehicule/$vehicleId',
         options: Options(
           headers: {
             'Authorization': 'Bearer $token',
@@ -449,7 +450,7 @@ Future<bool> changerCategorie({
       print('📤 Suppression du véhicule $vehicleId...');
 
       final response = await _dio.delete(
-        '$baseUrl/api/conducteur/vehicule/$vehicleId',
+        '$_baseUrl/api/conducteur/vehicule/$vehicleId',
         options: Options(
           headers: {
             'Authorization': 'Bearer $token',

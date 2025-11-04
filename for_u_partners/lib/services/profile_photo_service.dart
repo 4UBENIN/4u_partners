@@ -3,9 +3,10 @@ import 'dart:io';
 import 'package:for_u_partners/app/app.locator.dart';
 import 'package:for_u_partners/services/sharedpreferences_service.dart';
 import 'package:http/http.dart' as http;
+import 'package:for_u_partners/app/api_constant.dart';
 
 class ProfilePhotoService {
-  final String baseUrl = 'https://foryou.cilassocies.com';
+  String get _baseUrl => baseUrl.replaceAll('/api', '');
   final _sharedPreferencesService = locator<SharedpreferencesService>();
 
   Future<Map<String, dynamic>> updateProfilePhoto(File imageFile) async {
@@ -15,7 +16,7 @@ class ProfilePhotoService {
         throw Exception('Token non disponible');
       }
 
-      final uri = Uri.parse('$baseUrl/user/photo-profil');
+      final uri = Uri.parse('$_baseUrl/user/photo-profil');
       final request = http.MultipartRequest('POST', uri);
 
       // Ajouter les headers
@@ -61,7 +62,7 @@ class ProfilePhotoService {
       }
 
       final response = await http.delete(
-        Uri.parse('$baseUrl/user/photo-profil'),
+        Uri.parse('$_baseUrl/user/photo-profil'),
         headers: {
           'Authorization': 'Bearer $token',
           'Accept': 'application/json',

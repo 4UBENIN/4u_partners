@@ -41,7 +41,7 @@ class AuthService {
       });
 
       final response = await _dio.post(
-        'https://foryou.cilassocies.com/api/user/photo-profil',
+        '${baseUrl}/user/photo-profil',
         data: formData,
         options: Options(
           headers: {
@@ -67,27 +67,37 @@ class AuthService {
 
   //* LOGIN FUNCTION
   Future<void> login(LoginModel loginModel, BuildContext context) async {
-    final url =
-        Uri.parse("https://foryou.cilassocies.com/api/partenaire/login");
+    print("🟡 [AuthService] Début de la méthode login()");
+    final url = Uri.parse("$loginUrl");
+
+    print("🟡 [AuthService] URL: $url");
+    print("🟡 [AuthService] Payload: ${jsonEncode(loginModel.toJson())}");
 
     try {
+      print("🟡 [AuthService] Envoi de la requête HTTP POST...");
       final response = await http.post(
         url,
         headers: headers,
         body: jsonEncode(loginModel.toJson()),
       );
 
+      print("🟡 [AuthService] Réponse reçue");
       print("=== RESPONSE STATUS: ${response.statusCode} ===");
       print("=== RESPONSE BODY: ${response.body} ===");
 
+      print("🟡 [AuthService] Parsing du JSON...");
       final responseJson = jsonDecode(response.body);
+      print("🟡 [AuthService] JSON parsé avec succès");
 
       if (response.statusCode == 200) {
-        print("Connexion réussie ✅");
+        print("🟢 [AuthService] Status 200 - Connexion réussie ✅");
 
         String role = responseJson['type'];
+        print("🟡 [AuthService] Type initial: $role");
+
         if (role == "conducteur") {
           role = responseJson['conducteur_type'];
+          print("🟡 [AuthService] Type conducteur_type: $role");
         }
 
         String name = responseJson['data']['nom'];
@@ -95,6 +105,13 @@ class AuthService {
         String token = responseJson['token'];
         String message = responseJson['message'] ?? "Connexion réussie";
 
+        print("🟡 [AuthService] Données extraites:");
+        print("   - Nom: $name");
+        print("   - UserId: $userId");
+        print("   - Role: $role");
+        print("   - Token: ${token.substring(0, 20)}...");
+
+        print("🟡 [AuthService] Sauvegarde dans SharedPreferences...");
         await _sharedPreferencesServices.saveToken(token);
         await _sharedPreferencesServices.saveUserName(name);
         await _sharedPreferencesServices.saveUserType(role);
@@ -106,31 +123,43 @@ class AuthService {
               responseJson['data']['conducteur']['id'].toString();
           await _sharedPreferencesServices.saveUserTypeId(conducteurId);
           firestoreUserId = conducteurId;
+          print("🟡 [AuthService] ConducteurId: $conducteurId");
         } else {
           firestoreUserId = userId;
         }
 
+        print("🟡 [AuthService] Synchronisation avec Firestore...");
         await _syncUserToFirestore(responseJson['data'], role, firestoreUserId);
+        print("🟢 [AuthService] Firestore synchronisé");
 
+        print("🟡 [AuthService] Affichage du toast de succès...");
         CustomToast.showSuccess(context, message: message);
 
+        print("🟡 [AuthService] Navigation vers l'écran approprié (role: $role)...");
         switch (role) {
           case 'livreur':
+            print("🟡 [AuthService] Navigation vers DeliveryNavBarView");
             _navigationService.replaceWithDeliveryNavBarView();
             break;
           case 'chauffeur':
+            print("🟡 [AuthService] Navigation vers HomemainView");
             _navigationService.replaceWithHomemainView();
             break;
           case 'ramasseur':
+            print("🟡 [AuthService] Navigation vers DeliveryNavBarView (ramasseur)");
             _navigationService.replaceWithDeliveryNavBarView();
             break;
           case 'pressing':
+            print("🟡 [AuthService] Navigation vers NavBarPressingView");
             _navigationService.replaceWithNavBarPressingView();
             break;
           default:
+            print("⚠️ [AuthService] Role non reconnu: $role - Pas de navigation");
             break;
         }
+        print("🟢 [AuthService] Navigation effectuée avec succès");
       } else {
+        print("🔴 [AuthService] Status ${response.statusCode} - Échec de la connexion");
         String errorMessage = "Erreur de connexion. Veuillez réessayer.";
 
         if (responseJson['error'] != null && responseJson['error'] is String) {
@@ -148,14 +177,19 @@ class AuthService {
           errorMessage = responseJson['message'].toString();
         }
 
+        print("🔴 [AuthService] Message d'erreur: $errorMessage");
         throw errorMessage;
       }
     } catch (e) {
-      print("❌ Exception dans login(): $e");
+      print("❌ [AuthService] Exception capturée dans login(): $e");
+      print("❌ [AuthService] Type d'exception: ${e.runtimeType}");
+      print("❌ [AuthService] Stack trace: ${StackTrace.current}");
 
       if (e.toString().contains('SocketException')) {
+        print("🔴 [AuthService] Erreur de connexion réseau détectée");
         throw "Problème de connexion Internet. Vérifiez votre réseau.";
       } else {
+        print("🔴 [AuthService] Propagation de l'erreur: ${e.toString()}");
         throw e.toString();
       }
     }
@@ -216,8 +250,7 @@ class AuthService {
   //* VÉRIFICATION DU NUMÉRO DE TÉLÉPHONE
   Future<bool> checkPhoneNumberExists(String phoneNumber) async {
     try {
-      final url = Uri.parse(
-          "https://foryou.cilassocies.com/api/partenaire/check-phone");
+      final url = Uri.parse("$baseUrl/partenaire/check-phone");
 
       final response = await http.post(
         url,
@@ -349,7 +382,7 @@ class AuthService {
   Future<void> register(
       RegistrationModel registrationModel, BuildContext context) async {
     final dio = Dio();
-    const url = 'https://foryou.cilassocies.com/api/partenaire/register';
+    final url = registerUrl;
 
     dio.interceptors.add(LogInterceptor(
       requestBody: true,

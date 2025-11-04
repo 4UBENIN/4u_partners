@@ -69,7 +69,12 @@ Future<void> main() async {
   
   // Configurer le gestionnaire de messages en arrière-plan
   FirebaseMessaging.onBackgroundMessage(firebaseMessagingBackgroundHandler);
-  
+
+  // Initialiser le service FCM complet avec gestion des notifications foreground
+  final fcmService = FirebaseMessagingService();
+  await fcmService.init();
+  await fcmService.setupFlutterNotifications();
+
   // Lancer l'application
   runApp(const MainApp());
 }

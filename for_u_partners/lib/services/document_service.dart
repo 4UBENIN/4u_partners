@@ -5,10 +5,11 @@ import 'dart:io';
 import 'package:path_provider/path_provider.dart';
 import 'package:for_u_partners/services/sharedpreferences_service.dart';
 import 'package:for_u_partners/app/app.locator.dart';
+import 'package:for_u_partners/app/api_constant.dart';
 
 class DocumentService {
   final Dio _dio = Dio();
-  final String _baseUrl = 'https://foryou.cilassocies.com/api';
+  String get _baseUrl => baseUrl;
   
   final _sharedPreferencesServices = locator<SharedpreferencesService>();
 

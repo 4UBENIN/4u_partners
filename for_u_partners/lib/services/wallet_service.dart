@@ -4,6 +4,7 @@ import 'package:for_u_partners/app/models/wallet_model.dart';
 import 'package:http/http.dart' as http;
 import 'package:for_u_partners/app/app.locator.dart';
 import 'package:for_u_partners/services/auth_service.dart';
+import 'package:for_u_partners/app/api_constant.dart';
 
 class WalletService {
   final _authService = locator<AuthService>();
@@ -12,7 +13,7 @@ class WalletService {
   // Récupérer le solde du portefeuille
   Future<WalletModel> getWalletSold() async {
     try {
-      final url = Uri.parse("https://foryou.cilassocies.com/api/wallet_solde/");
+      final url = Uri.parse("$baseUrl/wallet_solde/");
       final response = await http.get(
         url,
         headers: await _authService.getAuthenticatedHeaders(),

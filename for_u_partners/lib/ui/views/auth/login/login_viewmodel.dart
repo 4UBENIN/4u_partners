@@ -179,26 +179,36 @@ class LoginViewModel extends FormViewModel {
   //* ---------------- CONNEXION ----------------
 
   Future<void> login(LoginModel model, BuildContext context) async {
+    print("🔵 [LoginViewModel] Début de la méthode login()");
+    print("🔵 [LoginViewModel] Téléphone: ${model.telephone}");
+    print("🔵 [LoginViewModel] Type: ${model.type}");
+
     setBusy(true);
+    print("🔵 [LoginViewModel] setBusy(true) - Loading démarré");
     _loginError = null;
     rebuildUi();
 
     try {
+      print("🔵 [LoginViewModel] Appel de _authService.login()...");
       await _authService.login(model, context);
+      print("🟢 [LoginViewModel] _authService.login() terminé avec succès");
       // Si la connexion réussit, la navigation se fait dans le service
     } on String catch (error) {
       // Erreur connue renvoyée par le service
-      print("⚠️ Erreur renvoyée par AuthService: $error");
+      print("⚠️ [LoginViewModel] Erreur renvoyée par AuthService: $error");
       _loginError = _formatLoginError(error);
       rebuildUi();
     } catch (e) {
       // Erreur inattendue
-      print("❌ Erreur inattendue: $e");
+      print("❌ [LoginViewModel] Erreur inattendue: $e");
+      print("❌ [LoginViewModel] Type d'erreur: ${e.runtimeType}");
       _loginError =
           '⚠️ Une erreur inattendue est survenue.\nVeuillez réessayer.';
       rebuildUi();
     } finally {
+      print("🔵 [LoginViewModel] Finally - setBusy(false)");
       setBusy(false);
+      print("🔵 [LoginViewModel] Loading arrêté");
     }
   }
 
