@@ -271,8 +271,8 @@ class _DriverSideNavigation extends StatelessWidget {
             onTap: onClose,
           ),
           _BottomMenuItem(
-            icon: Icons.settings_outlined,
-            label: 'Paramètres',
+            icon: Icons.person_outline_rounded,
+            label: 'Compte',
             onTap: onClose,
           ),
           const SizedBox(height: 8),

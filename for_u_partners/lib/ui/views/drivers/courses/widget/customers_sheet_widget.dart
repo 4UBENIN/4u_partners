@@ -99,7 +99,7 @@ class ClientsBottomSheet extends StatelessWidget {
   }
 }
 
-class ClientCard extends StatelessWidget {
+class ClientCard extends StatefulWidget {
   final ClientData client;
   final Function() onAccept;
   final Function() onDecline;
@@ -112,113 +112,218 @@ class ClientCard extends StatelessWidget {
       : super(key: key);
 
   @override
+  State<ClientCard> createState() => _ClientCardState();
+}
+
+class _ClientCardState extends State<ClientCard> {
+  Timer? _countdownTimer;
+  int _remainingSeconds = 15;
+  bool _isExpired = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _startCountdown();
+  }
+
+  @override
+  void dispose() {
+    _countdownTimer?.cancel();
+    super.dispose();
+  }
+
+  void _startCountdown() {
+    _countdownTimer = Timer.periodic(const Duration(seconds: 1), (timer) {
+      if (!mounted) {
+        timer.cancel();
+        return;
+      }
+
+      if (_remainingSeconds <= 1) {
+        setState(() {
+          _remainingSeconds = 0;
+          _isExpired = true;
+        });
+        timer.cancel();
+
+        // Auto-decline when timer expires after a short delay to show expired state
+        Future.delayed(const Duration(milliseconds: 500), () {
+          if (mounted) {
+            widget.onDecline();
+          }
+        });
+      } else {
+        setState(() {
+          _remainingSeconds--;
+        });
+      }
+    });
+  }
+
+  @override
   Widget build(BuildContext context) {
-    return Container(
-      margin: const EdgeInsets.only(bottom: 16),
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
-      decoration: BoxDecoration(
-        color: const Color(0xFFF7F8FD),
-        borderRadius: BorderRadius.circular(12),
-      ),
-      child: Row(
-        children: [
-          // Avatar avec initiales
-          Container(
-            width: 50,
-            height: 50,
-            decoration: BoxDecoration(
-              color: Colors.grey[800],
-              borderRadius: BorderRadius.circular(8),
-            ),
-            child: Center(
-              child: Text(
-                client.initials,
-                style: const TextStyle(
-                  color: Colors.white,
-                  fontSize: 20,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-            ),
-          ),
-          const SizedBox(width: 12),
-          // Informations client
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
+    final isUrgent = _remainingSeconds <= 5 && !_isExpired;
+
+    return Opacity(
+      opacity: _isExpired ? 0.6 : 1.0,
+      child: Container(
+        margin: const EdgeInsets.only(bottom: 16),
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+        decoration: BoxDecoration(
+          color: _isExpired
+              ? Colors.grey[300]
+              : (isUrgent ? Colors.red[50] : const Color(0xFFF7F8FD)),
+          borderRadius: BorderRadius.circular(12),
+          border: _isExpired
+              ? Border.all(color: Colors.grey[400]!, width: 2)
+              : (isUrgent
+                  ? Border.all(color: Colors.red[300]!, width: 2)
+                  : null),
+        ),
+        child: Column(
+          children: [
+            Row(
               children: [
-                Text(
-                  client.name,
-                  style: const TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.bold,
-                    color: Colors.black87,
+                // Avatar avec initiales
+                Container(
+                  width: 50,
+                  height: 50,
+                  decoration: BoxDecoration(
+                    color: _isExpired ? Colors.grey[600] : Colors.grey[800],
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: Center(
+                    child: Text(
+                      widget.client.initials,
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontSize: 20,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
                   ),
                 ),
-                const SizedBox(height: 2),
-                Text(
-                  client.timeInfo,
-                  style: TextStyle(
-                    fontSize: 14,
-                    color: Colors.grey[600],
+                const SizedBox(width: 12),
+                // Informations client
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        widget.client.name,
+                        style: TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.bold,
+                          color: _isExpired ? Colors.grey[600] : Colors.black87,
+                        ),
+                      ),
+                      const SizedBox(height: 2),
+                      Text(
+                        widget.client.timeInfo,
+                        style: TextStyle(
+                          fontSize: 14,
+                          color: Colors.grey[600],
+                        ),
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        widget.client.destination,
+                        style: TextStyle(
+                          fontSize: 13,
+                          color: Colors.grey[700],
+                        ),
+                      ),
+                    ],
                   ),
                 ),
-                const SizedBox(height: 4),
-                Text(
-                  client.destination,
-                  style: TextStyle(
-                    fontSize: 13,
-                    color: Colors.grey[700],
-                  ),
+                // Boutons d'action
+                Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    // Bouton X (refuser)
+                    Container(
+                      width: 36,
+                      height: 36,
+                      decoration: BoxDecoration(
+                        color: _isExpired ? Colors.grey[300] : Colors.grey[100],
+                        shape: BoxShape.circle,
+                        border: Border.all(
+                          color: _isExpired
+                              ? Colors.grey[400]!
+                              : Colors.grey[300]!,
+                        ),
+                      ),
+                      child: IconButton(
+                        onPressed: _isExpired ? null : widget.onDecline,
+                        icon: Icon(
+                          Icons.close,
+                          size: 18,
+                          color: _isExpired ? Colors.grey[500] : Colors.grey[600],
+                        ),
+                        padding: EdgeInsets.zero,
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    // Bouton Check (accepter)
+                    Container(
+                      width: 36,
+                      height: 36,
+                      decoration: BoxDecoration(
+                        color: _isExpired ? Colors.grey[400] : kcPrimaryColor,
+                        shape: BoxShape.circle,
+                      ),
+                      child: IconButton(
+                        onPressed: _isExpired ? null : widget.onAccept,
+                        icon: Icon(
+                          _isExpired ? Icons.block : Icons.check,
+                          size: 18,
+                          color: Colors.white,
+                        ),
+                        padding: EdgeInsets.zero,
+                      ),
+                    ),
+                  ],
                 ),
               ],
             ),
-          ),
-          // Boutons d'action
-          Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              // Bouton X (refuser)
-              Container(
-                width: 36,
-                height: 36,
-                decoration: BoxDecoration(
-                  color: Colors.grey[100],
-                  shape: BoxShape.circle,
-                  border: Border.all(color: Colors.grey[300]!),
-                ),
-                child: IconButton(
-                  onPressed: onDecline,
-                  icon: Icon(
-                    Icons.close,
-                    size: 18,
-                    color: Colors.grey[600],
-                  ),
-                  padding: EdgeInsets.zero,
-                ),
+            // Timer display
+            const SizedBox(height: 12),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+              decoration: BoxDecoration(
+                color: _isExpired
+                    ? Colors.grey[400]
+                    : (isUrgent ? Colors.red[100] : Colors.orange[100]),
+                borderRadius: BorderRadius.circular(8),
               ),
-              const SizedBox(width: 8),
-              // Bouton Check (accepter)
-              Container(
-                width: 36,
-                height: 36,
-                decoration: const BoxDecoration(
-                  color: kcPrimaryColor,
-                  shape: BoxShape.circle,
-                ),
-                child: IconButton(
-                  onPressed: onAccept,
-                  icon: const Icon(
-                    Icons.check,
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(
+                    _isExpired ? Icons.timer_off : Icons.timer,
                     size: 18,
-                    color: Colors.white,
+                    color: _isExpired
+                        ? Colors.grey[700]
+                        : (isUrgent ? Colors.red[700] : Colors.orange[700]),
                   ),
-                  padding: EdgeInsets.zero,
-                ),
+                  const SizedBox(width: 8),
+                  Text(
+                    _isExpired
+                        ? 'Offre expirée'
+                        : 'Accepter dans $_remainingSeconds secondes',
+                    style: TextStyle(
+                      fontSize: 14,
+                      fontWeight: FontWeight.w600,
+                      color: _isExpired
+                          ? Colors.grey[800]
+                          : (isUrgent ? Colors.red[900] : Colors.orange[900]),
+                    ),
+                  ),
+                ],
               ),
-            ],
-          ),
-        ],
+            ),
+          ],
+        ),
       ),
     );
   }
