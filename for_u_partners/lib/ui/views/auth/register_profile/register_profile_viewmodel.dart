@@ -16,10 +16,29 @@ class RegisterProfileViewModel extends FormViewModel {
   bool? hasVehicle;
   bool _showVehicleError = false;
   
+  //* Données de l'étape 1
+  Map<String, dynamic> step1Data = {};
+  
   bool? get showVehicleError => _showVehicleError;
   
   void setShowVehicleError(bool value) {
     _showVehicleError = value;
+    notifyListeners();
+  }
+
+  //* Sauvegarder les données de l'étape 1
+  void saveStep1Data({
+    required String nom,
+    required String prenom,
+    required String adresse,
+    String? genre,
+  }) {
+    step1Data = {
+      'nom': nom,
+      'prenom': prenom,
+      'adresse': adresse,
+      'genre': genre,
+    };
     notifyListeners();
   }
 

@@ -3,8 +3,10 @@ import 'package:stacked/stacked.dart';
 import 'package:for_u_partners/app/app.router.dart';
 import 'package:for_u_partners/app/app.locator.dart';
 import 'package:stacked_services/stacked_services.dart';
+import 'package:for_u_partners/ui/views/otp/otp_view.dart';
+import 'register_view.form.dart';
 
-class RegisterViewModel extends FormViewModel {
+class RegisterViewModel extends FormViewModel with $RegisterView {
   final navigationService = locator<NavigationService>();
 
   final profiles = [
@@ -15,15 +17,22 @@ class RegisterViewModel extends FormViewModel {
     "garagiste"
   ];
 
+  // GESTION DES ÉTAPES
+  int _currentStep = 0;
+  int get currentStep => _currentStep;
+  int get totalSteps => 4;
+
   bool obscurePassword = true;
-  bool _isPhoneNumberTouched = false;
-  bool _isEmailTouched = false;
-  bool _isPasswordTouched = false;
-  bool _isProfileTouched = false;
-  
+  bool obscureConfirmPassword = true;
+
+  // États de validation
   String? _phoneNumberError;
+  String? _firstNameError;
+  String? _lastNameError;
   String? _emailError;
+  String? _addressError;
   String? _passwordError;
+  String? _confirmPasswordError;
   String? _profileError;
   String? _registrationError;
 
@@ -31,131 +40,324 @@ class RegisterViewModel extends FormViewModel {
   String get selectedProfile => _selectedProfile;
   String? get registrationError => _registrationError;
 
-  // Getters pour les erreurs - N'affiche que si le champ a été touché
-  String? get phoneNumberErrorText => _isPhoneNumberTouched ? _phoneNumberError : null;
-  String? get emailErrorText => _isEmailTouched ? _emailError : null;
-  String? get passwordErrorText => _isPasswordTouched ? _passwordError : null;
-  String? get profileErrorText => _isProfileTouched ? _profileError : null;
-  
-  bool get isFormValid =>
-      _phoneNumberError == null &&
-      _emailError == null &&
-      _passwordError == null &&
-      _profileError == null &&
-      _isPhoneNumberTouched &&
-      _isEmailTouched &&
-      _isPasswordTouched &&
-      _isProfileTouched;
+  // Getters pour les erreurs
+  String? get phoneNumberErrorText => _phoneNumberError;
+  String? get firstNameErrorText => _firstNameError;
+  String? get lastNameErrorText => _lastNameError;
+  String? get emailErrorText => _emailError;
+  String? get addressErrorText => _addressError;
+  String? get passwordErrorText => _passwordError;
+  String? get confirmPasswordErrorText => _confirmPasswordError;
+  String? get profileErrorText => _profileError;
 
-  //* VALIDATION DU NUMÉRO DE TÉLÉPHONE
   String? _validatePhoneNumber(String phoneNumber) {
     final cleanPhone = phoneNumber.trim();
-    
+
     if (cleanPhone.isEmpty) {
       return '📱 Veuillez entrer votre numéro de téléphone';
     }
-    
+
     if (!RegExp(r'^[0-9]+$').hasMatch(cleanPhone)) {
       return '❌ Le numéro doit contenir uniquement des chiffres';
     }
-    
+
     if (cleanPhone.length != 10) {
       return '📏 Le numéro doit contenir exactement 10 chiffres';
     }
-    
+
     if (!cleanPhone.startsWith('01')) {
       return '⚠️ Le numéro doit commencer par 01';
     }
-    
+
     return null;
   }
 
-  //* VALIDATION DE L'EMAIL
+  String? _validateFirstName(String firstName) {
+    final cleanFirstName = firstName.trim();
+
+    if (cleanFirstName.isEmpty) {
+      return '👤 Veuillez entrer votre prénom';
+    }
+
+    if (cleanFirstName.length < 2) {
+      return '⚠️ Le prénom doit contenir au moins 2 caractères';
+    }
+
+    return null;
+  }
+
+  String? _validateLastName(String lastName) {
+    final cleanLastName = lastName.trim();
+
+    if (cleanLastName.isEmpty) {
+      return '👤 Veuillez entrer votre nom';
+    }
+
+    if (cleanLastName.length < 2) {
+      return '⚠️ Le nom doit contenir au moins 2 caractères';
+    }
+
+    return null;
+  }
+
   String? _validateEmail(String email) {
     final cleanEmail = email.trim();
-    
+
     if (cleanEmail.isEmpty) {
       return '📧 Veuillez entrer votre adresse email';
     }
-    
-    // Regex pour valider l'email
+
     final emailRegex = RegExp(
       r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$',
     );
-    
+
     if (!emailRegex.hasMatch(cleanEmail)) {
-      return '❌ Format d\'email invalide. Ex: exemple@mail.com';
+      return '❌ Format d\'email invalide';
     }
-    
-    // Vérifier les domaines courants
-    final domain = cleanEmail.split('@').last.toLowerCase();
-    final commonDomains = ['gmail.com', 'yahoo.com', 'outlook.com', 'hotmail.com'];
-    
-    if (!commonDomains.any((d) => domain == d) && !domain.contains('.')) {
-      return '⚠️ Vérifiez votre adresse email';
-    }
-    
+
     return null;
   }
 
-  //* VALIDATION DU MOT DE PASSE
+  String? _validateAddress(String address) {
+    final cleanAddress = address.trim();
+
+    if (cleanAddress.isEmpty) {
+      return '📍 Veuillez entrer votre adresse';
+    }
+
+    if (cleanAddress.length < 5) {
+      return '⚠️ L\'adresse doit contenir au moins 5 caractères';
+    }
+
+    return null;
+  }
+
   String? _validatePassword(String password) {
     if (password.isEmpty) {
       return '🔒 Veuillez entrer un mot de passe';
     }
-    
+
     if (password.length < 8) {
       return '🔒 Le mot de passe doit contenir au moins 8 caractères';
     }
-    
-    // Vérifier la présence de différents types de caractères
+
     final hasUppercase = password.contains(RegExp(r'[A-Z]'));
     final hasLowercase = password.contains(RegExp(r'[a-z]'));
     final hasDigit = password.contains(RegExp(r'[0-9]'));
-    
+
     if (!hasUppercase) {
       return '🔠 Le mot de passe doit contenir au moins une majuscule';
     }
-    
+
     if (!hasLowercase) {
       return '🔡 Le mot de passe doit contenir au moins une minuscule';
     }
-    
+
     if (!hasDigit) {
       return '🔢 Le mot de passe doit contenir au moins un chiffre';
     }
-    
+
     return null;
   }
 
-  //* VALIDATION DU PROFIL
+  String? _validateConfirmPassword(String confirmPassword, String password) {
+    if (confirmPassword.isEmpty) {
+      return '🔒 Veuillez confirmer votre mot de passe';
+    }
+
+    if (confirmPassword != password) {
+      return '❌ Les mots de passe ne correspondent pas';
+    }
+
+    return null;
+  }
+
   String? _validateProfile(String profile) {
     if (profile.isEmpty) {
       return '👤 Veuillez sélectionner votre profil';
     }
-    
+
     if (!profiles.contains(profile)) {
       return '❌ Profil non valide';
     }
-    
+
     return null;
   }
 
-  //* ÉVALUATION DE LA FORCE DU MOT DE PASSE
+  void onPhoneNumberChanged(String value) {
+    _phoneNumberError = _validatePhoneNumber(value);
+    rebuildUi();
+  }
+
+  void onFirstNameChanged(String value) {
+    _firstNameError = _validateFirstName(value);
+    rebuildUi();
+  }
+
+  void onLastNameChanged(String value) {
+    _lastNameError = _validateLastName(value);
+    rebuildUi();
+  }
+
+  void onEmailChanged(String value) {
+    _emailError = _validateEmail(value);
+    rebuildUi();
+  }
+
+  void onAddressChanged(String value) {
+    _addressError = _validateAddress(value);
+    rebuildUi();
+  }
+
+  void onPasswordChanged(String value) {
+    _passwordError = _validatePassword(value);
+    rebuildUi();
+  }
+
+  void onConfirmPasswordChanged(String value, String password) {
+    _confirmPasswordError = _validateConfirmPassword(value, password);
+    rebuildUi();
+  }
+
+  void setSelectedProfile(String value) {
+    _selectedProfile = value;
+    _profileError = _validateProfile(value);
+    rebuildUi();
+  }
+
+  bool _validateStep1(String phoneNumber, String firstName, String lastName) {
+    _phoneNumberError = _validatePhoneNumber(phoneNumber);
+    _firstNameError = _validateFirstName(firstName);
+    _lastNameError = _validateLastName(lastName);
+    rebuildUi();
+
+    return _phoneNumberError == null &&
+        _firstNameError == null &&
+        _lastNameError == null;
+  }
+
+  bool _validateStep2(String email, String address) {
+    _emailError = _validateEmail(email);
+    _addressError = _validateAddress(address);
+    rebuildUi();
+
+    return _emailError == null && _addressError == null;
+  }
+
+  bool _validateStep3(String password, String confirmPassword) {
+    _passwordError = _validatePassword(password);
+    _confirmPasswordError = _validateConfirmPassword(confirmPassword, password);
+    rebuildUi();
+
+    return _passwordError == null && _confirmPasswordError == null;
+  }
+
+  bool _validateStep4() {
+    _profileError = _validateProfile(_selectedProfile);
+    rebuildUi();
+
+    return _profileError == null;
+  }
+
+  bool validateCurrentStep({
+    String? phoneNumber,
+    String? firstName,
+    String? lastName,
+    String? email,
+    String? address,
+    String? password,
+    String? confirmPassword,
+  }) {
+    switch (_currentStep) {
+      case 0:
+        return _validateStep1(
+          phoneNumber ?? '',
+          firstName ?? '',
+          lastName ?? '',
+        );
+      case 1:
+        return _validateStep2(
+          email ?? '',
+          address ?? '',
+        );
+      case 2:
+        return _validateStep3(
+          password ?? '',
+          confirmPassword ?? '',
+        );
+      case 3:
+        return _validateStep4();
+      default:
+        return false;
+    }
+  }
+
+  bool canGoToNextStep({
+    String? phoneNumber,
+    String? firstName,
+    String? lastName,
+    String? email,
+    String? address,
+    String? password,
+    String? confirmPassword,
+  }) {
+    switch (_currentStep) {
+      case 0:
+        return phoneNumber != null &&
+            firstName != null &&
+            lastName != null &&
+            _validatePhoneNumber(phoneNumber) == null &&
+            _validateFirstName(firstName) == null &&
+            _validateLastName(lastName) == null;
+
+      case 1:
+        return email != null &&
+            address != null &&
+            _validateEmail(email) == null &&
+            _validateAddress(address) == null;
+
+      case 2:
+        return password != null &&
+            confirmPassword != null &&
+            _validatePassword(password) == null &&
+            _validateConfirmPassword(confirmPassword, password) == null;
+
+      case 3:
+        return _validateProfile(_selectedProfile) == null;
+
+      default:
+        return false;
+    }
+  }
+
+  void nextStep() {
+    if (_currentStep < totalSteps - 1) {
+      _currentStep++;
+      _registrationError = null;
+      rebuildUi();
+    }
+  }
+
+  void previousStep() {
+    if (_currentStep > 0) {
+      _currentStep--;
+      _registrationError = null;
+      rebuildUi();
+    }
+  }
+
   Map<String, dynamic> evaluatePasswordStrength(String password) {
     int strength = 0;
     String message = 'Très faible';
     Color color = Colors.red;
-    
-    // Critères de force
+
     if (password.length >= 6) strength++;
     if (password.length >= 8) strength++;
     if (password.contains(RegExp(r'[A-Z]'))) strength++;
     if (password.contains(RegExp(r'[a-z]'))) strength++;
     if (password.contains(RegExp(r'[0-9]'))) strength++;
     if (password.contains(RegExp(r'[!@#\$%^&*(),.?":{}|<>]'))) strength++;
-    
-    // Déterminer le niveau de sécurité
+
     if (strength >= 5) {
       message = '🛡️ Excellent';
       color = Colors.green.shade700;
@@ -168,172 +370,93 @@ class RegisterViewModel extends FormViewModel {
     } else if (strength >= 2) {
       message = '⚠️ Faible';
       color = Colors.orange.shade700;
-    } else {
-      message = '❌ Très faible';
-      color = Colors.red;
     }
-    
+
     return {
-      'strength': strength / 6, // Normalisé entre 0 et 1
+      'strength': strength / 6,
       'message': message,
       'color': color,
     };
   }
 
-  //* GESTION DES CHANGEMENTS DE CHAMPS
-  void onPhoneNumberChanged(String value) {
-    _isPhoneNumberTouched = true;
-    _phoneNumberError = _validatePhoneNumber(value);
-    
-    // Réinitialiser l'erreur d'inscription
-    if (_registrationError != null) {
-      _registrationError = null;
-    }
-    
-    rebuildUi();
-  }
-  
-  void onEmailChanged(String value) {
-    _isEmailTouched = true;
-    _emailError = _validateEmail(value);
-    
-    // Réinitialiser l'erreur d'inscription
-    if (_registrationError != null) {
-      _registrationError = null;
-    }
-    
+  void togglePasswordVisibility() {
+    obscurePassword = !obscurePassword;
     rebuildUi();
   }
 
-  void onPasswordChanged(String value) {
-    _isPasswordTouched = true;
-    _passwordError = _validatePassword(value);
-    
-    // Réinitialiser l'erreur d'inscription
-    if (_registrationError != null) {
-      _registrationError = null;
-    }
-    
+  void toggleConfirmPasswordVisibility() {
+    obscureConfirmPassword = !obscureConfirmPassword;
     rebuildUi();
   }
 
-  void onPasswordFieldTouched() {
-    _isPasswordTouched = true;
-    rebuildUi();
-  }
-
-  void setSelectedProfile(String value) {
-    _isProfileTouched = true;
-    _selectedProfile = value;
-    _profileError = _validateProfile(value);
-    
-    // Réinitialiser l'erreur d'inscription
-    if (_registrationError != null) {
-      _registrationError = null;
-    }
-    
-    rebuildUi();
-  }
-
-  //* VALIDATION COMPLÈTE DU FORMULAIRE
-  bool validateForm(String phoneNumber, String email, String password) {
-    // Marquer tous les champs comme touchés
-    _isPhoneNumberTouched = true;
-    _isEmailTouched = true;
-    _isPasswordTouched = true;
-    _isProfileTouched = true;
-    
-    // Réinitialiser l'erreur d'inscription
-    _registrationError = null;
-    
-    // Valider tous les champs
-    _phoneNumberError = _validatePhoneNumber(phoneNumber);
-    _emailError = _validateEmail(email);
-    _passwordError = _validatePassword(password);
-    _profileError = _validateProfile(_selectedProfile);
-    
-    rebuildUi();
-    
-    return _phoneNumberError == null &&
-           _emailError == null &&
-           _passwordError == null &&
-           _profileError == null;
-  }
-
-  //* GESTION DES ERREURS D'INSCRIPTION
   String _formatRegistrationError(dynamic error) {
-    if (error == null) return '⚠️ Une erreur est survenue lors de l\'inscription';
-    
+    if (error == null) {
+      return '⚠️ Une erreur est survenue lors de l\'inscription';
+    }
+
     final errorString = error.toString().toLowerCase();
-    
-    // Erreurs liées au numéro de téléphone
+
     if (errorString.contains('téléphone') && errorString.contains('utilisé')) {
-      return '📱 Ce numéro de téléphone est déjà utilisé.\nVeuillez vous connecter ou utiliser un autre numéro.';
+      return '📱 Ce numéro de téléphone est déjà utilisé';
     }
-    
-    if (errorString.contains('téléphone') && errorString.contains('invalide')) {
-      return '📱 Le numéro de téléphone est invalide.\nVérifiez et réessayez.';
-    }
-    
-    // Erreurs liées à l'email
+
     if (errorString.contains('email') && errorString.contains('utilisé')) {
-      return '📧 Cet email est déjà utilisé.\nVeuillez vous connecter ou utiliser un autre email.';
+      return '📧 Cet email est déjà utilisé';
     }
-    
-    if (errorString.contains('email') && errorString.contains('invalide')) {
-      return '📧 L\'adresse email est invalide.\nVérifiez et réessayez.';
+
+    if (errorString.contains('réseau') || errorString.contains('network')) {
+      return '📡 Problème de connexion internet';
     }
-    
-    // Erreurs réseau
-    if (errorString.contains('réseau') || 
-        errorString.contains('network') ||
-        errorString.contains('connexion')) {
-      return '📡 Problème de connexion internet.\nVérifiez votre connexion et réessayez.';
-    }
-    
-    // Erreurs serveur
-    if (errorString.contains('serveur') || 
-        errorString.contains('server') ||
-        errorString.contains('500')) {
-      return '🔧 Problème de connexion au serveur.\nVeuillez réessayer dans quelques instants.';
-    }
-    
-    // Timeout
-    if (errorString.contains('timeout')) {
-      return '⏱️ La connexion a pris trop de temps.\nVeuillez réessayer.';
-    }
-    
-    // Données manquantes ou invalides
-    if (errorString.contains('requis') || errorString.contains('obligatoire')) {
-      return '⚠️ Certains champs obligatoires sont manquants.\nVérifiez le formulaire.';
-    }
-    
-    // Message par défaut
-    return '⚠️ Une erreur est survenue lors de l\'inscription.\nVeuillez vérifier vos informations et réessayer.';
+
+    return '⚠️ Une erreur est survenue lors de l\'inscription';
   }
 
-  //* INSCRIPTION
+  Future<void> handleOtpNavigation() async {
+    final result = await navigationService.navigateToView(
+      OtpView(
+        phoneNumber: phoneNumberController.text.trim(),
+        email: emailController.text.trim(),
+        password: passwordController.text.trim(),
+      ),
+    );
+
+    if (result != null && result is Map) {
+      if (result['action'] == 'goToProfileStep') {
+        _currentStep = 3;
+        rebuildUi();
+      } else if (result['action'] == 'goToPhoneStep') {
+        _currentStep = 0;
+        if (result['phoneNumber'] != null) {
+          phoneNumberController.text = result['phoneNumber'];
+          _phoneNumberError = _validatePhoneNumber(result['phoneNumber']);
+        }
+        rebuildUi();
+      }
+    }
+  }
+
   Future<bool> registerByProfile() async {
     setBusy(true);
     _registrationError = null;
     rebuildUi();
-    
+
     try {
-      // Simulation d'une vérification (à remplacer par votre appel API réel)
       await Future.delayed(const Duration(seconds: 1));
       
-      // Exemple de vérification - À remplacer par votre logique réelle
-      // if (phoneNumberInputValue == '0123456789') {
-      //   throw Exception('Ce numéro de téléphone est déjà utilisé');
-      // }
+      final phoneNumber = phoneNumberController.text.trim();
       
-      // Si tout est bon
+      if (phoneNumber.isEmpty) {
+        _registrationError = 'Veuillez entrer un numéro de téléphone valide';
+        rebuildUi();
+        return false;
+      }
+
+      await handleOtpNavigation();
+      
       _registrationError = null;
       rebuildUi();
       return true;
-      
     } catch (e) {
-      // Formater l'erreur de manière conviviale
       _registrationError = _formatRegistrationError(e);
       rebuildUi();
       return false;
@@ -342,29 +465,24 @@ class RegisterViewModel extends FormViewModel {
     }
   }
 
-  //* AUTRES ACTIONS
-  void viewPassword() {
-    obscurePassword = !obscurePassword;
-    rebuildUi();
-  }
-
   void login() {
     navigationService.replaceWithLoginView();
   }
 
-  //* RÉINITIALISER LE FORMULAIRE
   void resetForm() {
-    _isPhoneNumberTouched = false;
-    _isEmailTouched = false;
-    _isPasswordTouched = false;
-    _isProfileTouched = false;
+    _currentStep = 0;
     _phoneNumberError = null;
+    _firstNameError = null;
+    _lastNameError = null;
     _emailError = null;
+    _addressError = null;
     _passwordError = null;
+    _confirmPasswordError = null;
     _profileError = null;
     _registrationError = null;
     _selectedProfile = "pressing";
     obscurePassword = true;
+    obscureConfirmPassword = true;
     rebuildUi();
   }
 }
