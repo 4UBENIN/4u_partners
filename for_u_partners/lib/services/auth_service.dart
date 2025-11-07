@@ -22,7 +22,7 @@ class AuthService {
   final _navigationService = locator<NavigationService>();
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
   final Dio _dio = Dio();
-  
+
   //* Mettre à jour la photo de profil
   Future<Map<String, dynamic>> updateProfilePicture(
       File imageFile, String token) async {
@@ -135,7 +135,8 @@ class AuthService {
         print("🟡 [AuthService] Affichage du toast de succès...");
         CustomToast.showSuccess(context, message: message);
 
-        print("🟡 [AuthService] Navigation vers l'écran approprié (role: $role)...");
+        print(
+            "🟡 [AuthService] Navigation vers l'écran approprié (role: $role)...");
         switch (role) {
           case 'livreur':
             print("🟡 [AuthService] Navigation vers DeliveryNavBarView");
@@ -146,7 +147,8 @@ class AuthService {
             _navigationService.replaceWithHomemainView();
             break;
           case 'ramasseur':
-            print("🟡 [AuthService] Navigation vers DeliveryNavBarView (ramasseur)");
+            print(
+                "🟡 [AuthService] Navigation vers DeliveryNavBarView (ramasseur)");
             _navigationService.replaceWithDeliveryNavBarView();
             break;
           case 'pressing':
@@ -154,12 +156,14 @@ class AuthService {
             _navigationService.replaceWithNavBarPressingView();
             break;
           default:
-            print("⚠️ [AuthService] Role non reconnu: $role - Pas de navigation");
+            print(
+                "⚠️ [AuthService] Role non reconnu: $role - Pas de navigation");
             break;
         }
         print("🟢 [AuthService] Navigation effectuée avec succès");
       } else {
-        print("🔴 [AuthService] Status ${response.statusCode} - Échec de la connexion");
+        print(
+            "🔴 [AuthService] Status ${response.statusCode} - Échec de la connexion");
         String errorMessage = "Erreur de connexion. Veuillez réessayer.";
 
         if (responseJson['error'] != null && responseJson['error'] is String) {

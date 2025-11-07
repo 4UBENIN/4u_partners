@@ -42,10 +42,17 @@ Future<void> main() async {
   
   // Initialisation de Firebase et des services
   WidgetsFlutterBinding.ensureInitialized();
-  
+
   // Charger les variables d'environnement
+print("🔄 Tentative de chargement du .env...");
+try {
   await dotenv.load(fileName: ".env");
-  
+  print("✅ .env chargé");
+  print("📍 API_ENDPOINT = ${dotenv.env['API_ENDPOINT']}");
+  print("📍 Clés disponibles: ${dotenv.env.keys.toList()}");
+} catch (e) {
+  print("❌ Erreur chargement .env: $e");
+}
   // Initialiser Firebase
   await Firebase.initializeApp();
   

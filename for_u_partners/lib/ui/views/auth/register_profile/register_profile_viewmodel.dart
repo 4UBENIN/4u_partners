@@ -13,38 +13,45 @@ import 'package:permission_handler/permission_handler.dart';
 import 'package:for_u_partners/ui/common/text_component.dart';
 
 class RegisterProfileViewModel extends FormViewModel {
+  // GESTION DES ÉTAPES
+  int _currentStep = 0;
+  int get currentStep => _currentStep;
+
+  // Le nombre d'étapes dépend de si l'utilisateur a un véhicule
+  int get totalSteps => hasVehicle == true ? 3 : 2;
+
   bool? hasVehicle;
   bool _showVehicleError = false;
-  
-  //* Données de l'étape 1
-  Map<String, dynamic> step1Data = {};
-  
   bool? get showVehicleError => _showVehicleError;
-  
+
   void setShowVehicleError(bool value) {
     _showVehicleError = value;
     notifyListeners();
   }
 
-  //* Sauvegarder les données de l'étape 1
-  void saveStep1Data({
-    required String nom,
-    required String prenom,
-    required String adresse,
-    String? genre,
-  }) {
-    step1Data = {
-      'nom': nom,
-      'prenom': prenom,
-      'adresse': adresse,
-      'genre': genre,
-    };
-    notifyListeners();
+  // Navigation entre étapes
+  void nextStep() {
+    if (_currentStep < totalSteps - 1) {
+      _currentStep++;
+      notifyListeners();
+    }
+  }
+
+  void previousStep() {
+    if (_currentStep > 0) {
+      _currentStep--;
+      notifyListeners();
+    }
+  }
+
+  void goToStep(int step) {
+    if (step >= 0 && step < totalSteps) {
+      _currentStep = step;
+      notifyListeners();
+    }
   }
 
   //* Files
-  XFile? deliverCarteGrise;
-  XFile? deliverAssurance;
   XFile? driverIdentity;
   XFile? driverCarCarteGrise;
   XFile? driverCarAssurance;
@@ -52,13 +59,11 @@ class RegisterProfileViewModel extends FormViewModel {
   XFile? driverNoCarPermis;
   XFile? driverMotoCarteGrise;
   XFile? driverMotoAssurance;
-  XFile? cleaningIdentity;
 
   //* Dropdown values
   final vehicles = ["moto", "voiture", "tricycle"];
   final categories = ["standard", "premium", "vip"];
   final wantedVehicles = ["moto", "voiture", "tricycle"];
-  final genders = ["masculin", "feminin"];
 
   String _selectedVehicle = "moto";
   String get selectedVehicle => _selectedVehicle;
@@ -68,9 +73,6 @@ class RegisterProfileViewModel extends FormViewModel {
 
   String _selectedCategory = "standard";
   String get selectedCategory => _selectedCategory;
-
-  String _selectedGender = "masculin";
-  String get selectedGender => _selectedGender;
 
   //* Services
   final _authService = locator<AuthService>();
@@ -94,7 +96,6 @@ class RegisterProfileViewModel extends FormViewModel {
 
       if (!_isInitialized) return;
 
-      // Schedule the controller update for after the build phase
       WidgetsBinding.instance.addPostFrameCallback((_) {
         if (_selectedVehicle == 'moto') {
           _driverCarPlacesController.text = '1';
@@ -104,7 +105,6 @@ class RegisterProfileViewModel extends FormViewModel {
             _driverCarPlacesController.text == '3') {
           _driverCarPlacesController.clear();
         }
-        // Notify listeners after updating the controller
         notifyListeners();
       });
     }
@@ -114,17 +114,14 @@ class RegisterProfileViewModel extends FormViewModel {
     if (hasVehicle != value) {
       hasVehicle = value;
 
-      // Mettre à jour les valeurs après la fin du frame
       WidgetsBinding.instance.addPostFrameCallback((_) {
         if (value == false) {
           _selectedVehicle = "moto";
           _wantedVehicle = "moto";
-          // Mettre à jour le contrôleur pour la moto
           if (_isInitialized) {
             _driverCarPlacesController.text = '1';
           }
         }
-        // Notifier les écouteurs après les mises à jour
         if (_isInitialized) {
           notifyListeners();
         }
@@ -157,59 +154,110 @@ class RegisterProfileViewModel extends FormViewModel {
     rebuildUi();
   }
 
-  void setSelectedGender(String value) {
-    _selectedGender = value;
-    rebuildUi();
+  // Validation de l'étape actuelle
+  bool validateCurrentStep() {
+    switch (_currentStep) {
+      case 0: // Étape pièce d'identité
+        if (driverIdentity == null) {
+          return false;
+        }
+        return true;
+
+      case 1: // Étape véhicule (question)
+        if (hasVehicle == null) {
+          setShowVehicleError(true);
+          return false;
+        }
+
+        // Si pas de véhicule, vérifier le type souhaité et le permis si voiture
+        if (hasVehicle == false) {
+          if (wantedVehicle == "voiture" && driverNoCarPermis == null) {
+            return false;
+          }
+        }
+        return true;
+
+      case 2: // Étape informations véhicule (si a un véhicule)
+        if (hasVehicle == true) {
+          return _validateVehicleInfo();
+        }
+        return true;
+
+      default:
+        return false;
+    }
+  }
+
+  bool _validateVehicleInfo() {
+    // Validation commune
+    if (_driverCarPlacesController.text.isEmpty) return false;
+
+    if (_selectedVehicle == 'voiture') {
+      if (driverCarPermis == null) return false;
+      if (driverCarCarteGrise == null) return false;
+      if (driverCarAssurance == null) return false;
+    } else {
+      if (driverMotoCarteGrise == null) return false;
+      if (driverMotoAssurance == null) return false;
+    }
+
+    return true;
   }
 
   Future<void> registerEnding(
-      RegistrationModel model, BuildContext context) async {
-    setBusy(true);
-    try {
-      await _authService.register(model, context);
-      if (context.mounted) {
-        CustomToast.showSuccess(context, message: "Inscription réussie");
-      }
-    } on DioException catch (e) {
-      String errorMessage = "Une erreur est survenue lors de l'inscription";
-      if (e.response?.data is Map) {
-        final responseData = e.response!.data as Map<String, dynamic>;
-        if (responseData['errors'] != null) {
-          final errors = responseData['errors'] as Map<String, dynamic>;
-          final errorMessages = <String>[];
-          errors.forEach((key, value) {
-            if (value is List) {
-              errorMessages.addAll(value.cast<String>());
-            } else if (value is String) {
-              errorMessages.add(value);
-            }
-          });
-          if (errorMessages.isNotEmpty) {
-            errorMessage = errorMessages.join('\n');
-          }
-        } else if (responseData['message'] != null) {
-          errorMessage = responseData['message'] as String;
-        }
-      } else if (e.message != null) {
-        errorMessage = e.message!;
-      }
-      if (context.mounted) {
-        CustomToast.showError(context, message: errorMessage);
-      }
-      print("Erreur lors de l'inscription: $errorMessage");
-      if (e.response?.data != null) {
-        print("Détails de l'erreur: ${e.response!.data}");
-      }
-    } catch (e) {
-      print("Erreur inattendue lors de l'inscription: $e");
-      if (context.mounted) {
-        CustomToast.showError(context,
-            message: "Une erreur inattendue est survenue: ${e.toString()}");
-      }
-    } finally {
-      setBusy(false);
+    RegistrationModel model, BuildContext context) async {
+  setBusy(true);
+  try {
+    print("🚀 Début de l'inscription via AuthService...");
+    await _authService.register(model, context);
+    print("✅ AuthService.register() terminé avec succès");
+    
+    if (context.mounted) {
+      CustomToast.showSuccess(context, message: "Inscription réussie");
+      print("✅ Toast de succès affiché");
     }
+  } on DioException catch (e) {
+    print("❌ DioException attrapée: ${e.message}");
+    String errorMessage = "Une erreur est survenue lors de l'inscription";
+    if (e.response?.data is Map) {
+      final responseData = e.response!.data as Map<String, dynamic>;
+      if (responseData['errors'] != null) {
+        final errors = responseData['errors'] as Map<String, dynamic>;
+        final errorMessages = <String>[];
+        errors.forEach((key, value) {
+          if (value is List) {
+            errorMessages.addAll(value.cast<String>());
+          } else if (value is String) {
+            errorMessages.add(value);
+          }
+        });
+        if (errorMessages.isNotEmpty) {
+          errorMessage = errorMessages.join('\n');
+        }
+      } else if (responseData['message'] != null) {
+        errorMessage = responseData['message'] as String;
+      }
+    } else if (e.message != null) {
+      errorMessage = e.message!;
+    }
+    if (context.mounted) {
+      CustomToast.showError(context, message: errorMessage);
+    }
+  } catch (e, stackTrace) {  // ← Ajoutez stackTrace ici aussi !
+    print("❌ ERREUR INATTENDUE dans registerEnding:");
+    print("Type: ${e.runtimeType}");
+    print("Message: $e");
+    print("StackTrace: $stackTrace");
+    
+    if (context.mounted) {
+      CustomToast.showError(context,
+          message: "Une erreur inattendue est survenue: ${e.toString()}");
+    }
+  } finally {
+    print("🔄 setBusy(false)");
+    setBusy(false);
   }
+}
 
   Future<void> _pickImage(void Function(XFile file) onImagePicked) async {
     try {
@@ -217,7 +265,6 @@ class RegisterProfileViewModel extends FormViewModel {
         final storagePermission = await Permission.storage.request();
         final photosPermission = await Permission.photos.request();
         if (!storagePermission.isGranted && !photosPermission.isGranted) {
-          print("Permission refusée");
           return;
         }
       }
@@ -436,65 +483,71 @@ class RegisterProfileViewModel extends FormViewModel {
   }
 
   Widget uploadFileComponent(
-    String label,
-    XFile? pickedFile,
-    void Function(XFile file) onFilePicked,
-  ) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        TextComponent(label, fontsize: 16),
-        const SizedBox(height: 10),
-        GestureDetector(
-          onTap: () => _pickImage(onFilePicked),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Container(
-                width: double.infinity,
-                height: pickedFile != null ? 200 : 45,
-                decoration: BoxDecoration(
-                  borderRadius: const BorderRadius.all(Radius.circular(15)),
-                  border: Border.all(color: greybutton),
-                ),
-                child: pickedFile != null
-                    ? ClipRRect(
-                        borderRadius:
-                            const BorderRadius.all(Radius.circular(15)),
-                        child: Image.file(
-                          File(pickedFile.path),
-                          width: double.infinity,
-                          fit: BoxFit.cover,
-                        ),
-                      )
-                    : Center(
-                        child: Row(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            Icon(
-                              Icons.add_photo_alternate,
-                              color: textinputcolor.withOpacity(0.5),
-                            ),
-                            const SizedBox(width: 8),
-                            TextComponent(
-                              "Choisissez une image",
-                              textcolor: textinputcolor.withOpacity(0.5),
-                            ),
-                          ],
-                        ),
-                      ),
+  String label,
+  XFile? pickedFile,
+  void Function(XFile file) onFilePicked,
+) {
+  return Column(
+    crossAxisAlignment: CrossAxisAlignment.start,
+    children: [
+      TextComponent(label, fontsize: 16),
+      const SizedBox(height: 10),
+      GestureDetector(
+        onTap: () async {
+          print("🖼️ Tentative d'upload pour: $label");
+          await _pickImage((file) {
+            print("✅ Fichier sélectionné: ${file.path}");
+            onFilePicked(file);
+          });
+        },
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Container(
+              width: double.infinity,
+              height: pickedFile != null ? 200 : 45,
+              decoration: BoxDecoration(
+                borderRadius: const BorderRadius.all(Radius.circular(15)),
+                border: Border.all(color: greybutton),
               ),
-              if (pickedFile != null) ...[
-                const SizedBox(height: 10),
-                const TextComponent(
-                  "Cliquez sur l'image pour la remplacer, si besoin",
-                  textcolor: primaryColor,
-                )
-              ]
-            ],
-          ),
+              child: pickedFile != null
+                  ? ClipRRect(
+                      borderRadius:
+                          const BorderRadius.all(Radius.circular(15)),
+                      child: Image.file(
+                        File(pickedFile.path),
+                        width: double.infinity,
+                        fit: BoxFit.cover,
+                      ),
+                    )
+                  : Center(
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Icon(
+                            Icons.add_photo_alternate,
+                            color: textinputcolor.withOpacity(0.5),
+                          ),
+                          const SizedBox(width: 8),
+                          TextComponent(
+                            "Choisissez une image",
+                            textcolor: textinputcolor.withOpacity(0.5),
+                          ),
+                        ],
+                      ),
+                    ),
+            ),
+            if (pickedFile != null) ...[
+              const SizedBox(height: 10),
+              const TextComponent(
+                "Cliquez sur l'image pour la remplacer, si besoin",
+                textcolor: primaryColor,
+              )
+            ]
+          ],
         ),
-      ],
-    );
-  }
+      ),
+    ],
+  );
+}
 }

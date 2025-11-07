@@ -417,6 +417,9 @@ class RegisterViewModel extends FormViewModel with $RegisterView {
         phoneNumber: phoneNumberController.text.trim(),
         email: emailController.text.trim(),
         password: passwordController.text.trim(),
+        firstName: firstNameController.text.trim(),
+        lastName: lastNameController.text.trim(),
+        address: addressController.text.trim(),
       ),
     );
 
@@ -436,34 +439,53 @@ class RegisterViewModel extends FormViewModel with $RegisterView {
   }
 
   Future<bool> registerByProfile() async {
-    setBusy(true);
-    _registrationError = null;
-    rebuildUi();
+  setBusy(true);
+  _registrationError = null;
+  rebuildUi();
 
-    try {
-      await Future.delayed(const Duration(seconds: 1));
-      
-      final phoneNumber = phoneNumberController.text.trim();
-      
-      if (phoneNumber.isEmpty) {
-        _registrationError = 'Veuillez entrer un numéro de téléphone valide';
-        rebuildUi();
-        return false;
-      }
-
-      await handleOtpNavigation();
-      
-      _registrationError = null;
-      rebuildUi();
-      return true;
-    } catch (e) {
-      _registrationError = _formatRegistrationError(e);
+  try {
+    await Future.delayed(const Duration(seconds: 1));
+    
+    final phoneNumber = phoneNumberController.text.trim();
+    final firstName = firstNameController.text.trim();
+    final lastName = lastNameController.text.trim();
+    final email = emailController.text.trim();
+    final address = addressController.text.trim();
+    final password = passwordController.text.trim();
+    
+    if (phoneNumber.isEmpty || 
+        firstName.isEmpty || 
+        lastName.isEmpty || 
+        email.isEmpty || 
+        address.isEmpty || 
+        password.isEmpty) {
+      _registrationError = 'Veuillez remplir tous les champs obligatoires';
       rebuildUi();
       return false;
-    } finally {
-      setBusy(false);
     }
+
+    // Navigation vers RegisterProfileView avec les paramètres requis
+    navigationService.navigateToRegisterProfileView(
+      selectedProfile: _selectedProfile,
+      phoneNumber: phoneNumber,
+      mail: email,
+      password: password,
+      firstName: firstName,
+      lastName: lastName,
+      address: address,
+    );
+    
+    _registrationError = null;
+    rebuildUi();
+    return true;
+  } catch (e) {
+    _registrationError = _formatRegistrationError(e);
+    rebuildUi();
+    return false;
+  } finally {
+    setBusy(false);
   }
+}
 
   void login() {
     navigationService.replaceWithLoginView();

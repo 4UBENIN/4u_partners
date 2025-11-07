@@ -7,7 +7,7 @@ import 'package:for_u_partners/ui/common/text_component.dart';
 
 class PrimaryButton extends StatelessWidget {
   final String text;
-  final VoidCallback onPressed;
+  final VoidCallback? onPressed;
   final bool isActive;
 
   const PrimaryButton({
@@ -21,7 +21,7 @@ class PrimaryButton extends StatelessWidget {
   Widget build(BuildContext context) {
     return Bounce(
       duration: const Duration(milliseconds: 150),
-      onTap: isActive ? onPressed : onPressed,
+      onTap: isActive ? onPressed : null,
       child: Container(
         width: double.infinity,
         margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),

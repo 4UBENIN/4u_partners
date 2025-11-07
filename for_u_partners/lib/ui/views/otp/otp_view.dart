@@ -11,12 +11,18 @@ class OtpView extends StackedView<OtpViewModel> {
   final String phoneNumber;
   final String email;
   final String password;
+  final String firstName;
+  final String lastName;
+  final String address;
 
   const OtpView({
     Key? key,
     required this.phoneNumber,
     required this.email,
     required this.password,
+    required this.firstName,
+    required this.lastName,
+    required this.address,
   }) : super(key: key);
 
   @override
@@ -167,6 +173,9 @@ class OtpView extends StackedView<OtpViewModel> {
                                       phoneNumber: phoneNumber,
                                       mail: email,
                                       password: password,
+                                      firstName: firstName,
+                                      lastName: lastName,
+                                      address: address,
                                     );
                                   }
                                 });

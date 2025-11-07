@@ -1,6 +1,20 @@
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 
-String get baseUrl => dotenv.env['API_ENDPOINT']!;
+// ✅ Avec gestion d'erreur claire
+String get baseUrl {
+  final url = dotenv.env['API_ENDPOINT'];
+  if (url == null || url.isEmpty) {
+    throw Exception(
+      '❌ API_ENDPOINT non configurée!\n'
+      'Vérifiez que:\n'
+      '1. Le fichier .env existe à la racine du projet\n'
+      '2. Il contient: API_ENDPOINT=https://votre-api.com/api\n'
+      '3. Le fichier .env est dans pubspec.yaml sous assets'
+    );
+  }
+  return url;
+}
+
 String get registerUrl => "$baseUrl/partenaire/register";
 String get loginUrl => "$baseUrl/partenaire/login";
 String get coursesPendingUrl => "$baseUrl/conducteur/courses";
@@ -24,6 +38,7 @@ String get assignedCourseUrl => "$baseUrl/conducteur/courses_list";
 String get walletSoldUrl => "$baseUrl/wallet_solde";
 String get getDailyStats => "$baseUrl/conducteur/stats/daily";
 String get getGlobalStats => "$baseUrl/conducteur/stats/global";
+
 Map<String, String> headers = {
   'Content-Type': 'application/json',
   'Accept': 'application/json'
