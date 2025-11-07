@@ -9,7 +9,24 @@
 import 'package:stacked_services/src/bottom_sheet/bottom_sheet_service.dart';
 import 'package:stacked_services/src/dialog/dialog_service.dart';
 import 'package:stacked_services/src/navigation/navigation_service.dart';
+import 'package:stacked_services/src/snackbar/snackbar_service.dart';
 import 'package:stacked_shared/stacked_shared.dart';
+
+import '../services/active_course_checker_service.dart';
+import '../services/arrival_state_service.dart';
+import '../services/auth_service.dart';
+import '../services/chat_service.dart';
+import '../services/course_restoration_service.dart';
+import '../services/driver_service.dart';
+import '../services/pause_state_service.dart';
+import '../services/pickers_service.dart';
+import '../services/profile_photo_service.dart';
+import '../services/sharedpreferences_service.dart';
+import '../services/vehicle_service.dart';
+import '../services/wallet_service.dart';
+import '../ui/views/drivers/documents/documents_viewmodel.dart';
+import '../ui/views/drivers/homemain/homemain_viewmodel.dart';
+import '../ui/views/drivers/vehicles/vehicles_viewmodel.dart';
 
 final locator = StackedLocator.instance;
 
@@ -25,4 +42,20 @@ Future<void> setupLocator({
   locator.registerLazySingleton(() => BottomSheetService());
   locator.registerLazySingleton(() => DialogService());
   locator.registerLazySingleton(() => NavigationService());
+  locator.registerLazySingleton(() => SnackbarService());
+  locator.registerLazySingleton(() => SharedpreferencesService());
+  locator.registerLazySingleton(() => AuthService());
+  locator.registerLazySingleton(() => DriverService());
+  locator.registerLazySingleton(() => WalletService());
+  locator.registerLazySingleton(() => ChatService());
+  locator.registerLazySingleton(() => PickersService());
+  locator.registerLazySingleton(() => VehicleService());
+  locator.registerLazySingleton(() => ActiveCourseCheckerService());
+  locator.registerLazySingleton(() => CourseRestorationService());
+  locator.registerLazySingleton(() => ArrivalStateService());
+  locator.registerLazySingleton(() => PauseStateService());
+  locator.registerSingleton(HomemainViewModel());
+  locator.registerSingleton(MesVehiculesViewModel());
+  locator.registerSingleton(DocumentsViewModel());
+  locator.registerLazySingleton(() => ProfilePhotoService());
 }

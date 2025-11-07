@@ -2,8 +2,6 @@ import 'startup_viewmodel.dart';
 import 'package:stacked/stacked.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/scheduler.dart';
-import 'package:for_u_partners/ui/common/ui_helpers.dart';
-
 
 class StartupView extends StackedView<StartupViewModel> {
   const StartupView({Key? key}) : super(key: key);
@@ -15,6 +13,7 @@ class StartupView extends StackedView<StartupViewModel> {
     Widget? child,
   ) {
     return Scaffold(
+      backgroundColor: Colors.white,
       body: Center(
         child: Image.asset("assets/logo.png", width: 200, height: 200),
       ),

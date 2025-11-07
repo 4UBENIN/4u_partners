@@ -1,22 +1,101 @@
-import 'package:for_u_partners/ui/bottom_sheets/notice/notice_sheet.dart';
-import 'package:for_u_partners/ui/dialogs/info_alert/info_alert_dialog.dart';
-import 'package:for_u_partners/ui/views/home/home_view.dart';
-import 'package:for_u_partners/ui/views/startup/startup_view.dart';
+import 'package:for_u_partners/services/profile_photo_service.dart';
+import 'package:for_u_partners/ui/views/drivers/documents/documents_viewmodel.dart';
+import 'package:for_u_partners/ui/views/drivers/documents/add_document.dart';
+import 'package:for_u_partners/ui/views/drivers/homemain/homemain_viewmodel.dart';
+import 'package:for_u_partners/ui/views/drivers/vehicles/vehicles_viewmodel.dart' as vehicle_vm;
 import 'package:stacked/stacked_annotations.dart';
 import 'package:stacked_services/stacked_services.dart';
+import 'package:for_u_partners/ui/views/startup/startup_view.dart';
+import 'package:for_u_partners/ui/views/auth/login/login_view.dart';
+import 'package:for_u_partners/ui/views/drivers/home/home_view.dart';
+import 'package:for_u_partners/services/sharedpreferences_service.dart';
+import 'package:for_u_partners/ui/views/drivers/profil/profil_view.dart';
+import 'package:for_u_partners/ui/views/auth/register/register_view.dart';
+import 'package:for_u_partners/ui/bottom_sheets/notice/notice_sheet.dart';
+import 'package:for_u_partners/ui/views/drivers/courses/courses_view.dart';
+import 'package:for_u_partners/ui/views/drivers/homemain/homemain_view.dart';
+import 'package:for_u_partners/ui/dialogs/info_alert/info_alert_dialog.dart';
+import 'package:for_u_partners/ui/views/drivers/activity/activity_view.dart';
+import 'package:for_u_partners/ui/views/drivers/notifications/notifications_view.dart';
+import 'package:for_u_partners/ui/views/delivery/delivery_home/delivery_home_view.dart';
+import 'package:for_u_partners/ui/views/pressing/home_pressing/home_pressing_view.dart';
+import 'package:for_u_partners/ui/views/auth/register_profile/register_profile_view.dart';
+import 'package:for_u_partners/ui/views/drivers/activitydetails/activitydetails_view.dart';
+import 'package:for_u_partners/ui/views/drivers/vehicles/vehicles_view.dart';
+import 'package:for_u_partners/ui/views/drivers/documents/documents_view.dart';
+import 'package:for_u_partners/ui/views/drivers/documents/document_viewer_view.dart';
+import 'package:for_u_partners/ui/views/pressing/compte_pressing/compte_pressing_view.dart';
+import 'package:for_u_partners/ui/views/delivery/compte_delivery/compte_delivery_view.dart';
+import 'package:for_u_partners/ui/views/delivery/delivery_nav_bar/delivery_nav_bar_view.dart';
+import 'package:for_u_partners/ui/views/pressing/nav_bar_pressing/nav_bar_pressing_view.dart';
+import 'package:for_u_partners/ui/views/delivery/courses_delivery/courses_delivery_view.dart';
+import 'package:for_u_partners/ui/views/pressing/activites_pressing/activites_pressing_view.dart';
+import 'package:for_u_partners/ui/views/delivery/activities_delivery/activities_delivery_view.dart';
+import 'package:for_u_partners/ui/views/delivery/notifications_delivery/notifications_delivery_view.dart';
+import 'package:for_u_partners/ui/views/pressing/notifications_pressing/notifications_pressing_view.dart';
+import 'package:for_u_partners/services/auth_service.dart';
+import 'package:for_u_partners/services/driver_service.dart';
+import 'package:for_u_partners/services/wallet_service.dart';
+import 'package:for_u_partners/services/chat_service.dart';
+import 'package:for_u_partners/services/pickers_service.dart';
+import 'package:for_u_partners/services/vehicle_service.dart';
+import 'package:for_u_partners/services/active_course_checker_service.dart';
+import 'package:for_u_partners/services/course_restoration_service.dart';
+import 'package:for_u_partners/services/arrival_state_service.dart';
+import 'package:for_u_partners/services/pause_state_service.dart';
 // @stacked-import
 
 @StackedApp(
   routes: [
-    MaterialRoute(page: HomeView),
     MaterialRoute(page: StartupView),
-    // @stacked-route
+    MaterialRoute(page: HomeView),
+    MaterialRoute(page: ActivityView),
+    MaterialRoute(page: CoursesView),
+    MaterialRoute(page: NotificationsView),
+    MaterialRoute(page: ProfilView),
+    MaterialRoute(page: HomemainView),
+    MaterialRoute(page: ActivitydetailsView),
+    MaterialRoute(page: LoginView),
+    MaterialRoute(page: RegisterView),
+    MaterialRoute(page: RegisterProfileView),
+    MaterialRoute(page: HomePressingView),
+    MaterialRoute(page: NavBarPressingView),
+    MaterialRoute(page: ActivitesPressingView),
+    MaterialRoute(page: NotificationsPressingView),
+    MaterialRoute(page: ComptePressingView),
+    MaterialRoute(page: DeliveryNavBarView),
+    MaterialRoute(page: DeliveryHomeView),
+    MaterialRoute(page: NotificationsDeliveryView),
+    MaterialRoute(page: CompteDeliveryView),
+    MaterialRoute(page: ActivitiesDeliveryView),
+    MaterialRoute(page: CoursesDeliveryView),
+    MaterialRoute(page: MesVehiculesView),
+    MaterialRoute(page: DocumentsView),
+    MaterialRoute(page: AddDocumentView),
+    MaterialRoute(page: DocumentViewerView),
+// @stacked-route
   ],
-  dependencies: [
+  dependencies: const [
     LazySingleton(classType: BottomSheetService),
     LazySingleton(classType: DialogService),
     LazySingleton(classType: NavigationService),
-    // @stacked-service
+    LazySingleton(classType: SnackbarService),
+    LazySingleton(classType: SharedpreferencesService),
+    LazySingleton(classType: AuthService),
+    LazySingleton(classType: DriverService),
+    LazySingleton(classType: WalletService),
+    LazySingleton(classType: ChatService),
+    LazySingleton(classType: PickersService),
+    LazySingleton(classType: VehicleService),
+    LazySingleton(classType: ActiveCourseCheckerService),
+    LazySingleton(classType: CourseRestorationService),
+    LazySingleton(classType: ArrivalStateService),
+    LazySingleton(classType: PauseStateService),
+    Singleton(classType: HomemainViewModel),
+    Singleton(classType: vehicle_vm.MesVehiculesViewModel),
+    Singleton(classType: DocumentsViewModel),
+    LazySingleton(classType: ProfilePhotoService),
+// @stacked-service
   ],
   bottomsheets: [
     StackedBottomsheet(classType: NoticeSheet),
