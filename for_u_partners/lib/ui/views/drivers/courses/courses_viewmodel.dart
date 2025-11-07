@@ -4,6 +4,7 @@ import 'package:for_u_partners/services/course_event_service.dart';
 import 'package:for_u_partners/services/course_notificationstorage_service.dart';
 import 'package:for_u_partners/services/driver_service.dart';
 import 'package:for_u_partners/services/marker_icon_service.dart';
+import 'package:for_u_partners/ui/common/app_colors.dart';
 import 'package:for_u_partners/ui/common/toast.dart';
 import 'package:stacked/stacked.dart';
 import 'package:flutter/material.dart';
@@ -125,6 +126,7 @@ class CoursesViewModel extends BaseViewModel {
   };
 
   String? _error;
+  bool _isInitialized = false;
 
   CoursesViewModel() {
     initializeViewModel();
@@ -132,6 +134,14 @@ class CoursesViewModel extends BaseViewModel {
 
   // ✨ Initialisation complète du ViewModel
   Future<void> initializeViewModel() async {
+    // Prevent double initialization
+    if (_isInitialized) {
+      print('⚠️ ViewModel already initialized, skipping...');
+      return;
+    }
+    _isInitialized = true;
+    print('✅ Initializing ViewModel for the first time...');
+
     // Lancer les tâches en parallèle
     await Future.wait([
       _getCurrentLocation(),
@@ -154,6 +164,10 @@ class CoursesViewModel extends BaseViewModel {
 
     if (_availableCourses.isNotEmpty) {
       setBottomSheetType(BottomSheetAppType.clients);
+      // Draw route for the first available course
+      if (_availableCourses.isNotEmpty) {
+        await _drawRouteForNewCourse(_availableCourses.first);
+      }
     }
     print("currentBottomSheetType: $_currentBottomSheetType");
   }
@@ -203,6 +217,13 @@ class CoursesViewModel extends BaseViewModel {
           _updatePendingCoursesCount();
           print('🧹 Aucune notification valide, liste des courses vidée');
         }
+        // Clear markers and polylines when no courses
+        _polylines.clear();
+        _markers.clear();
+        if (_currentPosition != null) {
+          await _addUserLocationMarker();
+        }
+        print('🧹 Cleared markers and polylines (no stored notifications)');
       } else {
         // Convertir les notifications en ClientData
         final validCourseIds = <String>[];
@@ -264,7 +285,12 @@ class CoursesViewModel extends BaseViewModel {
         _currentBottomSheetType == BottomSheetAppType.none) {
       setBottomSheetType(BottomSheetAppType.clients);
     } else if (_availableCourses.isEmpty) {
+      // Clear markers and polylines when no courses remain
+      _polylines.clear();
+      _markers.clear();
+      await _addUserLocationMarker();
       hideBottomSheet();
+      print('🧹 No courses after refresh, cleared markers and polylines');
     }
   }
 
@@ -455,8 +481,14 @@ class CoursesViewModel extends BaseViewModel {
   // Draw route polyline when a new course is received
   Future<void> _drawRouteForNewCourse(ClientData course) async {
     if (course.depLat == null || course.depLong == null ||
-        course.destLat == null || course.destLong == null ||
-        _currentPosition == null) {
+        course.destLat == null || course.destLong == null) {
+      print('⚠️ Course coordinates missing, skipping route draw');
+      return;
+    }
+
+    // Wait for initialization to complete before drawing routes
+    if (!_isInitialized || _currentPosition == null) {
+      print('⚠️ ViewModel not fully initialized or location not ready, skipping route draw for now');
       return;
     }
 
@@ -495,7 +527,7 @@ class CoursesViewModel extends BaseViewModel {
         ),
       );
 
-      // Draw route from current position to pickup using PolylinePoints
+      // Draw single route: driver -> pickup -> destination
       PolylinePoints polylinePoints = PolylinePoints(apiKey: _googleApiKey);
 
       PolylineResult resultToPickup = await polylinePoints.getRouteBetweenCoordinates(
@@ -506,18 +538,6 @@ class CoursesViewModel extends BaseViewModel {
         ),
       );
 
-      if (resultToPickup.points.isNotEmpty) {
-        _polylines.add(
-          Polyline(
-            polylineId: const PolylineId('route_to_pickup'),
-            color: Colors.blue,
-            width: 5,
-            points: resultToPickup.points.map((point) => LatLng(point.latitude, point.longitude)).toList(),
-          ),
-        );
-      }
-
-      // Draw route from pickup to destination
       PolylineResult resultToDestination = await polylinePoints.getRouteBetweenCoordinates(
         request: PolylineRequest(
           origin: PointLatLng(pickupLatLng.latitude, pickupLatLng.longitude),
@@ -526,14 +546,27 @@ class CoursesViewModel extends BaseViewModel {
         ),
       );
 
+      // Add dashed polyline from driver to pickup (primary color)
+      if (resultToPickup.points.isNotEmpty) {
+        _polylines.add(
+          Polyline(
+            polylineId: const PolylineId('route_to_pickup'),
+            color: kcPrimaryColor,
+            width: 4,
+            points: resultToPickup.points.map((point) => LatLng(point.latitude, point.longitude)).toList(),
+            patterns: [PatternItem.dash(20), PatternItem.gap(10)],
+          ),
+        );
+      }
+
+      // Add solid polyline from pickup to destination (black)
       if (resultToDestination.points.isNotEmpty) {
         _polylines.add(
           Polyline(
-            polylineId: const PolylineId('route_pickup_to_destination'),
-            color: Colors.green,
-            width: 5,
+            polylineId: const PolylineId('route_to_destination'),
+            color: Colors.black,
+            width: 4,
             points: resultToDestination.points.map((point) => LatLng(point.latitude, point.longitude)).toList(),
-            patterns: [PatternItem.dash(20), PatternItem.gap(10)],
           ),
         );
       }
@@ -583,7 +616,15 @@ class CoursesViewModel extends BaseViewModel {
     _updatePendingCoursesCount();
 
     if (_availableCourses.isEmpty) {
+      // Clear markers and polylines when no courses are left
+      _polylines.clear();
+      _markers.clear();
+      await _addUserLocationMarker();
       hideBottomSheet();
+      print('🧹 No more courses, cleared markers and polylines');
+    } else {
+      // Draw route for the next available course
+      await _drawRouteForNewCourse(_availableCourses.first);
     }
 
     notifyListeners();
@@ -628,7 +669,8 @@ class CoursesViewModel extends BaseViewModel {
   }
 
   void onMapTapped(LatLng point) {
-    addMarker(point);
+    // Disabled: Prevent adding markers by tapping on the map
+    // addMarker(point);
   }
 
   Future<void> addMarker(LatLng position) async {
@@ -1144,9 +1186,10 @@ class CoursesViewModel extends BaseViewModel {
         _polylines.add(
           Polyline(
             polylineId: const PolylineId('route_to_pickup'),
-            color: Colors.blue,
-            width: 5,
-            points: routePoints, // ✅ Vrais points de route
+            color: kcPrimaryColor,
+            width: 4,
+            points: routePoints,
+            patterns: [PatternItem.dash(20), PatternItem.gap(10)],
           ),
         );
 
@@ -1156,12 +1199,13 @@ class CoursesViewModel extends BaseViewModel {
         _polylines.add(
           Polyline(
             polylineId: const PolylineId('route_to_pickup'),
-            color: Colors.blue,
-            width: 5,
+            color: kcPrimaryColor,
+            width: 4,
             points: [
               LatLng(_currentPosition!.latitude, _currentPosition!.longitude),
               pickupLatLng,
             ],
+            patterns: [PatternItem.dash(20), PatternItem.gap(10)],
           ),
         );
         print('⚠️ Fallback: ligne droite vers pickup');
@@ -1197,12 +1241,13 @@ class CoursesViewModel extends BaseViewModel {
       _polylines.add(
         Polyline(
           polylineId: const PolylineId('route_to_pickup'),
-          color: Colors.blue,
-          width: 5,
+          color: kcPrimaryColor,
+          width: 4,
           points: [
             LatLng(_currentPosition!.latitude, _currentPosition!.longitude),
             LatLng(_currentCourse!.depLat!, _currentCourse!.depLong!),
           ],
+          patterns: [PatternItem.dash(20), PatternItem.gap(10)],
         ),
       );
     }
@@ -1252,9 +1297,9 @@ class CoursesViewModel extends BaseViewModel {
         _polylines.add(
           Polyline(
             polylineId: const PolylineId('route_to_destination'),
-            color: Colors.green,
-            width: 5,
-            points: routePoints, // ✅ Vrais points de route
+            color: Colors.black,
+            width: 4,
+            points: routePoints,
           ),
         );
 
@@ -1265,8 +1310,8 @@ class CoursesViewModel extends BaseViewModel {
         _polylines.add(
           Polyline(
             polylineId: const PolylineId('route_to_destination'),
-            color: Colors.green,
-            width: 5,
+            color: Colors.black,
+            width: 4,
             points: [pickupLatLng, destinationLatLng],
           ),
         );
@@ -1309,8 +1354,8 @@ class CoursesViewModel extends BaseViewModel {
       _polylines.add(
         Polyline(
           polylineId: const PolylineId('route_to_destination'),
-          color: Colors.green,
-          width: 5,
+          color: Colors.black,
+          width: 4,
           points: [pickupLatLng, destinationLatLng],
         ),
       );

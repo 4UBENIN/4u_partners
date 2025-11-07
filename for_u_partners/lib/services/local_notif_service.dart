@@ -81,6 +81,12 @@ class LocalNotificationService {
 
   // Créer le canal de notification pour Android
   static Future<void> _createNotificationChannel() async {
+    // Delete existing channel first to ensure sound updates
+    await _flutterLocalNotificationsPlugin
+        .resolvePlatformSpecificImplementation<
+            AndroidFlutterLocalNotificationsPlugin>()
+        ?.deleteNotificationChannel(_channelId);
+
     const AndroidNotificationChannel channel = AndroidNotificationChannel(
       _channelId,
       _channelName,
@@ -167,6 +173,7 @@ class LocalNotificationService {
         color: const Color(0xFF184E9C),
         enableVibration: true,
         playSound: true,
+        sound: const RawResourceAndroidNotificationSound('car_horn_beep'),
         timeoutAfter: const Duration(seconds: 30).inMilliseconds,
         styleInformation: BigTextStyleInformation(
           'Nouvelle course disponible à $pickupAddress\n'
