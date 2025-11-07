@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
+import 'package:for_u_partners/services/marker_icon_service.dart';
 import 'package:for_u_partners/ui/views/drivers/courses/functions_services.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:geocoding/geocoding.dart';
@@ -158,6 +159,10 @@ class _PickUpPageState extends State<PickUpPage> with TickerProviderStateMixin {
           final lng = details['longitude'] as double?;
 
           if (lat != null && lng != null) {
+            // Load custom markers
+            final pickupIcon = await MarkerIconService.getPickupMarker();
+            final destinationIcon = await MarkerIconService.getDestinationMarker();
+
             setState(() {
               if (wasFocus1) {
                 departLat = lat;
@@ -166,7 +171,7 @@ class _PickUpPageState extends State<PickUpPage> with TickerProviderStateMixin {
                 _markers.add(Marker(
                     markerId: const MarkerId('depart'),
                     position: LatLng(lat, lng),
-                    icon: BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueGreen),
+                    icon: pickupIcon,
                     infoWindow: InfoWindow(
                       title: '📍 Départ',
                       snippet: _departController.text,
@@ -179,7 +184,7 @@ class _PickUpPageState extends State<PickUpPage> with TickerProviderStateMixin {
                 _markers.add(Marker(
                     markerId: const MarkerId('arrivee'),
                     position: LatLng(lat, lng),
-                    icon: BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueRed),
+                    icon: destinationIcon,
                     infoWindow: InfoWindow(
                       title: '🎯 Destination',
                       snippet: _destinationController.text,
@@ -226,6 +231,9 @@ class _PickUpPageState extends State<PickUpPage> with TickerProviderStateMixin {
           if (place.locality != null) place.locality,
         ].where((s) => s != null && s.isNotEmpty).join(', ');
 
+        // Load custom pickup marker
+        final pickupIcon = await MarkerIconService.getPickupMarker();
+
         setState(() {
           isCurrentLocationVisible = false;
           _departController.text = address.isNotEmpty ? address : 'Position actuelle';
@@ -235,7 +243,7 @@ class _PickUpPageState extends State<PickUpPage> with TickerProviderStateMixin {
           _markers.add(Marker(
               markerId: const MarkerId('depart'),
               position: LatLng(departLat!, departLng!),
-              icon: BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueGreen),
+              icon: pickupIcon,
               infoWindow: InfoWindow(
                 title: '📍 Départ (Position actuelle)',
                 snippet: _departController.text,

@@ -16,6 +16,8 @@ import 'package:stacked_services/stacked_services.dart';
 import 'package:for_u_partners/app/models/login_model.dart';
 import 'package:for_u_partners/app/models/register_model.dart';
 import 'package:for_u_partners/services/sharedpreferences_service.dart';
+import 'package:for_u_partners/ui/common/get_fcm_token.dart';
+import 'package:for_u_partners/ui/common/api_constant.dart';
 
 class AuthService {
   final _sharedPreferencesServices = locator<SharedpreferencesService>();
@@ -131,6 +133,9 @@ class AuthService {
         print("🟡 [AuthService] Synchronisation avec Firestore...");
         await _syncUserToFirestore(responseJson['data'], role, firestoreUserId);
         print("🟢 [AuthService] Firestore synchronisé");
+
+        print("🟡 [AuthService] Envoi du token FCM au backend...");
+        await _sendFcmTokenToBackend(role);
 
         print("🟡 [AuthService] Affichage du toast de succès...");
         CustomToast.showSuccess(context, message: message);
@@ -461,6 +466,11 @@ class AuthService {
           firestoreUserId,
         );
 
+        await _sharedPreferencesServices.saveToken(token);
+
+        print("🟡 [AuthService] Envoi du token FCM au backend après inscription...");
+        await _sendFcmTokenToBackend(registerType);
+
         switch (registerType) {
           case 'livreur':
           case 'chauffeur':
@@ -476,7 +486,6 @@ class AuthService {
             break;
 
           case 'pressing':
-            await _sharedPreferencesServices.saveToken(token);
             _navigationService.replaceWithNavBarPressingView();
             break;
         }
@@ -545,6 +554,61 @@ class AuthService {
       print('✅ Nouvel utilisateur inscrit dans Firestore: $firestoreUserId');
     } catch (e) {
       print('❌ Erreur lors de la synchro Firestore: $e');
+    }
+  }
+
+  Future<void> _sendFcmTokenToBackend(String role) async {
+    try {
+      print('🔔 [AuthService] Début envoi token FCM pour role: $role');
+
+      final fcmService = FirebaseMessagingService();
+      String? endpoint;
+
+      switch (role) {
+        case 'chauffeur':
+        case 'livreur':
+        case 'ramasseur':
+          endpoint = ApiConstant.saveFcmTokenDriver;
+          print('🔔 [AuthService] Type conducteur - endpoint: $endpoint');
+          break;
+        case 'pressing':
+          endpoint = ApiConstant.saveFcmTokenPressing;
+          print('🔔 [AuthService] Type pressing - endpoint: $endpoint');
+          break;
+        default:
+          print('⚠️ [AuthService] Role non reconnu pour FCM: $role');
+          return;
+      }
+
+      print('🔔 [AuthService] Envoi du token FCM vers: $endpoint');
+      bool success = await fcmService.sendCurrentTokenToBackend(
+        endpoint,
+        maxRetries: 3,
+      );
+
+      if (success) {
+        print('✅ [AuthService] Token FCM envoyé avec succès après login/signup');
+      } else {
+        print('⚠️ [AuthService] Échec envoi token FCM (tentative de rafraîchissement)');
+        final refreshed = await fcmService.refreshToken();
+
+        if (refreshed) {
+          print('🔄 [AuthService] Token rafraîchi, nouvelle tentative...');
+          success = await fcmService.sendCurrentTokenToBackend(
+            endpoint,
+            maxRetries: 2,
+          );
+
+          if (success) {
+            print('✅ [AuthService] Token FCM envoyé après rafraîchissement');
+          } else {
+            print('❌ [AuthService] Échec définitif envoi token FCM');
+          }
+        }
+      }
+    } catch (e, stackTrace) {
+      print('❌ [AuthService] Exception lors envoi token FCM: $e');
+      print('❌ [AuthService] Stack trace: $stackTrace');
     }
   }
 

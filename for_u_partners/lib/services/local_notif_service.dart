@@ -87,6 +87,7 @@ class LocalNotificationService {
       description: _channelDescription,
       importance: Importance.high,
       playSound: true,
+      sound: RawResourceAndroidNotificationSound('car_horn_beep'),
       enableVibration: true,
       enableLights: true,
       ledColor: Color(0xFF184E9C), // Couleur de votre app
@@ -170,21 +171,9 @@ class LocalNotificationService {
         styleInformation: BigTextStyleInformation(
           'Nouvelle course disponible à $pickupAddress\n'
           'Prix: ${price.toStringAsFixed(2)}€ • Distance: ${distance}km',
-          contentTitle: '🚖 Nouvelle course disponible',
+          contentTitle: 'Nouvelle course disponible',
           htmlFormatBigText: true,
         ),
-        actions: <AndroidNotificationAction>[
-          const AndroidNotificationAction(
-            'accept',
-            'Accepter',
-            showsUserInterface: true,
-          ),
-          const AndroidNotificationAction(
-            'reject',
-            'Refuser',
-            showsUserInterface: true,
-          ),
-        ],
       );
 
       const DarwinNotificationDetails iosNotificationDetails =
@@ -192,6 +181,7 @@ class LocalNotificationService {
         presentAlert: true,
         presentBadge: true,
         presentSound: true,
+        sound: 'car_horn_beep.mp3',
         subtitle: 'Nouvelle course disponible',
         categoryIdentifier: 'NEW_COURSE',
       );

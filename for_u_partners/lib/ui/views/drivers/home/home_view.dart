@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:for_u_partners/services/marker_icon_service.dart';
 import 'package:for_u_partners/ui/common/app_colors.dart';
 import 'package:for_u_partners/ui/views/drivers/courses/pick_up_page.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
@@ -146,24 +147,31 @@ Widget _buildMap(HomeViewModel viewModel) {
     );
   }
 
-  final driverMarker = Marker(
-    markerId: const MarkerId('driver-position'),
-    position: viewModel.currentPosition!,
-    icon: BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueAzure),
-  );
+  return FutureBuilder<BitmapDescriptor>(
+    future: MarkerIconService.getDriverMarker(),
+    builder: (context, snapshot) {
+      final driverIcon = snapshot.data ?? BitmapDescriptor.defaultMarker;
 
-  return GoogleMap(
-    onMapCreated: viewModel.onMapCreated,
-    initialCameraPosition: CameraPosition(
-      target: viewModel.currentPosition!,
-      zoom: 15.5,
-    ),
-    myLocationEnabled: true,
-    myLocationButtonEnabled: false,
-    zoomControlsEnabled: false,
-    trafficEnabled: true,
-    compassEnabled: false,
-    markers: {driverMarker},
+      final driverMarker = Marker(
+        markerId: const MarkerId('driver-position'),
+        position: viewModel.currentPosition!,
+        icon: driverIcon,
+      );
+
+      return GoogleMap(
+        onMapCreated: viewModel.onMapCreated,
+        initialCameraPosition: CameraPosition(
+          target: viewModel.currentPosition!,
+          zoom: 15.5,
+        ),
+        myLocationEnabled: true,
+        myLocationButtonEnabled: false,
+        zoomControlsEnabled: false,
+        trafficEnabled: true,
+        compassEnabled: false,
+        markers: {driverMarker},
+      );
+    },
   );
 }
 

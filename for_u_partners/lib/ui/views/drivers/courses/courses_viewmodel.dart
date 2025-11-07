@@ -3,6 +3,7 @@ import 'package:for_u_partners/app/app.locator.dart';
 import 'package:for_u_partners/services/course_event_service.dart';
 import 'package:for_u_partners/services/course_notificationstorage_service.dart';
 import 'package:for_u_partners/services/driver_service.dart';
+import 'package:for_u_partners/services/marker_icon_service.dart';
 import 'package:for_u_partners/ui/common/toast.dart';
 import 'package:stacked/stacked.dart';
 import 'package:flutter/material.dart';
@@ -327,7 +328,7 @@ class CoursesViewModel extends BaseViewModel {
         await _moveToPosition(_mapCenter);
       }
 
-      _addUserLocationMarker();
+      await _addUserLocationMarker();
 
       _isLoadingLocation = false;
       notifyListeners();
@@ -372,16 +373,17 @@ class CoursesViewModel extends BaseViewModel {
     }
   }
 
-  void _addUserLocationMarker() {
+  Future<void> _addUserLocationMarker() async {
     _markers.clear();
 
     if (_currentPosition != null) {
+      final driverIcon = await MarkerIconService.getDriverMarker();
       _markers.add(
         Marker(
           markerId: const MarkerId('user_location'),
           position:
               LatLng(_currentPosition!.latitude, _currentPosition!.longitude),
-          icon: BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueRed),
+          icon: driverIcon,
           infoWindow: const InfoWindow(
             title: 'Ma position',
             snippet: 'Vous êtes ici',
@@ -467,14 +469,18 @@ class CoursesViewModel extends BaseViewModel {
       _markers.clear();
 
       // Add user location marker
-      _addUserLocationMarker();
+      await _addUserLocationMarker();
+
+      // Load custom marker icons
+      final pickupIcon = await MarkerIconService.getPickupMarker();
+      final destinationIcon = await MarkerIconService.getDestinationMarker();
 
       // Add pickup marker
       _markers.add(
         Marker(
           markerId: const MarkerId('pickup_point'),
           position: pickupLatLng,
-          icon: BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueGreen),
+          icon: pickupIcon,
           infoWindow: const InfoWindow(title: 'Point de départ'),
         ),
       );
@@ -484,7 +490,7 @@ class CoursesViewModel extends BaseViewModel {
         Marker(
           markerId: const MarkerId('destination_point'),
           position: destLatLng,
-          icon: BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueRed),
+          icon: destinationIcon,
           infoWindow: InfoWindow(title: course.destination),
         ),
       );
@@ -625,12 +631,13 @@ class CoursesViewModel extends BaseViewModel {
     addMarker(point);
   }
 
-  void addMarker(LatLng position) {
+  Future<void> addMarker(LatLng position) async {
     final markerId = 'marker_${_markers.length}';
+    final destinationIcon = await MarkerIconService.getDestinationMarker();
     final newMarker = Marker(
       markerId: MarkerId(markerId),
       position: position,
-      icon: BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueBlue),
+      icon: destinationIcon,
       infoWindow: InfoWindow(
         title: 'Marqueur $markerId',
         snippet:
@@ -911,7 +918,7 @@ class CoursesViewModel extends BaseViewModel {
       _currentCourse = null;
       _polylines.clear();
       _markers.clear();
-      _addUserLocationMarker();
+      await _addUserLocationMarker();
     } finally {
       setBusy(false);
       print("🔄 setBusy(false) appelé");
@@ -954,7 +961,7 @@ class CoursesViewModel extends BaseViewModel {
       _currentCourse = null;
       _polylines.clear();
       _markers.clear();
-      _addUserLocationMarker();
+      await _addUserLocationMarker();
     } finally {
       setBusy(false);
       print("🔄 setBusy(false) appelé");
@@ -1017,7 +1024,7 @@ class CoursesViewModel extends BaseViewModel {
       _currentCourse = null;
       _polylines.clear();
       _markers.clear();
-      _addUserLocationMarker();
+      await _addUserLocationMarker();
     } finally {
       setBusy(false);
       print("🔄 setBusy(false) appelé");
@@ -1161,11 +1168,12 @@ class CoursesViewModel extends BaseViewModel {
       }
 
       // Ajouter marqueur pickup
+      final pickupIcon = await MarkerIconService.getPickupMarker();
       _markers.add(
         Marker(
           markerId: const MarkerId('pickup_point'),
           position: pickupLatLng,
-          icon: BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueBlue),
+          icon: pickupIcon,
           infoWindow: InfoWindow(
             title: 'Point de ramassage',
             snippet: _currentCourse!.name,
@@ -1266,18 +1274,19 @@ class CoursesViewModel extends BaseViewModel {
       }
 
       // Ajouter les marqueurs
+      final pickupIcon = await MarkerIconService.getPickupMarker();
+      final destinationIcon = await MarkerIconService.getDestinationMarker();
       _markers.addAll([
         Marker(
           markerId: const MarkerId('pickup_point'),
           position: pickupLatLng,
-          icon: BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueBlue),
+          icon: pickupIcon,
           infoWindow: const InfoWindow(title: 'Point de ramassage'),
         ),
         Marker(
           markerId: const MarkerId('destination_point'),
           position: destinationLatLng,
-          icon:
-              BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueGreen),
+          icon: destinationIcon,
           infoWindow: const InfoWindow(title: 'Destination'),
         ),
       ]);
@@ -1365,7 +1374,7 @@ class CoursesViewModel extends BaseViewModel {
     _currentCourse = null;
     _polylines.clear();
     _markers.clear();
-    _addUserLocationMarker();
+    await _addUserLocationMarker();
 
     // Nettoyer le stockage local
     await _clearRideState();
@@ -1743,12 +1752,13 @@ class CoursesViewModel extends BaseViewModel {
     _markers
         .removeWhere((marker) => marker.markerId.value.startsWith('driver_'));
 
+    final driverIcon = await MarkerIconService.getDriverMarker();
     for (var driver in _onlineDrivers) {
       final markerId = 'driver_${driver.id}';
       final marker = Marker(
         markerId: MarkerId(markerId),
         position: LatLng(driver.latitude, driver.longitude),
-        icon: BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueBlue),
+        icon: driverIcon,
         infoWindow: InfoWindow(
           title: 'Conducteur #${driver.id}',
           snippet: 'Disponible',

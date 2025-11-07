@@ -4,8 +4,6 @@ import 'package:for_u_partners/app/models/pressing_depot_models/planned_depot_mo
 import 'package:for_u_partners/app/models/pressing_ramassage_models/ramassage_detail_model.dart';
 import 'package:for_u_partners/app/models/pressing_ramassage_models/ramassage_statut_model.dart';
 import 'package:for_u_partners/services/wallet_service.dart';
-import 'package:for_u_partners/ui/common/api_constant.dart';
-import 'package:for_u_partners/ui/common/get_fcm_token.dart';
 import 'package:intl/intl.dart';
 import 'package:for_u_partners/app/models/pressing_model.dart';
 import 'package:for_u_partners/services/pressing_service.dart';
@@ -69,12 +67,10 @@ class HomePressingViewModel extends FormViewModel {
 
   @override
   HomePressingViewModel() {
-    sendPressingFcmToken();
     getWalletSold();
     fetchPressingInfo();
     getRamassagesList();
     getDepotList();
-    // Ne pas charger les dépôts planifiés au démarrage
   }
 
   // Méthodes pour gérer les filtres
@@ -109,47 +105,6 @@ class HomePressingViewModel extends FormViewModel {
     }
   }
 
-  //! FCM TOKEN
-  void sendPressingFcmToken() async {
-    await registerPressingToken();
-  }
-
-  Future<void> registerPressingToken() async {
-    try {
-      print("🚀 [Pressing] Début de l'enregistrement du token FCM pour le pressing");
-
-      final fcmService = FirebaseMessagingService();
-
-      // Tenter d'envoyer le token actuel
-      print("🚀 [Pressing] Tentative d'envoi du token actuel...");
-      bool success = await fcmService.sendCurrentTokenToBackend(
-        ApiConstant.saveFcmTokenPressing,
-        maxRetries: 3,
-      );
-
-      // Si échec, rafraîchir le token et réessayer
-      if (!success) {
-        print("⚠️ [Pressing] Échec de l'envoi du token actuel, rafraîchissement...");
-        final refreshed = await fcmService.refreshToken();
-
-        if (refreshed) {
-          print("🔄 [Pressing] Token rafraîchi, nouvelle tentative d'envoi...");
-          success = await fcmService.sendCurrentTokenToBackend(
-            ApiConstant.saveFcmTokenPressing,
-            maxRetries: 2,
-          );
-        }
-      }
-
-      if (success) {
-        print("✅ [Pressing] Token FCM enregistré avec succès");
-      } else {
-        print("❌ [Pressing] Échec définitif de l'enregistrement du token FCM");
-      }
-    } catch (e) {
-      print("❌ [Pressing] Exception lors de l'enregistrement du token: $e");
-    }
-  }
 
   //! WALLET
   //* GET WALLET SOLD

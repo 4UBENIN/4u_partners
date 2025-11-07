@@ -27,7 +27,7 @@ class CoursesView extends StackedView<CoursesViewModel> {
     Widget? child,
   ) {
     return Scaffold(
-      backgroundColor: Theme.of(context).colorScheme.surface,
+      backgroundColor: Color(0xFFF5F5F5),
       body: Container(
         color: Colors.white,
         child: Stack(
@@ -41,7 +41,7 @@ class CoursesView extends StackedView<CoursesViewModel> {
                     onTap: viewModel.onMapTapped,
                     markers: viewModel.markers,
                     polylines: viewModel.polylines,
-                    myLocationEnabled: true,
+                    myLocationEnabled: false,
                     myLocationButtonEnabled: false,
                     zoomControlsEnabled: false,
                   ),
@@ -51,7 +51,7 @@ class CoursesView extends StackedView<CoursesViewModel> {
                   if (viewModel.availableCourses.isNotEmpty &&
                       viewModel.currentBottomSheetType == BottomSheetAppType.clients)
                     Positioned(
-                      bottom: 100,
+                      bottom: 0,
                       left: 16,
                       right: 16,
                       child: _buildClientCard(viewModel, context),

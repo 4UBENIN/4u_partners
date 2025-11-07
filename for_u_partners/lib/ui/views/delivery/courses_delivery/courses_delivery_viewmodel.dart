@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:convert';
 import 'package:for_u_partners/app/app.router.dart';
 import 'package:for_u_partners/app/models/ramasseur_models/facture_ramassage_model.dart';
+import 'package:for_u_partners/services/marker_icon_service.dart';
 import 'package:for_u_partners/ui/common/app_colors.dart';
 import 'package:for_u_partners/ui/views/delivery/courses_delivery/factureRamassagePage.dart';
 import 'package:http/http.dart' as http;
@@ -231,12 +232,13 @@ class CoursesDeliveryViewModel extends FormViewModel {
   //   addMarker(point);
   // }
 
-  void addMarker(LatLng position) {
+  Future<void> addMarker(LatLng position) async {
     final markerId = 'marker_${_markers.length}';
+    final destinationIcon = await MarkerIconService.getDestinationMarker();
     final newMarker = Marker(
       markerId: MarkerId(markerId),
       position: position,
-      icon: BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueBlue),
+      icon: destinationIcon,
       infoWindow: InfoWindow(
         title: 'Marqueur $markerId',
         snippet:
@@ -452,14 +454,17 @@ class CoursesDeliveryViewModel extends FormViewModel {
         ramassage_point = LatLng(double.parse(demande.latRamassage!),
             double.parse(demande.lngRamassage!));
 
+        // Load custom markers
+        final pickupIcon = await MarkerIconService.getPickupMarker();
+        final driverIcon = await MarkerIconService.getDriverMarker();
+
         // Ajouter le marqueur du point de ramassage
         _markers.add(
           Marker(
             markerId: const MarkerId('ramassage_point'),
             position: ramassage_point!,
             infoWindow: const InfoWindow(title: 'Point de ramassage'),
-            icon:
-                BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueRed),
+            icon: pickupIcon,
           ),
         );
 
@@ -475,8 +480,7 @@ class CoursesDeliveryViewModel extends FormViewModel {
               markerId: const MarkerId('current_position'),
               position: currentLatLng,
               infoWindow: const InfoWindow(title: 'Votre position'),
-              icon: BitmapDescriptor.defaultMarkerWithHue(
-                  BitmapDescriptor.hueBlue),
+              icon: driverIcon,
             ),
           );
 
@@ -599,13 +603,17 @@ class CoursesDeliveryViewModel extends FormViewModel {
       _markers.clear();
       _polylines.clear();
 
+      // Load custom markers
+      final destinationIcon = await MarkerIconService.getDestinationMarker();
+      final driverIcon = await MarkerIconService.getDriverMarker();
+
       // Ajouter le marqueur du point de livraison
       _markers.add(
         Marker(
           markerId: const MarkerId('livraison_point'),
           position: livraison_point!,
           infoWindow: const InfoWindow(title: 'Point de livraison'),
-          icon: BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueRed),
+          icon: destinationIcon,
         ),
       );
 
@@ -621,8 +629,7 @@ class CoursesDeliveryViewModel extends FormViewModel {
             markerId: const MarkerId('current_position'),
             position: currentLatLng,
             infoWindow: const InfoWindow(title: 'Votre position'),
-            icon:
-                BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueBlue),
+            icon: driverIcon,
           ),
         );
 

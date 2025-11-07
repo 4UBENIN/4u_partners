@@ -5,6 +5,7 @@ import 'package:for_u_partners/app/app.router.dart';
 import 'package:for_u_partners/services/course_event_service.dart';
 import 'package:for_u_partners/services/course_notificationstorage_service.dart';
 import 'package:for_u_partners/services/sharedpreferences_service.dart';
+import 'package:for_u_partners/services/local_notif_service.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
 import 'dart:io' show Platform;
@@ -27,51 +28,68 @@ class FirebaseMessagingService {
   /// Initialise Firebase Messaging
   Future<void> init() async {
     try {
-      // Demander les permissions
+      print('🚀 [FCM] Début de l\'initialisation Firebase Messaging');
 
       await initAndCleanStorage();
+      print('🚀 [FCM] Demande des permissions...');
+
       NotificationSettings settings = await _messaging.requestPermission(
         alert: true,
         badge: true,
         sound: true,
       );
 
+      print('🚀 [FCM] Permission status: ${settings.authorizationStatus}');
+
       if (settings.authorizationStatus == AuthorizationStatus.authorized ||
           settings.authorizationStatus == AuthorizationStatus.provisional) {
-        // Configurer les handlers de messages
-        await _setupMessageHandlers();
+        print('🚀 [FCM] Permissions accordées, configuration des handlers...');
 
-        // Récupérer le token selon la plateforme
+        await _setupMessageHandlers();
+        print('🚀 [FCM] Handlers configurés');
+
+        print('🚀 [FCM] Récupération du token FCM...');
         await _getToken();
 
-        // Écouter les mises à jour de token
+        print('🚀 [FCM] Configuration du listener de token...');
         _setupTokenListener();
+
+        print('✅ [FCM] Initialisation complète avec succès');
+      } else {
+        print('⚠️ [FCM] Permissions non accordées: ${settings.authorizationStatus}');
       }
-    } catch (e) {
-      print('Erreur initialisation FCM: $e');
+    } catch (e, stackTrace) {
+      print('❌ [FCM] Erreur initialisation FCM: $e');
+      print('❌ [FCM] Stack trace: $stackTrace');
     }
   }
 
   /// Récupère le token FCM
   Future<void> _getToken() async {
     try {
-      // Pour iOS, on attend un peu pour laisser le temps à APNS de s'initialiser
+      print('🎯 [FCM] _getToken appelé');
+      print('🎯 [FCM] Platform: ${Platform.isIOS ? "iOS" : "Android"}');
+
       if (Platform.isIOS) {
+        print('🎯 [FCM] Attente de 2 secondes pour iOS APNS...');
         await Future.delayed(const Duration(seconds: 2));
       }
 
-      // Récupérer le token FCM
+      print('🎯 [FCM] Appel de _messaging.getToken()...');
       final String? token = await _messaging.getToken();
 
       if (token != null) {
-        _currentToken = token; // Stocker le token
+        print('🎯 [FCM] Token FCM obtenu avec succès');
+        print('🎯 [FCM] Token length: ${token.length}');
+        print('🎯 [FCM] Token complet: $token');
+        _currentToken = token;
         onTokenUpdate?.call(token);
-        print('Token FCM obtenu avec succès');
       } else {
-        print('Le token FCM est null');
+        print('⚠️ [FCM] Le token FCM est null');
       }
-    } catch (e) {
-      print('Erreur lors de la récupération du token FCM: $e');
+    } catch (e, stackTrace) {
+      print('❌ [FCM] Erreur lors de la récupération du token FCM: $e');
+      print('❌ [FCM] Stack trace: $stackTrace');
     }
   }
 
@@ -106,6 +124,14 @@ class FirebaseMessagingService {
 
         // ✨ Sauvegarder en mémoire
         await CourseNotificationStorage.saveNotification(courseData);
+
+        // Show local notification with custom sound
+        await LocalNotificationService.showNewCourseNotification(
+          courseId: data['course_id'].toString(),
+          pickupAddress: data['depart_adresse'] ?? 'Adresse de départ',
+          price: double.tryParse(data['prix']?.toString() ?? '0') ?? 0.0,
+          distance: int.tryParse(data['distance']?.toString() ?? '0') ?? 0,
+        );
 
         // Transmettre au service d'événements (comme avant)
         _courseEventService.onNewCourseReceived(data);
@@ -143,42 +169,85 @@ class FirebaseMessagingService {
   /// Envoie le token au backend (méthode publique)
   Future<bool> sendTokenToBackend(String token, String url) async {
     try {
-      print('🔐 [FCM] Début envoi du token vers le backend');
-      print('🔐 [FCM] URL cible: $url');
+      print('════════════════════════════════════════════════════════════');
+      print('📤 [FCM SEND] ENVOI DU TOKEN FCM VERS LE BACKEND');
+      print('════════════════════════════════════════════════════════════');
+      print('📤 [FCM SEND] Timestamp: ${DateTime.now().toIso8601String()}');
+      print('📤 [FCM SEND] URL cible: $url');
+      print('📤 [FCM SEND] FCM Token à envoyer:');
+      print('📤 [FCM SEND] >>> $token <<<');
+      print('📤 [FCM SEND] Token length: ${token.length} caractères');
 
       final authToken = await _sharedPreferencesServices.getToken();
-      print('🔐 [FCM] FCM Token : $token...');
-      print('🔐 [FCM] Auth Token disponible: ${authToken != null && authToken.isNotEmpty}');
+      print('📤 [FCM SEND] Auth Token disponible: ${authToken != null && authToken.isNotEmpty}');
+      if (authToken != null && authToken.isNotEmpty) {
+        print('📤 [FCM SEND] Auth Token (preview): ${authToken.substring(0, 20)}...');
+      }
 
       if (authToken == null || authToken.isEmpty) {
-        print('❌ [FCM] Échec: Token d\'authentification manquant');
+        print('❌ [FCM SEND] ÉCHEC: Token d\'authentification manquant');
+        print('════════════════════════════════════════════════════════════');
         return false;
       }
 
-      print('🔐 [FCM] Envoi de la requête POST...');
+      final requestBody = {'fcm_token': token};
+      print('📤 [FCM SEND] ─────────────────────────────────────────────');
+      print('📤 [FCM SEND] Request Body JSON:');
+      print('📤 [FCM SEND] ${jsonEncode(requestBody)}');
+      print('📤 [FCM SEND] ─────────────────────────────────────────────');
+      print('📤 [FCM SEND] Headers:');
+      print('📤 [FCM SEND]   - Content-Type: application/json');
+      print('📤 [FCM SEND]   - Authorization: Bearer ${authToken.substring(0, 20)}...');
+      print('📤 [FCM SEND]   - Accept: application/json');
+      print('📤 [FCM SEND] ─────────────────────────────────────────────');
+      print('📤 [FCM SEND] Envoi de la requête POST en cours...');
+
       final response = await http
           .post(
             Uri.parse(url),
             headers: {
               'Content-Type': 'application/json',
               'Authorization': 'Bearer $authToken',
+              'Accept': 'application/json',
             },
-            body: jsonEncode({'fcm_token': token}),
+            body: jsonEncode(requestBody),
           )
           .timeout(const Duration(seconds: 10));
 
-      print('🔐 [FCM] Code de réponse HTTP: ${response.statusCode}');
-      print('🔐 [FCM] Corps de la réponse: ${response.body}');
+      print('📥 [FCM SEND] ─────────────────────────────────────────────');
+      print('📥 [FCM SEND] RÉPONSE DU SERVEUR:');
+      print('📥 [FCM SEND] HTTP Status: ${response.statusCode}');
+      print('📥 [FCM SEND] Response Headers: ${response.headers}');
+      print('📥 [FCM SEND] Response Body: ${response.body}');
+      print('📥 [FCM SEND] ─────────────────────────────────────────────');
 
       if (response.statusCode == 200 || response.statusCode == 201) {
-        print('✅ [FCM] Token envoyé avec succès vers: $url');
+        print('✅ [FCM SEND] SUCCÈS! Token FCM envoyé et accepté par le backend');
+        print('✅ [FCM SEND] URL: $url');
+        print('✅ [FCM SEND] Token envoyé: $token');
+        try {
+          final responseData = jsonDecode(response.body);
+          print('✅ [FCM SEND] Données de réponse parsées: $responseData');
+        } catch (e) {
+          print('⚠️ [FCM SEND] Réponse non-JSON (probablement OK): ${response.body}');
+        }
+        print('════════════════════════════════════════════════════════════');
         return true;
       } else {
-        print('❌ [FCM] Erreur HTTP ${response.statusCode}: ${response.body}');
+        print('❌ [FCM SEND] ÉCHEC HTTP ${response.statusCode}');
+        print('❌ [FCM SEND] URL: $url');
+        print('❌ [FCM SEND] Token qui a échoué: $token');
+        print('❌ [FCM SEND] Réponse du serveur: ${response.body}');
+        print('════════════════════════════════════════════════════════════');
         return false;
       }
-    } catch (e) {
-      print('❌ [FCM] Exception lors de l\'envoi du token: $e');
+    } catch (e, stackTrace) {
+      print('❌ [FCM SEND] EXCEPTION lors de l\'envoi du token!');
+      print('❌ [FCM SEND] URL: $url');
+      print('❌ [FCM SEND] Token concerné: $token');
+      print('❌ [FCM SEND] Exception: $e');
+      print('❌ [FCM SEND] Stack trace: $stackTrace');
+      print('════════════════════════════════════════════════════════════');
       return false;
     }
   }
@@ -198,21 +267,42 @@ class FirebaseMessagingService {
   }
 
   /// Récupère le token FCM actuel (depuis le cache ou Firebase)
-  static Future<String?> getCurrentToken() async {
+  static Future<String?> getCurrentToken({int maxWaitSeconds = 10}) async {
     try {
-      // Retourner le token en cache s'il existe
+      print('🔍 [FCM] getCurrentToken appelé');
+
       if (_currentToken != null && _currentToken!.isNotEmpty) {
+        print('🔍 [FCM] Token trouvé en cache');
+        print('🔍 [FCM] Cache token length: ${_currentToken!.length}');
         return _currentToken;
       }
 
-      // Sinon, récupérer depuis Firebase
-      String? token = await _messaging.getToken();
-      if (token != null) {
-        _currentToken = token; // Mettre en cache
+      print('🔍 [FCM] Aucun token en cache, récupération depuis Firebase...');
+
+      int attempts = 0;
+      while (attempts < maxWaitSeconds) {
+        String? token = await _messaging.getToken();
+
+        if (token != null && token.isNotEmpty) {
+          print('🔍 [FCM] Token récupéré depuis Firebase après ${attempts + 1}s');
+          print('🔍 [FCM] Token length: ${token.length}');
+          print('🔍 [FCM] Token: $token');
+          _currentToken = token;
+          return token;
+        }
+
+        if (attempts < maxWaitSeconds - 1) {
+          print('⚠️ [FCM] Token null, attente de 1 seconde... (tentative ${attempts + 1}/$maxWaitSeconds)');
+          await Future.delayed(Duration(seconds: 1));
+        }
+        attempts++;
       }
-      return token;
-    } catch (e) {
-      print('Erreur récupération token: $e');
+
+      print('⚠️ [FCM] Firebase a retourné un token null après $maxWaitSeconds tentatives');
+      return null;
+    } catch (e, stackTrace) {
+      print('❌ [FCM] Erreur récupération token: $e');
+      print('❌ [FCM] Stack trace: $stackTrace');
       return null;
     }
   }
@@ -225,14 +315,19 @@ class FirebaseMessagingService {
   /// Récupère le token actuel et l'envoie au backend
   Future<bool> sendCurrentTokenToBackend(String url, {int maxRetries = 3}) async {
     print('🔐 [FCM] sendCurrentTokenToBackend appelé avec URL: $url');
+    print('🔐 [FCM] Nombre de tentatives maximum: $maxRetries');
 
     for (int attempt = 1; attempt <= maxRetries; attempt++) {
       try {
-        print('🔐 [FCM] Tentative $attempt/$maxRetries de récupération du token');
+        print('🔐 [FCM] ===== Tentative $attempt/$maxRetries =====');
+        print('🔐 [FCM] Récupération du token FCM...');
         String? token = await getCurrentToken();
 
         if (token != null && token.isNotEmpty) {
           print('🔐 [FCM] Token récupéré avec succès');
+          print('🔐 [FCM] Longueur du token: ${token.length} caractères');
+          print('🔐 [FCM] Appel de sendTokenToBackend...');
+
           final success = await sendTokenToBackend(token, url);
 
           if (success) {
@@ -247,13 +342,17 @@ class FirebaseMessagingService {
           }
         } else {
           print('⚠️ [FCM] Aucun token FCM disponible (tentative $attempt)');
+          print('⚠️ [FCM] Token est ${token == null ? "null" : "vide"}');
           if (attempt < maxRetries) {
+            print('🔐 [FCM] Attente de 2 secondes avant nouvelle tentative...');
             await Future.delayed(Duration(seconds: 2));
           }
         }
-      } catch (e) {
+      } catch (e, stackTrace) {
         print('❌ [FCM] Erreur récupération/envoi token (tentative $attempt): $e');
+        print('❌ [FCM] Stack trace: $stackTrace');
         if (attempt < maxRetries) {
+          print('🔐 [FCM] Attente de 2 secondes avant nouvelle tentative...');
           await Future.delayed(Duration(seconds: 2));
         }
       }
@@ -267,22 +366,26 @@ class FirebaseMessagingService {
   Future<bool> refreshToken() async {
     try {
       print('🔄 [FCM] Début du rafraîchissement du token FCM');
+      print('🔄 [FCM] Ancien token: ${_currentToken ?? "null"}');
       print('🔄 [FCM] Suppression de l\'ancien token...');
       await _messaging.deleteToken();
+      _currentToken = null;
 
       print('🔄 [FCM] Récupération d\'un nouveau token...');
       await _getToken();
 
       if (_currentToken != null && _currentToken!.isNotEmpty) {
         print('✅ [FCM] Token rafraîchi avec succès');
-        print('🔄 [FCM] Nouveau token: ${_currentToken!}');
+        print('🔄 [FCM] Nouveau token: $_currentToken');
+        print('🔄 [FCM] Token length: ${_currentToken!.length}');
         return true;
       } else {
         print('⚠️ [FCM] Token rafraîchi mais vide ou null');
         return false;
       }
-    } catch (e) {
+    } catch (e, stackTrace) {
       print('❌ [FCM] Erreur lors du rafraîchissement du token: $e');
+      print('❌ [FCM] Stack trace: $stackTrace');
       return false;
     }
   }

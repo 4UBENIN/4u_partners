@@ -4,8 +4,6 @@ import 'package:for_u_partners/app/app.locator.dart';
 import 'package:for_u_partners/models/daily_stats_model.dart';
 import 'package:for_u_partners/services/driver_service.dart';
 import 'package:for_u_partners/services/sharedpreferences_service.dart';
-import 'package:for_u_partners/ui/common/api_constant.dart';
-import 'package:for_u_partners/ui/common/get_fcm_token.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:for_u_partners/services/tracking_service.dart';
 import 'package:location/location.dart';
@@ -78,11 +76,9 @@ class HomeViewModel extends BaseViewModel {
         getUserName(),
         getWalletBalance(),
         getDailyStats(),
-        registerDriverToken(),
         trackingService.demarrerTrackingContinu(),
       ]);
 
-      // Démarrer le timer des heartbeats après l'initialisation
       _startHeartbeatTimer();
 
       await _initialiseLocationTracking();
@@ -146,43 +142,6 @@ class HomeViewModel extends BaseViewModel {
     }
   }
 
-  // Enregistre le token de notification
-  Future<void> registerDriverToken() async {
-    try {
-      print("🚀 [Driver] Début de l'enregistrement du token FCM pour le conducteur");
-
-      final fcmService = FirebaseMessagingService();
-
-      // Tenter d'envoyer le token actuel
-      print("🚀 [Driver] Tentative d'envoi du token actuel...");
-      bool success = await fcmService.sendCurrentTokenToBackend(
-        ApiConstant.saveFcmTokenDriver,
-        maxRetries: 3,
-      );
-
-      // Si échec, rafraîchir le token et réessayer
-      if (!success) {
-        print("⚠️ [Driver] Échec de l'envoi du token actuel, rafraîchissement...");
-        final refreshed = await fcmService.refreshToken();
-
-        if (refreshed) {
-          print("🔄 [Driver] Token rafraîchi, nouvelle tentative d'envoi...");
-          success = await fcmService.sendCurrentTokenToBackend(
-            ApiConstant.saveFcmTokenDriver,
-            maxRetries: 2,
-          );
-        }
-      }
-
-      if (success) {
-        print("✅ [Driver] Token FCM enregistré avec succès");
-      } else {
-        print("❌ [Driver] Échec définitif de l'enregistrement du token FCM");
-      }
-    } catch (e) {
-      print("❌ [Driver] Exception lors de l'enregistrement du token: $e");
-    }
-  }
 
   // Récupère la balance du portefeuille
   Future<void> getWalletBalance() async {
