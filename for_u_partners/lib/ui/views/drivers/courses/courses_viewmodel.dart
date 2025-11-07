@@ -432,6 +432,9 @@ class CoursesViewModel extends BaseViewModel {
       print('   - Départ: (${clientData.depLat}, ${clientData.depLong})');
       print(
           '   - Destination: (${clientData.destLat}, ${clientData.destLong})');
+
+      // Automatically draw route polyline for the new course
+      _drawRouteForNewCourse(clientData);
     } else {
       _availableCourses[existingIndex] = clientData;
       print('🔄 Course mise à jour: ${clientData.name}');
@@ -445,6 +448,109 @@ class CoursesViewModel extends BaseViewModel {
     _updatePendingCoursesCount();
 
     notifyListeners();
+  }
+
+  // Draw route polyline when a new course is received
+  Future<void> _drawRouteForNewCourse(ClientData course) async {
+    if (course.depLat == null || course.depLong == null ||
+        course.destLat == null || course.destLong == null ||
+        _currentPosition == null) {
+      return;
+    }
+
+    try {
+      final pickupLatLng = LatLng(course.depLat!, course.depLong!);
+      final destLatLng = LatLng(course.destLat!, course.destLong!);
+
+      // Clear existing polylines and markers
+      _polylines.clear();
+      _markers.clear();
+
+      // Add user location marker
+      _addUserLocationMarker();
+
+      // Add pickup marker
+      _markers.add(
+        Marker(
+          markerId: const MarkerId('pickup_point'),
+          position: pickupLatLng,
+          icon: BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueGreen),
+          infoWindow: const InfoWindow(title: 'Point de départ'),
+        ),
+      );
+
+      // Add destination marker
+      _markers.add(
+        Marker(
+          markerId: const MarkerId('destination_point'),
+          position: destLatLng,
+          icon: BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueRed),
+          infoWindow: InfoWindow(title: course.destination),
+        ),
+      );
+
+      // Draw route from current position to pickup using PolylinePoints
+      PolylinePoints polylinePoints = PolylinePoints(apiKey: _googleApiKey);
+
+      PolylineResult resultToPickup = await polylinePoints.getRouteBetweenCoordinates(
+        request: PolylineRequest(
+          origin: PointLatLng(_currentPosition!.latitude, _currentPosition!.longitude),
+          destination: PointLatLng(pickupLatLng.latitude, pickupLatLng.longitude),
+          mode: TravelMode.driving,
+        ),
+      );
+
+      if (resultToPickup.points.isNotEmpty) {
+        _polylines.add(
+          Polyline(
+            polylineId: const PolylineId('route_to_pickup'),
+            color: Colors.blue,
+            width: 5,
+            points: resultToPickup.points.map((point) => LatLng(point.latitude, point.longitude)).toList(),
+          ),
+        );
+      }
+
+      // Draw route from pickup to destination
+      PolylineResult resultToDestination = await polylinePoints.getRouteBetweenCoordinates(
+        request: PolylineRequest(
+          origin: PointLatLng(pickupLatLng.latitude, pickupLatLng.longitude),
+          destination: PointLatLng(destLatLng.latitude, destLatLng.longitude),
+          mode: TravelMode.driving,
+        ),
+      );
+
+      if (resultToDestination.points.isNotEmpty) {
+        _polylines.add(
+          Polyline(
+            polylineId: const PolylineId('route_pickup_to_destination'),
+            color: Colors.green,
+            width: 5,
+            points: resultToDestination.points.map((point) => LatLng(point.latitude, point.longitude)).toList(),
+            patterns: [PatternItem.dash(20), PatternItem.gap(10)],
+          ),
+        );
+      }
+
+      // Animate camera to show all markers
+      if (_mapController != null) {
+        final currentLatLng = LatLng(_currentPosition!.latitude, _currentPosition!.longitude);
+        final bounds = _calculateBounds([
+          currentLatLng,
+          pickupLatLng,
+          destLatLng,
+        ]);
+
+        await _mapController!.animateCamera(
+          CameraUpdate.newLatLngBounds(bounds, 100),
+        );
+      }
+
+      notifyListeners();
+      print('✅ Route tracée automatiquement pour la course ${course.courseId}');
+    } catch (e) {
+      print('❌ Erreur lors du tracé de la route: $e');
+    }
   }
 
   void _onCourseUpdated(CourseNotificationData courseData) {

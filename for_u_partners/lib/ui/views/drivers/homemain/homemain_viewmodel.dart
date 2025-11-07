@@ -3,9 +3,8 @@ import 'package:flutter/material.dart';
 import 'package:for_u_partners/app/app.locator.dart';
 import 'package:for_u_partners/services/sharedpreferences_service.dart';
 import 'package:for_u_partners/ui/common/app_colors.dart';
-import 'package:for_u_partners/ui/views/drivers/home/home_view.dart';
-import 'package:for_u_partners/ui/views/drivers/profil/profil_view.dart';
 import 'package:for_u_partners/ui/views/drivers/courses/courses_view.dart';
+import 'package:for_u_partners/ui/views/drivers/profil/profil_view.dart';
 import 'package:for_u_partners/ui/views/drivers/activity/activity_view.dart';
 import 'package:for_u_partners/ui/views/drivers/notifications/notifications_view.dart';
 import 'package:for_u_partners/ui/views/drivers/wallet/wallet_view.dart';
@@ -47,19 +46,17 @@ class HomemainViewModel extends IndexTrackingViewModel {
   getViewFromIndex(int index) {
     switch (index) {
       case 0:
-        return const HomeView();
+        return const CoursesView();
       case 1:
         return const ActivityView();
       case 2:
-        return const CoursesView();
-      case 3:
         return const WalletView();
-      case 4:
+      case 3:
         return const NotificationsView();
-      case 5:
+      case 4:
         return const ProfilView();
       default:
-        return const HomeView();
+        return const CoursesView();
     }
   }
 

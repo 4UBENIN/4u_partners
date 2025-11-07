@@ -1,9 +1,11 @@
 import 'package:for_u_partners/app/app.router.dart';
 import 'package:for_u_partners/services/chat_service.dart';
 import 'package:for_u_partners/services/sharedpreferences_service.dart';
+import 'package:for_u_partners/services/driver_service.dart';
 import 'package:for_u_partners/ui/common/app_colors.dart';
 import 'package:for_u_partners/ui/views/drivers/courses/chat_page.dart';
 import 'package:for_u_partners/ui/views/drivers/courses/recap_view.dart';
+import 'package:for_u_partners/ui/views/drivers/courses/pick_up_page.dart';
 import 'package:for_u_partners/ui/views/drivers/homemain/homemain_viewmodel_export.dart';
 import 'package:stacked_services/stacked_services.dart';
 import 'courses_viewmodel.dart';
@@ -28,18 +30,7 @@ class CoursesView extends StackedView<CoursesViewModel> {
       backgroundColor: Theme.of(context).colorScheme.surface,
       body: Container(
         color: Colors.white,
-        child: viewModel.isLoadingLocation
-            ? const Center(
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    CircularProgressIndicator(),
-                    SizedBox(height: 16),
-                    Text('Obtention de votre position...'),
-                  ],
-                ),
-              )
-            : Stack(
+        child: Stack(
                 children: [
                   GoogleMap(
                     onMapCreated: viewModel.onMapCreated,
@@ -52,10 +43,21 @@ class CoursesView extends StackedView<CoursesViewModel> {
                     polylines: viewModel.polylines,
                     myLocationEnabled: true,
                     myLocationButtonEnabled: false,
+                    zoomControlsEnabled: false,
                   ),
                   // Bouton pour recentrer sur la position utilisateur
 
-                  // Afficher le bottom sheet avec gestion asynchrone
+                  // Display client card as fixed positioned element
+                  if (viewModel.availableCourses.isNotEmpty &&
+                      viewModel.currentBottomSheetType == BottomSheetAppType.clients)
+                    Positioned(
+                      bottom: 100,
+                      left: 16,
+                      right: 16,
+                      child: _buildClientCard(viewModel, context),
+                    ),
+
+                  // Other bottom sheets
                   FutureBuilder<Widget>(
                     future: _buildBottomSheet(viewModel, context),
                     builder: (context, snapshot) {
@@ -148,121 +150,74 @@ class CoursesView extends StackedView<CoursesViewModel> {
                         )
                       : const SizedBox.shrink(),
 
-                  Positioned(
-                    top: 52,
-                    left: 20,
-                    child: IgnorePointer(
-                      // Désactiver le bouton pendant la restauration de l'état
-                      ignoring: viewModel.isRestoringState,
-                      child: InkWell(
-                        onTap: () => viewModel.navigationService.back(),
+                  // Small loading indicator when getting location
+                  if (viewModel.isLoadingLocation)
+                    Positioned(
+                      top: 20,
+                      left: 0,
+                      right: 0,
+                      child: Center(
                         child: Container(
-                          height: 48,
-                          width: 48,
+                          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                           decoration: BoxDecoration(
                             color: Colors.white,
-                            shape: BoxShape.circle,
+                            borderRadius: BorderRadius.circular(20),
                             boxShadow: [
                               BoxShadow(
                                 color: Colors.black.withOpacity(0.1),
-                                blurRadius: 4,
+                                blurRadius: 8,
                                 offset: const Offset(0, 2),
                               ),
                             ],
                           ),
-                          child: Center(
-                            child: viewModel.isAndroid
-                                ? const Icon(Icons.arrow_back, size: 20)
-                                : const Row(
-                                    mainAxisAlignment: MainAxisAlignment.center,
-                                    children: [
-                                      SizedBox(width: 6),
-                                      Icon(Icons.arrow_back_ios, size: 20),
-                                    ],
-                                  ),
-                          ),
-                        ),
-                      ),
-                    ),
-                  ),
-
-                  Positioned(
-                    top: 52,
-                    right: 20,
-                    child: Column(
-                      children: [
-                        // Bouton pour recentrer sur la position actuelle
-                        InkWell(
-                          onTap: () {
-                            viewModel.recenterOnUserLocation();
-                          },
-                          child: Container(
-                            height: 48,
-                            width: 48,
-                            decoration: BoxDecoration(
-                              color: Colors.white,
-                              shape: BoxShape.circle,
-                              boxShadow: [
-                                BoxShadow(
-                                  color: Colors.black.withOpacity(0.1),
-                                  blurRadius: 4,
-                                  offset: const Offset(0, 2),
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: const [
+                              SizedBox(
+                                width: 16,
+                                height: 16,
+                                child: CircularProgressIndicator(
+                                  strokeWidth: 2,
+                                  valueColor: AlwaysStoppedAnimation<Color>(kcPrimaryColor),
                                 ),
-                              ],
-                            ),
-                            child: const Icon(
-                              Icons.my_location,
-                              size: 20,
-                              color: kcPrimaryColor,
-                            ),
+                              ),
+                              SizedBox(width: 8),
+                              Text(
+                                'Localisation...',
+                                style: TextStyle(
+                                  fontSize: 14,
+                                  fontWeight: FontWeight.w500,
+                                ),
+                              ),
+                            ],
                           ),
                         ),
-                      ],
-                    ),
-                  ),
-
-                  if (viewModel.currentBottomSheetType ==
-                          BottomSheetAppType.pickup ||
-                      viewModel.currentBottomSheetType ==
-                          BottomSheetAppType.inprogress)
-                    Positioned(
-                      top: 112,
-                      right: 20,
-                      child: Column(
-                        children: [
-                          // Bouton pour recentrer sur la position actuelle
-                          InkWell(
-                            onTap: () {
-                              if (viewModel.currentBottomSheetType ==
-                                  BottomSheetAppType.pickup) {
-                                viewModel.redirectPickupToGoogleMaps();
-                              } else {
-                                viewModel.redirectDestinationToGoogleMaps();
-                              }
-                            },
-                            child: Container(
-                              height: 48,
-                              width: 48,
-                              decoration: BoxDecoration(
-                                color: Colors.white,
-                                shape: BoxShape.circle,
-                                boxShadow: [
-                                  BoxShadow(
-                                    color: Colors.black.withOpacity(0.1),
-                                    blurRadius: 4,
-                                    offset: const Offset(0, 2),
-                                  ),
-                                ],
-                              ),
-                              child: const Icon(
-                                Icons.navigation,
-                                size: 20,
-                                color: kcPrimaryColor,
-                              ),
-                            ),
-                          ),
-                        ],
                       ),
+                    ),
+
+                  // Top bar with menu and stats (hide when courses available)
+                  if (viewModel.availableCourses.isEmpty &&
+                      viewModel.currentBottomSheetType == BottomSheetAppType.none)
+                    Positioned(
+                      top: 60,
+                      left: 16,
+                      right: 16,
+                      child: SafeArea(
+                        top: false,
+                        bottom: false,
+                        child: _buildTopBar(context, viewModel),
+                      ),
+                    ),
+
+
+                  // Status toggle at bottom (hide when courses available)
+                  if (viewModel.availableCourses.isEmpty &&
+                      viewModel.currentBottomSheetType == BottomSheetAppType.none)
+                    Positioned(
+                      bottom: 0,
+                      left: 0,
+                      right: 0,
+                      child: _buildStatusToggle(viewModel, context),
                     ),
                 ],
               ),
@@ -355,6 +310,31 @@ class CoursesView extends StackedView<CoursesViewModel> {
     }
   }
 
+  Widget _buildClientCard(CoursesViewModel viewModel, BuildContext context) {
+    if (viewModel.availableCourses.isEmpty) {
+      return const SizedBox.shrink();
+    }
+
+    final client = viewModel.availableCourses.first;
+
+    return ClientCard(
+      client: client,
+      onAccept: () {
+        if (client.hasValidCourseId) {
+          viewModel.acceptCourse(client.courseId!, context);
+        }
+      },
+      onDecline: () {
+        if (client.hasValidCourseId) {
+          viewModel.rejectCourseById(client.courseId!);
+        }
+        if (viewModel.availableCourses.length <= 1) {
+          viewModel.setBottomSheetType(BottomSheetAppType.none);
+        }
+      },
+    );
+  }
+
   Future<Widget> _buildBottomSheet(
       CoursesViewModel viewModel, BuildContext context) async {
     // Ne pas afficher si le type est none
@@ -377,37 +357,8 @@ class CoursesView extends StackedView<CoursesViewModel> {
 
     switch (viewModel.currentBottomSheetType) {
       case BottomSheetAppType.clients:
-        // Afficher uniquement s'il y a des courses disponibles
-        if (viewModel.availableCourses.isEmpty) {
-          return const SizedBox.shrink(key: ValueKey('empty'));
-        }
-
-        return ClientsBottomSheet(
-          key: const ValueKey('clients'),
-          getClientsList: viewModel.availableCourses,
-          onAccept: () {
-            // Accepter la première course disponible
-            if (viewModel.availableCourses.isNotEmpty) {
-              final firstCourse = viewModel.availableCourses.first;
-              if (firstCourse.hasValidCourseId) {
-                viewModel.acceptCourse(firstCourse.courseId!, context);
-              }
-            }
-          },
-          onDecline: () {
-            // Refuser la première course
-            if (viewModel.availableCourses.isNotEmpty) {
-              final firstCourse = viewModel.availableCourses.first;
-              if (firstCourse.hasValidCourseId) {
-                viewModel.rejectCourseById(firstCourse.courseId!);
-              }
-            }
-            // Fermer seulement s'il n'y a plus de courses - PAS de WidgetsBinding ici
-            if (viewModel.availableCourses.length <= 1) {
-              viewModel.setBottomSheetType(BottomSheetAppType.none);
-            }
-          },
-        );
+        // Now handled by _buildClientCard as a fixed positioned card
+        return const SizedBox.shrink(key: ValueKey('clients-handled-elsewhere'));
 
       case BottomSheetAppType.pickup:
         print(
@@ -535,6 +486,247 @@ class CoursesView extends StackedView<CoursesViewModel> {
 
       case BottomSheetAppType.none:
         return const SizedBox.shrink(key: ValueKey('none'));
+    }
+  }
+
+  Widget _buildStartRideButton(BuildContext context) {
+    return Container(
+      height: 56,
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: [
+          BoxShadow(
+            color: kcPrimaryColor.withOpacity(0.3),
+            blurRadius: 12,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: ElevatedButton(
+        onPressed: () {
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (context) => const PickUpPage(),
+            ),
+          );
+        },
+        style: ElevatedButton.styleFrom(
+          backgroundColor: kcPrimaryColor,
+          foregroundColor: Colors.white,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16),
+          ),
+          elevation: 0,
+          shadowColor: Colors.transparent,
+        ),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: const [
+            Icon(Icons.add_circle_outline_rounded, size: 22),
+            SizedBox(width: 10),
+            Text(
+              'Démarrer une course',
+              style: TextStyle(
+                fontSize: 17,
+                fontWeight: FontWeight.w600,
+                letterSpacing: 0.2,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildTopBar(BuildContext context, CoursesViewModel viewModel) {
+    final driverService = locator<DriverService>();
+    final homeMainViewModel = locator<HomemainViewModel>();
+
+    return FutureBuilder<Map<String, dynamic>>(
+      future: Future.wait([
+        driverService.fetchDailyStats().then((stats) => {
+          'montantGainToday': (stats?.montantGainToday ?? 0).toDouble(),
+          'todayCourses': stats?.totalActiviteToday ?? 0,
+        }),
+      ]).then((results) => results.first),
+      builder: (context, snapshot) {
+        final montantGainToday = snapshot.data?['montantGainToday'] ?? 0.0;
+        final todayCourses = snapshot.data?['todayCourses'] ?? 0;
+
+        return Row(
+          children: [
+            Material(
+              color: Colors.white,
+              elevation: 6,
+              shape: const CircleBorder(),
+              shadowColor: Colors.black.withOpacity(0.15),
+              child: InkWell(
+                customBorder: const CircleBorder(),
+                onTap: () {
+                  homeMainViewModel.toggleNavigation();
+                },
+                child: Container(
+                  height: 50,
+                  width: 50,
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    border: Border.all(
+                      color: Colors.grey.withOpacity(0.12),
+                      width: 1,
+                    ),
+                  ),
+                  child: const Icon(
+                    Icons.menu_rounded,
+                    color: kcPrimaryColor,
+                    size: 26,
+                  ),
+                ),
+              ),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Container(
+                padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(25),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withOpacity(0.1),
+                      blurRadius: 12,
+                      offset: const Offset(0, 2),
+                    ),
+                  ],
+                ),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceAround,
+                  children: [
+                    Row(
+                      children: [
+                        const Icon(
+                          Icons.payments_outlined,
+                          color: kcPrimaryColor,
+                          size: 24,
+                        ),
+                        const SizedBox(width: 8),
+                        Text(
+                          '${montantGainToday.toStringAsFixed(0)} FCFA',
+                          style: const TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.bold,
+                            color: kcPrimaryColor,
+                          ),
+                        ),
+                      ],
+                    ),
+                    Row(
+                      children: [
+                        const Icon(
+                          Icons.directions_car_filled_outlined,
+                          color: kcPrimaryColor,
+                          size: 24,
+                        ),
+                        const SizedBox(width: 8),
+                        Text(
+                          '$todayCourses',
+                          style: const TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.bold,
+                            color: kcPrimaryColor,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  Widget _buildStatusToggle(CoursesViewModel viewModel, BuildContext outerContext) {
+    return StreamBuilder<bool?>(
+      stream: _getOnlineStatusStream(),
+      initialData: true,
+      builder: (context, snapshot) {
+        final isOnline = snapshot.data ?? true;
+
+        return GestureDetector(
+          onTap: () async {
+            final sharedPrefsService = locator<SharedpreferencesService>();
+            final driverService = locator<DriverService>();
+
+            final newStatus = !isOnline;
+            await driverService.updateStatus(newStatus);
+            await sharedPrefsService.setOnlineStatus(newStatus);
+          },
+          child: Container(
+            padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 8),
+            decoration: const BoxDecoration(
+              color: Colors.white,
+            ),
+            child: SafeArea(
+              top: false,
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Text(
+                    isOnline ? 'EN LIGNE' : 'HORS LIGNE',
+                    style: TextStyle(
+                      color: isOnline ? Colors.black : Colors.red.shade600,
+                      fontSize: 17,
+                      fontWeight: FontWeight.w700,
+                      letterSpacing: 0.5,
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Icon(
+                    isOnline ? Icons.toggle_on : Icons.toggle_off,
+                    color: isOnline ? Colors.black : Colors.red.shade600,
+                    size: 32,
+                  ),
+                  const Spacer(),
+                  GestureDetector(
+                    onTap: () {
+                      Navigator.push(
+                        outerContext,
+                        MaterialPageRoute(
+                          builder: (context) => const PickUpPage(),
+                        ),
+                      );
+                    },
+                    child: Container(
+                      padding: const EdgeInsets.all(8),
+                      child: const Icon(
+                        Icons.add_circle_outline_rounded,
+                        color: Colors.black,
+                        size: 28,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  Stream<bool?> _getOnlineStatusStream() async* {
+    final sharedPrefsService = locator<SharedpreferencesService>();
+
+    // Emit initial value
+    yield await sharedPrefsService.getOnlineStatus();
+
+    // Poll for changes every second
+    while (true) {
+      await Future.delayed(const Duration(milliseconds: 500));
+      yield await sharedPrefsService.getOnlineStatus();
     }
   }
 

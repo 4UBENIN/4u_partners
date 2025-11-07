@@ -54,18 +54,6 @@ class ClientsBottomSheet extends StatelessWidget {
                   borderRadius: BorderRadius.circular(2.5),
                 ),
               ),
-              // Titre
-              const Padding(
-                padding: EdgeInsets.symmetric(horizontal: 20, vertical: 10),
-                child: Text(
-                  'Clients disponibles',
-                  style: TextStyle(
-                    fontSize: 18,
-                    fontWeight: FontWeight.bold,
-                    color: Colors.black87,
-                  ),
-                ),
-              ),
               // Liste des clients
               Expanded(
                 child: ListView.builder(
@@ -164,125 +152,200 @@ class _ClientCardState extends State<ClientCard> {
   Widget build(BuildContext context) {
     final isUrgent = _remainingSeconds <= 5 && !_isExpired;
 
+    // Log all client data for debugging
+    print('═══════════════════════════════════════');
+    print('📋 CLIENT CARD DATA:');
+    print('═══════════════════════════════════════');
+    print('👤 Name: ${widget.client.name}');
+    print('🔤 Initials: ${widget.client.initials}');
+    print('⏰ Time Info: ${widget.client.timeInfo}');
+    print('📍 Destination: ${widget.client.destination}');
+    print('📍 Adresse Départ: ${widget.client.adresseDepart}');
+    print('💰 Prix: ${widget.client.formattedPrice}');
+    print('📊 Distance: ${widget.client.formattedDistance}');
+    print('⏱️ Durée: ${widget.client.formattedDuration}');
+    print('🆔 Course ID: ${widget.client.courseId}');
+    print('👥 Client ID: ${widget.client.clientId}');
+    print('🌙 Is Night: ${widget.client.isNight}');
+    print('🚗 ETA Minutes: ${widget.client.etaMinutes}');
+    print('---');
+    print('📍 COORDONNÉES DÉPART:');
+    print('  Latitude: ${widget.client.depLat}');
+    print('  Longitude: ${widget.client.depLong}');
+    print('📍 COORDONNÉES DESTINATION:');
+    print('  Latitude: ${widget.client.destLat}');
+    print('  Longitude: ${widget.client.destLong}');
+    print('═══════════════════════════════════════');
+
+    // Extract simplified location names (neighborhood/area instead of full address)
+    String getSimplifiedLocation(String? address) {
+      if (address == null || address.isEmpty) return 'Non spécifié';
+      // Split by comma and take first 2 parts (usually area/neighborhood)
+      final parts = address.split(',');
+      return parts.take(2).join(',').trim();
+    }
+
     return Opacity(
       opacity: _isExpired ? 0.6 : 1.0,
       child: Container(
         margin: const EdgeInsets.only(bottom: 16),
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+        padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
           color: _isExpired
               ? Colors.grey[300]
-              : (isUrgent ? Colors.red[50] : const Color(0xFFF7F8FD)),
-          borderRadius: BorderRadius.circular(12),
+              : (isUrgent ? Colors.red[50] : Colors.white),
+          borderRadius: BorderRadius.circular(16),
           border: _isExpired
               ? Border.all(color: Colors.grey[400]!, width: 2)
               : (isUrgent
                   ? Border.all(color: Colors.red[300]!, width: 2)
-                  : null),
+                  : Border.all(color: Colors.grey[200]!, width: 1)),
+          boxShadow: _isExpired
+              ? null
+              : [
+                  BoxShadow(
+                    color: Colors.black.withOpacity(0.05),
+                    blurRadius: 8,
+                    offset: const Offset(0, 2),
+                  ),
+                ],
         ),
         child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
+            // Top: Category badge and action buttons
             Row(
               children: [
-                // Avatar avec initiales
+                // Category badge
                 Container(
-                  width: 50,
-                  height: 50,
+                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                   decoration: BoxDecoration(
-                    color: _isExpired ? Colors.grey[600] : Colors.grey[800],
-                    borderRadius: BorderRadius.circular(8),
+                    color: Colors.black,
+                    borderRadius: BorderRadius.circular(20),
                   ),
-                  child: Center(
-                    child: Text(
-                      widget.client.initials,
-                      style: const TextStyle(
-                        color: Colors.white,
-                        fontSize: 20,
-                        fontWeight: FontWeight.bold,
-                      ),
+                  child: Text(
+                    widget.client.timeInfo.toUpperCase(),
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontSize: 12,
+                      fontWeight: FontWeight.bold,
+                      letterSpacing: 0.5,
                     ),
                   ),
                 ),
+                const Spacer(),
+                // Bouton X (refuser)
+                Container(
+                  width: 40,
+                  height: 40,
+                  decoration: BoxDecoration(
+                    color: _isExpired ? Colors.grey[300] : Colors.grey[100],
+                    shape: BoxShape.circle,
+                  ),
+                  child: IconButton(
+                    onPressed: _isExpired ? null : widget.onDecline,
+                    icon: Icon(
+                      Icons.close_rounded,
+                      size: 20,
+                      color: _isExpired ? Colors.grey[500] : Colors.grey[700],
+                    ),
+                    padding: EdgeInsets.zero,
+                  ),
+                ),
+                const SizedBox(width: 8),
+                // Bouton Check (accepter)
+                Container(
+                  width: 40,
+                  height: 40,
+                  decoration: BoxDecoration(
+                    color: _isExpired ? Colors.grey[400] : kcPrimaryColor,
+                    shape: BoxShape.circle,
+                  ),
+                  child: IconButton(
+                    onPressed: _isExpired ? null : widget.onAccept,
+                    icon: Icon(
+                      _isExpired ? Icons.block : Icons.check_rounded,
+                      size: 20,
+                      color: Colors.white,
+                    ),
+                    padding: EdgeInsets.zero,
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 16),
+
+            // Price - Big, bold, black
+            Center(
+              child: Text(
+                widget.client.formattedPrice,
+                style: const TextStyle(
+                  fontSize: 32,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.black,
+                  letterSpacing: -0.5,
+                ),
+              ),
+            ),
+            const SizedBox(height: 16),
+
+            // Simplified pickup and dropoff locations
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Column(
+                  children: [
+                    Container(
+                      width: 5,
+                      height: 5,
+                      decoration: const BoxDecoration(
+                        color: Colors.black,
+                        shape: BoxShape.circle,
+                      ),
+                    ),
+                    Container(
+                      width: 2,
+                      height: 50,
+                      color: Colors.grey[300],
+                    ),
+                    Container(
+                      width: 5,
+                      height: 5,
+                      decoration: const BoxDecoration(
+                        color: Colors.black,
+                        shape: BoxShape.circle,
+                      ),
+                    ),
+                  ],
+                ),
                 const SizedBox(width: 12),
-                // Informations client
                 Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        widget.client.name,
-                        style: TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.bold,
-                          color: _isExpired ? Colors.grey[600] : Colors.black87,
-                        ),
-                      ),
-                      const SizedBox(height: 2),
-                      Text(
-                        widget.client.timeInfo,
-                        style: TextStyle(
+                        getSimplifiedLocation(widget.client.adresseDepart),
+                        style: const TextStyle(
                           fontSize: 14,
-                          color: Colors.grey[600],
+                          fontWeight: FontWeight.w600,
+                          color: Colors.black87,
                         ),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
                       ),
-                      const SizedBox(height: 4),
+                      const SizedBox(height: 24),
                       Text(
-                        widget.client.destination,
-                        style: TextStyle(
-                          fontSize: 13,
-                          color: Colors.grey[700],
+                        getSimplifiedLocation(widget.client.destination),
+                        style: const TextStyle(
+                          fontSize: 14,
+                          fontWeight: FontWeight.w600,
+                          color: Colors.black87,
                         ),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
                       ),
                     ],
                   ),
-                ),
-                // Boutons d'action
-                Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    // Bouton X (refuser)
-                    Container(
-                      width: 36,
-                      height: 36,
-                      decoration: BoxDecoration(
-                        color: _isExpired ? Colors.grey[300] : Colors.grey[100],
-                        shape: BoxShape.circle,
-                        border: Border.all(
-                          color: _isExpired
-                              ? Colors.grey[400]!
-                              : Colors.grey[300]!,
-                        ),
-                      ),
-                      child: IconButton(
-                        onPressed: _isExpired ? null : widget.onDecline,
-                        icon: Icon(
-                          Icons.close,
-                          size: 18,
-                          color: _isExpired ? Colors.grey[500] : Colors.grey[600],
-                        ),
-                        padding: EdgeInsets.zero,
-                      ),
-                    ),
-                    const SizedBox(width: 8),
-                    // Bouton Check (accepter)
-                    Container(
-                      width: 36,
-                      height: 36,
-                      decoration: BoxDecoration(
-                        color: _isExpired ? Colors.grey[400] : kcPrimaryColor,
-                        shape: BoxShape.circle,
-                      ),
-                      child: IconButton(
-                        onPressed: _isExpired ? null : widget.onAccept,
-                        icon: Icon(
-                          _isExpired ? Icons.block : Icons.check,
-                          size: 18,
-                          color: Colors.white,
-                        ),
-                        padding: EdgeInsets.zero,
-                      ),
-                    ),
-                  ],
                 ),
               ],
             ),

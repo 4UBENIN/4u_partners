@@ -8,7 +8,9 @@ import 'package:stacked/stacked.dart';
 import 'home_viewmodel.dart';
 
 class HomeView extends StackedView<HomeViewModel> {
-  const HomeView({Key? key}) : super(key: key);
+  final VoidCallback? onMenuTap;
+
+  const HomeView({Key? key, this.onMenuTap}) : super(key: key);
 
   @override
   Widget builder(
@@ -29,6 +31,16 @@ class HomeView extends StackedView<HomeViewModel> {
             child: _buildMap(viewModel),
           ),
           Positioned(
+            top: 60,
+            left: 16,
+            right: 16,
+            child: SafeArea(
+              top: false,
+              bottom: false,
+              child: _buildTopBar(context, viewModel, onMenuTap),
+            ),
+          ),
+          Positioned(
             bottom: 170,
             right: 16,
             child: SafeArea(
@@ -45,6 +57,12 @@ class HomeView extends StackedView<HomeViewModel> {
             left: 0,
             right: 0,
             child: _buildBottomPanel(context, viewModel),
+          ),
+          Positioned(
+            bottom: 0,
+            left: 0,
+            right: 0,
+            child: _buildStatusToggle(viewModel),
           ),
           if (viewModel.errorMessage != null && !viewModel.isBusy)
             Positioned(
@@ -149,54 +167,108 @@ Widget _buildMap(HomeViewModel viewModel) {
   );
 }
 
+Widget _buildTopBar(BuildContext context, HomeViewModel model, VoidCallback? onMenuTap) {
+  return Row(
+    children: [
+      Material(
+        color: Colors.white,
+        elevation: 6,
+        shape: const CircleBorder(),
+        shadowColor: Colors.black.withOpacity(0.15),
+        child: InkWell(
+          customBorder: const CircleBorder(),
+          onTap: onMenuTap,
+          child: Container(
+            height: 50,
+            width: 50,
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              border: Border.all(
+                color: Colors.grey.withOpacity(0.12),
+                width: 1,
+              ),
+            ),
+            child: const Icon(
+              Icons.menu_rounded,
+              color: kcPrimaryColor,
+              size: 26,
+            ),
+          ),
+        ),
+      ),
+      const SizedBox(width: 12),
+      Expanded(
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(25),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withOpacity(0.1),
+                blurRadius: 12,
+                offset: const Offset(0, 2),
+              ),
+            ],
+          ),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.spaceAround,
+            children: [
+              Row(
+                children: [
+                  const Icon(
+                    Icons.payments_outlined,
+                    color: kcPrimaryColor,
+                    size: 24,
+                  ),
+                  const SizedBox(width: 8),
+                  Text(
+                    '${model.montantGainToday.toStringAsFixed(0)} FCFA',
+                    style: const TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.bold,
+                      color: kcPrimaryColor,
+                    ),
+                  ),
+                ],
+              ),
+              Row(
+                children: [
+                  const Icon(
+                    Icons.directions_car_filled_outlined,
+                    color: kcPrimaryColor,
+                    size: 24,
+                  ),
+                  const SizedBox(width: 8),
+                  Text(
+                    '${model.todayCourses}',
+                    style: const TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.bold,
+                      color: kcPrimaryColor,
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ),
+        ),
+      ),
+    ],
+  );
+}
+
 Widget _buildBottomPanel(BuildContext context, HomeViewModel model) {
   return SafeArea(
     top: false,
+    bottom: false,
     child: Padding(
-      padding: const EdgeInsets.fromLTRB(16, 0, 16, 20),
+      padding: const EdgeInsets.fromLTRB(16, 0, 16, 90),
       child: Column(
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          Container(
-            padding: const EdgeInsets.all(20),
-            decoration: BoxDecoration(
-              color: Colors.white,
-              borderRadius: BorderRadius.circular(20),
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black.withOpacity(0.1),
-                  blurRadius: 24,
-                  offset: const Offset(0, -2),
-                  spreadRadius: 0,
-                ),
-              ],
-            ),
-            child: Row(
-              children: [
-                _StatTile(
-                  title: 'Gains du jour',
-                  value: '${model.montantGainToday.toStringAsFixed(0)} FCFA',
-                  icon: Icons.payments_outlined,
-                ),
-                Container(
-                  height: 46,
-                  width: 1,
-                  margin: const EdgeInsets.symmetric(horizontal: 18),
-                  color: kcLightGrey.withOpacity(0.2),
-                ),
-                _StatTile(
-                  title: 'Courses',
-                  value: '${model.todayCourses}',
-                  icon: Icons.directions_car_filled_outlined,
-                ),
-              ],
-            ),
-          ),
-          const SizedBox(height: 16),
           _buildSimpleStartRideButton(context),
-          const SizedBox(height: 16),
-          _buildStatusToggle(model),
         ],
       ),
     ),
@@ -361,7 +433,7 @@ Widget _buildStatusToggle(HomeViewModel model) {
   return GestureDetector(
     onTap: model.isBusy ? null : model.toggleOnlineStatus,
     child: Container(
-      padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 18),
+      padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 8),
       decoration: BoxDecoration(
         gradient: LinearGradient(
           colors: model.isOnline
@@ -374,46 +446,29 @@ Widget _buildStatusToggle(HomeViewModel model) {
                   const Color(0xFF6B7280),
                 ],
         ),
-        borderRadius: BorderRadius.circular(16),
-        boxShadow: [
-          BoxShadow(
-            color: (model.isOnline
-                    ? const Color(0xFF10B981)
-                    : const Color(0xFF9CA3AF))
-                .withOpacity(0.3),
-            blurRadius: 12,
-            offset: const Offset(0, 4),
-          ),
-        ],
       ),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Container(
-            width: 12,
-            height: 12,
-            decoration: const BoxDecoration(
-              color: Colors.white,
-              shape: BoxShape.circle,
+      child: SafeArea(
+        top: false,
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Text(
+              model.isOnline ? 'EN LIGNE' : 'HORS LIGNE',
+              style: const TextStyle(
+                color: Colors.white,
+                fontSize: 17,
+                fontWeight: FontWeight.w700,
+                letterSpacing: 0.5,
+              ),
             ),
-          ),
-          const SizedBox(width: 12),
-          Text(
-            model.isOnline ? 'EN LIGNE' : 'HORS LIGNE',
-            style: const TextStyle(
+            const SizedBox(width: 12),
+            Icon(
+              model.isOnline ? Icons.toggle_on : Icons.toggle_off,
               color: Colors.white,
-              fontSize: 17,
-              fontWeight: FontWeight.w700,
-              letterSpacing: 0.5,
+              size: 32,
             ),
-          ),
-          const SizedBox(width: 12),
-          Icon(
-            model.isOnline ? Icons.toggle_on : Icons.toggle_off,
-            color: Colors.white,
-            size: 32,
-          ),
-        ],
+          ],
+        ),
       ),
     ),
   );

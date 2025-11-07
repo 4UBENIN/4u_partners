@@ -31,29 +31,18 @@ class HomemainView extends StackedView<HomemainViewModel> {
       ),
       _NavItemData(
         index: 2,
-        label: 'Courses',
-        builder: (context) => _buildCoursesIcon(viewModel),
-      ),
-      _NavItemData(
-        index: 3,
         label: 'Portefeuille',
         builder: (context) => Icon(
           Icons.account_balance_wallet_outlined,
-          color: viewModel.currentIndex == 3 ? kcPrimaryColor : kcLightGrey,
+          color: viewModel.currentIndex == 2 ? kcPrimaryColor : kcLightGrey,
           size: 24,
         ),
       ),
       _NavItemData(
-        index: 4,
+        index: 3,
         label: 'Notifications',
         builder: (context) =>
-            viewModel.buildNavItem("assets/Bell.png", 4, viewModel),
-      ),
-      _NavItemData(
-        index: 5,
-        label: 'Compte',
-        builder: (context) =>
-            viewModel.buildNavItem("assets/user.png", 5, viewModel),
+            viewModel.buildNavItem("assets/Bell.png", 3, viewModel),
       ),
     ];
 
@@ -96,25 +85,19 @@ class HomemainView extends StackedView<HomemainViewModel> {
             left: viewModel.isNavigationOpen ? 0 : -_kSidebarWidth,
             child: SizedBox(
               width: _kSidebarWidth,
-              child: SafeArea(
-                right: false,
-                child: Padding(
-                  padding: const EdgeInsets.symmetric(vertical: 16),
-                  child: _DriverSideNavigation(
-                    items: navItems,
-                    currentIndex: viewModel.currentIndex,
-                    onItemSelected: viewModel.handleNavigationSelection,
-                    onClose: viewModel.closeNavigation,
-                    userName: viewModel.userName,
-                    isOnline: viewModel.isOnline,
-                  ),
-                ),
+              child: _DriverSideNavigation(
+                items: navItems,
+                currentIndex: viewModel.currentIndex,
+                onItemSelected: viewModel.handleNavigationSelection,
+                onClose: viewModel.closeNavigation,
+                userName: viewModel.userName,
+                isOnline: viewModel.isOnline,
               ),
             ),
           ),
           if (!viewModel.isNavigationOpen)
             Positioned(
-              top: 100,
+              top: 60,
               left: 16,
               child: SafeArea(
                 top: false,
@@ -193,90 +176,39 @@ class _DriverSideNavigation extends StatelessWidget {
       color: kcWhiteColors,
       elevation: 16,
       shadowColor: Colors.black.withOpacity(0.2),
-      borderRadius: const BorderRadius.only(
-        topRight: Radius.circular(24),
-        bottomRight: Radius.circular(24),
-      ),
-      child: Column(
-        children: [
-          Container(
-            padding: const EdgeInsets.fromLTRB(20, 16, 12, 16),
-            decoration: BoxDecoration(
-              color: kcPrimaryColor.withOpacity(0.05),
-              borderRadius: const BorderRadius.only(
-                topRight: Radius.circular(24),
+      child: SafeArea(
+        right: false,
+        child: Column(
+          children: [
+            _buildDriverProfile(),
+            Divider(height: 1, color: Colors.grey.withOpacity(0.15)),
+            Expanded(
+              child: ListView.separated(
+                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 20),
+                itemBuilder: (context, index) {
+                  final item = items[index];
+                  final isSelected = currentIndex == item.index;
+                  return _SideNavItem(
+                    label: item.label,
+                    isSelected: isSelected,
+                    onTap: () => onItemSelected(item.index),
+                    icon: item.builder(context),
+                  );
+                },
+                separatorBuilder: (context, index) => const SizedBox(height: 6),
+                itemCount: items.length,
               ),
             ),
-            child: Row(
-              children: [
-                Container(
-                  padding: const EdgeInsets.all(8),
-                  decoration: BoxDecoration(
-                    color: kcPrimaryColor.withOpacity(0.1),
-                    borderRadius: BorderRadius.circular(10),
-                  ),
-                  child: const Icon(
-                    Icons.dashboard_rounded,
-                    color: kcPrimaryColor,
-                    size: 20,
-                  ),
-                ),
-                const SizedBox(width: 12),
-                const Text(
-                  'Menu',
-                  style: TextStyle(
-                    fontSize: 20,
-                    fontWeight: FontWeight.w700,
-                    color: kcPrimaryColor,
-                    letterSpacing: 0.3,
-                  ),
-                ),
-                const Spacer(),
-                IconButton(
-                  splashRadius: 20,
-                  onPressed: onClose,
-                  icon: const Icon(
-                    Icons.close_rounded,
-                    color: kcMediumGrey,
-                    size: 24,
-                  ),
-                ),
-              ],
+            Divider(height: 1, color: Colors.grey.withOpacity(0.15)),
+            const SizedBox(height: 8),
+            _BottomMenuItem(
+              icon: Icons.person_outline_rounded,
+              label: 'Compte',
+              onTap: () => onItemSelected(4),
             ),
-          ),
-          _buildDriverProfile(),
-          Divider(height: 1, color: Colors.grey.withOpacity(0.15)),
-          Expanded(
-            child: ListView.separated(
-              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 20),
-              itemBuilder: (context, index) {
-                final item = items[index];
-                final isSelected = currentIndex == item.index;
-                return _SideNavItem(
-                  label: item.label,
-                  isSelected: isSelected,
-                  onTap: () => onItemSelected(item.index),
-                  icon: item.builder(context),
-                );
-              },
-              separatorBuilder: (context, index) => const SizedBox(height: 6),
-              itemCount: items.length,
-            ),
-          ),
-          Divider(height: 1, color: Colors.grey.withOpacity(0.15)),
-          const SizedBox(height: 8),
-          _BottomMenuItem(
-            icon: Icons.help_outline_rounded,
-            label: 'Aide & Support',
-            onTap: onClose,
-          ),
-          _BottomMenuItem(
-            icon: Icons.person_outline_rounded,
-            label: 'Compte',
-            onTap: onClose,
-          ),
-          const SizedBox(height: 8),
-        ],
+            const SizedBox(height: 8),
+          ],
+        ),
       ),
     );
   }
@@ -372,12 +304,12 @@ class _SideNavItem extends StatelessWidget {
               const SizedBox(width: 14),
               Expanded(
                 child: Text(
-                  label,
+                  label.toUpperCase(),
                   style: TextStyle(
-                    fontSize: 15,
-                    fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500,
+                    fontSize: 16,
+                    fontWeight: FontWeight.bold,
                     color: isSelected ? kcPrimaryColor : kcMediumGrey,
-                    letterSpacing: 0.2,
+                    letterSpacing: 0.5,
                   ),
                 ),
               ),
@@ -426,12 +358,12 @@ class _BottomMenuItem extends StatelessWidget {
               ),
               const SizedBox(width: 14),
               Text(
-                label,
-                style: TextStyle(
-                  fontSize: 14,
-                  fontWeight: FontWeight.w500,
+                label.toUpperCase(),
+                style: const TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.bold,
                   color: kcMediumGrey,
-                  letterSpacing: 0.2,
+                  letterSpacing: 0.5,
                 ),
               ),
             ],
@@ -452,16 +384,16 @@ class _SidebarToggleButton extends StatelessWidget {
     return Material(
       color: Colors.white,
       elevation: 6,
-      borderRadius: BorderRadius.circular(12),
+      shape: const CircleBorder(),
       shadowColor: Colors.black.withOpacity(0.15),
       child: InkWell(
-        borderRadius: BorderRadius.circular(12),
+        customBorder: const CircleBorder(),
         onTap: onTap,
         child: Container(
-          height: 46,
-          width: 46,
+          height: 50,
+          width: 50,
           decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(12),
+            shape: BoxShape.circle,
             border: Border.all(
               color: Colors.grey.withOpacity(0.12),
               width: 1,
@@ -470,7 +402,7 @@ class _SidebarToggleButton extends StatelessWidget {
           child: const Icon(
             Icons.menu_rounded,
             color: kcPrimaryColor,
-            size: 24,
+            size: 26,
           ),
         ),
       ),
