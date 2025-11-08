@@ -33,7 +33,7 @@ class CoursesViewModel extends BaseViewModel {
   LatLng _mapCenter = const LatLng(48.8566, 2.3522);
   LatLng get mapCenter => _mapCenter;
 
-  double _mapZoom = 15.0;
+  double _mapZoom = 16.5;
   double get mapZoom => _mapZoom;
 
   final Set<Marker> _markers = <Marker>{};
@@ -416,6 +416,8 @@ class CoursesViewModel extends BaseViewModel {
   void _updateDriverMarkerPosition(loc.LocationData location) async {
     if (location.latitude == null || location.longitude == null) return;
 
+    final newPosition = LatLng(location.latitude!, location.longitude!);
+
     try {
       // Find the driver marker
       final driverMarker = _markers.firstWhere(
@@ -428,9 +430,16 @@ class CoursesViewModel extends BaseViewModel {
       // Add updated marker
       _markers.add(
         driverMarker.copyWith(
-          positionParam: LatLng(location.latitude!, location.longitude!),
+          positionParam: newPosition,
         ),
       );
+
+      // Move camera to follow driver with street-level zoom
+      if (_mapController != null) {
+        _mapController!.animateCamera(
+          CameraUpdate.newLatLngZoom(newPosition, 16.5),
+        );
+      }
 
       debugPrint('🚗 Driver marker updated: ${location.latitude}, ${location.longitude}');
       notifyListeners();
@@ -441,7 +450,7 @@ class CoursesViewModel extends BaseViewModel {
       _markers.add(
         Marker(
           markerId: const MarkerId('user_location'),
-          position: LatLng(location.latitude!, location.longitude!),
+          position: newPosition,
           icon: driverIcon,
           infoWindow: const InfoWindow(
             title: 'Ma position',
@@ -449,6 +458,14 @@ class CoursesViewModel extends BaseViewModel {
           ),
         ),
       );
+
+      // Move camera to new marker with street-level zoom
+      if (_mapController != null) {
+        _mapController!.animateCamera(
+          CameraUpdate.newLatLngZoom(newPosition, 16.5),
+        );
+      }
+
       debugPrint('✅ Driver marker created');
       notifyListeners();
     }
