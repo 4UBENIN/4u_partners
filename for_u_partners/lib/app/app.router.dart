@@ -260,8 +260,12 @@ class StackedRouter extends _i1.RouterBase {
       );
     },
     _i3.HomeView: (data) {
+      final args = data.getArgs<HomeViewArguments>(
+        orElse: () => const HomeViewArguments(),
+      );
       return _i28.MaterialPageRoute<dynamic>(
-        builder: (context) => const _i3.HomeView(),
+        builder: (context) =>
+            _i3.HomeView(key: args.key, onMenuTap: args.onMenuTap),
         settings: data,
       );
     },
@@ -427,6 +431,33 @@ class StackedRouter extends _i1.RouterBase {
   Map<Type, _i1.StackedRouteFactory> get pagesMap => _pagesMap;
 }
 
+class HomeViewArguments {
+  const HomeViewArguments({
+    this.key,
+    this.onMenuTap,
+  });
+
+  final _i28.Key? key;
+
+  final void Function()? onMenuTap;
+
+  @override
+  String toString() {
+    return '{"key": "$key", "onMenuTap": "$onMenuTap"}';
+  }
+
+  @override
+  bool operator ==(covariant HomeViewArguments other) {
+    if (identical(this, other)) return true;
+    return other.key == key && other.onMenuTap == onMenuTap;
+  }
+
+  @override
+  int get hashCode {
+    return key.hashCode ^ onMenuTap.hashCode;
+  }
+}
+
 class ActivitydetailsViewArguments {
   const ActivitydetailsViewArguments({
     this.key,
@@ -540,14 +571,17 @@ extension NavigatorStateExtension on _i31.NavigationService {
         transition: transition);
   }
 
-  Future<dynamic> navigateToHomeView([
+  Future<dynamic> navigateToHomeView({
+    _i28.Key? key,
+    void Function()? onMenuTap,
     int? routerId,
     bool preventDuplicates = true,
     Map<String, String>? parameters,
     Widget Function(BuildContext, Animation<double>, Animation<double>, Widget)?
         transition,
-  ]) async {
+  }) async {
     return navigateTo<dynamic>(Routes.homeView,
+        arguments: HomeViewArguments(key: key, onMenuTap: onMenuTap),
         id: routerId,
         preventDuplicates: preventDuplicates,
         parameters: parameters,
@@ -921,14 +955,17 @@ extension NavigatorStateExtension on _i31.NavigationService {
         transition: transition);
   }
 
-  Future<dynamic> replaceWithHomeView([
+  Future<dynamic> replaceWithHomeView({
+    _i28.Key? key,
+    void Function()? onMenuTap,
     int? routerId,
     bool preventDuplicates = true,
     Map<String, String>? parameters,
     Widget Function(BuildContext, Animation<double>, Animation<double>, Widget)?
         transition,
-  ]) async {
+  }) async {
     return replaceWith<dynamic>(Routes.homeView,
+        arguments: HomeViewArguments(key: key, onMenuTap: onMenuTap),
         id: routerId,
         preventDuplicates: preventDuplicates,
         parameters: parameters,

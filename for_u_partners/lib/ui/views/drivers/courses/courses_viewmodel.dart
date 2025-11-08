@@ -4,11 +4,12 @@ import 'package:for_u_partners/services/course_event_service.dart';
 import 'package:for_u_partners/services/course_notificationstorage_service.dart';
 import 'package:for_u_partners/services/driver_service.dart';
 import 'package:for_u_partners/services/marker_icon_service.dart';
+import 'package:for_u_partners/services/location_tracking_service.dart';
 import 'package:for_u_partners/ui/common/app_colors.dart';
 import 'package:for_u_partners/ui/common/toast.dart';
 import 'package:stacked/stacked.dart';
 import 'package:flutter/material.dart';
-import 'package:geolocator/geolocator.dart';
+import 'package:location/location.dart' as loc;
 import 'package:url_launcher/url_launcher.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:for_u_partners/ui/common/enum/bottom_enum.dart';
@@ -106,8 +107,8 @@ class CoursesViewModel extends BaseViewModel {
   bool _isRestoringState = false;
   bool get isRestoringState => _isRestoringState;
 
-  Position? _currentPosition;
-  Position? get currentPosiction => _currentPosition;
+  loc.LocationData? _currentPosition;
+  loc.LocationData? get currentPosiction => _currentPosition;
 
   BottomSheetAppType _currentBottomSheetType = BottomSheetAppType.none;
   BottomSheetAppType get currentBottomSheetType => _currentBottomSheetType;
@@ -117,6 +118,8 @@ class CoursesViewModel extends BaseViewModel {
 
   final driverservice = locator<DriverService>();
   final navigationService = locator<NavigationService>();
+  final _locationService = locator<LocationTrackingService>();
+  StreamSubscription<loc.LocationData>? _locationStreamSubscription;
 
   static const String _googleApiKey = 'AIzaSyAVtrvygnbsdnL6VMEJS_DB0JfEa0piHqM';
   static const Set<String> _allowedCourseStatuses = {
@@ -142,13 +145,16 @@ class CoursesViewModel extends BaseViewModel {
     _isInitialized = true;
     print('✅ Initializing ViewModel for the first time...');
 
-    // Lancer les tâches en parallèle
-    await Future.wait([
-      _getCurrentLocation(),
-      _loadStoredNotifications(), // ✨ Charger les notifications stockées
-    ]);
+    // Initialize location service and get last known location (instant)
+    await _initializeLocation();
+
+    // Load stored notifications
+    await _loadStoredNotifications();
 
     _setupCourseListeners();
+
+    // Start real-time location tracking (non-blocking)
+    _startLocationTracking();
 
     // Démarrer le rafraîchissement des conducteurs en ligne
     startDriversRefresh();
@@ -217,13 +223,13 @@ class CoursesViewModel extends BaseViewModel {
           _updatePendingCoursesCount();
           print('🧹 Aucune notification valide, liste des courses vidée');
         }
-        // Clear markers and polylines when no courses
+        // Clear route-specific markers and polylines when no courses
         _polylines.clear();
-        _markers.clear();
-        if (_currentPosition != null) {
-          await _addUserLocationMarker();
-        }
-        print('🧹 Cleared markers and polylines (no stored notifications)');
+        _markers.removeWhere((marker) =>
+          marker.markerId.value == 'pickup_point' ||
+          marker.markerId.value == 'destination_point'
+        );
+        print('🧹 Cleared route markers and polylines (no stored notifications)');
       } else {
         // Convertir les notifications en ClientData
         final validCourseIds = <String>[];
@@ -285,12 +291,14 @@ class CoursesViewModel extends BaseViewModel {
         _currentBottomSheetType == BottomSheetAppType.none) {
       setBottomSheetType(BottomSheetAppType.clients);
     } else if (_availableCourses.isEmpty) {
-      // Clear markers and polylines when no courses remain
+      // Clear route-specific markers and polylines when no courses remain
       _polylines.clear();
-      _markers.clear();
-      await _addUserLocationMarker();
+      _markers.removeWhere((marker) =>
+        marker.markerId.value == 'pickup_point' ||
+        marker.markerId.value == 'destination_point'
+      );
       hideBottomSheet();
-      print('🧹 No courses after refresh, cleared markers and polylines');
+      print('🧹 No courses after refresh, cleared route markers and polylines');
     }
   }
 
@@ -299,7 +307,7 @@ class CoursesViewModel extends BaseViewModel {
       _mapController = controller;
       if (_currentPosition != null) {
         await _moveToPosition(
-          LatLng(_currentPosition!.latitude, _currentPosition!.longitude),
+          LatLng(_currentPosition!.latitude!, _currentPosition!.longitude!),
         );
       }
       // Forcer un rafraîchissement de l'affichage
@@ -314,53 +322,134 @@ class CoursesViewModel extends BaseViewModel {
     }
   }
 
-  Future<void> _getCurrentLocation() async {
+  // Initialize location service and load last known position (instant)
+  Future<void> _initializeLocation() async {
     try {
-      print("getCurrentLocation appelé");
+      print("📍 Initializing location service...");
+
+      // Initialize and get last known location from storage (instant, no blocking)
+      final lastKnown = await _locationService.initialize();
+
+      if (lastKnown != null) {
+        _currentPosition = lastKnown;
+        _isLoadingLocation = false;
+
+        print(
+            "✅ Last known position loaded: ${_currentPosition!.latitude}, ${_currentPosition!.longitude}");
+
+        // Update map center
+        _mapCenter = LatLng(_currentPosition!.latitude!, _currentPosition!.longitude!);
+
+        // Move map to last known position
+        if (_mapController != null) {
+          await _moveToPosition(_mapCenter);
+        }
+
+        await _addUserLocationMarker();
+        notifyListeners();
+      } else {
+        // No stored location, get current location once
+        await _getCurrentLocationOnce();
+      }
+    } catch (e) {
+      print('❌ Error initializing location: $e');
+      _isLoadingLocation = false;
+      notifyListeners();
+    }
+  }
+
+  // Get current location once (fallback)
+  Future<void> _getCurrentLocationOnce() async {
+    try {
       _isLoadingLocation = true;
       notifyListeners();
 
-      bool serviceEnabled = await Geolocator.isLocationServiceEnabled();
-      if (!serviceEnabled) {
-        _isLoadingLocation = false;
-        notifyListeners();
-        return;
-      }
+      final location = await _locationService.getCurrentLocation();
 
-      LocationPermission permission = await Geolocator.checkPermission();
-      if (permission == LocationPermission.denied) {
-        permission = await Geolocator.requestPermission();
-        if (permission == LocationPermission.denied) {
-          _isLoadingLocation = false;
-          notifyListeners();
-          return;
+      if (location != null) {
+        _currentPosition = location;
+        _isLoadingLocation = false;
+
+        if (location.latitude != null && location.longitude != null) {
+          _mapCenter = LatLng(location.latitude!, location.longitude!);
+
+          if (_mapController != null) {
+            await _moveToPosition(_mapCenter);
+          }
         }
-      }
 
-      if (permission == LocationPermission.deniedForever) {
-        _isLoadingLocation = false;
+        await _addUserLocationMarker();
         notifyListeners();
-        return;
       }
-
-      _currentPosition = await Geolocator.getCurrentPosition(
-        desiredAccuracy: LocationAccuracy.high,
-      );
-
-      _mapCenter =
-          LatLng(_currentPosition!.latitude, _currentPosition!.longitude);
-
-      if (_mapController != null) {
-        await _moveToPosition(_mapCenter);
-      }
-
-      await _addUserLocationMarker();
-
+    } catch (e) {
+      print('❌ Error getting current location: $e');
       _isLoadingLocation = false;
       notifyListeners();
+    }
+  }
+
+  // Start real-time location tracking (non-blocking)
+  void _startLocationTracking() {
+    print("🎯 Starting real-time location tracking...");
+
+    // Start tracking
+    _locationService.startTracking();
+
+    // Listen to location updates
+    _locationStreamSubscription = _locationService.locationStream.listen(
+      (loc.LocationData locationData) {
+        _currentPosition = locationData;
+
+        // Update driver marker position smoothly
+        _updateDriverMarkerPosition(locationData);
+
+        print(
+            "📍 Location updated: ${locationData.latitude}, ${locationData.longitude}");
+      },
+      onError: (error) {
+        print('❌ Location stream error: $error');
+      },
+    );
+  }
+
+  // Update driver marker position without full reload
+  void _updateDriverMarkerPosition(loc.LocationData location) async {
+    if (location.latitude == null || location.longitude == null) return;
+
+    try {
+      // Find the driver marker
+      final driverMarker = _markers.firstWhere(
+        (marker) => marker.markerId.value == 'user_location',
+      );
+
+      // Remove old marker
+      _markers.removeWhere((marker) => marker.markerId.value == 'user_location');
+
+      // Add updated marker
+      _markers.add(
+        driverMarker.copyWith(
+          positionParam: LatLng(location.latitude!, location.longitude!),
+        ),
+      );
+
+      debugPrint('🚗 Driver marker updated: ${location.latitude}, ${location.longitude}');
+      notifyListeners();
     } catch (e) {
-      print('Erreur lors de l\'obtention de la position: $e');
-      _isLoadingLocation = false;
+      // Marker doesn't exist yet, create it
+      debugPrint('⚠️ Driver marker not found, creating new one at ${location.latitude}, ${location.longitude}');
+      final driverIcon = await MarkerIconService.getDriverMarker();
+      _markers.add(
+        Marker(
+          markerId: const MarkerId('user_location'),
+          position: LatLng(location.latitude!, location.longitude!),
+          icon: driverIcon,
+          infoWindow: const InfoWindow(
+            title: 'Ma position',
+            snippet: 'Vous êtes ici',
+          ),
+        ),
+      );
+      debugPrint('✅ Driver marker created');
       notifyListeners();
     }
   }
@@ -400,7 +489,8 @@ class CoursesViewModel extends BaseViewModel {
   }
 
   Future<void> _addUserLocationMarker() async {
-    _markers.clear();
+    // Only remove the user_location marker, not all markers
+    _markers.removeWhere((marker) => marker.markerId.value == 'user_location');
 
     if (_currentPosition != null) {
       final driverIcon = await MarkerIconService.getDriverMarker();
@@ -408,7 +498,7 @@ class CoursesViewModel extends BaseViewModel {
         Marker(
           markerId: const MarkerId('user_location'),
           position:
-              LatLng(_currentPosition!.latitude, _currentPosition!.longitude),
+              LatLng(_currentPosition!.latitude!, _currentPosition!.longitude!),
           icon: driverIcon,
           infoWindow: const InfoWindow(
             title: 'Ma position',
@@ -496,11 +586,14 @@ class CoursesViewModel extends BaseViewModel {
       final pickupLatLng = LatLng(course.depLat!, course.depLong!);
       final destLatLng = LatLng(course.destLat!, course.destLong!);
 
-      // Clear existing polylines and markers
+      // Clear existing polylines and route-specific markers only
       _polylines.clear();
-      _markers.clear();
+      _markers.removeWhere((marker) =>
+        marker.markerId.value == 'pickup_point' ||
+        marker.markerId.value == 'destination_point'
+      );
 
-      // Add user location marker
+      // Ensure user location marker exists
       await _addUserLocationMarker();
 
       // Load custom marker icons
@@ -532,7 +625,7 @@ class CoursesViewModel extends BaseViewModel {
 
       PolylineResult resultToPickup = await polylinePoints.getRouteBetweenCoordinates(
         request: PolylineRequest(
-          origin: PointLatLng(_currentPosition!.latitude, _currentPosition!.longitude),
+          origin: PointLatLng(_currentPosition!.latitude!, _currentPosition!.longitude!),
           destination: PointLatLng(pickupLatLng.latitude, pickupLatLng.longitude),
           mode: TravelMode.driving,
         ),
@@ -573,7 +666,7 @@ class CoursesViewModel extends BaseViewModel {
 
       // Animate camera to show all markers
       if (_mapController != null) {
-        final currentLatLng = LatLng(_currentPosition!.latitude, _currentPosition!.longitude);
+        final currentLatLng = LatLng(_currentPosition!.latitude!, _currentPosition!.longitude!);
         final bounds = _calculateBounds([
           currentLatLng,
           pickupLatLng,
@@ -615,13 +708,17 @@ class CoursesViewModel extends BaseViewModel {
     // Mettre à jour le compteur de courses en attente
     _updatePendingCoursesCount();
 
+    // 🧹 Always clean up route-specific markers and polylines
+    _polylines.clear();
+    _markers.removeWhere((marker) =>
+      marker.markerId.value == 'pickup_point' ||
+      marker.markerId.value == 'destination_point'
+    );
+
     if (_availableCourses.isEmpty) {
-      // Clear markers and polylines when no courses are left
-      _polylines.clear();
-      _markers.clear();
-      await _addUserLocationMarker();
+      // No more courses - hide bottom sheet
       hideBottomSheet();
-      print('🧹 No more courses, cleared markers and polylines');
+      print('🧹 No more courses, cleared route markers and polylines');
     } else {
       // Draw route for the next available course
       await _drawRouteForNewCourse(_availableCourses.first);
@@ -662,9 +759,9 @@ class CoursesViewModel extends BaseViewModel {
   Future<void> recenterOnUserLocation() async {
     if (_currentPosition != null && _mapController != null) {
       await _moveToPosition(
-          LatLng(_currentPosition!.latitude, _currentPosition!.longitude));
+          LatLng(_currentPosition!.latitude!, _currentPosition!.longitude!));
     } else {
-      await _getCurrentLocation();
+      await _getCurrentLocationOnce();
     }
   }
 
@@ -820,12 +917,23 @@ class CoursesViewModel extends BaseViewModel {
           maxAge: const Duration(minutes: 1),
         );
 
-        // 4. Cacher le bottom sheet si plus de courses
+        // 4. 🧹 Clean up route-specific markers and polylines
+        _polylines.clear();
+        _markers.removeWhere((marker) =>
+          marker.markerId.value == 'pickup_point' ||
+          marker.markerId.value == 'destination_point'
+        );
+
+        // 5. Cacher le bottom sheet si plus de courses
         if (_availableCourses.isEmpty) {
           hideBottomSheet();
+          print('🧹 No more courses, cleared route markers and polylines');
+        } else {
+          // Draw route for the next available course
+          await _drawRouteForNewCourse(_availableCourses.first);
         }
 
-        // 5. Notifier les écouteurs
+        // 6. Notifier les écouteurs
         notifyListeners();
         print('✅ Refus de la course $courseId traité avec succès');
       } else {
@@ -1120,7 +1228,7 @@ class CoursesViewModel extends BaseViewModel {
   Future<void> redirectPickupToGoogleMaps() async {
     try {
       final Uri uri = Uri.parse(buildGoogleMapsUrlFlexible(
-        originLat: _currentPosition!.latitude,
+        originLat: _currentPosition!.latitude!,
         originLng: _currentPosition!.longitude,
         destAddress: _currentCourse!.adresseDepart!,
       ));
@@ -1171,7 +1279,7 @@ class CoursesViewModel extends BaseViewModel {
       PolylineResult result = await polylinePoints.getRouteBetweenCoordinates(
         request: PolylineRequest(
           origin: PointLatLng(
-              _currentPosition!.latitude, _currentPosition!.longitude),
+              _currentPosition!.latitude!, _currentPosition!.longitude!),
           destination:
               PointLatLng(_currentCourse!.depLat!, _currentCourse!.depLong!),
           mode: TravelMode.driving,
@@ -1202,7 +1310,7 @@ class CoursesViewModel extends BaseViewModel {
             color: kcPrimaryColor,
             width: 4,
             points: [
-              LatLng(_currentPosition!.latitude, _currentPosition!.longitude),
+              LatLng(_currentPosition!.latitude!, _currentPosition!.longitude!),
               pickupLatLng,
             ],
             patterns: [PatternItem.dash(20), PatternItem.gap(10)],
@@ -1228,7 +1336,7 @@ class CoursesViewModel extends BaseViewModel {
       // Ajuster la caméra
       if (_mapController != null) {
         final bounds = _calculateBounds([
-          LatLng(_currentPosition!.latitude, _currentPosition!.longitude),
+          LatLng(_currentPosition!.latitude!, _currentPosition!.longitude!),
           pickupLatLng,
         ]);
         _mapController!.animateCamera(
@@ -1244,7 +1352,7 @@ class CoursesViewModel extends BaseViewModel {
           color: kcPrimaryColor,
           width: 4,
           points: [
-            LatLng(_currentPosition!.latitude, _currentPosition!.longitude),
+            LatLng(_currentPosition!.latitude!, _currentPosition!.longitude!),
             LatLng(_currentCourse!.depLat!, _currentCourse!.depLong!),
           ],
           patterns: [PatternItem.dash(20), PatternItem.gap(10)],
@@ -1579,6 +1687,8 @@ class CoursesViewModel extends BaseViewModel {
     _driversRefreshTimer?.cancel();
     _newCourseSubscription?.cancel();
     _courseUpdateSubscription?.cancel();
+    _locationStreamSubscription?.cancel();
+    _locationService.stopTracking();
     super.dispose();
   }
 

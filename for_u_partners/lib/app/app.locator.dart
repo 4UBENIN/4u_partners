@@ -18,6 +18,7 @@ import '../services/auth_service.dart';
 import '../services/chat_service.dart';
 import '../services/course_restoration_service.dart';
 import '../services/driver_service.dart';
+import '../services/location_tracking_service.dart';
 import '../services/pause_state_service.dart';
 import '../services/pickers_service.dart';
 import '../services/profile_photo_service.dart';
@@ -54,6 +55,7 @@ Future<void> setupLocator({
   locator.registerLazySingleton(() => CourseRestorationService());
   locator.registerLazySingleton(() => ArrivalStateService());
   locator.registerLazySingleton(() => PauseStateService());
+  locator.registerLazySingleton(() => LocationTrackingService());
   locator.registerSingleton(HomemainViewModel());
   locator.registerSingleton(MesVehiculesViewModel());
   locator.registerSingleton(DocumentsViewModel());
