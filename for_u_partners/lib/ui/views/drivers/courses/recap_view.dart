@@ -25,13 +25,18 @@ class RecapitulatifCoursePage extends StatefulWidget {
 
 class _RecapitulatifCoursePageState extends State<RecapitulatifCoursePage> {
   final DriverService _driverService = DriverService();
-  late Future<FactureCourse> _factureFuture;
+  Future<FactureCourse>? _factureFuture;
   final DateFormat _dateFormat = DateFormat('dd/MM/yyyy HH:mm');
 
   @override
   void initState() {
     super.initState();
-    _factureFuture = _initializeData();
+    // Utiliser addPostFrameCallback pour éviter setState pendant build
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      setState(() {
+        _factureFuture = _initializeData();
+      });
+    });
   }
 
   // Méthode corrigée : on attend que completeCourseService se termine avant de fetch la facture
@@ -76,7 +81,7 @@ class _RecapitulatifCoursePageState extends State<RecapitulatifCoursePage> {
       body: FutureBuilder<FactureCourse>(
         future: _factureFuture,
         builder: (context, snapshot) {
-          if (snapshot.connectionState == ConnectionState.waiting) {
+          if (_factureFuture == null || snapshot.connectionState == ConnectionState.waiting) {
             return  Center(
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
@@ -269,6 +274,57 @@ class _RecapitulatifCoursePageState extends State<RecapitulatifCoursePage> {
 
                       const SizedBox(height: 24),
 
+                      // Section Véhicule (si disponible)
+                      if (facture.vehicule.isNotEmpty) ...[
+                        _buildSection(
+                          context,
+                          title: 'Véhicule utilisé',
+                          icon: Icons.directions_car,
+                          children: [
+                            if (facture.vehicule['categorie'] != null)
+                              Container(
+                                margin: const EdgeInsets.only(bottom: 12),
+                                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                                decoration: BoxDecoration(
+                                  color: kcPrimaryColor.withOpacity(0.1),
+                                  borderRadius: BorderRadius.circular(8),
+                                ),
+                                child: Row(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    const Icon(Icons.star, size: 16, color: primaryColor),
+                                    const SizedBox(width: 6),
+                                    Text(
+                                      '${facture.vehicule['categorie']}'.toUpperCase(),
+                                      style: const TextStyle(
+                                        fontSize: 13,
+                                        fontWeight: FontWeight.bold,
+                                        color: primaryColor,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            if (facture.vehicule['marque'] != null)
+                              _buildInvoiceRow(
+                                'Marque',
+                                '${facture.vehicule['marque']} ${facture.vehicule['modele'] ?? ''}',
+                              ),
+                            if (facture.vehicule['immatriculation'] != null)
+                              _buildInvoiceRow(
+                                'Immatriculation',
+                                '${facture.vehicule['immatriculation']}',
+                              ),
+                            if (facture.vehicule['couleur'] != null)
+                              _buildInvoiceRow(
+                                'Couleur',
+                                '${facture.vehicule['couleur']}',
+                              ),
+                          ],
+                        ),
+                        const SizedBox(height: 24),
+                      ],
+
                       // Section Détails de la facture
                       _buildSection(
                         context,
@@ -280,36 +336,72 @@ class _RecapitulatifCoursePageState extends State<RecapitulatifCoursePage> {
                           _buildInvoiceRow(
                               'Date', _dateFormat.format(DateTime.now())),
                           const Divider(height: 32),
-                          _buildInvoiceRow(
-                            'Distance (${facture.distanceKm.toStringAsFixed(1)} km)',
-                            '${facture.tarifParKm} FCFA/km',
+
+                          // Distance avec calcul
+                          _buildCalculationRow(
+                            label: 'Distance parcourue',
+                            calculation: '${facture.distanceKm.toStringAsFixed(1)} km × ${facture.tarifParKm} FCFA',
+                            result: '${(facture.distanceKm * facture.tarifParKm).toStringAsFixed(0)} FCFA',
                           ),
-                          const SizedBox(height: 8),
-                          _buildInvoiceRow(
-                            'Temps estimé',
-                            '${facture.tarifParMinute} FCFA/min',
+                          const SizedBox(height: 12),
+
+                          // Durée avec calcul
+                          _buildCalculationRow(
+                            label: 'Temps de course',
+                            calculation: '${facture.dureeMin} min × ${facture.tarifParMinute} FCFA',
+                            result: '${(facture.dureeMin * facture.tarifParMinute).toStringAsFixed(0)} FCFA',
                           ),
+
+                          // Temps d'attente (si > 0)
+                          if (facture.tempsAttente > 0) ...[
+                            const SizedBox(height: 12),
+                            _buildCalculationRow(
+                              label: 'Temps d\'attente',
+                              calculation: '${facture.tempsAttente} min',
+                              result: '${facture.montantAttente} FCFA',
+                            ),
+                          ],
+
+                          // Temps de pause (si > 0)
+                          if (facture.tempsPause > 0) ...[
+                            const SizedBox(height: 12),
+                            _buildCalculationRow(
+                              label: 'Temps de pause',
+                              calculation: '${facture.tempsPause} min',
+                              result: '${facture.montantPause} FCFA',
+                            ),
+                          ],
+
                           const Divider(height: 32),
-                          Row(
-                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                            children: [
-                              const Text(
-                                'Total à payer',
-                                style: TextStyle(
-                                  fontSize: 16,
-                                  fontWeight: FontWeight.bold,
-                                  color: primaryColor,
+
+                          // Total final
+                          Container(
+                            padding: const EdgeInsets.all(12),
+                            decoration: BoxDecoration(
+                              color: kcPrimaryColor.withOpacity(0.1),
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                            child: Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                              children: [
+                                const Text(
+                                  'Total à payer',
+                                  style: TextStyle(
+                                    fontSize: 17,
+                                    fontWeight: FontWeight.bold,
+                                    color: primaryColor,
+                                  ),
                                 ),
-                              ),
-                              Text(
-                                '${facture.montant} FCFA',
-                                style: const TextStyle(
-                                  fontSize: 18,
-                                  fontWeight: FontWeight.bold,
-                                  color: primaryColor,
+                                Text(
+                                  '${facture.montant} FCFA',
+                                  style: const TextStyle(
+                                    fontSize: 20,
+                                    fontWeight: FontWeight.bold,
+                                    color: primaryColor,
+                                  ),
                                 ),
-                              ),
-                            ],
+                              ],
+                            ),
                           ),
                         ],
                       ),
@@ -485,6 +577,64 @@ class _RecapitulatifCoursePageState extends State<RecapitulatifCoursePage> {
               fontSize: 14,
               fontWeight: FontWeight.w500,
             ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildCalculationRow({
+    required String label,
+    required String calculation,
+    required String result,
+  }) {
+    return Container(
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: Colors.grey[50],
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(color: Colors.grey[200]!),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            label,
+            style: TextStyle(
+              color: Colors.grey[700],
+              fontSize: 13,
+              fontWeight: FontWeight.w500,
+            ),
+          ),
+          const SizedBox(height: 6),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            crossAxisAlignment: CrossAxisAlignment.center,
+            children: [
+              Text(
+                calculation,
+                style: TextStyle(
+                  color: Colors.grey[600],
+                  fontSize: 13,
+                ),
+              ),
+              const SizedBox(width: 8),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                decoration: BoxDecoration(
+                  color: kcPrimaryColor.withOpacity(0.15),
+                  borderRadius: BorderRadius.circular(6),
+                ),
+                child: Text(
+                  result,
+                  style: const TextStyle(
+                    fontSize: 14,
+                    fontWeight: FontWeight.bold,
+                    color: primaryColor,
+                  ),
+                ),
+              ),
+            ],
           ),
         ],
       ),

@@ -5,6 +5,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 /// Real-time location tracking service with local storage
 /// Provides smooth, continuous location updates without blocking UI
+/// Also sends location to backend during active rides
 class LocationTrackingService {
   static final LocationTrackingService _instance = LocationTrackingService._internal();
   factory LocationTrackingService() => _instance;
@@ -29,6 +30,10 @@ class LocationTrackingService {
 
   bool _isTracking = false;
   bool get isTracking => _isTracking;
+
+  // Active course tracking for backend updates
+  int? _activeCourseId;
+  Function(loc.LocationData)? _backendUpdateCallback;
 
   /// Initialize and load last known location from storage
   Future<loc.LocationData?> initialize() async {
@@ -93,6 +98,11 @@ class LocationTrackingService {
 
           // Save to storage asynchronously (non-blocking)
           _saveLocationToStorage(locationData);
+
+          // Send to backend if active course exists
+          if (_activeCourseId != null && _backendUpdateCallback != null) {
+            _backendUpdateCallback!(locationData);
+          }
 
           debugPrint(
             '📍 [LocationTracking] Updated: '
@@ -212,6 +222,30 @@ class LocationTrackingService {
       debugPrint('❌ [LocationTracking] Error clearing location: $e');
     }
   }
+
+  /// Enable backend location updates for active course
+  /// Callback will be called for each location update
+  void enableBackendUpdates({
+    required int courseId,
+    required Function(loc.LocationData) onLocationUpdate,
+  }) {
+    _activeCourseId = courseId;
+    _backendUpdateCallback = onLocationUpdate;
+    debugPrint('🌐 [LocationTracking] Backend updates enabled for course $courseId');
+  }
+
+  /// Disable backend location updates
+  void disableBackendUpdates() {
+    _activeCourseId = null;
+    _backendUpdateCallback = null;
+    debugPrint('🌐 [LocationTracking] Backend updates disabled');
+  }
+
+  /// Check if backend updates are enabled
+  bool get isBackendUpdatesEnabled => _activeCourseId != null;
+
+  /// Get active course ID
+  int? get activeCourseId => _activeCourseId;
 
   /// Dispose resources
   void dispose() {

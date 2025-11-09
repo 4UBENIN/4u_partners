@@ -152,32 +152,6 @@ class _ClientCardState extends State<ClientCard> {
   Widget build(BuildContext context) {
     final isUrgent = _remainingSeconds <= 5 && !_isExpired;
 
-    // Log all client data for debugging
-    print('═══════════════════════════════════════');
-    print('📋 CLIENT CARD DATA:');
-    print('═══════════════════════════════════════');
-    print('👤 Name: ${widget.client.name}');
-    print('🔤 Initials: ${widget.client.initials}');
-    print('⏰ Time Info: ${widget.client.timeInfo}');
-    print('📍 Destination: ${widget.client.destination}');
-    print('📍 Adresse Départ: ${widget.client.adresseDepart}');
-    print('💰 Prix: ${widget.client.formattedPrice}');
-    print('📊 Distance: ${widget.client.formattedDistance}');
-    print('⏱️ Durée: ${widget.client.formattedDuration}');
-    print('🆔 Course ID: ${widget.client.courseId}');
-    print('👥 Client ID: ${widget.client.clientId}');
-    print('🌙 Is Night: ${widget.client.isNight}');
-    print('🚗 ETA Minutes: ${widget.client.etaMinutes}');
-    print('---');
-    print('📍 COORDONNÉES DÉPART:');
-    print('  Latitude: ${widget.client.depLat}');
-    print('  Longitude: ${widget.client.depLong}');
-    print('📍 COORDONNÉES DESTINATION:');
-    print('  Latitude: ${widget.client.destLat}');
-    print('  Longitude: ${widget.client.destLong}');
-    print('═══════════════════════════════════════');
-
-    // Extract simplified location names (neighborhood/area instead of full address)
     String getSimplifiedLocation(String? address) {
       if (address == null || address.isEmpty) return 'Non spécifié';
       // Split by comma and take first 2 parts (usually area/neighborhood)
@@ -421,6 +395,7 @@ class AcceptedClientBottomSheet extends StatefulWidget {
 
 class _AcceptedClientBottomSheetState extends State<AcceptedClientBottomSheet> {
   final _arrivalStateService = locator<ArrivalStateService>();
+  final GlobalKey<SlideActionState> _slideKey = GlobalKey();
   Timer? _waitingTimer;
   bool _arrivalConfirmed = false;
   int _waitingTime = 0;
@@ -502,21 +477,28 @@ class _AcceptedClientBottomSheetState extends State<AcceptedClientBottomSheet> {
 
     final driverservice = locator<DriverService>();
     try {
+      // Set state immediately to remove SlideAction before async completes
+      if (mounted) {
+        setState(() {
+          _arrivalConfirmed = true;
+          _waitingTime = 0;
+        });
+      }
+
       // Notify client of arrival (updates status to "chauffeur_arrive")
       await driverservice.notifyClient(widget.courseId);
 
-      await Future.delayed(const Duration(milliseconds: 500));
-
       if (mounted) {
-        _arrivalConfirmed = true;
-        _waitingTime = 0;
         await _arrivalStateService.setArrivalConfirmed(widget.courseId, true);
         await _arrivalStateService.setWaitingTime(widget.courseId, 0);
-        setState(() {});
         _startWaitingTimer();
       }
     } catch (e) {
+      // Revert state on error
       if (mounted) {
+        setState(() {
+          _arrivalConfirmed = false;
+        });
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text('Erreur: ${e.toString()}')),
         );
@@ -717,6 +699,7 @@ class _AcceptedClientBottomSheetState extends State<AcceptedClientBottomSheet> {
                   // Arrival Confirmation Slider
                   if (!_arrivalConfirmed)
                     SlideAction(
+                      key: _slideKey,
                       onSubmit: _confirmArrival,
                       height: 60,
                       borderRadius: 30,

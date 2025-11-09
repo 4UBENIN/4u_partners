@@ -865,6 +865,34 @@ class CoursesViewModel extends BaseViewModel {
       // Appeler le service
       await acceptCourseService(courseNumericId, context);
 
+      // 🌐 Enable backend location updates AFTER successful acceptance
+      print('🌐 [acceptCourse] Enabling backend location updates for course $courseNumericId');
+      print('🌐 [acceptCourse] _currentCourse: ${_currentCourse?.courseId}');
+
+      if (_currentCourse != null) {
+        _locationService.enableBackendUpdates(
+          courseId: courseNumericId,
+          onLocationUpdate: (locationData) {
+            if (locationData.latitude != null && locationData.longitude != null) {
+              print('🌐 [acceptCourse] Sending location update: ${locationData.latitude}, ${locationData.longitude}');
+              driverservice.sendLocationUpdate(
+                courseId: courseNumericId,
+                latitude: locationData.latitude!,
+                longitude: locationData.longitude!,
+                heading: locationData.heading,
+                speed: locationData.speed,
+                accuracy: locationData.accuracy,
+              );
+            } else {
+              print('⚠️ [acceptCourse] Location data missing lat/lng, skipping update');
+            }
+          },
+        );
+        print('✅ [acceptCourse] Backend location updates enabled for course $courseNumericId');
+      } else {
+        print('⚠️ [acceptCourse] Cannot enable backend updates: _currentCourse is null');
+      }
+
       // Sauvegarder l'état de la course
       await _saveRideState('accepted');
     }
@@ -888,6 +916,10 @@ class CoursesViewModel extends BaseViewModel {
   // ✨ Annuler une course
   Future<void> cancelCourse(String courseId, {String? reason}) async {
     if (_currentCourse?.courseId == courseId) {
+      // 🌐 Disable backend location updates
+      _locationService.disableBackendUpdates();
+      print('🌐 Backend location updates disabled (course cancelled)');
+
       // Afficher la notification d'annulation
       await LocalNotificationService.showCourseCancelledNotification(
         courseId: courseId,
@@ -1117,6 +1149,11 @@ class CoursesViewModel extends BaseViewModel {
       await _arrivalStateService.clearCourseState(courseId);
       await driverservice.rejectCourse(courseId);
       canReject = true;
+
+      // 🌐 Disable backend location updates
+      _locationService.disableBackendUpdates();
+      print('🌐 Backend location updates disabled (course rejected)');
+
       print("✅ Course refusée avec succès");
     } catch (e) {
       print('❌ Erreur refus course: $e');
@@ -1536,6 +1573,10 @@ class CoursesViewModel extends BaseViewModel {
 
     _isOnTrip = false;
     _isGoingToPickup = false;
+
+    // 🌐 Disable backend location updates
+    _locationService.disableBackendUpdates();
+    print('🌐 Backend location updates disabled (trip completed)');
 
     // Sauvegarder l'état de la course
     await _saveRideState('completed');

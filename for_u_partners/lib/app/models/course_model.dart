@@ -104,6 +104,10 @@ class FactureCourse {
   final String modePaiement;
   final int tarifParMinute;
   final int tarifParKm;
+  final int tempsAttente;
+  final int tempsPause;
+  final int montantAttente;
+  final int montantPause;
 
   // Tu peux remplacer les types Map<String, dynamic> par des classes précises pour `vehicule`, `chauffeur`, `client` si besoin.
   final Map<String, dynamic> vehicule;
@@ -120,6 +124,10 @@ class FactureCourse {
     required this.modePaiement,
     required this.tarifParMinute,
     required this.tarifParKm,
+    required this.tempsAttente,
+    required this.tempsPause,
+    required this.montantAttente,
+    required this.montantPause,
     required this.vehicule,
     required this.chauffeur,
     required this.client,
@@ -136,6 +144,10 @@ class FactureCourse {
       modePaiement: json['mode_paiement'],
       tarifParMinute: json['tarif_par_minute'],
       tarifParKm: json['tarif_par_km'],
+      tempsAttente: json['temps_attente'] ?? 0,
+      tempsPause: json['temps_pause'] ?? 0,
+      montantAttente: json['montant_attente'] ?? 0,
+      montantPause: json['montant_pause'] ?? 0,
       vehicule: json['vehicule'] ?? {},
       chauffeur: json['chauffeur'] ?? {},
       client: json['client'] ?? {},

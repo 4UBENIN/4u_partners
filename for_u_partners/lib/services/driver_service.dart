@@ -143,13 +143,21 @@ class DriverService {
           'Authorization': 'Bearer $token',
         },
       );
+      print("accept-course-status: ${response.statusCode}");
       print("accept-course-response: ${response.body}");
 
       if (response.statusCode == 200) {
         // La course a été acceptée avec succès
         return jsonDecode(response.body);
       } else {
-        throw Exception('Échec de l\'acceptation de la course');
+        // Tenter de décoder le message d'erreur du backend
+        try {
+          final errorData = jsonDecode(response.body);
+          final errorMessage = errorData['error'] ?? errorData['message'] ?? 'Échec de l\'acceptation de la course';
+          throw Exception(errorMessage);
+        } catch (e) {
+          throw Exception('Échec de l\'acceptation de la course');
+        }
       }
     } catch (e) {
       debugPrint('Erreur lors de l\'acceptation de la course: $e');
@@ -358,10 +366,29 @@ class DriverService {
     print("url: $url");
     final response = await http.get(url, headers: headers);
 
-    print("facture-body: ${response.body}");
+    print("========== FACTURE COURSE RESPONSE ==========");
+    print("Status Code: ${response.statusCode}");
+    print("Full Response Body: ${response.body}");
 
     if (response.statusCode == 200) {
       final data = jsonDecode(response.body);
+      print("Parsed Data:");
+      print("- Course ID: ${data['course_id']}");
+      print("- Distance: ${data['distance_km']} km");
+      print("- Durée: ${data['duree_min']} min");
+      print("- Tarif par km: ${data['tarif_par_km']} FCFA");
+      print("- Tarif par minute: ${data['tarif_par_minute']} FCFA");
+      print("- Temps attente: ${data['temps_attente']} min");
+      print("- Montant attente: ${data['montant_attente']} FCFA");
+      print("- Temps pause: ${data['temps_pause']} min");
+      print("- Montant pause: ${data['montant_pause']} FCFA");
+      print("- Montant total: ${data['montant']} FCFA");
+      print("- Mode paiement: ${data['mode_paiement']}");
+      print("- Vehicule: ${data['vehicule']}");
+      print("- Chauffeur: ${data['chauffeur']}");
+      print("- Client: ${data['client']}");
+      print("============================================");
+
       return FactureCourse.fromJson(data);
     } else {
       throw Exception("Erreur ${response.statusCode} : ${response.body}");
@@ -785,6 +812,66 @@ class DriverService {
     } catch (e) {
       debugPrint('Erreur updateStatus: $e');
       rethrow;
+    }
+  }
+
+  /// Send driver's current location to backend during active ride
+  /// Used for real-time tracking on client app
+  Future<bool> sendLocationUpdate({
+    required int courseId,
+    required double latitude,
+    required double longitude,
+    double? heading,
+    double? speed,
+    double? accuracy,
+  }) async {
+    try {
+      final token = await sharedPreferencesService.getToken();
+      final url = '$baseUrl/conducteur/courses/$courseId/location';
+
+      // Format timestamp - try ISO 8601 without milliseconds
+      final now = DateTime.now().toUtc();
+      // Remove milliseconds: "2025-11-08T14:30:00Z" instead of "2025-11-08T14:30:00.123Z"
+      final isoString = now.toIso8601String();
+      final timestamp = isoString.split('.')[0] + 'Z';
+
+      final body = {
+        'latitude': latitude,
+        'longitude': longitude,
+        if (heading != null) 'heading': heading,
+        if (speed != null) 'speed': speed,
+        if (accuracy != null) 'accuracy': accuracy,
+        'timestamp': timestamp,
+      };
+
+      debugPrint('🌐 [Driver Location] Timestamp format: $timestamp');
+
+      debugPrint('🌐 [Driver Location] Sending update to: $url');
+      debugPrint('🌐 [Driver Location] Body: ${jsonEncode(body)}');
+
+      final response = await http.post(
+        Uri.parse(url),
+        headers: {
+          'Accept': 'application/json',
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer $token',
+        },
+        body: jsonEncode(body),
+      );
+
+      debugPrint('🌐 [Driver Location] Response status: ${response.statusCode}');
+      debugPrint('🌐 [Driver Location] Response body: ${response.body}');
+
+      if (response.statusCode == 200 || response.statusCode == 201) {
+        debugPrint('✅ [Driver Location] Location sent successfully: $latitude, $longitude');
+        return true;
+      } else {
+        debugPrint('⚠️ [Driver Location] Update failed: ${response.statusCode} - ${response.body}');
+        return false;
+      }
+    } catch (e) {
+      debugPrint('❌ [Driver Location] Error sending location: $e');
+      return false;
     }
   }
 }
