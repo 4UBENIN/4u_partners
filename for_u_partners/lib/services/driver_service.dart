@@ -149,6 +149,12 @@ class DriverService {
       if (response.statusCode == 200) {
         // La course a été acceptée avec succès
         return jsonDecode(response.body);
+      } else if (response.statusCode == 404) {
+        // Course introuvable - déjà prise ou supprimée
+        throw Exception('Course introuvable - déjà prise par un autre chauffeur');
+      } else if (response.statusCode == 409) {
+        // Conflit - course déjà assignée
+        throw Exception('Course déjà prise par un autre chauffeur');
       } else {
         // Tenter de décoder le message d'erreur du backend
         try {
@@ -156,6 +162,9 @@ class DriverService {
           final errorMessage = errorData['error'] ?? errorData['message'] ?? 'Échec de l\'acceptation de la course';
           throw Exception(errorMessage);
         } catch (e) {
+          if (e.toString().contains('introuvable') || e.toString().contains('déjà prise')) {
+            rethrow;
+          }
           throw Exception('Échec de l\'acceptation de la course');
         }
       }
@@ -829,11 +838,10 @@ class DriverService {
       final token = await sharedPreferencesService.getToken();
       final url = '$baseUrl/conducteur/courses/$courseId/location';
 
-      // Format timestamp - try ISO 8601 without milliseconds
-      final now = DateTime.now().toUtc();
-      // Remove milliseconds: "2025-11-08T14:30:00Z" instead of "2025-11-08T14:30:00.123Z"
-      final isoString = now.toIso8601String();
-      final timestamp = isoString.split('.')[0] + 'Z';
+      // Format timestamp - ISO 8601 format in local time (no timezone)
+      final now = DateTime.now();
+      // Format: "2025-11-09T05:35:41" (ISO 8601 local time, no Z)
+      final timestamp = '${now.year}-${now.month.toString().padLeft(2, '0')}-${now.day.toString().padLeft(2, '0')}T${now.hour.toString().padLeft(2, '0')}:${now.minute.toString().padLeft(2, '0')}:${now.second.toString().padLeft(2, '0')}';
 
       final body = {
         'latitude': latitude,
@@ -860,12 +868,34 @@ class DriverService {
       );
 
       debugPrint('🌐 [Driver Location] Response status: ${response.statusCode}');
+      debugPrint('🌐 [Driver Location] Response headers: ${response.headers}');
       debugPrint('🌐 [Driver Location] Response body: ${response.body}');
 
       if (response.statusCode == 200 || response.statusCode == 201) {
+        try {
+          final responseData = jsonDecode(response.body);
+          debugPrint('✅ [Driver Location] Parsed response data: $responseData');
+          responseData.forEach((key, value) {
+            debugPrint('  ✅ $key: $value');
+          });
+        } catch (e) {
+          debugPrint('✅ [Driver Location] Response is not JSON: ${response.body}');
+        }
         debugPrint('✅ [Driver Location] Location sent successfully: $latitude, $longitude');
         return true;
       } else {
+        try {
+          final errorData = jsonDecode(response.body);
+          debugPrint('⚠️ [Driver Location] Parsed error response: $errorData');
+          if (errorData.containsKey('errors')) {
+            debugPrint('⚠️ [Driver Location] Validation errors: ${errorData['errors']}');
+          }
+          if (errorData.containsKey('message')) {
+            debugPrint('⚠️ [Driver Location] Error message: ${errorData['message']}');
+          }
+        } catch (e) {
+          debugPrint('⚠️ [Driver Location] Error response is not JSON');
+        }
         debugPrint('⚠️ [Driver Location] Update failed: ${response.statusCode} - ${response.body}');
         return false;
       }

@@ -57,6 +57,8 @@ class ActiveCourseCheckerService {
       final courseDetails = await _driverService.getCourseDetails(courseId);
 
       debugPrint('✅ Active course details retrieved successfully');
+      debugPrint('📋 Course details keys: ${courseDetails.keys.toList()}');
+      debugPrint('📋 Full course details: $courseDetails');
 
       return courseDetails;
     } catch (e) {
