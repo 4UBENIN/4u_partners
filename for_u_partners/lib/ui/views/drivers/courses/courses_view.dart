@@ -655,8 +655,9 @@ class CoursesView extends StackedView<CoursesViewModel> {
       builder: (context, snapshot) {
         final isOnline = snapshot.data ?? true;
 
-        return GestureDetector(
-          onTap: () async {
+        return _StatusToggleWidget(
+          isOnline: isOnline,
+          onToggle: () async {
             final sharedPrefsService = locator<SharedpreferencesService>();
             final driverService = locator<DriverService>();
 
@@ -664,54 +665,7 @@ class CoursesView extends StackedView<CoursesViewModel> {
             await driverService.updateStatus(newStatus);
             await sharedPrefsService.setOnlineStatus(newStatus);
           },
-          child: Container(
-            padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 8),
-            decoration: const BoxDecoration(
-              color: Colors.white,
-            ),
-            child: SafeArea(
-              top: false,
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Text(
-                    isOnline ? 'EN LIGNE' : 'HORS LIGNE',
-                    style: TextStyle(
-                      color: isOnline ? Colors.black : Colors.red.shade600,
-                      fontSize: 17,
-                      fontWeight: FontWeight.w700,
-                      letterSpacing: 0.5,
-                    ),
-                  ),
-                  const SizedBox(width: 12),
-                  Icon(
-                    isOnline ? Icons.toggle_on : Icons.toggle_off,
-                    color: isOnline ? Colors.black : Colors.red.shade600,
-                    size: 32,
-                  ),
-                  const Spacer(),
-                  GestureDetector(
-                    onTap: () {
-                      Navigator.push(
-                        outerContext,
-                        MaterialPageRoute(
-                          builder: (context) => const PickUpPage(),
-                        ),
-                      );
-                    },
-                    child: Container(
-                      padding: const EdgeInsets.all(8),
-                      child: const Icon(
-                        Icons.add_circle_outline_rounded,
-                        color: Colors.black,
-                        size: 28,
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ),
+          outerContext: outerContext,
         );
       },
     );
@@ -739,5 +693,127 @@ class CoursesView extends StackedView<CoursesViewModel> {
     // Initialiser le ViewModel
     viewModel.initializeViewModel();
     return viewModel;
+  }
+}
+
+class _StatusToggleWidget extends StatefulWidget {
+  final bool isOnline;
+  final Future<void> Function() onToggle;
+  final BuildContext outerContext;
+
+  const _StatusToggleWidget({
+    Key? key,
+    required this.isOnline,
+    required this.onToggle,
+    required this.outerContext,
+  }) : super(key: key);
+
+  @override
+  State<_StatusToggleWidget> createState() => _StatusToggleWidgetState();
+}
+
+class _StatusToggleWidgetState extends State<_StatusToggleWidget> {
+  bool _isToggling = false;
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: _isToggling ? null : () async {
+        setState(() {
+          _isToggling = true;
+        });
+
+        try {
+          await widget.onToggle();
+        } finally {
+          if (mounted) {
+            setState(() {
+              _isToggling = false;
+            });
+          }
+        }
+      },
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+        decoration: const BoxDecoration(
+          color: Colors.white,
+        ),
+        child: SafeArea(
+          top: false,
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              AnimatedSwitcher(
+                duration: const Duration(milliseconds: 300),
+                transitionBuilder: (child, animation) {
+                  return FadeTransition(
+                    opacity: animation,
+                    child: ScaleTransition(
+                      scale: animation,
+                      child: child,
+                    ),
+                  );
+                },
+                child: Text(
+                  widget.isOnline ? 'EN LIGNE' : 'HORS LIGNE',
+                  key: ValueKey(widget.isOnline),
+                  style: TextStyle(
+                    color: widget.isOnline ? Colors.black : Colors.red.shade600,
+                    fontSize: 22,
+                    fontWeight: FontWeight.w800,
+                    letterSpacing: 1.0,
+                  ),
+                ),
+              ),
+              const SizedBox(width: 12),
+              if (_isToggling)
+                const SizedBox(
+                  width: 32,
+                  height: 32,
+                  child: CircularProgressIndicator(
+                    strokeWidth: 3,
+                    valueColor: AlwaysStoppedAnimation<Color>(kcPrimaryColor),
+                  ),
+                )
+              else
+                AnimatedSwitcher(
+                  duration: const Duration(milliseconds: 300),
+                  transitionBuilder: (child, animation) {
+                    return ScaleTransition(
+                      scale: animation,
+                      child: child,
+                    );
+                  },
+                  child: Icon(
+                    widget.isOnline ? Icons.toggle_on : Icons.toggle_off,
+                    key: ValueKey(widget.isOnline),
+                    color: widget.isOnline ? Colors.black : Colors.red.shade600,
+                    size: 38,
+                  ),
+                ),
+              const Spacer(),
+              GestureDetector(
+                onTap: () {
+                  Navigator.push(
+                    widget.outerContext,
+                    MaterialPageRoute(
+                      builder: (context) => const PickUpPage(),
+                    ),
+                  );
+                },
+                child: Container(
+                  padding: const EdgeInsets.all(8),
+                  child: const Icon(
+                    Icons.add_circle_outline_rounded,
+                    color: Colors.black,
+                    size: 32,
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
   }
 }
