@@ -58,15 +58,7 @@ class CoursesView extends StackedView<CoursesViewModel> {
                     ),
 
                   // Other bottom sheets
-                  FutureBuilder<Widget>(
-                    future: _buildBottomSheet(viewModel, context),
-                    builder: (context, snapshot) {
-                      if (snapshot.connectionState == ConnectionState.waiting) {
-                        return const SizedBox.shrink();
-                      }
-                      return snapshot.data ?? const SizedBox.shrink();
-                    },
-                  ),
+                  _buildBottomSheet(viewModel, context),
                   viewModel.isBusy
                       ? Positioned.fill(
                           child: Container(
@@ -335,45 +327,64 @@ class CoursesView extends StackedView<CoursesViewModel> {
     );
   }
 
-  Future<Widget> _buildBottomSheet(
-      CoursesViewModel viewModel, BuildContext context) async {
+  Widget _buildBottomSheet(
+      CoursesViewModel viewModel, BuildContext context) {
+    print('🏗️ [BottomSheet] _buildBottomSheet called');
+    print('🏗️ [BottomSheet] currentBottomSheetType: ${viewModel.currentBottomSheetType}');
+    print('🏗️ [BottomSheet] currentCourse: ${viewModel.currentCourse?.courseId}');
+    print('🏗️ [BottomSheet] isGoingToPickup: ${viewModel.isGoingToPickup}');
+    print('🏗️ [BottomSheet] isOnTrip: ${viewModel.isOnTrip}');
+
     // Ne pas afficher si le type est none
     if (viewModel.currentBottomSheetType == BottomSheetAppType.none) {
+      print('🏗️ [BottomSheet] Returning shrink - type is none');
       return const SizedBox.shrink(key: ValueKey('none'));
     }
 
     // Vérifier si on a une course en cours
     final hasActiveRide = viewModel.currentCourse != null &&
         (viewModel.isGoingToPickup || viewModel.isOnTrip);
+    print('🏗️ [BottomSheet] hasActiveRide: $hasActiveRide');
 
     // Si on a une course en cours mais pas de bottom sheet actif, forcer l'affichage
     if (hasActiveRide &&
         viewModel.currentBottomSheetType == BottomSheetAppType.none) {
+      print('🏗️ [BottomSheet] Active ride but no bottom sheet - scheduling type change');
       Future.delayed(Duration.zero, () {
         viewModel.setBottomSheetType(BottomSheetAppType.pickup);
       });
       return const SizedBox.shrink(key: ValueKey('delayed-show'));
     }
 
+    print('🏗️ [BottomSheet] Entering switch with type: ${viewModel.currentBottomSheetType}');
     switch (viewModel.currentBottomSheetType) {
       case BottomSheetAppType.clients:
         // Now handled by _buildClientCard as a fixed positioned card
         return const SizedBox.shrink(key: ValueKey('clients-handled-elsewhere'));
 
       case BottomSheetAppType.pickup:
+        print('🏗️ [BottomSheet] PICKUP case entered');
         print(
             '🔄 BottomSheetAppType.pickup - availableCourses: ${viewModel.availableCourses.length}');
         print(
             '🔄 Contenu de availableCourses: ${viewModel.availableCourses.map((c) => '${c.courseId}: ${c.name}').toList()}');
         print('🔄 Current course: ${viewModel.currentCourse?.courseId}');
+        print('🔄 Current course object: ${viewModel.currentCourse}');
+
         if (viewModel.currentCourse == null) {
           print(
-              '❌ Aucune course active pour afficher le bottom sheet pickup');
+              '❌ [BottomSheet] Aucune course active pour afficher le bottom sheet pickup');
           return const SizedBox.shrink(key: ValueKey('no-pickup'));
         }
 
+        print('✅ [BottomSheet] Current course is NOT null, creating AcceptedClientBottomSheet');
         final pickupCourse = viewModel.currentCourse!;
+        print('✅ [BottomSheet] pickupCourse: ${pickupCourse.courseId}');
+        print('✅ [BottomSheet] pickupCourse.clientId: ${pickupCourse.clientId}');
+        print('✅ [BottomSheet] pickupCourse.hasValidCourseId: ${pickupCourse.hasValidCourseId}');
+
         final chatService = locator<ChatService>();
+        print('✅ [BottomSheet] ChatService obtained, building AcceptedClientBottomSheet...');
 
         return AcceptedClientBottomSheet(
             key: ValueKey('pickup-${pickupCourse.courseId}'),
@@ -423,17 +434,16 @@ class CoursesView extends StackedView<CoursesViewModel> {
       case BottomSheetAppType.inprogress:
         // Vérifier d'abord si on a une course en cours
         if (viewModel.currentCourse == null) {
-          // Essayer de restaurer l'état de la course
-          await viewModel.checkAndRestoreRideState();
+          // Essayer de restaurer l'état de la course (non-blocking)
+          Future.microtask(() => viewModel.checkAndRestoreRideState());
 
           // Si toujours pas de course, vérifier availableCourses en dernier recours
-          if (viewModel.currentCourse == null &&
-              viewModel.availableCourses.isNotEmpty) {
+          if (viewModel.availableCourses.isNotEmpty) {
             viewModel.currentCourse = viewModel.availableCourses.first;
             print(
                 'ℹ️ Course récupérée depuis availableCourses: ${viewModel.currentCourse?.courseId}');
-          } else if (viewModel.currentCourse == null) {
-            print('ℹ️ Aucune course en cours à afficher');
+          } else {
+            print('ℹ️ Aucune course en cours à afficher - tentative de restauration en cours');
             return const SizedBox.shrink(key: ValueKey('no-inprogress'));
           }
         } else {

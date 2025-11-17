@@ -272,8 +272,8 @@ class CoursesViewModel extends BaseViewModel {
 
       print('✅ ${_availableCourses.length} courses chargées au total');
 
-      // Si aucune course disponible, cacher le bottom sheet
-      if (_availableCourses.isEmpty) {
+      // Si aucune course disponible ET aucune course active, cacher le bottom sheet
+      if (_availableCourses.isEmpty && _currentCourse == null) {
         hideBottomSheet();
       }
     } catch (e) {
@@ -292,7 +292,7 @@ class CoursesViewModel extends BaseViewModel {
     if (_availableCourses.isNotEmpty &&
         _currentBottomSheetType == BottomSheetAppType.none) {
       setBottomSheetType(BottomSheetAppType.clients);
-    } else if (_availableCourses.isEmpty) {
+    } else if (_availableCourses.isEmpty && _currentCourse == null) {
       // Clear route-specific markers and polylines when no courses remain
       _polylines.clear();
       _markers.removeWhere((marker) =>
@@ -736,11 +736,11 @@ class CoursesViewModel extends BaseViewModel {
       marker.markerId.value == 'destination_point'
     );
 
-    if (_availableCourses.isEmpty) {
-      // No more courses - hide bottom sheet
+    if (_availableCourses.isEmpty && _currentCourse == null) {
+      // No more courses and no active course - hide bottom sheet
       hideBottomSheet();
       print('🧹 No more courses, cleared route markers and polylines');
-    } else {
+    } else if (_availableCourses.isNotEmpty) {
       // Draw route for the next available course
       await _drawRouteForNewCourse(_availableCourses.first);
     }
@@ -988,11 +988,11 @@ class CoursesViewModel extends BaseViewModel {
           marker.markerId.value == 'destination_point'
         );
 
-        // 5. Cacher le bottom sheet si plus de courses
-        if (_availableCourses.isEmpty) {
+        // 5. Cacher le bottom sheet si plus de courses ET aucune course active
+        if (_availableCourses.isEmpty && _currentCourse == null) {
           hideBottomSheet();
           print('🧹 No more courses, cleared route markers and polylines');
-        } else {
+        } else if (_availableCourses.isNotEmpty) {
           // Draw route for the next available course
           await _drawRouteForNewCourse(_availableCourses.first);
         }

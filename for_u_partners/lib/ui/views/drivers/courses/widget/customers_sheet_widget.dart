@@ -508,11 +508,15 @@ class _AcceptedClientBottomSheetState extends State<AcceptedClientBottomSheet> {
 
   @override
   Widget build(BuildContext context) {
+    print('🏗️ [AcceptedClientBottomSheet] build() called for course ${widget.courseId}');
+    print('🏗️ [AcceptedClientBottomSheet] client: ${widget.client.name}');
+    print('🏗️ [AcceptedClientBottomSheet] _arrivalConfirmed: $_arrivalConfirmed');
     return DraggableScrollableSheet(
       initialChildSize: 0.45,
       minChildSize: 0.25,
       maxChildSize: 0.6,
       builder: (context, scrollController) {
+        print('🏗️ [AcceptedClientBottomSheet] DraggableScrollableSheet builder called');
         return Container(
           decoration: const BoxDecoration(
             color: Colors.white,
