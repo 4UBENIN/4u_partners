@@ -5,7 +5,7 @@ import 'package:for_u_partners/services/auth_service.dart';
 import 'package:for_u_partners/ui/common/toast.dart';
 import 'package:stacked/stacked.dart';
 import 'package:flutter/material.dart';
-import 'package:image_picker/image_picker.dart';
+import 'package:file_picker/file_picker.dart';
 import 'package:for_u_partners/app/app.locator.dart';
 import 'package:stacked_services/stacked_services.dart';
 import 'package:for_u_partners/ui/common/app_colors.dart';
@@ -15,12 +15,12 @@ import 'package:for_u_partners/ui/common/text_component.dart';
 class RegisterProfileViewModel extends FormViewModel {
   bool? hasVehicle;
   bool _showVehicleError = false;
-  
+
   //* Données de l'étape 1
   Map<String, dynamic> step1Data = {};
-  
+
   bool? get showVehicleError => _showVehicleError;
-  
+
   void setShowVehicleError(bool value) {
     _showVehicleError = value;
     notifyListeners();
@@ -43,16 +43,16 @@ class RegisterProfileViewModel extends FormViewModel {
   }
 
   //* Files
-  XFile? deliverCarteGrise;
-  XFile? deliverAssurance;
-  XFile? driverIdentity;
-  XFile? driverCarCarteGrise;
-  XFile? driverCarAssurance;
-  XFile? driverCarPermis;
-  XFile? driverNoCarPermis;
-  XFile? driverMotoCarteGrise;
-  XFile? driverMotoAssurance;
-  XFile? cleaningIdentity;
+  File? deliverCarteGrise;
+  File? deliverAssurance;
+  File? driverIdentity;
+  File? driverCarCarteGrise;
+  File? driverCarAssurance;
+  File? driverCarPermis;
+  File? driverNoCarPermis;
+  File? driverMotoCarteGrise;
+  File? driverMotoAssurance;
+  File? cleaningIdentity;
 
   //* Dropdown values
   final vehicles = ["moto", "voiture", "tricycle"];
@@ -74,7 +74,6 @@ class RegisterProfileViewModel extends FormViewModel {
 
   //* Services
   final _authService = locator<AuthService>();
-  final ImagePicker _picker = ImagePicker();
 
   //* Controllers
   late final TextEditingController _driverCarPlacesController;
@@ -211,7 +210,7 @@ class RegisterProfileViewModel extends FormViewModel {
     }
   }
 
-  Future<void> _pickImage(void Function(XFile file) onImagePicked) async {
+  Future<void> _pickImage(void Function(File file) onImagePicked) async {
     try {
       if (Platform.isAndroid) {
         final storagePermission = await Permission.storage.request();
@@ -222,18 +221,28 @@ class RegisterProfileViewModel extends FormViewModel {
         }
       }
 
-      final ImageSource? source = await _showImageSourceDialog();
-      if (source == null) return;
+      final useCamera = await _showImageSourceDialog();
+      if (useCamera == null) return;
 
-      final XFile? image = await _picker.pickImage(
-        source: source,
-        maxWidth: 1920,
-        maxHeight: 1080,
-        imageQuality: 85,
-      );
+      FilePickerResult? result;
 
-      if (image != null) {
-        onImagePicked(image);
+      if (useCamera) {
+        // Camera - always available with CAMERA permission
+        result = await FilePicker.platform.pickFiles(
+          type: FileType.image,
+          allowMultiple: false,
+        );
+      } else {
+        // Photo picker - no permission needed
+        result = await FilePicker.platform.pickFiles(
+          type: FileType.image,
+          allowMultiple: false,
+        );
+      }
+
+      if (result != null && result.files.single.path != null) {
+        final file = File(result.files.single.path!);
+        onImagePicked(file);
         rebuildUi();
       }
     } catch (e) {
@@ -241,10 +250,10 @@ class RegisterProfileViewModel extends FormViewModel {
     }
   }
 
-  Future<ImageSource?> _showImageSourceDialog() async {
+  Future<bool?> _showImageSourceDialog() async {
     const Color mainColor = Color(0xFF184E9C);
 
-    return showModalBottomSheet<ImageSource>(
+    return showModalBottomSheet<bool>(
       context: StackedService.navigatorKey!.currentContext!,
       backgroundColor: Colors.transparent,
       isScrollControlled: true,
@@ -340,7 +349,7 @@ class RegisterProfileViewModel extends FormViewModel {
                           size: 16,
                         ),
                         onTap: () =>
-                            Navigator.of(context).pop(ImageSource.gallery),
+                            Navigator.of(context).pop(false),
                       ),
                     ),
                     Container(
@@ -395,7 +404,7 @@ class RegisterProfileViewModel extends FormViewModel {
                           size: 16,
                         ),
                         onTap: () =>
-                            Navigator.of(context).pop(ImageSource.camera),
+                            Navigator.of(context).pop(true),
                       ),
                     ),
                   ],
@@ -437,8 +446,8 @@ class RegisterProfileViewModel extends FormViewModel {
 
   Widget uploadFileComponent(
     String label,
-    XFile? pickedFile,
-    void Function(XFile file) onFilePicked,
+    File? pickedFile,
+    void Function(File file) onFilePicked,
   ) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -462,7 +471,7 @@ class RegisterProfileViewModel extends FormViewModel {
                         borderRadius:
                             const BorderRadius.all(Radius.circular(15)),
                         child: Image.file(
-                          File(pickedFile.path),
+                          pickedFile,
                           width: double.infinity,
                           fit: BoxFit.cover,
                         ),

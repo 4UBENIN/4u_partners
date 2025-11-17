@@ -6,7 +6,7 @@ import 'package:dio/dio.dart';
 import 'package:for_u_partners/models/vehicle_model.dart';
 import 'package:for_u_partners/services/vehicle_service.dart';
 import 'package:for_u_partners/app/app.locator.dart';
-import 'package:image_picker/image_picker.dart';
+import 'package:file_picker/file_picker.dart';
 
 class AddVehiclesView extends StatefulWidget {
   const AddVehiclesView({Key? key}) : super(key: key);
@@ -656,7 +656,7 @@ class _AddVehiclesViewState extends State<AddVehiclesView> {
 
   Widget _buildFileUpload(
     String label,
-    XFile? file,
+    File? file,
     VoidCallback onTap,
   ) {
     return Column(
@@ -751,22 +751,22 @@ class AddVehiclesViewModel extends ChangeNotifier {
   String selectedCategory = 'standard';
   final List<String> categories = ['standard', 'premium', 'vip'];
 
-  XFile? carteGrise;
-  XFile? assurance;
-  XFile? permis;
+  File? carteGrise;
+  File? assurance;
+  File? permis;
 
   final _vehicleService = locator<VehicleService>();
-  final ImagePicker _picker = ImagePicker();
 
-  Future<void> pickFile(Function(XFile) onFilePicked) async {
+  Future<void> pickFile(Function(File) onFilePicked) async {
     try {
-      final XFile? file = await _picker.pickImage(
-        source: ImageSource.gallery,
-        maxWidth: 1920,
-        maxHeight: 1080,
-        imageQuality: 85,
+      final FilePickerResult? result = await FilePicker.platform.pickFiles(
+        type: FileType.image,
+        allowMultiple: false,
       );
-      if (file != null) {
+
+      if (result != null && result.files.single.path != null) {
+        final file = File(result.files.single.path!);
+
         // Vérification de la taille du fichier (max 5 MB)
         final fileSize = await file.length();
         if (fileSize > 5 * 1024 * 1024) {
@@ -783,9 +783,9 @@ class AddVehiclesViewModel extends ChangeNotifier {
   Future<void> addVehicle(
     Vehicle vehicle,
     BuildContext context, {
-    required XFile? carteGrise,
-    required XFile? assurance,
-    required XFile? permis,
+    required File? carteGrise,
+    required File? assurance,
+    required File? permis,
     required String vehicleType,
     required String annee,
   }) async {
@@ -793,10 +793,10 @@ class AddVehiclesViewModel extends ChangeNotifier {
     notifyListeners();
 
     try {
-      // Convertir XFile en File
-      File? carteGriseFile = carteGrise != null ? File(carteGrise.path) : null;
-      File? assuranceFile = assurance != null ? File(assurance.path) : null;
-      File? permisFile = permis != null ? File(permis.path) : null;
+      // Files are already File objects
+      File? carteGriseFile = carteGrise;
+      File? assuranceFile = assurance;
+      File? permisFile = permis;
 
       // Appeler le service pour ajouter le véhicule
       final addedVehicle = await _vehicleService.addVehicleWithDocuments(

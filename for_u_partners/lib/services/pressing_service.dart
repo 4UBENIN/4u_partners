@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'package:flutter/material.dart';
 import 'package:for_u_partners/app/models/pressing_depot_models/depot_detail_model.dart';
 import 'package:for_u_partners/app/models/pressing_depot_models/depot_model.dart';
 import 'package:for_u_partners/app/models/pressing_depot_models/planned_depot_model.dart';
@@ -14,6 +15,19 @@ import 'package:for_u_partners/app/api_constant.dart';
 class PressingService {
   final _authService = locator<AuthService>();
 
+  /// Check if response contains authentication error and logout if necessary
+  void _checkAuthenticationError(http.Response response) {
+    try {
+      final responseData = jsonDecode(response.body);
+      if (responseData is Map && responseData['error'] == 'Unauthenticated.') {
+        debugPrint('⚠️ [PressingService] Unauthenticated error detected - logging out user');
+        _authService.logOut();
+      }
+    } catch (e) {
+      // Ignore JSON parsing errors
+    }
+  }
+
   //* GET PRESSING INFO
   Future<PressingResponse?> getPressingInfo() async {
     final url = Uri.parse("$baseUrl/pressing/dashboard");
@@ -27,6 +41,9 @@ class PressingService {
 
       print('Status Code: ${response.statusCode}');
       print('Response Body: ${response.body}');
+
+      // Check for authentication errors
+      _checkAuthenticationError(response);
 
       if (response.statusCode == 200) {
         final jsonData = jsonDecode(response.body);
@@ -65,6 +82,9 @@ class PressingService {
       print('Ramassages Status: ${response.statusCode}');
       print('Ramassages Body: ${response.body}');
 
+      // Check for authentication errors
+      _checkAuthenticationError(response);
+
       if (response.statusCode == 200) {
         final jsonData = jsonDecode(response.body);
         final ramassageList = RamassageDemandModel.fromJson(jsonData);
@@ -98,6 +118,9 @@ class PressingService {
 
       print('Detail Status: ${response.statusCode}');
       print('Detail Body: ${response.body}');
+
+      // Check for authentication errors
+      _checkAuthenticationError(response);
 
       if (response.statusCode == 200) {
         final jsonData = jsonDecode(response.body);

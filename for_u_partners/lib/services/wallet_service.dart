@@ -1,5 +1,5 @@
 import 'dart:convert';
-
+import 'package:flutter/material.dart';
 import 'package:for_u_partners/app/models/wallet_model.dart';
 import 'package:http/http.dart' as http;
 import 'package:for_u_partners/app/app.locator.dart';
@@ -8,6 +8,19 @@ import 'package:for_u_partners/app/api_constant.dart';
 
 class WalletService {
   final _authService = locator<AuthService>();
+
+  /// Check if response contains authentication error and logout if necessary
+  void _checkAuthenticationError(http.Response response) {
+    try {
+      final responseData = jsonDecode(response.body);
+      if (responseData is Map && responseData['error'] == 'Unauthenticated.') {
+        debugPrint('⚠️ [WalletService] Unauthenticated error detected - logging out user');
+        _authService.logOut();
+      }
+    } catch (e) {
+      // Ignore JSON parsing errors
+    }
+  }
 
   //* GET WALLET BALANCE
   // Récupérer le solde du portefeuille
@@ -21,6 +34,9 @@ class WalletService {
 
       print('Wallet Status: ${response.statusCode}');
       print('Wallet Body: ${response.body}');
+
+      // Check for authentication errors
+      _checkAuthenticationError(response);
 
       if (response.statusCode == 200) {
         final jsonData = jsonDecode(response.body);

@@ -9,6 +9,19 @@ import 'package:http/http.dart' as http;
 class DeliveryService {
   final _authService = locator<AuthService>();
 
+  /// Check if response contains authentication error and logout if necessary
+  void _checkAuthenticationError(http.Response response) {
+    try {
+      final responseData = json.decode(response.body);
+      if (responseData is Map && responseData['error'] == 'Unauthenticated.') {
+        debugPrint('⚠️ [DeliveryService] Unauthenticated error detected - logging out user');
+        _authService.logOut();
+      }
+    } catch (e) {
+      // Ignore JSON parsing errors
+    }
+  }
+
   /// Récupérer les demandes de livraison disponibles
   Future<Map<String, dynamic>> getAvailableDeliveries(
       BuildContext context) async {
@@ -22,6 +35,9 @@ class DeliveryService {
 
       print('📦 Response status: ${response.statusCode}');
       print('📦 Response body: ${response.body}');
+
+      // Check for authentication errors
+      _checkAuthenticationError(response);
 
       if (response.statusCode == 200) {
         final data = json.decode(response.body) as Map<String, dynamic>;

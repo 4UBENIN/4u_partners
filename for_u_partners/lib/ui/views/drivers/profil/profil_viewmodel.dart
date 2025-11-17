@@ -11,14 +11,13 @@ import 'package:stacked/stacked.dart';
 import 'package:for_u_partners/app/app.router.dart';
 import 'package:for_u_partners/app/app.locator.dart';
 import 'package:stacked_services/stacked_services.dart';
-import 'package:image_picker/image_picker.dart';
+import 'package:file_picker/file_picker.dart';
 
 class ProfilViewModel extends BaseViewModel {
   final navigationService = locator<NavigationService>();
   final _sharedPreferencesServices = locator<SharedpreferencesService>();
   final _driverService = locator<DriverService>();
   final _profilePhotoService = locator<ProfilePhotoService>();
-  final _imagePicker = ImagePicker();
   final _snackbarService = locator<SnackbarService>(); 
 
   GlobalStats? _globalStats;
@@ -52,26 +51,40 @@ class ProfilViewModel extends BaseViewModel {
   Future<void> pickAndUploadPhoto(BuildContext context) async {
     try {
       // Afficher les options : Caméra ou Galerie
-      final source = await _showImageSourceDialog(context);
-      if (source == null) return;
+      final useCamera = await _showImageSourceDialog(context);
+      if (useCamera == null) return;
 
-      // Sélectionner l'image
-      final XFile? pickedFile = await _imagePicker.pickImage(
-        source: source,
-        maxWidth: 1024,
-        maxHeight: 1024,
-        imageQuality: 85,
-      );
+      File? imageFile;
 
-      if (pickedFile == null) return;
+      if (useCamera) {
+        // Utiliser la caméra - toujours disponible avec permission CAMERA
+        final result = await FilePicker.platform.pickFiles(
+          type: FileType.image,
+          allowMultiple: false,
+        );
+
+        if (result != null && result.files.single.path != null) {
+          imageFile = File(result.files.single.path!);
+        }
+      } else {
+        // Utiliser le Photo Picker Android natif (pas de permission requise)
+        final result = await FilePicker.platform.pickFiles(
+          type: FileType.image,
+          allowMultiple: false,
+        );
+
+        if (result != null && result.files.single.path != null) {
+          imageFile = File(result.files.single.path!);
+        }
+      }
+
+      if (imageFile == null) return;
 
       // Upload de la photo
       _isUploadingPhoto = true;
       notifyListeners();
 
-      final result = await _profilePhotoService.updateProfilePhoto(
-        File(pickedFile.path),
-      );
+      final result = await _profilePhotoService.updateProfilePhoto(imageFile);
 
       // Mettre à jour l'utilisateur avec la nouvelle URL
       await loadUserProfile();
@@ -86,7 +99,7 @@ class ProfilViewModel extends BaseViewModel {
     } catch (e) {
       _isUploadingPhoto = false;
       notifyListeners();
-      
+
       //  Vérifier que le context est toujours monté
       if (context.mounted) {
         _showErrorSnackBar(context, 'Erreur lors de la mise à jour de la photo: $e');
@@ -94,19 +107,19 @@ class ProfilViewModel extends BaseViewModel {
     }
   }
 
-  Future<ImageSource?> _showImageSourceDialog(BuildContext context) async {
+  Future<bool?> _showImageSourceDialog(BuildContext context) async {
     if (Platform.isIOS) {
-      return await showCupertinoModalPopup<ImageSource>(
+      return await showCupertinoModalPopup<bool>(
         context: context,
         builder: (BuildContext context) => CupertinoActionSheet(
           title: const Text('Choisir une photo'),
           actions: [
             CupertinoActionSheetAction(
-              onPressed: () => Navigator.pop(context, ImageSource.camera),
+              onPressed: () => Navigator.pop(context, true),
               child: const Text('Prendre une photo'),
             ),
             CupertinoActionSheetAction(
-              onPressed: () => Navigator.pop(context, ImageSource.gallery),
+              onPressed: () => Navigator.pop(context, false),
               child: const Text('Choisir dans la galerie'),
             ),
           ],
@@ -118,7 +131,7 @@ class ProfilViewModel extends BaseViewModel {
         ),
       );
     } else {
-      return await showModalBottomSheet<ImageSource>(
+      return await showModalBottomSheet<bool>(
         context: context,
         shape: const RoundedRectangleBorder(
           borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
@@ -133,12 +146,12 @@ class ProfilViewModel extends BaseViewModel {
                   ListTile(
                     leading: const Icon(Icons.camera_alt),
                     title: const Text('Prendre une photo'),
-                    onTap: () => Navigator.pop(context, ImageSource.camera),
+                    onTap: () => Navigator.pop(context, true),
                   ),
                   ListTile(
                     leading: const Icon(Icons.photo_library),
                     title: const Text('Choisir dans la galerie'),
-                    onTap: () => Navigator.pop(context, ImageSource.gallery),
+                    onTap: () => Navigator.pop(context, false),
                   ),
                 ],
               ),

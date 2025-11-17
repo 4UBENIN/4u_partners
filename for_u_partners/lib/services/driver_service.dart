@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:for_u_partners/app/app.locator.dart';
 import 'package:for_u_partners/services/sharedpreferences_service.dart';
+import 'package:for_u_partners/services/auth_service.dart';
 import 'package:http/http.dart' as http;
 import 'package:for_u_partners/app/api_constant.dart';
 import 'package:for_u_partners/app/models/course_model.dart';
@@ -46,6 +47,22 @@ class DriverLocation {
 class DriverService {
   // URL de l'API pour les conducteurs en ligne
   static String get onlineDriversUrl => '$baseUrl/conducteur/en-ligne';
+
+  final sharedPreferencesService = locator<SharedpreferencesService>();
+  final _authService = locator<AuthService>();
+
+  /// Check if response contains authentication error and logout if necessary
+  void _checkAuthenticationError(http.Response response) {
+    try {
+      final responseData = jsonDecode(response.body);
+      if (responseData is Map && responseData['error'] == 'Unauthenticated.') {
+        debugPrint('⚠️ [DriverService] Unauthenticated error detected - logging out user');
+        _authService.logOut();
+      }
+    } catch (e) {
+      // Ignore JSON parsing errors
+    }
+  }
 
   // Passer en mode en ligne
   Future<void> goOnline() async {
@@ -126,8 +143,6 @@ class DriverService {
       rethrow;
     }
   }
-
-  final sharedPreferencesService = locator<SharedpreferencesService>();
 
   // Accepter une course
   Future<void> acceptCourse(int courseId) async {
@@ -467,6 +482,10 @@ class DriverService {
     final url = Uri.parse(walletSoldUrl);
     final response = await http.get(url, headers: headers);
     print("wallet-body: ${response.body}");
+
+    // Check for authentication errors
+    _checkAuthenticationError(response);
+
     if (response.statusCode == 200) {
       final data = jsonDecode(response.body);
       return (data['balance'] as num).toDouble();
@@ -489,6 +508,9 @@ class DriverService {
       final response = await http.get(url, headers: headers);
 
       print("daily-stats-response: ${response.body}");
+
+      // Check for authentication errors
+      _checkAuthenticationError(response);
 
       if (response.statusCode == 200) {
         final Map<String, dynamic> responseData = jsonDecode(response.body);
@@ -517,6 +539,9 @@ class DriverService {
       },
     );
 
+    // Check for authentication errors
+    _checkAuthenticationError(response);
+
     if (response.statusCode == 200) {
       final responseData = jsonDecode(response.body);
       return GlobalStats.fromJson(responseData);
@@ -539,6 +564,9 @@ class DriverService {
         'Authorization': 'Bearer $token',
       },
     );
+
+    // Check for authentication errors
+    _checkAuthenticationError(response);
 
     if (response.statusCode == 200) {
       final responseData = jsonDecode(response.body);
@@ -608,6 +636,9 @@ class DriverService {
     debugPrint('=== COURSES LIST DEBUG ===');
     debugPrint('Status Code: ${response.statusCode}');
     debugPrint('Full Response Body: ${response.body}');
+
+    // Check for authentication errors
+    _checkAuthenticationError(response);
 
     if (response.statusCode == 200) {
       final responseData = jsonDecode(response.body);
