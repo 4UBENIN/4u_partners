@@ -28,11 +28,8 @@ import 'package:for_u_partners/ui/common/app_button_component.dart';
   FormTextField(name: 'deliverMailInput'),
   FormTextField(name: 'deliverImmatriculationInput'),
   //* Conducteur
-  FormTextField(name: 'driverNameInput'),
-  FormTextField(name: 'driverSurnameInput'),
   FormTextField(name: 'driverGenderInput'),
   FormTextField(name: 'driverMailInput'),
-  FormTextField(name: 'driverAdresseInput'),
   //* has a Moto, Tricycle
   FormTextField(name: 'driverImmatriculationBikeInput'),
   //* has a Car
@@ -56,9 +53,18 @@ class RegisterProfileView extends StackedView<RegisterProfileViewModel>
   final String phoneNumber;
   final String mail;
   final String password;
+  final String firstName;
+  final String lastName;
+  final String address;
 
   const RegisterProfileView(
-      this.selectedProfile, this.phoneNumber, this.mail, this.password,
+      this.selectedProfile,
+      this.phoneNumber,
+      this.mail,
+      this.password,
+      this.firstName,
+      this.lastName,
+      this.address,
       {Key? key})
       : super(key: key);
 
@@ -307,15 +313,6 @@ class RegisterProfileView extends StackedView<RegisterProfileViewModel>
   }
 
   void _validateDriverFields(RegisterProfileViewModel viewModel, BuildContext context) {
-    if (driverNameInputController.text.isEmpty) {
-      throw 'Veuillez entrer votre prénom';
-    }
-    if (driverSurnameInputController.text.isEmpty) {
-      throw 'Veuillez entrer votre nom';
-    }
-    if (driverAdresseInputController.text.isEmpty) {
-      throw 'Veuillez entrer votre adresse';
-    }
     if (viewModel.driverIdentity == null) {
       throw 'Veuillez télécharger votre pièce d\'identité';
     }
@@ -387,9 +384,9 @@ class RegisterProfileView extends StackedView<RegisterProfileViewModel>
         genre: viewModel.selectedGender,
         motDePasse: password,
         motDePasseConfirmation: password,
-        nom: driverSurnameInputController.text.trim(),
-        prenom: driverNameInputController.text.trim(),
-        adresse: driverAdresseInputController.text.trim(),
+        nom: lastName,
+        prenom: firstName,
+        adresse: address,
         dateNaissance: "1990-01-15",
         numeroPermis: "TEMP_PERMIS",
         dateExpirationPermis: "2030-12-31",
@@ -423,9 +420,9 @@ class RegisterProfileView extends StackedView<RegisterProfileViewModel>
         genre: viewModel.selectedGender,
         motDePasse: password,
         motDePasseConfirmation: password,
-        nom: driverSurnameInputController.text.trim(),
-        prenom: driverNameInputController.text.trim(),
-        adresse: driverAdresseInputController.text.trim(),
+        nom: lastName,
+        prenom: firstName,
+        adresse: address,
         dateNaissance: "1990-01-15",
         numeroPermis: "TEMP_PERMIS",
         dateExpirationPermis: "2030-12-31",
@@ -540,18 +537,6 @@ class RegisterProfileView extends StackedView<RegisterProfileViewModel>
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        TextInputField(
-          bigLabel: "Nom",
-          hintText: "DOUNOU",
-          controller: driverSurnameInputController,
-        ),
-        const SizedBox(height: 20),
-        TextInputField(
-          bigLabel: "Prénom",
-          hintText: "Bastien",
-          controller: driverNameInputController,
-        ),
-        const SizedBox(height: 20),
         CustomDropdown(
           title: "Genre",
           items: viewModel.genders,
@@ -561,12 +546,6 @@ class RegisterProfileView extends StackedView<RegisterProfileViewModel>
               viewModel.setSelectedGender(value);
             }
           },
-        ),
-        const SizedBox(height: 20),
-        TextInputField(
-          bigLabel: "Adresse",
-          hintText: "123 rue de la paix",
-          controller: driverAdresseInputController,
         ),
         const SizedBox(height: 20),
         viewModel.uploadFileComponent(

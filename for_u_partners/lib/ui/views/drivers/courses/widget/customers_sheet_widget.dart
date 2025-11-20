@@ -7,6 +7,7 @@ import 'package:for_u_partners/services/pause_state_service.dart';
 import 'package:for_u_partners/ui/common/app_colors.dart';
 import 'package:for_u_partners/ui/views/drivers/courses/model/client_model.dart';
 import 'package:for_u_partners/ui/views/drivers/courses/widget/dialog_widget.dart';
+import 'package:for_u_partners/ui/views/drivers/courses/courses_viewmodel.dart';
 import 'package:slide_to_act/slide_to_act.dart';
 
 class ClientsBottomSheet extends StatelessWidget {
@@ -727,6 +728,51 @@ class _AcceptedClientBottomSheetState extends State<AcceptedClientBottomSheet> {
                     _buildWaitingTimer(),
 
                   const SizedBox(height: 20),
+
+                  // Bouton Ouvrir dans Google Maps
+                  SizedBox(
+                    width: double.infinity,
+                    height: 50,
+                    child: ElevatedButton.icon(
+                      onPressed: () async {
+                        try {
+                          final viewModel = locator<CoursesViewModel>();
+                          await viewModel.redirectPickupToGoogleMaps();
+                        } catch (e) {
+                          if (!context.mounted) return;
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(
+                              content: Text('Erreur: ${e.toString()}'),
+                              backgroundColor: Colors.red,
+                            ),
+                          );
+                        }
+                      },
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.white,
+                        foregroundColor: Colors.black87,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(25),
+                          side: BorderSide(color: Colors.grey[300]!),
+                        ),
+                        elevation: 0,
+                      ),
+                      icon: const Icon(
+                        Icons.navigation,
+                        size: 20,
+                        color: Colors.blue,
+                      ),
+                      label: const Text(
+                        'Ouvrir dans Google Maps',
+                        style: TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ),
+                  ),
+
+                  const SizedBox(height: 15),
 
                   // Bouton Démarrer la course (conditionnel)
                   SizedBox(
@@ -1706,6 +1752,51 @@ class _InProgressRideBottomSheetState extends State<InProgressRideBottomSheet>
                         ],
                       ),
                     ),
+
+                  // Bouton Ouvrir dans Google Maps
+                  SizedBox(
+                    width: double.infinity,
+                    height: 50,
+                    child: ElevatedButton.icon(
+                      onPressed: () async {
+                        try {
+                          final viewModel = locator<CoursesViewModel>();
+                          await viewModel.redirectDestinationToGoogleMaps();
+                        } catch (e) {
+                          if (!context.mounted) return;
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(
+                              content: Text('Erreur: ${e.toString()}'),
+                              backgroundColor: Colors.red,
+                            ),
+                          );
+                        }
+                      },
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.white,
+                        foregroundColor: Colors.black87,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(25),
+                          side: BorderSide(color: Colors.grey[300]!),
+                        ),
+                        elevation: 0,
+                      ),
+                      icon: const Icon(
+                        Icons.navigation,
+                        size: 20,
+                        color: Colors.blue,
+                      ),
+                      label: const Text(
+                        'Ouvrir dans Google Maps',
+                        style: TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ),
+                  ),
+
+                  const SizedBox(height: 15),
 
                   // Bouton Terminer avec effet de chargement
                   SizedBox(

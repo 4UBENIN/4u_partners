@@ -249,7 +249,20 @@ class _CountryPhoneSelectorState extends State<CountryPhoneSelector>
     super.initState();
 
     // Initialisation du contrôleur de texte
-    _textController = widget.controller ?? TextEditingController();
+    // Si un controller est fourni mais a été disposed, on en crée un nouveau
+    if (widget.controller != null) {
+      try {
+        // Tenter d'accéder au texte pour vérifier si le controller est valide
+        final _ = widget.controller!.text;
+        _textController = widget.controller!;
+      } catch (e) {
+        // Le controller a été disposed, on en crée un nouveau
+        print('⚠️ Controller was disposed, creating a new one');
+        _textController = TextEditingController();
+      }
+    } else {
+      _textController = TextEditingController();
+    }
 
     // Sélection du pays initial
     if (widget.initialCountryCode != null) {
@@ -276,6 +289,7 @@ class _CountryPhoneSelectorState extends State<CountryPhoneSelector>
 
     // Écouter le changement de focus pour fermer le dropdown
     _focusNode.addListener(() {
+      if (!mounted) return;
       if (_focusNode.hasFocus && _isDropdownOpen) {
         _toggleDropdown();
       }
@@ -284,24 +298,24 @@ class _CountryPhoneSelectorState extends State<CountryPhoneSelector>
 
   @override
   void dispose() {
-    // Ne pas disposer du contrôleur s'il a été fourni par le widget parent
-    if (widget.controller == null) {
-      _textController.dispose();
-    } else {
-      // Remove any listeners to prevent callbacks after disposal
-      _textController.removeListener(() {});
-    }
-
-    // Dispose focus node and animation controller
-    _focusNode.dispose();
+    // Dispose animation controller first
     _animationController.dispose();
 
-    // Call super last
+    // Dispose focus node
+    _focusNode.dispose();
+
+    // Only dispose the text controller if we created it or if we had to recreate it
+    if (widget.controller == null || _textController != widget.controller) {
+      _textController.dispose();
+    }
+    // If controller was provided by parent and we're using it, don't dispose it
+
     super.dispose();
   }
 
   // Gérer l'ouverture/fermeture du dropdown
   void _toggleDropdown() {
+    if (!mounted) return;
     setState(() {
       _isDropdownOpen = !_isDropdownOpen;
       if (_isDropdownOpen) {
@@ -315,6 +329,7 @@ class _CountryPhoneSelectorState extends State<CountryPhoneSelector>
 
   // Sélectionner un pays
   void _selectCountry(CountryInfo country) {
+    if (!mounted) return;
     setState(() {
       _selectedCountry = country;
       _toggleDropdown();
@@ -325,7 +340,11 @@ class _CountryPhoneSelectorState extends State<CountryPhoneSelector>
       }
 
       // Focus sur le champ de texte après sélection
-      Future.microtask(() => FocusScope.of(context).requestFocus(_focusNode));
+      Future.microtask(() {
+        if (mounted) {
+          FocusScope.of(context).requestFocus(_focusNode);
+        }
+      });
     });
   }
 

@@ -3,6 +3,8 @@ import 'package:flutter_dotenv/flutter_dotenv.dart';
 String get baseUrl => dotenv.env['API_ENDPOINT']!;
 String get registerUrl => "$baseUrl/partenaire/register";
 String get loginUrl => "$baseUrl/partenaire/login";
+String get sendOtpUrl => "$baseUrl/partenaire/send-code";
+String get verifyOtpUrl => "$baseUrl/partenaire/verify-code";
 String get coursesPendingUrl => "$baseUrl/conducteur/courses";
 String acceptCourseUrl(int courseId) =>
     "$baseUrl/conducteur/courses/$courseId/accept";

@@ -19,6 +19,7 @@ import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:for_u_partners/services/active_course_checker_service.dart';
 import 'package:for_u_partners/services/course_restoration_service.dart';
+import 'package:for_u_partners/services/sharedpreferences_service.dart';
 
 // Gestionnaire de messages en arrière-plan
 @pragma('vm:entry-point')
@@ -127,6 +128,15 @@ class _MainAppState extends State<MainApp> with WidgetsBindingObserver {
       if (isInitialLoad) _hasCheckedOnInit = true;
 
       debugPrint('🔍 Checking for active course (initial: $isInitialLoad)...');
+
+      // Vérifier si l'utilisateur est connecté avant de continuer
+      final sharedPrefs = locator<SharedpreferencesService>();
+      final token = await sharedPrefs.getToken();
+
+      if (token == null || token.isEmpty) {
+        debugPrint('ℹ️ User not logged in, skipping active course check');
+        return;
+      }
 
       // Wait for router to finish initial navigation
       await Future.delayed(const Duration(milliseconds: 2000));

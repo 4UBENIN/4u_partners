@@ -4,10 +4,12 @@ import 'package:for_u_partners/app/app.router.dart';
 import 'package:for_u_partners/app/app.locator.dart';
 import 'package:stacked_services/stacked_services.dart';
 import 'package:for_u_partners/ui/views/otp/otp_view.dart';
+import 'package:for_u_partners/services/auth_service.dart';
 import 'register_view.form.dart';
 
 class RegisterViewModel extends FormViewModel with $RegisterView {
   final navigationService = locator<NavigationService>();
+  final _authService = locator<AuthService>();
 
   final profiles = [
     "pressing",
@@ -417,6 +419,9 @@ class RegisterViewModel extends FormViewModel with $RegisterView {
         phoneNumber: phoneNumberController.text.trim(),
         email: emailController.text.trim(),
         password: passwordController.text.trim(),
+        firstName: firstNameController.text.trim(),
+        lastName: lastNameController.text.trim(),
+        address: addressController.text.trim(),
       ),
     );
 
@@ -436,32 +441,49 @@ class RegisterViewModel extends FormViewModel with $RegisterView {
   }
 
   Future<bool> registerByProfile() async {
+    print("🟢 [RegisterViewModel] Début registerByProfile()");
     setBusy(true);
     _registrationError = null;
     rebuildUi();
 
     try {
-      await Future.delayed(const Duration(seconds: 1));
-      
       final phoneNumber = phoneNumberController.text.trim();
-      
+      print("🟢 [RegisterViewModel] Numéro de téléphone: $phoneNumber");
+
       if (phoneNumber.isEmpty) {
+        print("🔴 [RegisterViewModel] Numéro de téléphone vide");
         _registrationError = 'Veuillez entrer un numéro de téléphone valide';
         rebuildUi();
         return false;
       }
 
-      await handleOtpNavigation();
-      
-      _registrationError = null;
-      rebuildUi();
-      return true;
+      // Envoi du code OTP
+      print("🟢 [RegisterViewModel] Appel de sendOtpCode...");
+      final result = await _authService.sendOtpCode(phoneNumber);
+      print("🟢 [RegisterViewModel] Résultat sendOtpCode: $result");
+
+      if (result['success'] == true) {
+        print("✅ [RegisterViewModel] Code OTP envoyé avec succès");
+        print("🟢 [RegisterViewModel] Navigation vers OtpView...");
+        await handleOtpNavigation();
+
+        _registrationError = null;
+        rebuildUi();
+        return true;
+      } else {
+        print("🔴 [RegisterViewModel] Échec de l'envoi du code OTP");
+        _registrationError = result['message'] ?? 'Erreur lors de l\'envoi du code';
+        rebuildUi();
+        return false;
+      }
     } catch (e) {
+      print("❌ [RegisterViewModel] Exception dans registerByProfile(): $e");
       _registrationError = _formatRegistrationError(e);
       rebuildUi();
       return false;
     } finally {
       setBusy(false);
+      print("🟢 [RegisterViewModel] Fin registerByProfile()");
     }
   }
 

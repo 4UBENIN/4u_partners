@@ -289,7 +289,8 @@ class LoginView extends StackedView<LoginViewModel> with $LoginView {
   @override
   void onDispose(LoginViewModel viewModel) {
     super.onDispose(viewModel);
-    disposeForm();
+    // Ne pas disposer le formulaire car on peut y revenir
+    // disposeForm();
   }
 
   @override

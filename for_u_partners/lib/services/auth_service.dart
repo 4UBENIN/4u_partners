@@ -277,6 +277,138 @@ class AuthService {
     }
   }
 
+  //* ENVOI DU CODE OTP
+  Future<Map<String, dynamic>> sendOtpCode(String phoneNumber) async {
+    print("🔵 [AuthService] Début sendOtpCode()");
+    print("🔵 [AuthService] Numéro de téléphone: $phoneNumber");
+
+    try {
+      // Ajouter le préfixe +229 si le numéro commence par 01
+      String formattedPhone = phoneNumber;
+      if (phoneNumber.startsWith('01')) {
+        formattedPhone = '+229$phoneNumber';
+        print("🔵 [AuthService] Numéro formaté: $formattedPhone");
+      }
+
+      final url = Uri.parse(sendOtpUrl);
+      print("🔵 [AuthService] URL: $url");
+
+      final body = jsonEncode({'telephone': formattedPhone});
+      print("🔵 [AuthService] Body: $body");
+
+      print("🔵 [AuthService] Envoi de la requête...");
+      final response = await http.post(
+        url,
+        headers: headers,
+        body: body,
+      );
+
+      print("🔵 [AuthService] Réponse reçue");
+      print("🔵 [AuthService] Status code: ${response.statusCode}");
+      print("🔵 [AuthService] Response body: ${response.body}");
+
+      final responseData = jsonDecode(response.body);
+
+      if (response.statusCode == 200 || response.statusCode == 201) {
+        print("✅ [AuthService] Code OTP envoyé avec succès");
+        return {
+          'success': true,
+          'message': responseData['message'] ?? 'Code envoyé avec succès',
+          'data': responseData
+        };
+      } else {
+        print("🔴 [AuthService] Erreur lors de l'envoi du code OTP");
+        String errorMessage = 'Erreur lors de l\'envoi du code';
+
+        if (responseData['message'] != null) {
+          errorMessage = responseData['message'];
+        } else if (responseData['error'] != null) {
+          errorMessage = responseData['error'];
+        }
+
+        print("🔴 [AuthService] Message d'erreur: $errorMessage");
+        return {
+          'success': false,
+          'message': errorMessage,
+        };
+      }
+    } catch (e) {
+      print("❌ [AuthService] Exception dans sendOtpCode(): $e");
+      return {
+        'success': false,
+        'message': 'Erreur de connexion. Veuillez réessayer.',
+      };
+    }
+  }
+
+  //* VÉRIFICATION DU CODE OTP
+  Future<Map<String, dynamic>> verifyOtpCode(String phoneNumber, String code) async {
+    print("🟣 [AuthService] Début verifyOtpCode()");
+    print("🟣 [AuthService] Numéro: $phoneNumber");
+    print("🟣 [AuthService] Code: $code");
+
+    try {
+      // Ajouter le préfixe +229 si le numéro commence par 01
+      String formattedPhone = phoneNumber;
+      if (phoneNumber.startsWith('01')) {
+        formattedPhone = '+229$phoneNumber';
+        print("🟣 [AuthService] Numéro formaté: $formattedPhone");
+      }
+
+      final url = Uri.parse(verifyOtpUrl);
+      print("🟣 [AuthService] URL: $url");
+
+      final body = jsonEncode({
+        'telephone': formattedPhone,
+        'code': code,
+      });
+      print("🟣 [AuthService] Body: $body");
+
+      print("🟣 [AuthService] Envoi de la requête...");
+      final response = await http.post(
+        url,
+        headers: headers,
+        body: body,
+      );
+
+      print("🟣 [AuthService] Réponse reçue");
+      print("🟣 [AuthService] Status code: ${response.statusCode}");
+      print("🟣 [AuthService] Response body: ${response.body}");
+
+      final responseData = jsonDecode(response.body);
+
+      if (response.statusCode == 200) {
+        print("✅ [AuthService] Code OTP vérifié avec succès");
+        return {
+          'success': true,
+          'message': responseData['message'] ?? 'Code vérifié avec succès',
+          'data': responseData
+        };
+      } else {
+        print("🔴 [AuthService] Code OTP invalide");
+        String errorMessage = 'Code invalide. Veuillez réessayer.';
+
+        if (responseData['message'] != null) {
+          errorMessage = responseData['message'];
+        } else if (responseData['error'] != null) {
+          errorMessage = responseData['error'];
+        }
+
+        print("🔴 [AuthService] Message d'erreur: $errorMessage");
+        return {
+          'success': false,
+          'message': errorMessage,
+        };
+      }
+    } catch (e) {
+      print("❌ [AuthService] Exception dans verifyOtpCode(): $e");
+      return {
+        'success': false,
+        'message': 'Erreur de connexion. Veuillez réessayer.',
+      };
+    }
+  }
+
   //* REGISTER FUNCTION
   MediaType getMediaTypeFromFileName(String filePath) {
     final ext = path.extension(filePath).toLowerCase();
@@ -473,19 +605,49 @@ class AuthService {
 
         switch (registerType) {
           case 'livreur':
+            if (profilStatuts != null) {
+              await _sharedPreferencesServices.saveProfilStatuts(profilStatuts);
+            }
+            // Afficher un message de succès
+            if (context.mounted) {
+              CustomToast.showSuccess(context,
+                message: "Inscription réussie! Bienvenue");
+            }
+            // Naviguer vers l'écran de livraison
+            _navigationService.replaceWithDeliveryNavBarView();
+            break;
+
           case 'chauffeur':
+            if (profilStatuts != null) {
+              await _sharedPreferencesServices.saveProfilStatuts(profilStatuts);
+            }
+            // Afficher un message de succès
+            if (context.mounted) {
+              CustomToast.showSuccess(context,
+                message: "Inscription réussie! Bienvenue");
+            }
+            // Naviguer vers l'écran conducteur
+            _navigationService.replaceWithHomemainView();
+            break;
+
           case 'ramasseur':
             if (profilStatuts != null) {
               await _sharedPreferencesServices.saveProfilStatuts(profilStatuts);
             }
-            Navigator.push(
-              context,
-              MaterialPageRoute(
-                  builder: (context) => const ProfileValidationPage()),
-            );
+            // Afficher un message de succès
+            if (context.mounted) {
+              CustomToast.showSuccess(context,
+                message: "Inscription réussie! Bienvenue");
+            }
+            // Naviguer vers l'écran pressing ramasseur
+            _navigationService.replaceWithNavBarPressingView();
             break;
 
           case 'pressing':
+            if (context.mounted) {
+              CustomToast.showSuccess(context,
+                message: "Inscription réussie! Bienvenue");
+            }
             _navigationService.replaceWithNavBarPressingView();
             break;
         }

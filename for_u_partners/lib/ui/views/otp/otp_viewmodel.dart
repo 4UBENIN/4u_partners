@@ -2,9 +2,11 @@ import 'dart:async';
 import 'package:stacked/stacked.dart';
 import 'package:stacked_services/stacked_services.dart';
 import 'package:for_u_partners/app/app.locator.dart';
+import 'package:for_u_partners/services/auth_service.dart';
 
 class OtpViewModel extends BaseViewModel {
   final NavigationService navigationService = locator<NavigationService>();
+  final _authService = locator<AuthService>();
 
   // Propriétés
   final int otpLength = 4; 
@@ -65,62 +67,76 @@ class OtpViewModel extends BaseViewModel {
   }
 
   Future<bool> verifyOtp() async {
-    if (!_isOtpComplete) return false;
+    print("🟠 [OtpViewModel] Début verifyOtp()");
+    if (!_isOtpComplete) {
+      print("🔴 [OtpViewModel] OTP incomplet");
+      return false;
+    }
 
     setBusy(true);
     _otpError = null;
 
     try {
-      await Future.delayed(const Duration(seconds: 1));
-
       final otpCode = _otpDigits.join();
+      print("🟠 [OtpViewModel] Code OTP: $otpCode");
+      print("🟠 [OtpViewModel] Numéro de téléphone: $_phoneNumber");
 
-      final isValid = await _verifyOtpWithServer(otpCode);
+      print("🟠 [OtpViewModel] Appel de verifyOtpCode...");
+      final result = await _authService.verifyOtpCode(_phoneNumber, otpCode);
+      print("🟠 [OtpViewModel] Résultat verifyOtpCode: $result");
 
-      if (!isValid) {
-        _otpError = 'Code OTP invalide. Veuillez réessayer.';
+      if (result['success'] == true) {
+        print("✅ [OtpViewModel] Code OTP vérifié avec succès");
+        return true;
+      } else {
+        print("🔴 [OtpViewModel] Code OTP invalide");
+        _otpError = result['message'] ?? 'Code OTP invalide. Veuillez réessayer.';
         notifyListeners();
         return false;
       }
-
-      return true;
     } catch (e) {
+      print("❌ [OtpViewModel] Exception dans verifyOtp(): $e");
       _otpError = 'Une erreur est survenue. Veuillez réessayer.';
       notifyListeners();
       return false;
     } finally {
       setBusy(false);
+      print("🟠 [OtpViewModel] Fin verifyOtp()");
     }
   }
 
-  Future<bool> _verifyOtpWithServer(String otpCode) async {
-    await Future.delayed(const Duration(seconds: 1));
-    return RegExp(r'^\d+$').hasMatch(otpCode);
-  }
-
   Future<void> resendOtp() async {
+    print("🟡 [OtpViewModel] Début resendOtp()");
     if (_canResend) {
       setBusy(true);
       _otpError = null;
 
       try {
+        print("🟡 [OtpViewModel] Réinitialisation des champs OTP");
         _otpDigits.fillRange(0, _otpDigits.length, '');
         _isOtpComplete = false;
 
-        await Future.delayed(const Duration(seconds: 1));
+        print("🟡 [OtpViewModel] Appel de sendOtpCode...");
+        final result = await _authService.sendOtpCode(_phoneNumber);
+        print("🟡 [OtpViewModel] Résultat sendOtpCode: $result");
 
-        startResendTimer();
-
-        // Afficher un message de succès (optionnel)
-        // ScaffoldMessenger.of(context).showSnackBar(
-        //   const SnackBar(content: Text('Nouveau code envoyé avec succès')),
-        // );
+        if (result['success'] == true) {
+          print("✅ [OtpViewModel] Code OTP renvoyé avec succès");
+          startResendTimer();
+        } else {
+          print("🔴 [OtpViewModel] Échec du renvoi du code OTP");
+          _otpError = result['message'] ?? 'Impossible de renvoyer le code. Veuillez réessayer.';
+        }
       } catch (e) {
+        print("❌ [OtpViewModel] Exception dans resendOtp(): $e");
         _otpError = 'Impossible de renvoyer le code. Veuillez réessayer.';
       } finally {
         setBusy(false);
         notifyListeners();
+        print("🟡 [OtpViewModel] Fin resendOtp()");
       }
+    } else {
+      print("⚠️ [OtpViewModel] Impossible de renvoyer le code - timer non expiré");
     }
   }
 

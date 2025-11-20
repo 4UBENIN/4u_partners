@@ -50,41 +50,21 @@ class ProfilViewModel extends BaseViewModel {
 
   Future<void> pickAndUploadPhoto(BuildContext context) async {
     try {
-      // Afficher les options : Caméra ou Galerie
-      final useCamera = await _showImageSourceDialog(context);
-      if (useCamera == null) return;
+      // Utiliser le sélecteur natif (Android 13+ inclut caméra et galerie)
+      final result = await FilePicker.platform.pickFiles(
+        type: FileType.image,
+        allowMultiple: false,
+      );
 
-      File? imageFile;
+      if (result == null || result.files.single.path == null) return;
 
-      if (useCamera) {
-        // Utiliser la caméra - toujours disponible avec permission CAMERA
-        final result = await FilePicker.platform.pickFiles(
-          type: FileType.image,
-          allowMultiple: false,
-        );
-
-        if (result != null && result.files.single.path != null) {
-          imageFile = File(result.files.single.path!);
-        }
-      } else {
-        // Utiliser le Photo Picker Android natif (pas de permission requise)
-        final result = await FilePicker.platform.pickFiles(
-          type: FileType.image,
-          allowMultiple: false,
-        );
-
-        if (result != null && result.files.single.path != null) {
-          imageFile = File(result.files.single.path!);
-        }
-      }
-
-      if (imageFile == null) return;
+      final imageFile = File(result.files.single.path!);
 
       // Upload de la photo
       _isUploadingPhoto = true;
       notifyListeners();
 
-      final result = await _profilePhotoService.updateProfilePhoto(imageFile);
+      await _profilePhotoService.updateProfilePhoto(imageFile);
 
       // Mettre à jour l'utilisateur avec la nouvelle URL
       await loadUserProfile();
@@ -107,60 +87,6 @@ class ProfilViewModel extends BaseViewModel {
     }
   }
 
-  Future<bool?> _showImageSourceDialog(BuildContext context) async {
-    if (Platform.isIOS) {
-      return await showCupertinoModalPopup<bool>(
-        context: context,
-        builder: (BuildContext context) => CupertinoActionSheet(
-          title: const Text('Choisir une photo'),
-          actions: [
-            CupertinoActionSheetAction(
-              onPressed: () => Navigator.pop(context, true),
-              child: const Text('Prendre une photo'),
-            ),
-            CupertinoActionSheetAction(
-              onPressed: () => Navigator.pop(context, false),
-              child: const Text('Choisir dans la galerie'),
-            ),
-          ],
-          cancelButton: CupertinoActionSheetAction(
-            onPressed: () => Navigator.pop(context),
-            isDefaultAction: true,
-            child: const Text('Annuler'),
-          ),
-        ),
-      );
-    } else {
-      return await showModalBottomSheet<bool>(
-        context: context,
-        shape: const RoundedRectangleBorder(
-          borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-        ),
-        builder: (BuildContext context) {
-          return SafeArea(
-            child: Padding(
-              padding: const EdgeInsets.symmetric(vertical: 20),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  ListTile(
-                    leading: const Icon(Icons.camera_alt),
-                    title: const Text('Prendre une photo'),
-                    onTap: () => Navigator.pop(context, true),
-                  ),
-                  ListTile(
-                    leading: const Icon(Icons.photo_library),
-                    title: const Text('Choisir dans la galerie'),
-                    onTap: () => Navigator.pop(context, false),
-                  ),
-                ],
-              ),
-            ),
-          );
-        },
-      );
-    }
-  }
 
   Future<void> deleteProfilePhoto(BuildContext context) async {
     try {

@@ -478,6 +478,9 @@ class RegisterView extends StackedView<RegisterViewModel> with $RegisterView {
                       phoneNumber: phoneNumberController.text,
                       mail: emailController.text,
                       password: passwordController.text,
+                      firstName: firstNameController.text,
+                      lastName: lastNameController.text,
+                      address: addressController.text,
                     );
                   }
                 } else {

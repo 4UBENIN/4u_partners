@@ -5,7 +5,7 @@ import 'package:for_u_partners/services/auth_service.dart';
 import 'package:for_u_partners/ui/common/toast.dart';
 import 'package:stacked/stacked.dart';
 import 'package:flutter/material.dart';
-import 'package:file_picker/file_picker.dart';
+import 'package:image_picker/image_picker.dart';
 import 'package:for_u_partners/app/app.locator.dart';
 import 'package:stacked_services/stacked_services.dart';
 import 'package:for_u_partners/ui/common/app_colors.dart';
@@ -74,6 +74,7 @@ class RegisterProfileViewModel extends FormViewModel {
 
   //* Services
   final _authService = locator<AuthService>();
+  final ImagePicker _picker = ImagePicker();
 
   //* Controllers
   late final TextEditingController _driverCarPlacesController;
@@ -212,236 +213,32 @@ class RegisterProfileViewModel extends FormViewModel {
 
   Future<void> _pickImage(void Function(File file) onImagePicked) async {
     try {
+      // Demander la permission CAMERA
       if (Platform.isAndroid) {
-        final storagePermission = await Permission.storage.request();
-        final photosPermission = await Permission.photos.request();
-        if (!storagePermission.isGranted && !photosPermission.isGranted) {
-          print("Permission refusée");
+        final cameraPermission = await Permission.camera.request();
+        if (!cameraPermission.isGranted) {
+          print("Permission caméra refusée");
           return;
         }
       }
 
-      final useCamera = await _showImageSourceDialog();
-      if (useCamera == null) return;
+      // Prendre une photo avec la caméra arrière
+      final XFile? photo = await _picker.pickImage(
+        source: ImageSource.camera,
+        preferredCameraDevice: CameraDevice.rear,
+        maxWidth: 1920,
+        maxHeight: 1080,
+        imageQuality: 85,
+      );
 
-      FilePickerResult? result;
-
-      if (useCamera) {
-        // Camera - always available with CAMERA permission
-        result = await FilePicker.platform.pickFiles(
-          type: FileType.image,
-          allowMultiple: false,
-        );
-      } else {
-        // Photo picker - no permission needed
-        result = await FilePicker.platform.pickFiles(
-          type: FileType.image,
-          allowMultiple: false,
-        );
-      }
-
-      if (result != null && result.files.single.path != null) {
-        final file = File(result.files.single.path!);
+      if (photo != null) {
+        final file = File(photo.path);
         onImagePicked(file);
         rebuildUi();
       }
     } catch (e) {
-      print("Erreur lors de la sélection de l'image: $e");
+      print("Erreur lors de la prise de photo: $e");
     }
-  }
-
-  Future<bool?> _showImageSourceDialog() async {
-    const Color mainColor = Color(0xFF184E9C);
-
-    return showModalBottomSheet<bool>(
-      context: StackedService.navigatorKey!.currentContext!,
-      backgroundColor: Colors.transparent,
-      isScrollControlled: true,
-      builder: (BuildContext context) {
-        return Container(
-          decoration: const BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.only(
-              topLeft: Radius.circular(25),
-              topRight: Radius.circular(25),
-            ),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black12,
-                blurRadius: 10,
-                spreadRadius: 5,
-              ),
-            ],
-          ),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Container(
-                margin: const EdgeInsets.only(top: 15),
-                height: 5,
-                width: 50,
-                decoration: BoxDecoration(
-                  color: Colors.grey[300],
-                  borderRadius: BorderRadius.circular(10),
-                ),
-              ),
-              const SizedBox(height: 25),
-              const TextComponent(
-                "Choisissez une source d'image",
-                fontsize: 20,
-                fontweight: FontWeight.bold,
-              ),
-              const SizedBox(height: 25),
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 20),
-                child: Column(
-                  children: [
-                    Container(
-                      margin: const EdgeInsets.only(bottom: 12),
-                      decoration: BoxDecoration(
-                        color: Colors.white,
-                        borderRadius: BorderRadius.circular(15),
-                        border: Border.all(
-                          color: Colors.grey[200]!,
-                          width: 1.5,
-                        ),
-                        boxShadow: [
-                          BoxShadow(
-                            color: Colors.grey.withOpacity(0.08),
-                            blurRadius: 8,
-                            offset: const Offset(0, 3),
-                          ),
-                        ],
-                      ),
-                      child: ListTile(
-                        contentPadding: const EdgeInsets.symmetric(
-                          horizontal: 20,
-                          vertical: 8,
-                        ),
-                        leading: Container(
-                          padding: const EdgeInsets.all(12),
-                          decoration: BoxDecoration(
-                            color: mainColor.withOpacity(0.1),
-                            borderRadius: BorderRadius.circular(12),
-                            border: Border.all(
-                              color: mainColor.withOpacity(0.2),
-                              width: 1,
-                            ),
-                          ),
-                          child: const Icon(
-                            Icons.photo_library_rounded,
-                            color: mainColor,
-                            size: 24,
-                          ),
-                        ),
-                        title: const TextComponent(
-                          'Galerie',
-                          fontsize: 16,
-                        ),
-                        subtitle: TextComponent(
-                          'Choisir depuis vos photos',
-                          fontsize: 13,
-                          textcolor: Colors.grey[600]!,
-                        ),
-                        trailing: Icon(
-                          Icons.arrow_forward_ios_rounded,
-                          color: Colors.grey[400],
-                          size: 16,
-                        ),
-                        onTap: () =>
-                            Navigator.of(context).pop(false),
-                      ),
-                    ),
-                    Container(
-                      decoration: BoxDecoration(
-                        color: Colors.white,
-                        borderRadius: BorderRadius.circular(15),
-                        border: Border.all(
-                          color: Colors.grey[200]!,
-                          width: 1.5,
-                        ),
-                        boxShadow: [
-                          BoxShadow(
-                            color: Colors.grey.withOpacity(0.08),
-                            blurRadius: 8,
-                            offset: const Offset(0, 3),
-                          ),
-                        ],
-                      ),
-                      child: ListTile(
-                        contentPadding: const EdgeInsets.symmetric(
-                          horizontal: 20,
-                          vertical: 8,
-                        ),
-                        leading: Container(
-                          padding: const EdgeInsets.all(12),
-                          decoration: BoxDecoration(
-                            color: mainColor.withOpacity(0.1),
-                            borderRadius: BorderRadius.circular(12),
-                            border: Border.all(
-                              color: mainColor.withOpacity(0.2),
-                              width: 1,
-                            ),
-                          ),
-                          child: const Icon(
-                            Icons.camera_alt_rounded,
-                            color: mainColor,
-                            size: 24,
-                          ),
-                        ),
-                        title: const TextComponent(
-                          'Appareil photo',
-                          fontsize: 16,
-                        ),
-                        subtitle: TextComponent(
-                          'Prendre une nouvelle photo',
-                          fontsize: 13,
-                          textcolor: Colors.grey[600]!,
-                        ),
-                        trailing: Icon(
-                          Icons.arrow_forward_ios_rounded,
-                          color: Colors.grey[400],
-                          size: 16,
-                        ),
-                        onTap: () =>
-                            Navigator.of(context).pop(true),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              const SizedBox(height: 25),
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 20),
-                child: SizedBox(
-                  width: double.infinity,
-                  child: TextButton(
-                    onPressed: () => Navigator.of(context).pop(),
-                    style: TextButton.styleFrom(
-                      backgroundColor: Colors.grey[50],
-                      padding: const EdgeInsets.symmetric(vertical: 15),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(15),
-                        side: BorderSide(
-                          color: Colors.grey[200]!,
-                          width: 1.5,
-                        ),
-                      ),
-                    ),
-                    child: TextComponent(
-                      'Annuler',
-                      fontsize: 16,
-                      textcolor: Colors.grey[600]!,
-                    ),
-                  ),
-                ),
-              ),
-              const SizedBox(height: 35),
-            ],
-          ),
-        );
-      },
-    );
   }
 
   Widget uploadFileComponent(
@@ -481,12 +278,12 @@ class RegisterProfileViewModel extends FormViewModel {
                           mainAxisAlignment: MainAxisAlignment.center,
                           children: [
                             Icon(
-                              Icons.add_photo_alternate,
+                              Icons.camera_alt,
                               color: textinputcolor.withOpacity(0.5),
                             ),
                             const SizedBox(width: 8),
                             TextComponent(
-                              "Choisissez une image",
+                              "Prendre une photo",
                               textcolor: textinputcolor.withOpacity(0.5),
                             ),
                           ],
@@ -496,7 +293,7 @@ class RegisterProfileViewModel extends FormViewModel {
               if (pickedFile != null) ...[
                 const SizedBox(height: 10),
                 const TextComponent(
-                  "Cliquez sur l'image pour la remplacer, si besoin",
+                  "Cliquez sur l'image pour reprendre une photo",
                   textcolor: primaryColor,
                 )
               ]

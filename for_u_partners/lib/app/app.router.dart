@@ -325,7 +325,13 @@ class StackedRouter extends _i1.RouterBase {
       final args = data.getArgs<RegisterProfileViewArguments>(nullOk: false);
       return _i28.MaterialPageRoute<dynamic>(
         builder: (context) => _i12.RegisterProfileView(
-            args.selectedProfile, args.phoneNumber, args.mail, args.password,
+            args.selectedProfile,
+            args.phoneNumber,
+            args.mail,
+            args.password,
+            args.firstName,
+            args.lastName,
+            args.address,
             key: args.key),
         settings: data,
       );
@@ -491,6 +497,9 @@ class RegisterProfileViewArguments {
     required this.phoneNumber,
     required this.mail,
     required this.password,
+    required this.firstName,
+    required this.lastName,
+    required this.address,
     this.key,
   });
 
@@ -502,11 +511,17 @@ class RegisterProfileViewArguments {
 
   final String password;
 
+  final String firstName;
+
+  final String lastName;
+
+  final String address;
+
   final _i28.Key? key;
 
   @override
   String toString() {
-    return '{"selectedProfile": "$selectedProfile", "phoneNumber": "$phoneNumber", "mail": "$mail", "password": "$password", "key": "$key"}';
+    return '{"selectedProfile": "$selectedProfile", "phoneNumber": "$phoneNumber", "mail": "$mail", "password": "$password", "firstName": "$firstName", "lastName": "$lastName", "address": "$address", "key": "$key"}';
   }
 
   @override
@@ -516,6 +531,9 @@ class RegisterProfileViewArguments {
         other.phoneNumber == phoneNumber &&
         other.mail == mail &&
         other.password == password &&
+        other.firstName == firstName &&
+        other.lastName == lastName &&
+        other.address == address &&
         other.key == key;
   }
 
@@ -525,6 +543,9 @@ class RegisterProfileViewArguments {
         phoneNumber.hashCode ^
         mail.hashCode ^
         password.hashCode ^
+        firstName.hashCode ^
+        lastName.hashCode ^
+        address.hashCode ^
         key.hashCode;
   }
 }
@@ -708,6 +729,9 @@ extension NavigatorStateExtension on _i31.NavigationService {
     required String phoneNumber,
     required String mail,
     required String password,
+    required String firstName,
+    required String lastName,
+    required String address,
     _i28.Key? key,
     int? routerId,
     bool preventDuplicates = true,
@@ -721,6 +745,9 @@ extension NavigatorStateExtension on _i31.NavigationService {
             phoneNumber: phoneNumber,
             mail: mail,
             password: password,
+            firstName: firstName,
+            lastName: lastName,
+            address: address,
             key: key),
         id: routerId,
         preventDuplicates: preventDuplicates,
@@ -1092,6 +1119,9 @@ extension NavigatorStateExtension on _i31.NavigationService {
     required String phoneNumber,
     required String mail,
     required String password,
+    required String firstName,
+    required String lastName,
+    required String address,
     _i28.Key? key,
     int? routerId,
     bool preventDuplicates = true,
@@ -1105,6 +1135,9 @@ extension NavigatorStateExtension on _i31.NavigationService {
             phoneNumber: phoneNumber,
             mail: mail,
             password: password,
+            firstName: firstName,
+            lastName: lastName,
+            address: address,
             key: key),
         id: routerId,
         preventDuplicates: preventDuplicates,
