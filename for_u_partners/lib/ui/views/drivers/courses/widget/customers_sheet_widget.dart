@@ -9,6 +9,7 @@ import 'package:for_u_partners/ui/views/drivers/courses/model/client_model.dart'
 import 'package:for_u_partners/ui/views/drivers/courses/widget/dialog_widget.dart';
 import 'package:for_u_partners/ui/views/drivers/courses/courses_viewmodel.dart';
 import 'package:slide_to_act/slide_to_act.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 class ClientsBottomSheet extends StatelessWidget {
   final List<ClientData> getClientsList;
@@ -376,6 +377,8 @@ class AcceptedClientBottomSheet extends StatefulWidget {
   final Function() onCallClients;
   final Function() onChatClients;
   final String? vehicleType;
+  final double? currentLatitude;
+  final double? currentLongitude;
 
   const AcceptedClientBottomSheet({
     Key? key,
@@ -387,6 +390,8 @@ class AcceptedClientBottomSheet extends StatefulWidget {
     this.clientId,
     required this.courseId,
     this.vehicleType,
+    this.currentLatitude,
+    this.currentLongitude,
   }) : super(key: key);
 
   @override
@@ -736,8 +741,21 @@ class _AcceptedClientBottomSheetState extends State<AcceptedClientBottomSheet> {
                     child: ElevatedButton.icon(
                       onPressed: () async {
                         try {
-                          final viewModel = locator<CoursesViewModel>();
-                          await viewModel.redirectPickupToGoogleMaps();
+                          // Vérifier que les données sont disponibles
+                          if (widget.currentLatitude == null || widget.currentLongitude == null) {
+                            throw "Position actuelle non disponible";
+                          }
+                          if (widget.client.adresseDepart == null || widget.client.adresseDepart!.isEmpty) {
+                            throw "Adresse de départ non disponible";
+                          }
+
+                          // Construire l'URL Google Maps
+                          final origin = "${widget.currentLatitude},${widget.currentLongitude}";
+                          final destination = Uri.encodeComponent(widget.client.adresseDepart!);
+                          final url = "https://www.google.com/maps/dir/?api=1&origin=$origin&destination=$destination&travelmode=driving";
+
+                          final Uri uri = Uri.parse(url);
+                          await launchUrl(uri, mode: LaunchMode.externalApplication);
                         } catch (e) {
                           if (!context.mounted) return;
                           ScaffoldMessenger.of(context).showSnackBar(
@@ -1057,6 +1075,8 @@ class InProgressRideBottomSheet extends StatefulWidget {
   final Function() onCallClients;
   final double price;
   final String? vehicleType;
+  final double? currentLatitude;
+  final double? currentLongitude;
 
   const InProgressRideBottomSheet({
     Key? key,
@@ -1066,6 +1086,8 @@ class InProgressRideBottomSheet extends StatefulWidget {
     required this.onCallClients,
     required this.price,
     this.vehicleType,
+    this.currentLatitude,
+    this.currentLongitude,
   }) : super(key: key);
 
   @override
@@ -1760,8 +1782,21 @@ class _InProgressRideBottomSheetState extends State<InProgressRideBottomSheet>
                     child: ElevatedButton.icon(
                       onPressed: () async {
                         try {
-                          final viewModel = locator<CoursesViewModel>();
-                          await viewModel.redirectDestinationToGoogleMaps();
+                          // Vérifier que les données sont disponibles
+                          if (widget.client.adresseDepart == null || widget.client.adresseDepart!.isEmpty) {
+                            throw "Adresse de départ non disponible";
+                          }
+                          if (widget.client.destination.isEmpty) {
+                            throw "Destination non disponible";
+                          }
+
+                          // Construire l'URL Google Maps
+                          final origin = Uri.encodeComponent(widget.client.adresseDepart!);
+                          final destination = Uri.encodeComponent(widget.client.destination);
+                          final url = "https://www.google.com/maps/dir/?api=1&origin=$origin&destination=$destination&travelmode=driving";
+
+                          final Uri uri = Uri.parse(url);
+                          await launchUrl(uri, mode: LaunchMode.externalApplication);
                         } catch (e) {
                           if (!context.mounted) return;
                           ScaffoldMessenger.of(context).showSnackBar(

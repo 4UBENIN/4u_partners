@@ -129,7 +129,10 @@ class _MainAppState extends State<MainApp> with WidgetsBindingObserver {
 
       debugPrint('🔍 Checking for active course (initial: $isInitialLoad)...');
 
-      // Vérifier si l'utilisateur est connecté avant de continuer
+      // Wait for router to finish initial navigation and for services to initialize
+      await Future.delayed(const Duration(milliseconds: 3000));
+
+      // Vérifier si l'utilisateur est connecté
       final sharedPrefs = locator<SharedpreferencesService>();
       final token = await sharedPrefs.getToken();
 
@@ -138,8 +141,7 @@ class _MainAppState extends State<MainApp> with WidgetsBindingObserver {
         return;
       }
 
-      // Wait for router to finish initial navigation
-      await Future.delayed(const Duration(milliseconds: 2000));
+      debugPrint('✅ User is logged in, proceeding with active course check');
 
       final activeCourseChecker = locator<ActiveCourseCheckerService>();
       final navigationService = locator<NavigationService>();

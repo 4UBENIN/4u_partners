@@ -3,6 +3,7 @@ import 'package:for_u_partners/ui/views/drivers/documents/documents_viewmodel.da
 import 'package:for_u_partners/ui/views/drivers/documents/add_document.dart';
 import 'package:for_u_partners/ui/views/drivers/homemain/homemain_viewmodel.dart';
 import 'package:for_u_partners/ui/views/drivers/vehicles/vehicles_viewmodel.dart' as vehicle_vm;
+import 'package:for_u_partners/ui/views/drivers/courses/courses_viewmodel.dart';
 import 'package:stacked/stacked_annotations.dart';
 import 'package:stacked_services/stacked_services.dart';
 import 'package:for_u_partners/ui/views/startup/startup_view.dart';
@@ -96,6 +97,7 @@ import 'package:for_u_partners/services/location_tracking_service.dart';
     Singleton(classType: HomemainViewModel),
     Singleton(classType: vehicle_vm.MesVehiculesViewModel),
     Singleton(classType: DocumentsViewModel),
+    Singleton(classType: CoursesViewModel),
     LazySingleton(classType: ProfilePhotoService),
 // @stacked-service
   ],

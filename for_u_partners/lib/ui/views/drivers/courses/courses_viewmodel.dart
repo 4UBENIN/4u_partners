@@ -1296,6 +1296,20 @@ class CoursesViewModel extends BaseViewModel {
 
   Future<void> redirectPickupToGoogleMaps() async {
     try {
+      // Vérifier que les données nécessaires sont disponibles
+      if (_currentPosition == null) {
+        throw "Position actuelle non disponible";
+      }
+      if (_currentPosition!.latitude == null || _currentPosition!.longitude == null) {
+        throw "Coordonnées GPS non disponibles";
+      }
+      if (_currentCourse == null) {
+        throw "Aucune course active";
+      }
+      if (_currentCourse!.adresseDepart == null || _currentCourse!.adresseDepart!.isEmpty) {
+        throw "Adresse de départ non disponible";
+      }
+
       final Uri uri = Uri.parse(buildGoogleMapsUrlFlexible(
         originLat: _currentPosition!.latitude!,
         originLng: _currentPosition!.longitude,
@@ -1304,12 +1318,23 @@ class CoursesViewModel extends BaseViewModel {
 
       await launchUrl(uri, mode: LaunchMode.externalApplication);
     } catch (e) {
-      throw "❌ Impossible d’ouvrir Google Maps: $e";
+      throw "❌ Impossible d'ouvrir Google Maps: $e";
     }
   }
 
   Future<void> redirectDestinationToGoogleMaps() async {
     try {
+      // Vérifier que les données nécessaires sont disponibles
+      if (_currentCourse == null) {
+        throw "Aucune course active";
+      }
+      if (_currentCourse!.adresseDepart == null || _currentCourse!.adresseDepart!.isEmpty) {
+        throw "Adresse de départ non disponible";
+      }
+      if (_currentCourse!.destination.isEmpty) {
+        throw "Destination non disponible";
+      }
+
       final Uri uri = Uri.parse(buildGoogleMapsUrlFlexible(
         originAddress: _currentCourse!.adresseDepart,
         destAddress: _currentCourse!.destination,
@@ -1317,7 +1342,7 @@ class CoursesViewModel extends BaseViewModel {
 
       await launchUrl(uri, mode: LaunchMode.externalApplication);
     } catch (e) {
-      throw "❌ Impossible d’ouvrir Google Maps: $e";
+      throw "❌ Impossible d'ouvrir Google Maps: $e";
     }
   }
 

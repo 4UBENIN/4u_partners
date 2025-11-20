@@ -1212,6 +1212,38 @@ class MockAuthService extends _i1.Mock implements _i23.AuthService {
       ) as _i20.Future<bool>);
 
   @override
+  _i20.Future<Map<String, dynamic>> sendOtpCode(String? phoneNumber) =>
+      (super.noSuchMethod(
+        Invocation.method(
+          #sendOtpCode,
+          [phoneNumber],
+        ),
+        returnValue:
+            _i20.Future<Map<String, dynamic>>.value(<String, dynamic>{}),
+        returnValueForMissingStub:
+            _i20.Future<Map<String, dynamic>>.value(<String, dynamic>{}),
+      ) as _i20.Future<Map<String, dynamic>>);
+
+  @override
+  _i20.Future<Map<String, dynamic>> verifyOtpCode(
+    String? phoneNumber,
+    String? code,
+  ) =>
+      (super.noSuchMethod(
+        Invocation.method(
+          #verifyOtpCode,
+          [
+            phoneNumber,
+            code,
+          ],
+        ),
+        returnValue:
+            _i20.Future<Map<String, dynamic>>.value(<String, dynamic>{}),
+        returnValueForMissingStub:
+            _i20.Future<Map<String, dynamic>>.value(<String, dynamic>{}),
+      ) as _i20.Future<Map<String, dynamic>>);
+
+  @override
   _i2.MediaType getMediaTypeFromFileName(String? filePath) =>
       (super.noSuchMethod(
         Invocation.method(
@@ -1711,6 +1743,32 @@ class MockDriverService extends _i1.Mock implements _i27.DriverService {
         returnValue: _i20.Future<void>.value(),
         returnValueForMissingStub: _i20.Future<void>.value(),
       ) as _i20.Future<void>);
+
+  @override
+  _i20.Future<bool> sendLocationUpdate({
+    required int? courseId,
+    required double? latitude,
+    required double? longitude,
+    double? heading,
+    double? speed,
+    double? accuracy,
+  }) =>
+      (super.noSuchMethod(
+        Invocation.method(
+          #sendLocationUpdate,
+          [],
+          {
+            #courseId: courseId,
+            #latitude: latitude,
+            #longitude: longitude,
+            #heading: heading,
+            #speed: speed,
+            #accuracy: accuracy,
+          },
+        ),
+        returnValue: _i20.Future<bool>.value(false),
+        returnValueForMissingStub: _i20.Future<bool>.value(false),
+      ) as _i20.Future<bool>);
 }
 
 /// A class which mocks [PressingService].

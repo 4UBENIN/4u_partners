@@ -869,10 +869,9 @@ class DriverService {
       final token = await sharedPreferencesService.getToken();
       final url = '$baseUrl/conducteur/courses/$courseId/location';
 
-      // Format timestamp - ISO 8601 format in local time (no timezone)
-      final now = DateTime.now();
-      // Format: "2025-11-09T05:35:41" (ISO 8601 local time, no Z)
-      final timestamp = '${now.year}-${now.month.toString().padLeft(2, '0')}-${now.day.toString().padLeft(2, '0')}T${now.hour.toString().padLeft(2, '0')}:${now.minute.toString().padLeft(2, '0')}:${now.second.toString().padLeft(2, '0')}';
+      // Format timestamp - ISO 8601 format in UTC
+      final now = DateTime.now().toUtc();
+      final timestamp = now.toIso8601String();
 
       final body = {
         'latitude': latitude,

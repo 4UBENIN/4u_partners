@@ -391,6 +391,8 @@ class CoursesView extends StackedView<CoursesViewModel> {
             client: pickupCourse,
             clientId: pickupCourse.clientId,
             courseId: int.tryParse(pickupCourse.courseId!)!,
+            currentLatitude: viewModel.currentPosiction?.latitude,
+            currentLongitude: viewModel.currentPosiction?.longitude,
             onCancelRide: () {
               // Annuler la course acceptée - PAS de WidgetsBinding ici
               if (pickupCourse.hasValidCourseId) {
@@ -454,6 +456,8 @@ class CoursesView extends StackedView<CoursesViewModel> {
         return InProgressRideBottomSheet(
           key: const ValueKey('inprogress'),
           client: viewModel.currentCourse!,
+          currentLatitude: viewModel.currentPosiction?.latitude,
+          currentLongitude: viewModel.currentPosiction?.longitude,
           onCancelRide: () {
             Navigator.push(
               context,
