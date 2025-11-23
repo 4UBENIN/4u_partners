@@ -6,8 +6,10 @@ import 'package:for_u_partners/ui/common/app_colors.dart';
 import 'package:for_u_partners/ui/views/drivers/courses/chat_page.dart';
 import 'package:for_u_partners/ui/views/drivers/courses/recap_view.dart';
 import 'package:for_u_partners/ui/views/drivers/courses/pick_up_page.dart';
+import 'package:for_u_partners/ui/views/drivers/courses/course_denial_view.dart';
 import 'package:for_u_partners/ui/views/drivers/homemain/homemain_viewmodel_export.dart';
 import 'package:stacked_services/stacked_services.dart';
+import 'package:url_launcher/url_launcher.dart';
 import 'courses_viewmodel.dart';
 import 'package:stacked/stacked.dart';
 import 'package:flutter/material.dart';
@@ -45,7 +47,97 @@ class CoursesView extends StackedView<CoursesViewModel> {
                     myLocationButtonEnabled: false,
                     zoomControlsEnabled: false,
                   ),
-                  // Bouton pour recentrer sur la position utilisateur
+
+                  // Floating Google Maps button (top right)
+                  if (viewModel.currentCourse != null &&
+                      (viewModel.currentBottomSheetType == BottomSheetAppType.pickup ||
+                       viewModel.currentBottomSheetType == BottomSheetAppType.inprogress))
+                    Positioned(
+                      top: 60,
+                      right: 16,
+                      child: SafeArea(
+                        child: Material(
+                          elevation: 4,
+                          borderRadius: BorderRadius.circular(12),
+                          child: InkWell(
+                            borderRadius: BorderRadius.circular(12),
+                            onTap: () async {
+                              try {
+                                final currentCourse = viewModel.currentCourse!;
+                                String url;
+
+                                // Different URLs based on ride state
+                                if (viewModel.currentBottomSheetType == BottomSheetAppType.pickup) {
+                                  // Going to pickup: current position -> pickup address
+                                  if (viewModel.currentPosiction?.latitude == null ||
+                                      viewModel.currentPosiction?.longitude == null) {
+                                    throw "Position actuelle non disponible";
+                                  }
+                                  if (currentCourse.adresseDepart == null ||
+                                      currentCourse.adresseDepart!.isEmpty) {
+                                    throw "Adresse de départ non disponible";
+                                  }
+
+                                  final origin = "${viewModel.currentPosiction!.latitude},${viewModel.currentPosiction!.longitude}";
+                                  final destination = Uri.encodeComponent(currentCourse.adresseDepart!);
+                                  url = "https://www.google.com/maps/dir/?api=1&origin=$origin&destination=$destination&travelmode=driving";
+                                } else {
+                                  // In progress: pickup address -> destination
+                                  if (currentCourse.adresseDepart == null ||
+                                      currentCourse.adresseDepart!.isEmpty) {
+                                    throw "Adresse de départ non disponible";
+                                  }
+                                  if (currentCourse.destination.isEmpty) {
+                                    throw "Destination non disponible";
+                                  }
+
+                                  final origin = Uri.encodeComponent(currentCourse.adresseDepart!);
+                                  final destination = Uri.encodeComponent(currentCourse.destination);
+                                  url = "https://www.google.com/maps/dir/?api=1&origin=$origin&destination=$destination&travelmode=driving";
+                                }
+
+                                final Uri uri = Uri.parse(url);
+                                await launchUrl(uri, mode: LaunchMode.externalApplication);
+                              } catch (e) {
+                                if (!context.mounted) return;
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  SnackBar(
+                                    content: Text('Erreur: ${e.toString()}'),
+                                    backgroundColor: Colors.red,
+                                  ),
+                                );
+                              }
+                            },
+                            child: Container(
+                              padding: const EdgeInsets.all(12),
+                              decoration: BoxDecoration(
+                                color: Colors.white,
+                                borderRadius: BorderRadius.circular(12),
+                              ),
+                              child: Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: const [
+                                  Icon(
+                                    Icons.navigation,
+                                    size: 24,
+                                    color: Colors.blue,
+                                  ),
+                                  SizedBox(width: 8),
+                                  Text(
+                                    'Google Maps',
+                                    style: TextStyle(
+                                      fontSize: 14,
+                                      fontWeight: FontWeight.w600,
+                                      color: Colors.black87,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
 
                   // Display client card as fixed positioned element
                   if (viewModel.availableCourses.isNotEmpty &&
@@ -431,6 +523,36 @@ class CoursesView extends StackedView<CoursesViewModel> {
                 courseId: pickupCourse.courseId,
                 chatService: chatService,
               );
+            },
+            onDenyRide: () async {
+              // Refuser la course (seulement si statut = chauffeur_en_route)
+              try {
+                final denialData = await viewModel.denyCourse();
+                viewModel.setBottomSheetType(BottomSheetAppType.none);
+
+                if (context.mounted && denialData != null) {
+                  // Naviguer vers la page de détails du refus
+                  Navigator.of(context).push(
+                    MaterialPageRoute(
+                      builder: (context) => CourseDenialView(
+                        denialData: denialData,
+                        onClose: () {
+                          Navigator.of(context).pop();
+                        },
+                      ),
+                    ),
+                  );
+                }
+              } catch (e) {
+                if (context.mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: Text('Erreur: ${e.toString()}'),
+                      backgroundColor: Colors.red,
+                    ),
+                  );
+                }
+              }
             });
 
       case BottomSheetAppType.inprogress:

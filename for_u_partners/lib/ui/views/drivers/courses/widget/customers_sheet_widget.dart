@@ -9,7 +9,6 @@ import 'package:for_u_partners/ui/views/drivers/courses/model/client_model.dart'
 import 'package:for_u_partners/ui/views/drivers/courses/widget/dialog_widget.dart';
 import 'package:for_u_partners/ui/views/drivers/courses/courses_viewmodel.dart';
 import 'package:slide_to_act/slide_to_act.dart';
-import 'package:url_launcher/url_launcher.dart';
 
 class ClientsBottomSheet extends StatelessWidget {
   final List<ClientData> getClientsList;
@@ -376,6 +375,7 @@ class AcceptedClientBottomSheet extends StatefulWidget {
   final Function() onStartRide;
   final Function() onCallClients;
   final Function() onChatClients;
+  final Function()? onDenyRide;
   final String? vehicleType;
   final double? currentLatitude;
   final double? currentLongitude;
@@ -387,6 +387,7 @@ class AcceptedClientBottomSheet extends StatefulWidget {
     required this.onStartRide,
     required this.onCallClients,
     required this.onChatClients,
+    this.onDenyRide,
     this.clientId,
     required this.courseId,
     this.vehicleType,
@@ -734,64 +735,6 @@ class _AcceptedClientBottomSheetState extends State<AcceptedClientBottomSheet> {
 
                   const SizedBox(height: 20),
 
-                  // Bouton Ouvrir dans Google Maps
-                  SizedBox(
-                    width: double.infinity,
-                    height: 50,
-                    child: ElevatedButton.icon(
-                      onPressed: () async {
-                        try {
-                          // Vérifier que les données sont disponibles
-                          if (widget.currentLatitude == null || widget.currentLongitude == null) {
-                            throw "Position actuelle non disponible";
-                          }
-                          if (widget.client.adresseDepart == null || widget.client.adresseDepart!.isEmpty) {
-                            throw "Adresse de départ non disponible";
-                          }
-
-                          // Construire l'URL Google Maps
-                          final origin = "${widget.currentLatitude},${widget.currentLongitude}";
-                          final destination = Uri.encodeComponent(widget.client.adresseDepart!);
-                          final url = "https://www.google.com/maps/dir/?api=1&origin=$origin&destination=$destination&travelmode=driving";
-
-                          final Uri uri = Uri.parse(url);
-                          await launchUrl(uri, mode: LaunchMode.externalApplication);
-                        } catch (e) {
-                          if (!context.mounted) return;
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            SnackBar(
-                              content: Text('Erreur: ${e.toString()}'),
-                              backgroundColor: Colors.red,
-                            ),
-                          );
-                        }
-                      },
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.white,
-                        foregroundColor: Colors.black87,
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(25),
-                          side: BorderSide(color: Colors.grey[300]!),
-                        ),
-                        elevation: 0,
-                      ),
-                      icon: const Icon(
-                        Icons.navigation,
-                        size: 20,
-                        color: Colors.blue,
-                      ),
-                      label: const Text(
-                        'Ouvrir dans Google Maps',
-                        style: TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
-                    ),
-                  ),
-
-                  const SizedBox(height: 15),
-
                   // Bouton Démarrer la course (conditionnel)
                   SizedBox(
                     width: double.infinity,
@@ -839,16 +782,132 @@ class _AcceptedClientBottomSheetState extends State<AcceptedClientBottomSheet> {
 
                   const SizedBox(height: 15),
 
-                  // Bouton Annuler
-                  // SizedBox(
-                  //   width: double.infinity,
-                  //   height: 50,
-                  //   child: _buildCancelButton(),
-                  // ),
+                  // Bouton Refuser la course
+                  if (widget.onDenyRide != null)
+                    SizedBox(
+                      width: double.infinity,
+                      height: 50,
+                      child: OutlinedButton.icon(
+                        onPressed: () => _showDenyDialog(context),
+                        style: OutlinedButton.styleFrom(
+                          foregroundColor: Colors.red,
+                          side: const BorderSide(color: Colors.red, width: 1.5),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(25),
+                          ),
+                        ),
+                        icon: const Icon(Icons.cancel_outlined, size: 20),
+                        label: const Text(
+                          'Refuser la course',
+                          style: TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                      ),
+                    ),
                 ],
               ),
             ),
           ),
+        );
+      },
+    );
+  }
+
+  void _showDenyDialog(BuildContext context) {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          backgroundColor: Colors.white,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16),
+          ),
+          title: Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  color: Colors.red.withOpacity(0.1),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: const Icon(
+                  Icons.warning_amber_rounded,
+                  color: Colors.red,
+                  size: 24,
+                ),
+              ),
+              const SizedBox(width: 12),
+              const Expanded(
+                child: Text(
+                  'Refuser la course',
+                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                ),
+              ),
+            ],
+          ),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                'Êtes-vous sûr de vouloir refuser la course avec ${widget.client.name} ?',
+                style: const TextStyle(fontSize: 15),
+              ),
+              const SizedBox(height: 12),
+              Container(
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: Colors.orange[50],
+                  borderRadius: BorderRadius.circular(8),
+                  border: Border.all(color: Colors.orange[200]!),
+                ),
+                child: Row(
+                  children: [
+                    Icon(Icons.info_outline, color: Colors.orange[700], size: 20),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: Text(
+                        'Cette action est irréversible',
+                        style: TextStyle(
+                          fontSize: 13,
+                          color: Colors.orange[900],
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(),
+              style: TextButton.styleFrom(
+                foregroundColor: Colors.grey[700],
+              ),
+              child: const Text('Annuler'),
+            ),
+            TextButton(
+              onPressed: () {
+                Navigator.of(context).pop();
+                if (widget.onDenyRide != null) {
+                  widget.onDenyRide!();
+                }
+              },
+              style: TextButton.styleFrom(
+                backgroundColor: Colors.red,
+                foregroundColor: Colors.white,
+                padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(8),
+                ),
+              ),
+              child: const Text('Oui, refuser'),
+            ),
+          ],
         );
       },
     );
@@ -1774,64 +1833,6 @@ class _InProgressRideBottomSheetState extends State<InProgressRideBottomSheet>
                         ],
                       ),
                     ),
-
-                  // Bouton Ouvrir dans Google Maps
-                  SizedBox(
-                    width: double.infinity,
-                    height: 50,
-                    child: ElevatedButton.icon(
-                      onPressed: () async {
-                        try {
-                          // Vérifier que les données sont disponibles
-                          if (widget.client.adresseDepart == null || widget.client.adresseDepart!.isEmpty) {
-                            throw "Adresse de départ non disponible";
-                          }
-                          if (widget.client.destination.isEmpty) {
-                            throw "Destination non disponible";
-                          }
-
-                          // Construire l'URL Google Maps
-                          final origin = Uri.encodeComponent(widget.client.adresseDepart!);
-                          final destination = Uri.encodeComponent(widget.client.destination);
-                          final url = "https://www.google.com/maps/dir/?api=1&origin=$origin&destination=$destination&travelmode=driving";
-
-                          final Uri uri = Uri.parse(url);
-                          await launchUrl(uri, mode: LaunchMode.externalApplication);
-                        } catch (e) {
-                          if (!context.mounted) return;
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            SnackBar(
-                              content: Text('Erreur: ${e.toString()}'),
-                              backgroundColor: Colors.red,
-                            ),
-                          );
-                        }
-                      },
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.white,
-                        foregroundColor: Colors.black87,
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(25),
-                          side: BorderSide(color: Colors.grey[300]!),
-                        ),
-                        elevation: 0,
-                      ),
-                      icon: const Icon(
-                        Icons.navigation,
-                        size: 20,
-                        color: Colors.blue,
-                      ),
-                      label: const Text(
-                        'Ouvrir dans Google Maps',
-                        style: TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
-                    ),
-                  ),
-
-                  const SizedBox(height: 15),
 
                   // Bouton Terminer avec effet de chargement
                   SizedBox(

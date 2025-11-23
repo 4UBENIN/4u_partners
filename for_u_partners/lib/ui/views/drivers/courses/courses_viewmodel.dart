@@ -1742,6 +1742,45 @@ class CoursesViewModel extends BaseViewModel {
     }
   }
 
+  // ✨ Refuser une course (uniquement si statut = chauffeur_en_route)
+  Future<Map<String, dynamic>?> denyCourse() async {
+    if (_currentCourse != null) {
+      try {
+        setBusy(true);
+        final courseId = _currentCourse!.courseId!;
+
+        // Appeler l'API pour refuser la course
+        // Cette méthode vérifie automatiquement le statut et retourne les données
+        final responseData = await driverservice.denyCourse(int.parse(courseId));
+
+        // Afficher la notification de refus
+        await LocalNotificationService.showCourseAbortedNotification(
+          courseId: courseId,
+        );
+
+        // Supprimer la course du cache
+        await CourseNotificationStorage.removeNotification(courseId);
+        print('🗑️ Course refusée supprimée du cache: $courseId');
+
+        // Sauvegarder l'état de la course comme refusée
+        await _saveRideState('denied');
+
+        // Réinitialiser l'état
+        await _resetCourseState();
+
+        // Retourner les données de la réponse (message, pénalité, course)
+        return responseData;
+      } catch (e) {
+        print('❌ Erreur lors du refus de la course: $e');
+        rethrow;
+      } finally {
+        setBusy(false);
+        notifyListeners();
+      }
+    }
+    return null;
+  }
+
   // ✨ Réinitialiser l'état de la course
   Future<void> _resetCourseState() async {
     // Sauvegarder l'ID de la course avant de la supprimer

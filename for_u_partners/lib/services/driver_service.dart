@@ -215,6 +215,61 @@ class DriverService {
     }
   }
 
+  // Refuser une course (uniquement si le statut est "chauffeur_en_route")
+  Future<Map<String, dynamic>> denyCourse(int courseId) async {
+    final token = await sharedPreferencesService.getToken();
+
+    try {
+      // Récupérer les détails de la course pour vérifier le statut
+      final courseDetails = await getCourseDetails(courseId);
+      final currentStatus = courseDetails['statut'] ?? '';
+
+      debugPrint('========== DENY COURSE REQUEST ==========');
+      debugPrint('Course ID: $courseId');
+      debugPrint('Current Status: $currentStatus');
+
+      // Vérifier que le statut est "chauffeur_en_route"
+      if (currentStatus != 'chauffeur_en_route') {
+        debugPrint('⚠️ Status validation failed - expected: chauffeur_en_route, got: $currentStatus');
+        throw Exception(
+          'Impossible de refuser la course. Cette action n\'est possible que lorsque vous êtes en route vers le client.'
+        );
+      }
+
+      // Effectuer l'appel API pour refuser la course
+      final url = Uri.parse(rejectCourseUrl(courseId));
+      debugPrint('Deny Course URL: $url');
+
+      final response = await http.patch(
+        url,
+        headers: {
+          'Accept': 'application/json',
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer $token',
+        },
+      );
+
+      debugPrint('========== DENY COURSE RESPONSE ==========');
+      debugPrint('Status Code: ${response.statusCode}');
+      debugPrint('Response Headers: ${response.headers}');
+      debugPrint('Response Body: ${response.body}');
+      debugPrint('==========================================');
+
+      if (response.statusCode != 200) {
+        debugPrint('❌ Deny course failed with status ${response.statusCode}');
+        throw Exception('Échec du refus de la course');
+      }
+
+      debugPrint('✅ Course denied successfully');
+
+      // Retourner les données de la réponse (message, pénalité, course)
+      return jsonDecode(response.body);
+    } catch (e) {
+      debugPrint('❌ Erreur lors du refus de la course: $e');
+      rethrow;
+    }
+  }
+
   // Démarrer une course
   Future<void> startCourse(int courseId) async {
     final token = await sharedPreferencesService.getToken();
