@@ -64,10 +64,6 @@ class _RecapitulatifCoursePageState extends State<RecapitulatifCoursePage> {
         backgroundColor: Colors.white,
         elevation: 2,
         shadowColor: Colors.black12,
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: Colors.black),
-          onPressed: () => Navigator.of(context).pop(),
-        ),
         title: const Text(
           'Récapitulatif de course',
           style: TextStyle(
