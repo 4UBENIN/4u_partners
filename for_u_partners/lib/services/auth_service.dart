@@ -426,6 +426,16 @@ class AuthService {
   }
 
   Future<FormData> registrationModelToFormData(RegistrationModel model) async {
+    print("🔍 [registrationModelToFormData] Début de la conversion");
+    print("🔍 [registrationModelToFormData] model.type: ${model.type}");
+    print("🔍 [registrationModelToFormData] model.telephone: ${model.telephone}");
+    print("🔍 [registrationModelToFormData] model.email: ${model.email}");
+    print("🔍 [registrationModelToFormData] model.code: ${model.code}");
+    print("🔍 [registrationModelToFormData] model.motDePasse: ${model.motDePasse.isNotEmpty ? '***' : 'EMPTY'}");
+    print("🔍 [registrationModelToFormData] model.motDePasseConfirmation: ${model.motDePasseConfirmation.isNotEmpty ? '***' : 'EMPTY'}");
+    print("🔍 [registrationModelToFormData] model.nom: ${model.nom}");
+    print("🔍 [registrationModelToFormData] model.adresse: ${model.adresse}");
+
     final formData = FormData();
     formData.fields.addAll([
       MapEntry('type', model.type),
@@ -437,32 +447,46 @@ class AuthService {
       MapEntry('nom', model.nom),
       MapEntry('adresse', model.adresse),
     ]);
+    print("🔍 [registrationModelToFormData] Champs de base ajoutés ✓");
 
+    print("🔍 [registrationModelToFormData] model.prenom: ${model.prenom}");
     if (model.prenom != null)
       formData.fields.add(MapEntry('prenom', model.prenom!));
+
+    print("🔍 [registrationModelToFormData] model.genre: ${model.genre}");
     if (model.genre != null)
       formData.fields.add(MapEntry('genre', model.genre!));
+
+    print("🔍 [registrationModelToFormData] model.dateNaissance: ${model.dateNaissance}");
     if (model.dateNaissance != null && model.dateNaissance!.isNotEmpty) {
       formData.fields.add(MapEntry('date_naissance', model.dateNaissance!));
     }
 
+    print("🔍 [registrationModelToFormData] model.numeroPermis: ${model.numeroPermis}");
     if (model.numeroPermis != null) {
       formData.fields
           .add(MapEntry('numero_permis', model.numeroPermis ?? 'TEMP_PERMIS'));
     }
+
+    print("🔍 [registrationModelToFormData] model.dateExpirationPermis: ${model.dateExpirationPermis}");
     if (model.dateExpirationPermis != null) {
       formData.fields.add(MapEntry('date_expiration_permis',
           model.dateExpirationPermis ?? '2030-12-31'));
     }
+
+    print("🔍 [registrationModelToFormData] model.possedeVehicule: ${model.possedeVehicule}");
     if (model.possedeVehicule != null) {
       formData.fields
           .add(MapEntry('possedevehicule', model.possedeVehicule.toString()));
     }
+
+    print("🔍 [registrationModelToFormData] model.typeConducteurId: ${model.typeConducteurId}");
     if (model.typeConducteurId != null) {
       formData.fields.add(
           MapEntry('type_conducteur_id', model.typeConducteurId.toString()));
     }
 
+    print("🔍 [registrationModelToFormData] model.documentIdentite: ${model.documentIdentite?.path}");
     if (model.documentIdentite != null) {
       final file = await MultipartFile.fromFile(
         model.documentIdentite!.path,
@@ -470,10 +494,55 @@ class AuthService {
         contentType: getMediaTypeFromFileName(model.documentIdentite!.path),
       );
       formData.files.add(MapEntry('document_identite', file));
+      print("🔍 [registrationModelToFormData] Document identité ajouté ✓");
     }
 
+    print("🔍 [registrationModelToFormData] model.vehicule: ${model.vehicule != null ? 'NON NULL' : 'NULL'}");
     if (model.vehicule != null) {
       final v = model.vehicule!;
+      print("🔍 [registrationModelToFormData] vehicule.type: ${v.type}");
+      print("🔍 [registrationModelToFormData] vehicule.marque: ${v.marque}");
+      print("🔍 [registrationModelToFormData] vehicule.modele: ${v.modele}");
+      print("🔍 [registrationModelToFormData] vehicule.immatriculation: ${v.immatriculation}");
+      print("🔍 [registrationModelToFormData] vehicule.nombrePlaces: ${v.nombrePlaces}");
+      print("🔍 [registrationModelToFormData] vehicule.couleur: ${v.couleur}");
+      print("🔍 [registrationModelToFormData] vehicule.categorie: ${v.categorie}");
+      print("🔍 [registrationModelToFormData] vehicule.annee: ${v.annee}");
+
+      // Vérifier chaque champ avant de l'ajouter
+      if (v.type == null || v.type!.isEmpty) {
+        print("❌ [registrationModelToFormData] ERREUR: vehicule.type est NULL ou vide!");
+        throw Exception("Le type du véhicule est requis");
+      }
+      if (v.marque == null || v.marque!.isEmpty) {
+        print("❌ [registrationModelToFormData] ERREUR: vehicule.marque est NULL ou vide!");
+        throw Exception("La marque du véhicule est requise");
+      }
+      if (v.modele == null || v.modele!.isEmpty) {
+        print("❌ [registrationModelToFormData] ERREUR: vehicule.modele est NULL ou vide!");
+        throw Exception("Le modèle du véhicule est requis");
+      }
+      if (v.immatriculation == null || v.immatriculation!.isEmpty) {
+        print("❌ [registrationModelToFormData] ERREUR: vehicule.immatriculation est NULL ou vide!");
+        throw Exception("L'immatriculation du véhicule est requise");
+      }
+      if (v.nombrePlaces == null) {
+        print("❌ [registrationModelToFormData] ERREUR: vehicule.nombrePlaces est NULL!");
+        throw Exception("Le nombre de places du véhicule est requis");
+      }
+      if (v.couleur == null || v.couleur!.isEmpty) {
+        print("❌ [registrationModelToFormData] ERREUR: vehicule.couleur est NULL ou vide!");
+        throw Exception("La couleur du véhicule est requise");
+      }
+      if (v.categorie == null || v.categorie!.isEmpty) {
+        print("❌ [registrationModelToFormData] ERREUR: vehicule.categorie est NULL ou vide!");
+        throw Exception("La catégorie du véhicule est requise");
+      }
+      if (v.annee == null) {
+        print("❌ [registrationModelToFormData] ERREUR: vehicule.annee est NULL!");
+        throw Exception("L'année du véhicule est requise");
+      }
+
       formData.fields.addAll([
         MapEntry('vehicule[type]', v.type!),
         MapEntry('vehicule[marque]', v.marque!),
@@ -484,7 +553,9 @@ class AuthService {
         MapEntry('vehicule[categorie]', v.categorie!),
         MapEntry('vehicule[annee]', v.annee.toString()),
       ]);
+      print("🔍 [registrationModelToFormData] Champs véhicule ajoutés ✓");
 
+      print("🔍 [registrationModelToFormData] vehicule.cartegrise: ${v.cartegrise?.path}");
       if (v.cartegrise != null) {
         final file = await MultipartFile.fromFile(
           v.cartegrise!.path,
@@ -492,8 +563,10 @@ class AuthService {
           contentType: getMediaTypeFromFileName(v.cartegrise!.path),
         );
         formData.files.add(MapEntry('vehicule[carte_grise]', file));
+        print("🔍 [registrationModelToFormData] Carte grise ajoutée ✓");
       }
 
+      print("🔍 [registrationModelToFormData] vehicule.assurance: ${v.assurance?.path}");
       if (v.assurance != null) {
         final file = await MultipartFile.fromFile(
           v.assurance!.path,
@@ -501,8 +574,10 @@ class AuthService {
           contentType: getMediaTypeFromFileName(v.assurance!.path),
         );
         formData.files.add(MapEntry('vehicule[assurance]', file));
+        print("🔍 [registrationModelToFormData] Assurance ajoutée ✓");
       }
 
+      print("🔍 [registrationModelToFormData] vehicule.permis: ${v.permis?.path}");
       if (v.permis != null) {
         final file = await MultipartFile.fromFile(
           v.permis!.path,
@@ -510,14 +585,30 @@ class AuthService {
           contentType: getMediaTypeFromFileName(v.permis!.path),
         );
         formData.files.add(MapEntry('permis_conduire', file));
+        print("🔍 [registrationModelToFormData] Permis ajouté ✓");
       }
     }
 
+    print("✅ [registrationModelToFormData] Conversion terminée avec succès");
     return formData;
   }
 
   Future<void> register(
       RegistrationModel registrationModel, BuildContext context) async {
+    print("🚀 [register] ========== DEBUT DE L'INSCRIPTION ==========");
+    print("🚀 [register] Type d'inscription: ${registrationModel.type}");
+    print("🚀 [register] Téléphone: ${registrationModel.telephone}");
+    print("🚀 [register] Email: ${registrationModel.email}");
+    print("🚀 [register] Nom: ${registrationModel.nom}");
+    print("🚀 [register] Prénom: ${registrationModel.prenom}");
+    print("🚀 [register] Adresse: ${registrationModel.adresse}");
+    print("🚀 [register] Genre: ${registrationModel.genre}");
+    print("🚀 [register] Date de naissance: ${registrationModel.dateNaissance}");
+    print("🚀 [register] Code OTP: ${registrationModel.code}");
+    print("🚀 [register] Possède véhicule: ${registrationModel.possedeVehicule}");
+    print("🚀 [register] Type conducteur ID: ${registrationModel.typeConducteurId}");
+    print("🚀 [register] Véhicule: ${registrationModel.vehicule != null ? 'OUI' : 'NON'}");
+
     final dio = Dio();
     final url = registerUrl;
 
@@ -533,9 +624,12 @@ class AuthService {
       print("=== DEBUT DE L'INSCRIPTION ===");
 
       // ✅ Vérifier si le numéro existe déjà
+      print("🔍 [register] Vérification si le numéro existe déjà...");
       final phoneExists =
           await checkPhoneNumberExists(registrationModel.telephone);
+      print("🔍 [register] Numéro existe déjà: $phoneExists");
       if (phoneExists) {
+        print("⚠️ [register] Le numéro existe déjà, redirection vers login");
         CustomToast.showError(
           context,
           message:
@@ -551,6 +645,7 @@ class AuthService {
 
       print("=== CREATION DU FORMDATA ===");
       final formData = await registrationModelToFormData(registrationModel);
+      print("✅ [register] FormData créé avec succès");
 
       final response = await dio.post(
         url,
@@ -564,10 +659,13 @@ class AuthService {
         ),
       );
 
+      print("🔍 [register] Status code reçu: ${response.statusCode}");
       final responseJson = response.data;
-      String token = responseJson['token'];
+      print("🔍 [register] Response data: $responseJson");
 
       if (response.statusCode == 201) {
+        print("✅ [register] Inscription réussie (status 201)");
+        String token = responseJson['token'];
         String registerType = responseJson['type'];
         final String? profilStatuts = responseJson['data']['statut_validation'];
 
@@ -652,12 +750,19 @@ class AuthService {
             break;
         }
       } else {
+        print("❌ [register] Échec de l'inscription (status ${response.statusCode})");
         String errorMessage = "Erreur lors de l'inscription";
         if (response.data is Map) {
-          if (response.data['message'] != null) {
+          print("🔍 [register] Response data est un Map");
+          if (response.data['error'] != null) {
+            errorMessage = response.data['error'].toString();
+            print("🔍 [register] Erreur trouvée dans 'error': $errorMessage");
+          } else if (response.data['message'] != null) {
             errorMessage = response.data['message'].toString();
+            print("🔍 [register] Erreur trouvée dans 'message': $errorMessage");
           } else if (response.data['errors'] != null) {
             final errors = response.data['errors'] as Map<String, dynamic>;
+            print("🔍 [register] Erreurs multiples trouvées: $errors");
             if (errors.isNotEmpty) {
               final allErrors = <String>[];
               errors.forEach((key, value) {
@@ -669,6 +774,7 @@ class AuthService {
             }
           }
         }
+        print("❌ [register] Message d'erreur final: $errorMessage");
         throw DioException(
           requestOptions: response.requestOptions,
           response: response,

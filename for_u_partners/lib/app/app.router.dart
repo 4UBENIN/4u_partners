@@ -332,6 +332,7 @@ class StackedRouter extends _i1.RouterBase {
             args.firstName,
             args.lastName,
             args.address,
+            otpCode: args.otpCode,
             key: args.key),
         settings: data,
       );
@@ -500,6 +501,7 @@ class RegisterProfileViewArguments {
     required this.firstName,
     required this.lastName,
     required this.address,
+    this.otpCode,
     this.key,
   });
 
@@ -517,11 +519,13 @@ class RegisterProfileViewArguments {
 
   final String address;
 
+  final String? otpCode;
+
   final _i28.Key? key;
 
   @override
   String toString() {
-    return '{"selectedProfile": "$selectedProfile", "phoneNumber": "$phoneNumber", "mail": "$mail", "password": "$password", "firstName": "$firstName", "lastName": "$lastName", "address": "$address", "key": "$key"}';
+    return '{"selectedProfile": "$selectedProfile", "phoneNumber": "$phoneNumber", "mail": "$mail", "password": "$password", "firstName": "$firstName", "lastName": "$lastName", "address": "$address", "otpCode": "$otpCode", "key": "$key"}';
   }
 
   @override
@@ -534,6 +538,7 @@ class RegisterProfileViewArguments {
         other.firstName == firstName &&
         other.lastName == lastName &&
         other.address == address &&
+        other.otpCode == otpCode &&
         other.key == key;
   }
 
@@ -546,6 +551,7 @@ class RegisterProfileViewArguments {
         firstName.hashCode ^
         lastName.hashCode ^
         address.hashCode ^
+        otpCode.hashCode ^
         key.hashCode;
   }
 }
@@ -732,6 +738,7 @@ extension NavigatorStateExtension on _i31.NavigationService {
     required String firstName,
     required String lastName,
     required String address,
+    String? otpCode,
     _i28.Key? key,
     int? routerId,
     bool preventDuplicates = true,
@@ -748,6 +755,7 @@ extension NavigatorStateExtension on _i31.NavigationService {
             firstName: firstName,
             lastName: lastName,
             address: address,
+            otpCode: otpCode,
             key: key),
         id: routerId,
         preventDuplicates: preventDuplicates,
@@ -1122,6 +1130,7 @@ extension NavigatorStateExtension on _i31.NavigationService {
     required String firstName,
     required String lastName,
     required String address,
+    String? otpCode,
     _i28.Key? key,
     int? routerId,
     bool preventDuplicates = true,
@@ -1138,6 +1147,7 @@ extension NavigatorStateExtension on _i31.NavigationService {
             firstName: firstName,
             lastName: lastName,
             address: address,
+            otpCode: otpCode,
             key: key),
         id: routerId,
         preventDuplicates: preventDuplicates,

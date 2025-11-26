@@ -1391,6 +1391,19 @@ class MockDriverService extends _i1.Mock implements _i27.DriverService {
       ) as _i20.Future<void>);
 
   @override
+  _i20.Future<Map<String, dynamic>> denyCourse(int? courseId) =>
+      (super.noSuchMethod(
+        Invocation.method(
+          #denyCourse,
+          [courseId],
+        ),
+        returnValue:
+            _i20.Future<Map<String, dynamic>>.value(<String, dynamic>{}),
+        returnValueForMissingStub:
+            _i20.Future<Map<String, dynamic>>.value(<String, dynamic>{}),
+      ) as _i20.Future<Map<String, dynamic>>);
+
+  @override
   _i20.Future<void> startCourse(int? courseId) => (super.noSuchMethod(
         Invocation.method(
           #startCourse,

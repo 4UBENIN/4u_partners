@@ -56,6 +56,7 @@ class RegisterProfileView extends StackedView<RegisterProfileViewModel>
   final String firstName;
   final String lastName;
   final String address;
+  final String? otpCode;
 
   const RegisterProfileView(
       this.selectedProfile,
@@ -65,7 +66,8 @@ class RegisterProfileView extends StackedView<RegisterProfileViewModel>
       this.firstName,
       this.lastName,
       this.address,
-      {Key? key})
+      {this.otpCode,
+      Key? key})
       : super(key: key);
 
   @override
@@ -194,7 +196,7 @@ class RegisterProfileView extends StackedView<RegisterProfileViewModel>
       telephone: phoneNumber,
       dateNaissance: '',
       email: mail,
-      code: "",
+      code: otpCode ?? "1234",
       motDePasse: password,
       motDePasseConfirmation: password,
       nom: pressingNameInputController.text.trim(),
@@ -271,7 +273,7 @@ class RegisterProfileView extends StackedView<RegisterProfileViewModel>
       type: "agent d'entretien",
       telephone: phoneNumber,
       email: mail,
-      code: "1234",
+      code: otpCode ?? "1234",
       motDePasse: password,
       motDePasseConfirmation: password,
       nom: cleaningSurnameInputController.text.trim(),
@@ -302,7 +304,7 @@ class RegisterProfileView extends StackedView<RegisterProfileViewModel>
       type: 'garagiste',
       telephone: phoneNumber,
       email: mail,
-      code: "1234",
+      code: otpCode ?? "1234",
       motDePasse: password,
       motDePasseConfirmation: password,
       nom: garageNameInputController.text.trim(),
@@ -319,27 +321,45 @@ class RegisterProfileView extends StackedView<RegisterProfileViewModel>
   }
 
   void _validateVehicleFields(RegisterProfileViewModel viewModel) {
-    if (driverCarModelInputController.text.isEmpty) {
+    // Champs communs à tous les types de véhicules
+    if (driverCarBrandInputController.text.trim().isEmpty) {
+      throw 'Veuillez entrer la marque du véhicule';
+    }
+
+    if (driverCarColorInputController.text.trim().isEmpty) {
+      throw 'Veuillez entrer la couleur du véhicule';
+    }
+
+    if (driverCarModelInputController.text.trim().isEmpty) {
       throw 'Veuillez entrer le modèle du véhicule';
     }
-    
-    if (driverImmatriculationCarInputController.text.isEmpty) {
+
+    if (driverImmatriculationCarInputController.text.trim().isEmpty) {
       throw 'Veuillez entrer l\'immatriculation du véhicule';
     }
-    
-    if (driverCarYearInputController.text.isEmpty) {
+
+    if (driverCarYearInputController.text.trim().isEmpty) {
       throw 'Veuillez entrer l\'année du véhicule';
     }
-    
+
+    // Valider que l'année est un nombre valide
+    final year = int.tryParse(driverCarYearInputController.text.trim());
+    if (year == null) {
+      throw 'L\'année du véhicule doit être un nombre valide';
+    }
+
+    if (year < 1900 || year > DateTime.now().year + 1) {
+      throw 'L\'année du véhicule doit être entre 1900 et ${DateTime.now().year + 1}';
+    }
+
+    // Validation spécifique pour voiture
     if (viewModel.selectedVehicle == 'voiture') {
-      if (driverCarBrandInputController.text.isEmpty) {
-        throw 'Veuillez entrer la marque du véhicule';
-      }
-      if (driverCarColorInputController.text.isEmpty) {
-        throw 'Veuillez entrer la couleur du véhicule';
-      }
-      if (driverCarPlacesInputController.text.isEmpty) {
+      if (driverCarPlacesInputController.text.trim().isEmpty) {
         throw 'Veuillez entrer le nombre de places';
+      }
+      final places = int.tryParse(driverCarPlacesInputController.text.trim());
+      if (places == null) {
+        throw 'Le nombre de places doit être un nombre valide';
       }
     }
   }
@@ -380,7 +400,7 @@ class RegisterProfileView extends StackedView<RegisterProfileViewModel>
         type: type,
         telephone: phoneNumber,
         email: mail,
-        code: "1234",
+        code: otpCode ?? "1234",
         genre: viewModel.selectedGender,
         motDePasse: password,
         motDePasseConfirmation: password,
@@ -416,7 +436,7 @@ class RegisterProfileView extends StackedView<RegisterProfileViewModel>
         type: type,
         telephone: phoneNumber,
         email: mail,
-        code: "1234",
+        code: otpCode ?? "1234",
         genre: viewModel.selectedGender,
         motDePasse: password,
         motDePasseConfirmation: password,
@@ -441,24 +461,56 @@ class RegisterProfileView extends StackedView<RegisterProfileViewModel>
   }
 
   VehiculeModel _createVehicleModel(RegisterProfileViewModel viewModel) {
+    print("🚗 [_createVehicleModel] Création du modèle véhicule");
+    print("🚗 Type: ${viewModel.selectedVehicle}");
+    print("🚗 Marque: '${driverCarBrandInputController.text}'");
+    print("🚗 Modèle: '${driverCarModelInputController.text}'");
+    print("🚗 Immatriculation: '${driverImmatriculationCarInputController.text}'");
+    print("🚗 Places texte: '${driverCarPlacesInputController.text}'");
+    print("🚗 Couleur: '${driverCarColorInputController.text}'");
+    print("🚗 Catégorie: ${viewModel.selectedCategory}");
+    print("🚗 Année texte: '${driverCarYearInputController.text}'");
+
+    // Parse year and places
+    final yearText = driverCarYearInputController.text.trim();
+    final placesText = driverCarPlacesInputController.text.trim();
+    final annee = int.tryParse(yearText);
+    final nombrePlaces = int.tryParse(placesText);
+
+    print("🚗 Année parsée: $annee");
+    print("🚗 Places parsées: $nombrePlaces");
+
+    // Use moto/tricycle carte grise and assurance if voiture files are null
+    final carteGriseFile = viewModel.selectedVehicle == 'voiture'
+        ? (viewModel.driverCarCarteGrise != null
+            ? File(viewModel.driverCarCarteGrise!.path)
+            : null)
+        : (viewModel.driverMotoCarteGrise != null
+            ? File(viewModel.driverMotoCarteGrise!.path)
+            : null);
+
+    final assuranceFile = viewModel.selectedVehicle == 'voiture'
+        ? (viewModel.driverCarAssurance != null
+            ? File(viewModel.driverCarAssurance!.path)
+            : null)
+        : (viewModel.driverMotoAssurance != null
+            ? File(viewModel.driverMotoAssurance!.path)
+            : null);
+
     return VehiculeModel(
       type: viewModel.selectedVehicle,
-      marque: driverCarBrandInputController.text,
-      modele: driverCarModelInputController.text,
-      immatriculation: driverImmatriculationCarInputController.text,
-      nombrePlaces: int.tryParse(driverCarPlacesInputController.text),
-      couleur: driverCarColorInputController.text,
+      marque: driverCarBrandInputController.text.trim(),
+      modele: driverCarModelInputController.text.trim(),
+      immatriculation: driverImmatriculationCarInputController.text.trim(),
+      nombrePlaces: nombrePlaces,
+      couleur: driverCarColorInputController.text.trim(),
       categorie: viewModel.selectedCategory,
-      annee: int.tryParse(driverCarYearInputController.text),
-      cartegrise: viewModel.driverCarCarteGrise != null
-          ? File(viewModel.driverCarCarteGrise!.path)
-          : null,
+      annee: annee,
+      cartegrise: carteGriseFile,
       permis: viewModel.driverCarPermis != null
           ? File(viewModel.driverCarPermis!.path)
           : null,
-      assurance: viewModel.driverCarAssurance != null
-          ? File(viewModel.driverCarAssurance!.path)
-          : null,
+      assurance: assuranceFile,
     );
   }
 
@@ -697,14 +749,18 @@ class RegisterProfileView extends StackedView<RegisterProfileViewModel>
     // Update the controller text based on the selected vehicle
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (driverCarPlacesInputController.text.isEmpty) {
-        final seatNumber = viewModel.selectedVehicle == 'moto' 
-            ? '1' 
-            : viewModel.selectedVehicle == 'tricycle' 
-                ? '3' 
+        final seatNumber = viewModel.selectedVehicle == 'moto'
+            ? '1'
+            : viewModel.selectedVehicle == 'tricycle'
+                ? '3'
                 : driverCarPlacesInputController.text;
         if (driverCarPlacesInputController.text != seatNumber) {
           driverCarPlacesInputController.text = seatNumber;
         }
+      }
+      // Set category to "standard" by default for moto/tricycle
+      if (viewModel.selectedCategory != 'standard') {
+        viewModel.setSelectedCategory('standard');
       }
     });
 
@@ -719,6 +775,18 @@ class RegisterProfileView extends StackedView<RegisterProfileViewModel>
             "Assurance",
             viewModel.driverMotoAssurance,
             (file) => viewModel.driverMotoAssurance = file),
+        const SizedBox(height: 20),
+        TextInputField(
+          bigLabel: "Couleur du véhicule",
+          hintText: "Ex: Noir",
+          controller: driverCarColorInputController,
+        ),
+        const SizedBox(height: 20),
+        TextInputField(
+          bigLabel: "Marque du véhicule",
+          hintText: "Ex: Yamaha",
+          controller: driverCarBrandInputController,
+        ),
         const SizedBox(height: 20),
         TextInputField(
           bigLabel: "Modèle du véhicule",
@@ -745,6 +813,7 @@ class RegisterProfileView extends StackedView<RegisterProfileViewModel>
           bigLabel: "Année du véhicule",
           hintText: "Ex: 2008",
           controller: driverCarYearInputController,
+          keyboardType: TextInputType.number,
         ),
         const SizedBox(height: 20),
       ],
@@ -806,6 +875,7 @@ class RegisterProfileView extends StackedView<RegisterProfileViewModel>
           bigLabel: "Année du véhicule",
           hintText: "Ex: 2008",
           controller: driverCarYearInputController,
+          keyboardType: TextInputType.number,
         ),
         const SizedBox(height: 20),
         CustomDropdown(

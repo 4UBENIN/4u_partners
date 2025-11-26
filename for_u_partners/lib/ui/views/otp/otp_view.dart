@@ -167,6 +167,7 @@ class OtpView extends StackedView<OtpViewModel> {
                             ? () {
                                 viewModel.verifyOtp().then((isValid) {
                                   if (isValid) {
+                                    print("🔑 [OtpView] Navigation avec code OTP: ${viewModel.otpCode}");
                                     viewModel.navigationService
                                         .navigateToRegisterProfileView(
                                       selectedProfile: "conducteur",
@@ -176,6 +177,7 @@ class OtpView extends StackedView<OtpViewModel> {
                                       firstName: firstName ?? '',
                                       lastName: lastName ?? '',
                                       address: address ?? '',
+                                      otpCode: viewModel.otpCode,
                                     );
                                   }
                                 });

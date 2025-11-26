@@ -27,6 +27,7 @@ class OtpViewModel extends BaseViewModel {
   String get maskedPhoneNumber {
     return _phoneNumber;
   }
+  String get otpCode => _otpDigits.join();
   void initialize(String phoneNumber) {
     _phoneNumber = phoneNumber;
     _otpDigits = List.filled(otpLength, '', growable: false);
