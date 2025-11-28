@@ -106,7 +106,7 @@ class ClientCard extends StatefulWidget {
 
 class _ClientCardState extends State<ClientCard> {
   Timer? _countdownTimer;
-  int _remainingSeconds = 15;
+  int _remainingSeconds = 20;
   bool _isExpired = false;
 
   @override
