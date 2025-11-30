@@ -47,6 +47,50 @@ class _MesVehiculesView extends StatelessWidget {
     }
   }
 
+  String _getPlacesText(Vehicle vehicle) {
+    // Si nombre_places est disponible dans les données, l'utiliser
+    if (vehicle.nombrePlaces != null) {
+      return vehicle.nombrePlaces.toString();
+    }
+
+    // Sinon, utiliser la logique existante basée sur le type et la catégorie
+    final type = vehicle.type?.toLowerCase();
+    final categorie = vehicle.categorie?.toLowerCase();
+
+    // Si c'est une moto, toujours 1 place
+    if (type == 'moto') {
+      return '1';
+    }
+
+    // Course à l'heure = 2 places
+    if (vehicle.courseHeure) {
+      return '2';
+    }
+
+    // Tricycle = 3 places
+    if (categorie == 'tricycle') {
+      return '3';
+    }
+
+    // Par défaut = 4 places
+    return '4';
+  }
+
+  IconData _getVehicleIcon(String? type) {
+    final vehicleType = type?.toLowerCase();
+    switch (vehicleType) {
+      case 'moto':
+      case 'motorcycle':
+        return Icons.two_wheeler;
+      case 'tricycle':
+        return Icons.pedal_bike;
+      case 'voiture':
+      case 'car':
+      default:
+        return Icons.directions_car;
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -117,7 +161,7 @@ class _MesVehiculesView extends StatelessWidget {
                               right: -20,
                               bottom: -10,
                               child: Icon(
-                                Icons.directions_car,
+                                _getVehicleIcon(viewModel.vehiculeActif?.type),
                                 size: 140,
                                 color: Colors.white.withOpacity(0.2),
                               ),
@@ -386,7 +430,7 @@ class _MesVehiculesView extends StatelessWidget {
                         Icon(Icons.people_outline, size: 14, color: Colors.grey[600]),
                         const SizedBox(width: 4),
                         Text(
-                          vehicle.courseHeure ? '2' : vehicle.categorie?.toLowerCase() == 'tricycle' ? '3' : '4',
+                          _getPlacesText(vehicle),
                           style: TextStyle(
                             fontSize: 11,
                             color: Colors.grey[800],
@@ -515,7 +559,7 @@ class _MesVehiculesView extends StatelessWidget {
                     Icon(Icons.people_outline, size: 14, color: Colors.grey[600]),
                     const SizedBox(width: 4),
                     Text(
-                      '${vehicle.courseHeure ? '2' : vehicle.categorie?.toLowerCase() == 'tricycle' ? '3' : '4'} places',
+                      '${_getPlacesText(vehicle)} places',
                       style: TextStyle(
                         fontSize: 12,
                         color: Colors.grey[600],

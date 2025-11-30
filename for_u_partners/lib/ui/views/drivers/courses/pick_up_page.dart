@@ -9,6 +9,10 @@ import 'package:iconsax/iconsax.dart';
 import 'package:for_u_partners/ui/common/app_colors.dart';
 import 'package:flutter_polyline_points/flutter_polyline_points.dart';
 import 'package:for_u_partners/app/core/constants.dart';
+import 'package:for_u_partners/app/app.locator.dart';
+import 'package:for_u_partners/services/driver_service.dart';
+import 'package:for_u_partners/app/app.router.dart';
+import 'package:stacked_services/stacked_services.dart';
 
 // AppColors class with logo property
 class AppColors {
@@ -43,9 +47,15 @@ class _PickUpPageState extends State<PickUpPage> with TickerProviderStateMixin {
   String _lastSearchQuery = "";
 
   final FunctionsService _functionsService = FunctionsService();
+  final _driverService = locator<DriverService>();
+  final _navigationService = locator<NavigationService>();
 
   late AnimationController _animationController;
   late Animation<double> _fadeAnimation;
+
+  // Pickup course state
+  bool _isCreatingCourse = false;
+  int? _createdCourseId;
 
   // Google Maps
   GoogleMapController? _mapController;
@@ -434,8 +444,80 @@ class _PickUpPageState extends State<PickUpPage> with TickerProviderStateMixin {
     );
   }
 
+  // 🚀 Create and start pickup course
+  Future<void> _createAndStartPickupCourse() async {
+    if (_isCreatingCourse) {
+      print('⚠️ [PickUpPage] Already creating a course, skipping...');
+      return;
+    }
+
+    setState(() => _isCreatingCourse = true);
+
+    try {
+      print('🚀 [PickUpPage] Creating pickup course...');
+
+      // Create the pickup course
+      final courseData = await _driverService.createPickupCourse(
+        typeCourse: 'distance',
+        departLat: departLat!,
+        departLng: departLng!,
+        arriveeLat: arriveeLat!,
+        arriveeLng: arriveeLng!,
+        adresseDepart: _departController.text,
+        adresseArrivee: _destinationController.text,
+        modePaiement: 'especes', // Cash payment
+      );
+
+      _createdCourseId = courseData['course_id'];
+      print('✅ [PickUpPage] Course created - ID: $_createdCourseId');
+      print('📊 [PickUpPage] Estimated amount: ${courseData['estimation_montant']} FCFA');
+
+      // Start the pickup course immediately
+      print('🏁 [PickUpPage] Starting pickup course $_createdCourseId...');
+      await _driverService.startPickupCourse(_createdCourseId!);
+      print('✅ [PickUpPage] Course started successfully');
+
+      if (mounted) {
+        // Close the dialog
+        Navigator.pop(context);
+
+        // Show success message
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Course démarrée avec succès! ID: $_createdCourseId'),
+            backgroundColor: Colors.green,
+            duration: const Duration(seconds: 3),
+          ),
+        );
+
+        // Navigate to courses view to show the active course
+        // You can customize this navigation based on your app structure
+        _navigationService.clearStackAndShow(Routes.homemainView);
+      }
+    } catch (e) {
+      print('❌ [PickUpPage] Error creating/starting course: $e');
+
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Erreur: ${e.toString()}'),
+            backgroundColor: Colors.red,
+            duration: const Duration(seconds: 5),
+          ),
+        );
+      }
+    } finally {
+      if (mounted) {
+        setState(() => _isCreatingCourse = false);
+      }
+    }
+  }
+
   // 🔥 Afficher la popup avec les détails du trajet
   void _showTripDetailsDialog() {
+    print('🔔 [PickUpPage] _showTripDetailsDialog() called');
+    print('📊 [PickUpPage] Trip details - Distance: $_distance, Duration: $_duration, Price: $_price FCFA');
+
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
@@ -733,27 +815,58 @@ class _PickUpPageState extends State<PickUpPage> with TickerProviderStateMixin {
                 width: double.infinity,
                 height: 56,
                 child: ElevatedButton(
-                  onPressed: () {
-                    Navigator.pop(context);
-                    print('Départ: ${_departController.text} ($departLat,$departLng)');
-                    print('Arrivée: ${_destinationController.text} ($arriveeLat,$arriveeLng)');
-                    // Ajoutez ici la logique pour démarrer la course
-                  },
+                  onPressed: _isCreatingCourse
+                      ? null
+                      : () async {
+                          print('🚀 [PickUpPage] Button "Démarrer la course" CLICKED');
+                          print('📍 [PickUpPage] Departure: ${_departController.text}');
+                          print('📍 [PickUpPage] Departure Coords: ($departLat, $departLng)');
+                          print('🎯 [PickUpPage] Destination: ${_destinationController.text}');
+                          print('🎯 [PickUpPage] Destination Coords: ($arriveeLat, $arriveeLng)');
+                          print('💰 [PickUpPage] Price: $_price FCFA');
+                          print('📏 [PickUpPage] Distance: $_distance');
+                          print('⏱️ [PickUpPage] Duration: $_duration');
+
+                          await _createAndStartPickupCourse();
+                        },
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: AppColors.logo,
+                    backgroundColor: _isCreatingCourse ? Colors.grey : AppColors.logo,
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(12),
                     ),
                     elevation: 0,
                   ),
-                  child: const Text(
-                    'Démarrer la course',
-                    style: TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.w600,
-                      color: Colors.white,
-                    ),
-                  ),
+                  child: _isCreatingCourse
+                      ? const Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            SizedBox(
+                              width: 20,
+                              height: 20,
+                              child: CircularProgressIndicator(
+                                strokeWidth: 2,
+                                valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                              ),
+                            ),
+                            SizedBox(width: 12),
+                            Text(
+                              'Création en cours...',
+                              style: TextStyle(
+                                fontSize: 16,
+                                fontWeight: FontWeight.w600,
+                                color: Colors.white,
+                              ),
+                            ),
+                          ],
+                        )
+                      : const Text(
+                          'Démarrer la course',
+                          style: TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.w600,
+                            color: Colors.white,
+                          ),
+                        ),
                 ),
               ),
             ],
@@ -978,7 +1091,19 @@ class _PickUpPageState extends State<PickUpPage> with TickerProviderStateMixin {
                 width: double.infinity,
                 height: 56,
                 child: ElevatedButton(
-                  onPressed: _canContinue ? _showTripDetailsDialog : null,
+                  onPressed: _canContinue
+                      ? () {
+                          print('👆 [PickUpPage] "Voir détails" button pressed');
+                          print('✅ [PickUpPage] _canContinue: $_canContinue');
+                          _showTripDetailsDialog();
+                        }
+                      : () {
+                          print('⚠️ [PickUpPage] "Voir détails" button pressed but disabled');
+                          print('❌ [PickUpPage] _canContinue: $_canContinue');
+                          print('📝 [PickUpPage] Departure text: "${_departController.text}"');
+                          print('📝 [PickUpPage] Destination text: "${_destinationController.text}"');
+                          print('📍 [PickUpPage] departLat: $departLat, arriveeLat: $arriveeLat');
+                        },
                   style: ElevatedButton.styleFrom(
                     backgroundColor: _canContinue ? AppColors.logo : Colors.grey[300],
                     shape: RoundedRectangleBorder(

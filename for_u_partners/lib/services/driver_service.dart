@@ -989,4 +989,443 @@ class DriverService {
       return false;
     }
   }
+
+  // ========== PICKUP COURSE METHODS ==========
+
+  /// Get pickup course details
+  ///
+  /// Parameters:
+  /// - courseId: The ID of the pickup course
+  ///
+  /// Returns a Map with full course details
+  Future<Map<String, dynamic>> getPickupCourseDetails(int courseId) async {
+    final token = await sharedPreferencesService.getToken();
+    final url = Uri.parse(pickupCourseDetailsUrl(courseId));
+
+    debugPrint('========== GET PICKUP COURSE DETAILS ==========');
+    debugPrint('Course ID: $courseId');
+    debugPrint('URL: $url');
+
+    try {
+      final response = await http.get(
+        url,
+        headers: {
+          'Accept': 'application/json',
+          'Authorization': 'Bearer $token',
+        },
+      );
+
+      debugPrint('Response Status: ${response.statusCode}');
+      debugPrint('Response Body: ${response.body}');
+
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+        debugPrint('✅ Pickup course details retrieved');
+        return data;
+      } else if (response.statusCode == 404) {
+        throw Exception('Course pickup non trouvée');
+      } else {
+        _checkAuthenticationError(response);
+        throw Exception('Erreur lors de la récupération des détails: ${response.statusCode}');
+      }
+    } catch (e) {
+      debugPrint('❌ Error getting pickup course details: $e');
+      rethrow;
+    }
+  }
+
+  /// List all pickup courses for the connected driver
+  ///
+  /// Returns a List of pickup courses
+  Future<List<Map<String, dynamic>>> listPickupCourses() async {
+    final token = await sharedPreferencesService.getToken();
+    final url = Uri.parse(listPickupCoursesUrl);
+
+    debugPrint('========== LIST PICKUP COURSES ==========');
+    debugPrint('URL: $url');
+
+    try {
+      final response = await http.get(
+        url,
+        headers: {
+          'Accept': 'application/json',
+          'Authorization': 'Bearer $token',
+        },
+      );
+
+      debugPrint('Response Status: ${response.statusCode}');
+      debugPrint('Response Body: ${response.body}');
+
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+
+        // The API might return {courses: [...]} or just [...]
+        List<dynamic> coursesList;
+        if (data is List) {
+          coursesList = data;
+        } else if (data is Map && data.containsKey('courses')) {
+          coursesList = data['courses'];
+        } else if (data is Map && data.containsKey('data')) {
+          coursesList = data['data'];
+        } else {
+          coursesList = [];
+        }
+
+        debugPrint('✅ Found ${coursesList.length} pickup courses');
+        return coursesList.map((e) => e as Map<String, dynamic>).toList();
+      } else {
+        _checkAuthenticationError(response);
+        throw Exception('Erreur lors de la récupération des courses: ${response.statusCode}');
+      }
+    } catch (e) {
+      debugPrint('❌ Error listing pickup courses: $e');
+      rethrow;
+    }
+  }
+
+  /// Get active pickup course (if any)
+  ///
+  /// Returns the active pickup course or null if none
+  Future<Map<String, dynamic>?> getActivePickupCourse() async {
+    try {
+      final courses = await listPickupCourses();
+
+      // Look for courses with active statuses
+      final activeCourse = courses.firstWhere(
+        (course) {
+          final status = course['statut']?.toString().toLowerCase() ?? '';
+          return status == 'en_cours' ||
+                 status == 'en_pause' ||
+                 status == 'chauffeur_en_route' ||
+                 status == 'chauffeur_arrive';
+        },
+        orElse: () => {},
+      );
+
+      if (activeCourse.isEmpty) {
+        debugPrint('ℹ️ No active pickup course found');
+        return null;
+      }
+
+      debugPrint('✅ Active pickup course found: ${activeCourse['id']}');
+      return activeCourse;
+    } catch (e) {
+      debugPrint('❌ Error getting active pickup course: $e');
+      return null;
+    }
+  }
+
+  /// Create a pickup course (for clients without the app)
+  ///
+  /// Parameters:
+  /// - typeCourse: "distance" or other type
+  /// - departLat: Departure latitude
+  /// - departLng: Departure longitude
+  /// - arriveeLat: Arrival latitude
+  /// - arriveeLng: Arrival longitude
+  /// - adresseDepart: Departure address
+  /// - adresseArrivee: Arrival address
+  /// - modePaiement: Payment mode (e.g., "especes")
+  ///
+  /// Returns a Map with course details including:
+  /// - course_id
+  /// - estimation_montant
+  /// - distance_estimée
+  /// - durée_estimée
+  /// - vehicule info
+  /// - chauffeur info
+  Future<Map<String, dynamic>> createPickupCourse({
+    required String typeCourse,
+    required double departLat,
+    required double departLng,
+    required double arriveeLat,
+    required double arriveeLng,
+    required String adresseDepart,
+    required String adresseArrivee,
+    required String modePaiement,
+  }) async {
+    final token = await sharedPreferencesService.getToken();
+    final url = Uri.parse(createPickupCourseUrl);
+
+    debugPrint('========== CREATE PICKUP COURSE ==========');
+    debugPrint('URL: $url');
+    debugPrint('Departure: $adresseDepart ($departLat, $departLng)');
+    debugPrint('Arrival: $adresseArrivee ($arriveeLat, $arriveeLng)');
+    debugPrint('Type: $typeCourse | Payment: $modePaiement');
+
+    final body = {
+      'type_course': typeCourse,
+      'depart_lat': departLat,
+      'depart_lng': departLng,
+      'arrivee_lat': arriveeLat,
+      'arrivee_lng': arriveeLng,
+      'adresse_depart': adresseDepart,
+      'adresse_arrivee': adresseArrivee,
+      'mode_paiement': modePaiement,
+    };
+
+    try {
+      final response = await http.post(
+        url,
+        headers: {
+          'Accept': 'application/json',
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer $token',
+        },
+        body: jsonEncode(body),
+      );
+
+      debugPrint('Response Status: ${response.statusCode}');
+      debugPrint('Response Body: ${response.body}');
+
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+        debugPrint('✅ Pickup course created successfully - ID: ${data['course_id']}');
+        return data;
+      } else if (response.statusCode == 422) {
+        final errorData = jsonDecode(response.body);
+        debugPrint('❌ Validation error: ${errorData['errors']}');
+        throw Exception('Données invalides: ${errorData['errors']}');
+      } else {
+        _checkAuthenticationError(response);
+        throw Exception('Erreur lors de la création de la course: ${response.statusCode}');
+      }
+    } catch (e) {
+      debugPrint('❌ Error creating pickup course: $e');
+      rethrow;
+    }
+  }
+
+  /// Start a pickup course
+  ///
+  /// Parameters:
+  /// - courseId: The ID of the pickup course to start
+  ///
+  /// Returns a Map with course info including status and start time
+  Future<Map<String, dynamic>> startPickupCourse(int courseId) async {
+    final token = await sharedPreferencesService.getToken();
+    final url = Uri.parse(startPickupCourseUrl(courseId));
+
+    debugPrint('========== START PICKUP COURSE ==========');
+    debugPrint('Course ID: $courseId');
+    debugPrint('URL: $url');
+
+    try {
+      final response = await http.patch(
+        url,
+        headers: {
+          'Accept': 'application/json',
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer $token',
+        },
+      );
+
+      debugPrint('Response Status: ${response.statusCode}');
+      debugPrint('Response Body: ${response.body}');
+
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+        debugPrint('✅ Pickup course started successfully');
+        return data;
+      } else if (response.statusCode == 404) {
+        throw Exception('Course pickup non trouvée ou non autorisée');
+      } else {
+        _checkAuthenticationError(response);
+        throw Exception('Erreur lors du démarrage de la course: ${response.statusCode}');
+      }
+    } catch (e) {
+      debugPrint('❌ Error starting pickup course: $e');
+      rethrow;
+    }
+  }
+
+  /// Finish a pickup course
+  ///
+  /// Parameters:
+  /// - courseId: The ID of the pickup course to finish
+  /// - penalite: Penalty amount (default: 0)
+  ///
+  /// Returns a Map with final course details including amount and payment info
+  Future<Map<String, dynamic>> finishPickupCourse(int courseId, {int penalite = 0}) async {
+    final token = await sharedPreferencesService.getToken();
+    final url = Uri.parse(finishPickupCourseUrl(courseId));
+
+    debugPrint('========== FINISH PICKUP COURSE ==========');
+    debugPrint('Course ID: $courseId');
+    debugPrint('Penalty: $penalite');
+    debugPrint('URL: $url');
+
+    try {
+      final response = await http.patch(
+        url,
+        headers: {
+          'Accept': 'application/json',
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer $token',
+        },
+        body: jsonEncode({'penalite': penalite}),
+      );
+
+      debugPrint('Response Status: ${response.statusCode}');
+      debugPrint('Response Body: ${response.body}');
+
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+        debugPrint('✅ Pickup course finished successfully');
+        debugPrint('   Amount: ${data['montant']} FCFA');
+        debugPrint('   Payment Status: ${data['payment_status']}');
+        return data;
+      } else {
+        _checkAuthenticationError(response);
+        throw Exception('Erreur lors de la finalisation de la course: ${response.statusCode}');
+      }
+    } catch (e) {
+      debugPrint('❌ Error finishing pickup course: $e');
+      rethrow;
+    }
+  }
+
+  /// Mark a pickup course as paid in cash
+  ///
+  /// Parameters:
+  /// - courseId: The ID of the pickup course
+  ///
+  /// Returns a Map with payment confirmation and commission details
+  Future<Map<String, dynamic>> markPickupCoursePaid(int courseId) async {
+    final token = await sharedPreferencesService.getToken();
+    final url = Uri.parse(markPickupCoursePaidUrl(courseId));
+
+    debugPrint('========== MARK PICKUP COURSE PAID ==========');
+    debugPrint('Course ID: $courseId');
+    debugPrint('URL: $url');
+
+    try {
+      final response = await http.post(
+        url,
+        headers: {
+          'Accept': 'application/json',
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer $token',
+        },
+      );
+
+      debugPrint('Response Status: ${response.statusCode}');
+      debugPrint('Response Body: ${response.body}');
+
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+        debugPrint('✅ Pickup course marked as paid');
+        debugPrint('   Amount: ${data['montant']} FCFA');
+        debugPrint('   Commission: ${data['montant_commission']} FCFA');
+        debugPrint('   Balance: ${data['balance_disponible']} FCFA');
+        return data;
+      } else if (response.statusCode == 400) {
+        final errorData = jsonDecode(response.body);
+        throw Exception(errorData['message'] ?? 'Le paiement a déjà été enregistré');
+      } else if (response.statusCode == 404) {
+        final errorData = jsonDecode(response.body);
+        throw Exception(errorData['message'] ?? 'Course non trouvée');
+      } else {
+        _checkAuthenticationError(response);
+        throw Exception('Erreur lors de l\'enregistrement du paiement: ${response.statusCode}');
+      }
+    } catch (e) {
+      debugPrint('❌ Error marking pickup course as paid: $e');
+      rethrow;
+    }
+  }
+
+  /// Start a pause on a pickup course
+  ///
+  /// Parameters:
+  /// - courseId: The ID of the pickup course
+  ///
+  /// Returns a Map with pause start time
+  Future<Map<String, dynamic>> startPickupPause(int courseId) async {
+    final token = await sharedPreferencesService.getToken();
+    final url = Uri.parse(startPickupPauseUrl(courseId));
+
+    debugPrint('========== START PICKUP PAUSE ==========');
+    debugPrint('Course ID: $courseId');
+    debugPrint('URL: $url');
+
+    try {
+      final response = await http.post(
+        url,
+        headers: {
+          'Accept': 'application/json',
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer $token',
+        },
+      );
+
+      debugPrint('Response Status: ${response.statusCode}');
+      debugPrint('Response Body: ${response.body}');
+
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+        debugPrint('✅ Pickup pause started');
+        return data;
+      } else if (response.statusCode == 400) {
+        final errorData = jsonDecode(response.body);
+        throw Exception(errorData['message'] ?? 'Une pause est déjà en cours');
+      } else if (response.statusCode == 404) {
+        throw Exception('Course non trouvée');
+      } else {
+        _checkAuthenticationError(response);
+        throw Exception('Erreur lors du démarrage de la pause: ${response.statusCode}');
+      }
+    } catch (e) {
+      debugPrint('❌ Error starting pickup pause: $e');
+      rethrow;
+    }
+  }
+
+  /// Stop a pause on a pickup course
+  ///
+  /// Parameters:
+  /// - courseId: The ID of the pickup course
+  ///
+  /// Returns a Map with pause duration and cost details
+  Future<Map<String, dynamic>> stopPickupPause(int courseId) async {
+    final token = await sharedPreferencesService.getToken();
+    final url = Uri.parse(stopPickupPauseUrl(courseId));
+
+    debugPrint('========== STOP PICKUP PAUSE ==========');
+    debugPrint('Course ID: $courseId');
+    debugPrint('URL: $url');
+
+    try {
+      final response = await http.post(
+        url,
+        headers: {
+          'Accept': 'application/json',
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer $token',
+        },
+      );
+
+      debugPrint('Response Status: ${response.statusCode}');
+      debugPrint('Response Body: ${response.body}');
+
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+        debugPrint('✅ Pickup pause stopped');
+        debugPrint('   Pause duration: ${data['pause_seconds']}s');
+        debugPrint('   Pause cost: ${data['montant_pause']} FCFA');
+        return data;
+      } else if (response.statusCode == 400) {
+        final errorData = jsonDecode(response.body);
+        throw Exception(errorData['message'] ?? 'Aucune pause active à arrêter');
+      } else if (response.statusCode == 404) {
+        throw Exception('Course non trouvée');
+      } else {
+        _checkAuthenticationError(response);
+        throw Exception('Erreur lors de l\'arrêt de la pause: ${response.statusCode}');
+      }
+    } catch (e) {
+      debugPrint('❌ Error stopping pickup pause: $e');
+      rethrow;
+    }
+  }
 }

@@ -7,4 +7,6 @@ class ApiConstant {
   static String get saveFcmTokenDriver => '$baseUrl/conducteur/save-fcm-token';
   static String get saveFcmTokenPressing => '$baseUrl/pressing/save-fcm-token';
   static String get saveDriverPosition => '$baseUrl/conducteur/position';
+  static String get getDriverNotifications => '$baseUrl/conducteur/notifications';
+  static String markNotificationAsRead(int id) => '$baseUrl/conducteur/notifications/$id/read';
 }

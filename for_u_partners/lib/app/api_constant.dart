@@ -26,6 +26,23 @@ String get assignedCourseUrl => "$baseUrl/conducteur/courses_list";
 String get walletSoldUrl => "$baseUrl/wallet_solde";
 String get getDailyStats => "$baseUrl/conducteur/stats/daily";
 String get getGlobalStats => "$baseUrl/conducteur/stats/global";
+
+// Pickup Course URLs
+String get createPickupCourseUrl => "$baseUrl/conducteur/course_pickup/lancer_course";
+String get listPickupCoursesUrl => "$baseUrl/conducteur/course_pickup";
+String pickupCourseDetailsUrl(int courseId) =>
+    "$baseUrl/conducteur/course_pickup/$courseId";
+String startPickupCourseUrl(int courseId) =>
+    "$baseUrl/conducteur/course_pickup/$courseId/start";
+String finishPickupCourseUrl(int courseId) =>
+    "$baseUrl/conducteur/course_pickup/$courseId/finish";
+String markPickupCoursePaidUrl(int courseId) =>
+    "$baseUrl/conducteur/course_pickup/$courseId/payment";
+String startPickupPauseUrl(int courseId) =>
+    "$baseUrl/conducteur/course_pickup/$courseId/start_pause";
+String stopPickupPauseUrl(int courseId) =>
+    "$baseUrl/conducteur/course_pickup/$courseId/stop_pause";
+
 Map<String, String> headers = {
   'Content-Type': 'application/json',
   'Accept': 'application/json'

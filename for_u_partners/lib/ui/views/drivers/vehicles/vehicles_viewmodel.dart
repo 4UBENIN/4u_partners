@@ -92,6 +92,8 @@ class MesVehiculesViewModel extends BaseViewModel {
               statut: vehicleData['statut']?.toString(),
               categorie: categorie,
               couleur: vehicleData['couleur']?.toString() ?? 'Noire',
+              type: vehicleData['type']?.toString(),
+              nombrePlaces: vehicleData['nombre_places'] as int?,
               courseHeure: vehicleData['course_heure'] == true || vehicleData['course_heure'] == 1,
               clim: vehicleData['clim'] == true || vehicleData['clim'] == 1,
               basic: basicValue,
@@ -99,6 +101,8 @@ class MesVehiculesViewModel extends BaseViewModel {
             );
             
             print('ℹ️ Catégorie du véhicule: ${vehicle.categorie}');
+            print('ℹ️ Type du véhicule: ${vehicle.type}');
+            print('ℹ️ Nombre de places: ${vehicle.nombrePlaces}');
             print('ℹ️ Services - Course à l\'heure: ${vehicle.courseHeure}, Clim: ${vehicle.clim}, Basic: ${vehicle.basic}, Premium: ${vehicle.premium}');
             
             _vehicules = [vehicle];
