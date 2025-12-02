@@ -22,10 +22,14 @@ import 'package:for_u_partners/services/ride/ride_persistence_service.dart';
 import 'package:for_u_partners/ui/views/drivers/homemain/homemain_viewmodel.dart';
 import 'package:for_u_partners/services/course_restoration_service.dart';
 import 'package:for_u_partners/services/arrival_state_service.dart';
+import 'package:for_u_partners/services/tracking_service.dart';
+import 'package:for_u_partners/services/sharedpreferences_service.dart';
 
 class CoursesViewModel extends BaseViewModel {
   final _driverService = locator<DriverService>();
   final _arrivalStateService = locator<ArrivalStateService>();
+  final _trackingService = TrackingService();
+  final _sharedPreferencesService = locator<SharedpreferencesService>();
 
   GoogleMapController? _mapController;
   GoogleMapController? get mapController => _mapController;
@@ -159,6 +163,9 @@ class CoursesViewModel extends BaseViewModel {
 
     // Check for pending course restoration
     await _checkPendingRestoration();
+
+    // ✅ Start continuous general position tracking if driver is online
+    await _startGeneralPositionTracking();
 
     // Afficher le bottom sheet s'il y a des courses
     print(
@@ -880,15 +887,47 @@ class CoursesViewModel extends BaseViewModel {
 
     // 🌐 Enable backend location updates AFTER successful acceptance
     // Only if _currentCourse is still set (not rejected/cancelled in the meantime)
-    print('🌐 [acceptCourse] Enabling backend location updates for course $courseNumericId');
+    print('🌐 [acceptCourse] Checking location tracking for course $courseNumericId');
     print('🌐 [acceptCourse] _currentCourse: ${_currentCourse?.courseId}');
+    print('🌐 [acceptCourse] isPickupCourse: ${_currentCourse?.isPickupCourse}');
 
+    // ⚡ Skip location tracking for pickup courses (service_id = 3)
     if (_currentCourse != null && _currentCourse!.courseId == courseId) {
-      _locationService.enableBackendUpdates(
+      if (_currentCourse!.isPickupCourse) {
+        print('⚡ [acceptCourse] PICKUP COURSE: Skipping backend location updates');
+        print('⚡ [acceptCourse] Pickup courses do not send real-time location to backend');
+      } else {
+        print('🌐 [acceptCourse] Enabling backend location updates for regular course $courseNumericId');
+        _locationService.enableBackendUpdates(
         courseId: courseNumericId,
         onLocationUpdate: (locationData) {
+          debugPrint('🔔 [CALLBACK] ========== LOCATION CALLBACK TRIGGERED ==========');
+          debugPrint('🔔 [CALLBACK] Course ID: $courseNumericId');
+          debugPrint('🔔 [CALLBACK] Latitude: ${locationData.latitude}');
+          debugPrint('🔔 [CALLBACK] Longitude: ${locationData.longitude}');
+          debugPrint('🔔 [CALLBACK] Accuracy: ${locationData.accuracy}');
+          debugPrint('🔔 [CALLBACK] Heading: ${locationData.heading}');
+          debugPrint('🔔 [CALLBACK] Speed: ${locationData.speed}');
+
           if (locationData.latitude != null && locationData.longitude != null) {
-            print('🌐 [acceptCourse] Sending location update: ${locationData.latitude}, ${locationData.longitude}');
+            // ✅ Additional safety check: Only send if course is still current
+            if (_currentCourse?.courseId != courseId.toString()) {
+              debugPrint('⚠️ [CALLBACK] Course has changed or ended - skipping update');
+              debugPrint('⚠️ [CALLBACK] Expected: $courseId, Current: ${_currentCourse?.courseId}');
+              debugPrint('⚠️ [CALLBACK] Disabling backend updates...');
+              _locationService.disableBackendUpdates();
+              return;
+            }
+
+            debugPrint('✅ [CALLBACK] Calling sendLocationUpdate API...');
+            debugPrint('✅ [CALLBACK] Request details:');
+            debugPrint('   - Course ID: $courseNumericId');
+            debugPrint('   - Latitude: ${locationData.latitude}');
+            debugPrint('   - Longitude: ${locationData.longitude}');
+            debugPrint('   - Heading: ${locationData.heading}');
+            debugPrint('   - Speed: ${locationData.speed}');
+            debugPrint('   - Accuracy: ${locationData.accuracy}');
+
             driverservice.sendLocationUpdate(
               courseId: courseNumericId,
               latitude: locationData.latitude!,
@@ -896,13 +935,32 @@ class CoursesViewModel extends BaseViewModel {
               heading: locationData.heading,
               speed: locationData.speed,
               accuracy: locationData.accuracy,
-            );
+            ).then((success) {
+              if (success) {
+                debugPrint('✅ [CALLBACK] API call successful for course $courseNumericId');
+              } else {
+                debugPrint('❌ [CALLBACK] ========== API CALL FAILED ==========');
+                debugPrint('❌ [CALLBACK] Course ID: $courseNumericId');
+                debugPrint('❌ [CALLBACK] REASON: Server returned non-200 status');
+                debugPrint('❌ [CALLBACK] This usually means the course has ended or changed status');
+                debugPrint('❌ [CALLBACK] Disabling backend updates to prevent further errors...');
+                _locationService.disableBackendUpdates();
+              }
+            }).catchError((error) {
+              debugPrint('❌ [CALLBACK] ========== API CALL EXCEPTION ==========');
+              debugPrint('❌ [CALLBACK] Exception: $error');
+              debugPrint('❌ [CALLBACK] Course ID: $courseNumericId');
+              debugPrint('❌ [CALLBACK] Disabling backend updates...');
+              _locationService.disableBackendUpdates();
+            });
           } else {
-            print('⚠️ [acceptCourse] Location data missing lat/lng, skipping update');
+            debugPrint('⚠️ [CALLBACK] CRITICAL: Location data has NULL lat/lng!');
+            debugPrint('⚠️ [CALLBACK] This means GPS is not providing coordinates');
           }
         },
       );
-      print('✅ [acceptCourse] Backend location updates enabled for course $courseNumericId');
+        print('✅ [acceptCourse] Backend location updates enabled for course $courseNumericId');
+      }
     } else {
       print('⚠️ [acceptCourse] Cannot enable backend updates: _currentCourse is null or changed');
     }
@@ -1230,6 +1288,11 @@ class CoursesViewModel extends BaseViewModel {
     try {
       setBusy(true);
       print("🔄 Début fin course...");
+
+      // 🌐 Disable backend location updates BEFORE completing course
+      _locationService.disableBackendUpdates();
+      print('🌐 Backend location updates disabled (course completing)');
+
       await driverservice.completeCourse(courseId);
       canComplete = true;
       print("✅ Course terminée avec succès");
@@ -1244,6 +1307,10 @@ class CoursesViewModel extends BaseViewModel {
       _polylines.clear();
       _markers.clear();
       await _addUserLocationMarker();
+
+      // 🌐 Also disable on error to prevent continued updates
+      _locationService.disableBackendUpdates();
+      print('🌐 Backend location updates disabled (error during completion)');
     } finally {
       setBusy(false);
       print("🔄 setBusy(false) appelé");
@@ -1677,9 +1744,16 @@ class CoursesViewModel extends BaseViewModel {
       try {
         setBusy(true);
         final courseId = _currentCourse!.courseId!;
+        final isPickup = _currentCourse!.isPickupCourse;
 
-        // Appeler l'API pour terminer la course
-        final result = await driverservice.completeCourse(int.parse(courseId));
+        // ⚡ Appeler l'API appropriée selon le type de course
+        if (isPickup) {
+          print('⚡ [PICKUP] Terminating pickup course $courseId');
+          await driverservice.completePickupCourse(int.parse(courseId));
+        } else {
+          print('🚗 [REGULAR] Terminating regular course $courseId');
+          await driverservice.completeCourse(int.parse(courseId));
+        }
 
         // Afficher la notification de fin de course
         await LocalNotificationService.showCourseFinishedNotification(
@@ -1786,6 +1860,11 @@ class CoursesViewModel extends BaseViewModel {
     // Sauvegarder l'ID de la course avant de la supprimer
     final currentCourseId = _currentCourse?.courseId;
 
+    // 🌐 CRITICAL: Disable backend location updates FIRST
+    _locationService.disableBackendUpdates();
+    debugPrint('🌐 [_resetCourseState] Backend location updates DISABLED');
+    debugPrint('🌐 [_resetCourseState] Previous course ID: $currentCourseId');
+
     _currentCourse = null;
     _isGoingToPickup = false;
     _isOnTrip = false;
@@ -1826,6 +1905,7 @@ class CoursesViewModel extends BaseViewModel {
     _courseUpdateSubscription?.cancel();
     _locationStreamSubscription?.cancel();
     _locationService.stopTracking();
+    _trackingService.dispose(); // Stop general position tracking
     super.dispose();
   }
 
@@ -2082,6 +2162,48 @@ class CoursesViewModel extends BaseViewModel {
     await RidePersistenceService.clearRideState();
   }
 
+  /// Start continuous general position tracking if driver is online
+  Future<void> _startGeneralPositionTracking() async {
+    try {
+      final isOnline = await _sharedPreferencesService.getOnlineStatus() ?? false;
+      debugPrint('🎯 [CoursesView] Checking driver online status: $isOnline');
+
+      if (isOnline) {
+        debugPrint('🎯 [CoursesView] Driver is ONLINE - starting continuous position tracking');
+        await _trackingService.startContinuousTracking(
+          interval: const Duration(seconds: 30), // Send position every 30 seconds
+        );
+        debugPrint('✅ [CoursesView] General position tracking started');
+      } else {
+        debugPrint('ℹ️ [CoursesView] Driver is OFFLINE - position tracking not started');
+      }
+    } catch (e) {
+      debugPrint('❌ [CoursesView] Error starting general position tracking: $e');
+    }
+  }
+
+  /// Stop continuous general position tracking
+  Future<void> _stopGeneralPositionTracking() async {
+    try {
+      debugPrint('🛑 [CoursesView] Stopping general position tracking...');
+      await _trackingService.stopContinuousTracking();
+      debugPrint('✅ [CoursesView] General position tracking stopped');
+    } catch (e) {
+      debugPrint('❌ [CoursesView] Error stopping general position tracking: $e');
+    }
+  }
+
+  /// Called when driver's online status changes (from home view)
+  Future<void> onDriverOnlineStatusChanged(bool isOnline) async {
+    debugPrint('🔄 [CoursesView] Driver online status changed: $isOnline');
+
+    if (isOnline) {
+      await _startGeneralPositionTracking();
+    } else {
+      await _stopGeneralPositionTracking();
+    }
+  }
+
   /// Restore active course state when app resumes
   /// Called from main app lifecycle manager
   Future<void> restoreActiveCourse(Map<String, dynamic> courseDetails) async {
@@ -2092,7 +2214,7 @@ class CoursesViewModel extends BaseViewModel {
       notifyListeners();
 
       // Parse course details from API response
-      final courseId = courseDetails['course_id']?.toString();
+      final courseId = (courseDetails['course_id'] ?? courseDetails['id'])?.toString();
       final status = courseDetails['statut'] as String?;
 
       debugPrint('🔄 [Restoration] Parsed - courseId: $courseId, status: $status');
@@ -2137,13 +2259,18 @@ class CoursesViewModel extends BaseViewModel {
             : (pointArrivee['lng'] as num?)?.toDouble();
       }
 
+      // Extract service_id to identify pickup courses
+      final serviceId = courseDetails['service_id'] as int?;
+      final isPickup = (serviceId == 3);
+      debugPrint('🔍 [Restoration] service_id: $serviceId, isPickup: $isPickup');
+
       // Create ClientData object
       final restoredCourse = ClientData(
         courseId: courseId,
-        name: clientName,
+        name: isPickup ? 'Course Pickup' : clientName,
         timeInfo: 'En cours',
         destination: pointArrivee?['adresse'] ?? 'Arrivée',
-        initials: clientName.isNotEmpty ? clientName[0].toUpperCase() : 'C',
+        initials: isPickup ? 'P' : (clientName.isNotEmpty ? clientName[0].toUpperCase() : 'C'),
         adresseDepart: pointDepart?['adresse'] ?? 'Départ',
         depLat: depLat,
         depLong: depLong,
@@ -2151,36 +2278,66 @@ class CoursesViewModel extends BaseViewModel {
         destLong: arrLong,
         distance: (courseDetails['distance_km'] as num?)?.toDouble(),
         prix: (courseDetails['montant'] as num?)?.toDouble(),
+        serviceId: serviceId,
       );
 
       _currentCourse = restoredCourse;
       debugPrint('✅ [Restoration] Course object created: ${_currentCourse?.courseId}');
 
       // Set state based on course status
+      // 🚀 For pickup courses, skip chauffeur_en_route and chauffeur_arrive
       debugPrint('🔄 [Restoration] Processing status: $status');
       switch (status) {
         case 'chauffeur_en_route':
         case 'en_route_vers_client':
-          debugPrint('🚗 [Restoration] Driver en route to pickup');
-          _isGoingToPickup = true;
-          _isOnTrip = false;
-          setBottomSheetType(BottomSheetAppType.pickup);
+          // ⚡ Skip for pickup courses - go directly to en_cours
+          if (isPickup) {
+            debugPrint('⚡ [Restoration] PICKUP: Skipping en_route state, treating as en_cours');
+            _isGoingToPickup = false;
+            _isOnTrip = true;
+            setBottomSheetType(BottomSheetAppType.inprogress);
 
-          // Draw route to pickup
-          if (_currentPosition != null && depLat != null && depLong != null) {
-            debugPrint('🗺️ [Restoration] Drawing route to pickup');
-            await _drawRouteToPickup();
+            // Draw route to destination
+            if (_currentPosition != null && arrLat != null && arrLong != null) {
+              debugPrint('🗺️ [Restoration] PICKUP: Drawing route to destination');
+              await _drawRouteToDestination();
+            }
           } else {
-            debugPrint('⚠️ [Restoration] Cannot draw route - missing position or coordinates');
+            debugPrint('🚗 [Restoration] Driver en route to pickup');
+            _isGoingToPickup = true;
+            _isOnTrip = false;
+            setBottomSheetType(BottomSheetAppType.pickup);
+
+            // Draw route to pickup
+            if (_currentPosition != null && depLat != null && depLong != null) {
+              debugPrint('🗺️ [Restoration] Drawing route to pickup');
+              await _drawRouteToPickup();
+            } else {
+              debugPrint('⚠️ [Restoration] Cannot draw route - missing position or coordinates');
+            }
           }
           break;
 
         case 'arrive_au_point_depart':
         case 'chauffeur_arrive':
-          debugPrint('📍 [Restoration] Driver arrived at pickup');
-          _isGoingToPickup = true;
-          _isOnTrip = false;
-          setBottomSheetType(BottomSheetAppType.pickup);
+          // ⚡ Skip for pickup courses - go directly to en_cours
+          if (isPickup) {
+            debugPrint('⚡ [Restoration] PICKUP: Skipping arrive state, treating as en_cours');
+            _isGoingToPickup = false;
+            _isOnTrip = true;
+            setBottomSheetType(BottomSheetAppType.inprogress);
+
+            // Draw route to destination
+            if (_currentPosition != null && arrLat != null && arrLong != null) {
+              debugPrint('🗺️ [Restoration] PICKUP: Drawing route to destination');
+              await _drawRouteToDestination();
+            }
+          } else {
+            debugPrint('📍 [Restoration] Driver arrived at pickup');
+            _isGoingToPickup = true;
+            _isOnTrip = false;
+            setBottomSheetType(BottomSheetAppType.pickup);
+          }
           break;
 
         case 'en_cours':
@@ -2217,15 +2374,37 @@ class CoursesViewModel extends BaseViewModel {
       }
 
       // 🌐 Re-enable backend location updates for restored ride
+      // ⚡ Skip for pickup courses (service_id = 3)
       if (_currentCourse != null) {
         final courseNumericId = int.tryParse(courseId);
         if (courseNumericId != null) {
-          debugPrint('🌐 [Restoration] Enabling backend location updates for course $courseNumericId');
-          _locationService.enableBackendUpdates(
+          if (_currentCourse!.isPickupCourse) {
+            debugPrint('⚡ [Restoration] PICKUP COURSE: Skipping backend location updates');
+            debugPrint('⚡ [Restoration] Pickup courses do not send real-time location to backend');
+          } else {
+            debugPrint('🌐 [Restoration] Enabling backend location updates for course $courseNumericId');
+            _locationService.enableBackendUpdates(
             courseId: courseNumericId,
             onLocationUpdate: (locationData) {
+              debugPrint('🔔 [RESTORATION CALLBACK] ========== LOCATION CALLBACK TRIGGERED ==========');
+              debugPrint('🔔 [RESTORATION CALLBACK] Course ID: $courseNumericId');
+              debugPrint('🔔 [RESTORATION CALLBACK] Latitude: ${locationData.latitude}');
+              debugPrint('🔔 [RESTORATION CALLBACK] Longitude: ${locationData.longitude}');
+              debugPrint('🔔 [RESTORATION CALLBACK] Accuracy: ${locationData.accuracy}');
+              debugPrint('🔔 [RESTORATION CALLBACK] Heading: ${locationData.heading}');
+              debugPrint('🔔 [RESTORATION CALLBACK] Speed: ${locationData.speed}');
+
               if (locationData.latitude != null && locationData.longitude != null) {
-                debugPrint('🌐 [Restoration] Sending location update: ${locationData.latitude}, ${locationData.longitude}');
+                // ✅ Additional safety check: Only send if course is still current
+                if (_currentCourse?.courseId != courseId) {
+                  debugPrint('⚠️ [RESTORATION CALLBACK] Course has changed or ended - skipping update');
+                  debugPrint('⚠️ [RESTORATION CALLBACK] Expected: $courseId, Current: ${_currentCourse?.courseId}');
+                  debugPrint('⚠️ [RESTORATION CALLBACK] Disabling backend updates...');
+                  _locationService.disableBackendUpdates();
+                  return;
+                }
+
+                debugPrint('✅ [RESTORATION CALLBACK] Calling sendLocationUpdate API...');
                 driverservice.sendLocationUpdate(
                   courseId: courseNumericId,
                   latitude: locationData.latitude!,
@@ -2233,11 +2412,27 @@ class CoursesViewModel extends BaseViewModel {
                   heading: locationData.heading,
                   speed: locationData.speed,
                   accuracy: locationData.accuracy,
-                );
+                ).then((success) {
+                  if (success) {
+                    debugPrint('✅ [RESTORATION CALLBACK] API call successful');
+                  } else {
+                    debugPrint('❌ [RESTORATION CALLBACK] API call FAILED');
+                    debugPrint('❌ [RESTORATION CALLBACK] Course likely ended/changed - disabling updates');
+                    _locationService.disableBackendUpdates();
+                  }
+                }).catchError((error) {
+                  debugPrint('❌ [RESTORATION CALLBACK] API call threw exception: $error');
+                  debugPrint('❌ [RESTORATION CALLBACK] Disabling backend updates...');
+                  _locationService.disableBackendUpdates();
+                });
+              } else {
+                debugPrint('⚠️ [RESTORATION CALLBACK] CRITICAL: Location data has NULL lat/lng!');
+                debugPrint('⚠️ [RESTORATION CALLBACK] This means GPS is not providing coordinates');
               }
             },
           );
-          debugPrint('✅ [Restoration] Backend location updates enabled for course $courseNumericId');
+            debugPrint('✅ [Restoration] Backend location updates enabled for course $courseNumericId');
+          }
         } else {
           debugPrint('⚠️ [Restoration] Cannot enable location updates - invalid courseId: $courseId');
         }

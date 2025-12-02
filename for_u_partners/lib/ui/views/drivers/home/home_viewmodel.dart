@@ -6,6 +6,7 @@ import 'package:for_u_partners/services/driver_service.dart';
 import 'package:for_u_partners/services/sharedpreferences_service.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:for_u_partners/services/tracking_service.dart';
+import 'package:for_u_partners/ui/views/drivers/homemain/homemain_viewmodel.dart';
 import 'package:location/location.dart';
 import 'package:stacked/stacked.dart';
 
@@ -15,6 +16,13 @@ class HomeViewModel extends BaseViewModel {
   final _sharedpreferencesService = locator<SharedpreferencesService>();
   final trackingService = TrackingService();
   final driverService = locator<DriverService>();
+
+  // Référence au ViewModel principal
+  HomemainViewModel? _homeMainViewModel;
+
+  void setHomeMainViewModel(HomemainViewModel viewModel) {
+    _homeMainViewModel = viewModel;
+  }
   int todayCourses = 0;
   double montantGainToday = 0.0;
   // Données utilisateur
@@ -51,17 +59,22 @@ class HomeViewModel extends BaseViewModel {
       setBusy(true);
       _isOnline = !_isOnline;
 
-      print("toggle-online-status: $_isOnline");
+      print("🔄 [Toggle Online] Changing status to: $_isOnline");
 
       await driverService.updateStatus(_isOnline);
       await _sharedpreferencesService.setOnlineStatus(_isOnline);
 
-      print("status-updated-successfully: $_isOnline");
+      // ✅ Notify the main view model which will notify courses view
+      if (_homeMainViewModel != null) {
+        await _homeMainViewModel!.notifyOnlineStatusChanged(_isOnline);
+      }
+
+      print("✅ [Toggle Online] Status updated successfully: $_isOnline");
       notifyListeners();
     } catch (e) {
       _isOnline = !_isOnline;
       errorMessage = "Erreur lors du changement d'état";
-      print("error-toggle-status: $e");
+      print("❌ [Toggle Online] Error: $e");
       notifyListeners();
       rethrow;
     } finally {
@@ -76,7 +89,6 @@ class HomeViewModel extends BaseViewModel {
         getUserName(),
         getWalletBalance(),
         getDailyStats(),
-        trackingService.demarrerTrackingContinu(),
       ]);
 
       _startHeartbeatTimer();
@@ -85,7 +97,7 @@ class HomeViewModel extends BaseViewModel {
 
       _debugLogCourses();
     } catch (e) {
-      print("Erreur lors de l'initialisation: $e");
+      print("❌ [Initialize] Error: $e");
       errorMessage = "Erreur lors du chargement des données";
       notifyListeners();
     } finally {

@@ -206,6 +206,19 @@ class _DriverSideNavigation extends StatelessWidget {
               label: 'Compte',
               onTap: () => onItemSelected(4),
             ),
+            const SizedBox(height: 4),
+            _BottomMenuItem(
+              icon: Icons.description_outlined,
+              label: 'Documents',
+              onTap: () => onItemSelected(5),
+            ),
+            const SizedBox(height: 4),
+            _BottomMenuItem(
+              icon: Icons.logout_outlined,
+              label: 'Déconnexion',
+              isLogout: true,
+              onTap: () => onItemSelected(6),
+            ),
             const SizedBox(height: 8),
           ],
         ),
@@ -335,11 +348,13 @@ class _BottomMenuItem extends StatelessWidget {
     required this.icon,
     required this.label,
     required this.onTap,
+    this.isLogout = false,
   });
 
   final IconData icon;
   final String label;
   final VoidCallback onTap;
+  final bool isLogout;
 
   @override
   Widget build(BuildContext context) {
@@ -353,16 +368,16 @@ class _BottomMenuItem extends StatelessWidget {
             children: [
               Icon(
                 icon,
-                color: kcPrimaryColor.withOpacity(0.7),
+                color: isLogout ? const Color(0xFFDC3545) : kcPrimaryColor.withOpacity(0.7),
                 size: 22,
               ),
               const SizedBox(width: 14),
               Text(
                 label.toUpperCase(),
-                style: const TextStyle(
+                style: TextStyle(
                   fontSize: 16,
                   fontWeight: FontWeight.bold,
-                  color: kcMediumGrey,
+                  color: isLogout ? const Color(0xFFDC3545) : kcMediumGrey,
                   letterSpacing: 0.5,
                 ),
               ),

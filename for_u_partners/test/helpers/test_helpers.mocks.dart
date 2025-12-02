@@ -45,7 +45,7 @@ import 'package:for_u_partners/services/sharedpreferences_service.dart' as _i4;
 import 'package:for_u_partners/services/wallet_service.dart' as _i32;
 import 'package:for_u_partners/ui/views/delivery/courses_delivery/courses_delivery_viewmodel.dart'
     as _i22;
-import 'package:http_parser/http_parser.dart' as _i2;
+import 'package:http/http.dart' as _i2;
 import 'package:mockito/mockito.dart' as _i1;
 import 'package:mockito/src/dummies.dart' as _i18;
 import 'package:stacked_services/stacked_services.dart' as _i17;
@@ -1782,6 +1782,145 @@ class MockDriverService extends _i1.Mock implements _i27.DriverService {
         returnValue: _i20.Future<bool>.value(false),
         returnValueForMissingStub: _i20.Future<bool>.value(false),
       ) as _i20.Future<bool>);
+
+  @override
+  _i20.Future<Map<String, dynamic>> getPickupCourseDetails(int? courseId) =>
+      (super.noSuchMethod(
+        Invocation.method(
+          #getPickupCourseDetails,
+          [courseId],
+        ),
+        returnValue:
+            _i20.Future<Map<String, dynamic>>.value(<String, dynamic>{}),
+        returnValueForMissingStub:
+            _i20.Future<Map<String, dynamic>>.value(<String, dynamic>{}),
+      ) as _i20.Future<Map<String, dynamic>>);
+
+  @override
+  _i20.Future<List<Map<String, dynamic>>> listPickupCourses() =>
+      (super.noSuchMethod(
+        Invocation.method(
+          #listPickupCourses,
+          [],
+        ),
+        returnValue: _i20.Future<List<Map<String, dynamic>>>.value(
+            <Map<String, dynamic>>[]),
+        returnValueForMissingStub:
+            _i20.Future<List<Map<String, dynamic>>>.value(
+                <Map<String, dynamic>>[]),
+      ) as _i20.Future<List<Map<String, dynamic>>>);
+
+  @override
+  _i20.Future<Map<String, dynamic>?> getActivePickupCourse() =>
+      (super.noSuchMethod(
+        Invocation.method(
+          #getActivePickupCourse,
+          [],
+        ),
+        returnValue: _i20.Future<Map<String, dynamic>?>.value(),
+        returnValueForMissingStub: _i20.Future<Map<String, dynamic>?>.value(),
+      ) as _i20.Future<Map<String, dynamic>?>);
+
+  @override
+  _i20.Future<Map<String, dynamic>> createPickupCourse({
+    required String? typeCourse,
+    required double? departLat,
+    required double? departLng,
+    required double? arriveeLat,
+    required double? arriveeLng,
+    required String? adresseDepart,
+    required String? adresseArrivee,
+    required String? modePaiement,
+  }) =>
+      (super.noSuchMethod(
+        Invocation.method(
+          #createPickupCourse,
+          [],
+          {
+            #typeCourse: typeCourse,
+            #departLat: departLat,
+            #departLng: departLng,
+            #arriveeLat: arriveeLat,
+            #arriveeLng: arriveeLng,
+            #adresseDepart: adresseDepart,
+            #adresseArrivee: adresseArrivee,
+            #modePaiement: modePaiement,
+          },
+        ),
+        returnValue:
+            _i20.Future<Map<String, dynamic>>.value(<String, dynamic>{}),
+        returnValueForMissingStub:
+            _i20.Future<Map<String, dynamic>>.value(<String, dynamic>{}),
+      ) as _i20.Future<Map<String, dynamic>>);
+
+  @override
+  _i20.Future<Map<String, dynamic>> startPickupCourse(int? courseId) =>
+      (super.noSuchMethod(
+        Invocation.method(
+          #startPickupCourse,
+          [courseId],
+        ),
+        returnValue:
+            _i20.Future<Map<String, dynamic>>.value(<String, dynamic>{}),
+        returnValueForMissingStub:
+            _i20.Future<Map<String, dynamic>>.value(<String, dynamic>{}),
+      ) as _i20.Future<Map<String, dynamic>>);
+
+  @override
+  _i20.Future<Map<String, dynamic>> finishPickupCourse(
+    int? courseId, {
+    int? penalite = 0,
+  }) =>
+      (super.noSuchMethod(
+        Invocation.method(
+          #finishPickupCourse,
+          [courseId],
+          {#penalite: penalite},
+        ),
+        returnValue:
+            _i20.Future<Map<String, dynamic>>.value(<String, dynamic>{}),
+        returnValueForMissingStub:
+            _i20.Future<Map<String, dynamic>>.value(<String, dynamic>{}),
+      ) as _i20.Future<Map<String, dynamic>>);
+
+  @override
+  _i20.Future<Map<String, dynamic>> markPickupCoursePaid(int? courseId) =>
+      (super.noSuchMethod(
+        Invocation.method(
+          #markPickupCoursePaid,
+          [courseId],
+        ),
+        returnValue:
+            _i20.Future<Map<String, dynamic>>.value(<String, dynamic>{}),
+        returnValueForMissingStub:
+            _i20.Future<Map<String, dynamic>>.value(<String, dynamic>{}),
+      ) as _i20.Future<Map<String, dynamic>>);
+
+  @override
+  _i20.Future<Map<String, dynamic>> startPickupPause(int? courseId) =>
+      (super.noSuchMethod(
+        Invocation.method(
+          #startPickupPause,
+          [courseId],
+        ),
+        returnValue:
+            _i20.Future<Map<String, dynamic>>.value(<String, dynamic>{}),
+        returnValueForMissingStub:
+            _i20.Future<Map<String, dynamic>>.value(<String, dynamic>{}),
+      ) as _i20.Future<Map<String, dynamic>>);
+
+  @override
+  _i20.Future<Map<String, dynamic>> stopPickupPause(int? courseId) =>
+      (super.noSuchMethod(
+        Invocation.method(
+          #stopPickupPause,
+          [courseId],
+        ),
+        returnValue:
+            _i20.Future<Map<String, dynamic>>.value(<String, dynamic>{}),
+        returnValueForMissingStub:
+            _i20.Future<Map<String, dynamic>>.value(<String, dynamic>{}),
+      ) as _i20.Future<Map<String, dynamic>>);
 }
 
 /// A class which mocks [PressingService].

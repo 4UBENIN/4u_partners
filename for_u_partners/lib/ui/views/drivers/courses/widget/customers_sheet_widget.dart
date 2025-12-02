@@ -782,8 +782,8 @@ class _AcceptedClientBottomSheetState extends State<AcceptedClientBottomSheet> {
 
                   const SizedBox(height: 15),
 
-                  // Bouton Refuser la course
-                  if (widget.onDenyRide != null)
+                  // Bouton Refuser la course (seulement si pas encore arrivé)
+                  if (widget.onDenyRide != null && !_arrivalConfirmed)
                     SizedBox(
                       width: double.infinity,
                       height: 50,
@@ -1149,6 +1149,9 @@ class InProgressRideBottomSheet extends StatefulWidget {
     this.currentLongitude,
   }) : super(key: key);
 
+  // Helper to check if this is a pickup course
+  bool get isPickupCourse => client.isPickupCourse;
+
   @override
   State<InProgressRideBottomSheet> createState() =>
       _InProgressRideBottomSheetState();
@@ -1249,10 +1252,16 @@ class _InProgressRideBottomSheetState extends State<InProgressRideBottomSheet>
     final courseId = int.tryParse(widget.client.courseId!);
     if (courseId == null) return;
 
+    // ⚡ Check if this is a pickup course
+    final isPickup = widget.isPickupCourse;
+
     try {
       if (_isPaused) {
         // Reprendre la course
-        final pauseData = await _driverService.stopPause(courseId);
+        final pauseData = isPickup
+            ? await _driverService.stopPickupPause(courseId)
+            : await _driverService.stopPause(courseId);
+
         _pauseTimer?.cancel();
         _isPaused = false;
         await _pauseStateService.setPaused(courseId, false);
@@ -1277,7 +1286,10 @@ class _InProgressRideBottomSheetState extends State<InProgressRideBottomSheet>
         }
       } else {
         // Mettre en pause
-        final response = await _driverService.startPause(courseId);
+        final response = isPickup
+            ? await _driverService.startPickupPause(courseId)
+            : await _driverService.startPause(courseId);
+
         final timestamp = response['timestamp'] as int;
 
         _pauseStartTimestamp = timestamp;
@@ -1563,7 +1575,9 @@ class _InProgressRideBottomSheetState extends State<InProgressRideBottomSheet>
                           ),
                         ),
                         Text(
-                          _isPaused ? 'Course en pause' : 'Course en cours',
+                          _isPaused
+                            ? (widget.isPickupCourse ? 'Pickup en pause' : 'Course en pause')
+                            : (widget.isPickupCourse ? 'Pickup en cours' : 'Course en cours'),
                           style: TextStyle(
                             fontSize: 18,
                             fontWeight: FontWeight.bold,
@@ -1576,79 +1590,128 @@ class _InProgressRideBottomSheetState extends State<InProgressRideBottomSheet>
 
                   const SizedBox(height: 12),
 
-                  // Informations client
-                  Container(
-                    padding: const EdgeInsets.symmetric(
-                        horizontal: 12, vertical: 12),
-                    decoration: BoxDecoration(
-                      color: const Color(0xFFF7F8FD),
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    child: Row(
-                      children: [
-                        // Avatar
-                        Container(
-                          width: 60,
-                          height: 60,
-                          decoration: BoxDecoration(
-                            color: Colors.grey[800],
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                          child: Center(
-                            child: Text(
-                              widget.client.initials,
-                              style: const TextStyle(
-                                color: Colors.white,
-                                fontSize: 24,
-                                fontWeight: FontWeight.bold,
-                              ),
+                  // Informations client (skip for pickup courses)
+                  if (!widget.isPickupCourse)
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 12, vertical: 12),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFF7F8FD),
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: Row(
+                        children: [
+                          // Avatar
+                          Container(
+                            width: 60,
+                            height: 60,
+                            decoration: BoxDecoration(
+                              color: Colors.grey[800],
+                              borderRadius: BorderRadius.circular(12),
                             ),
-                          ),
-                        ),
-                        const SizedBox(width: 15),
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                widget.client.name,
+                            child: Center(
+                              child: Text(
+                                widget.client.initials,
                                 style: const TextStyle(
-                                  fontSize: 18,
+                                  color: Colors.white,
+                                  fontSize: 24,
                                   fontWeight: FontWeight.bold,
-                                  color: Colors.black87,
                                 ),
                               ),
-                              const SizedBox(height: 4),
-                              Text(
-                                widget.client.timeInfo,
-                                style: TextStyle(
-                                  fontSize: 14,
-                                  color: Colors.grey[600],
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                        // Bouton pause/reprendre
-                        Container(
-                          width: 50,
-                          height: 50,
-                          decoration: BoxDecoration(
-                            color: _isPaused ? Colors.green : Colors.orange,
-                            shape: BoxShape.circle,
-                          ),
-                          child: IconButton(
-                            onPressed: _togglePause,
-                            icon: Icon(
-                              _isPaused ? Icons.play_arrow : Icons.pause,
-                              color: Colors.white,
-                              size: 24,
                             ),
                           ),
-                        ),
-                      ],
+                          const SizedBox(width: 15),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  widget.client.name,
+                                  style: const TextStyle(
+                                    fontSize: 18,
+                                    fontWeight: FontWeight.bold,
+                                    color: Colors.black87,
+                                  ),
+                                ),
+                                const SizedBox(height: 4),
+                                Text(
+                                  widget.client.timeInfo,
+                                  style: TextStyle(
+                                    fontSize: 14,
+                                    color: Colors.grey[600],
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                          // Bouton pause/reprendre
+                          Container(
+                            width: 50,
+                            height: 50,
+                            decoration: BoxDecoration(
+                              color: _isPaused ? Colors.green : Colors.orange,
+                              shape: BoxShape.circle,
+                            ),
+                            child: IconButton(
+                              onPressed: _togglePause,
+                              icon: Icon(
+                                _isPaused ? Icons.play_arrow : Icons.pause,
+                                color: Colors.white,
+                                size: 24,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
                     ),
-                  ),
+
+                  // Pause button for pickup courses
+                  if (widget.isPickupCourse)
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 12, vertical: 12),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFF7F8FD),
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: Row(
+                        children: [
+                          const Icon(
+                            Icons.local_taxi,
+                            size: 36,
+                            color: kcPrimaryColor,
+                          ),
+                          const SizedBox(width: 15),
+                          const Expanded(
+                            child: Text(
+                              'Course Pickup',
+                              style: TextStyle(
+                                fontSize: 18,
+                                fontWeight: FontWeight.bold,
+                                color: Colors.black87,
+                              ),
+                            ),
+                          ),
+                          // Bouton pause/reprendre
+                          Container(
+                            width: 50,
+                            height: 50,
+                            decoration: BoxDecoration(
+                              color: _isPaused ? Colors.green : Colors.orange,
+                              shape: BoxShape.circle,
+                            ),
+                            child: IconButton(
+                              onPressed: _togglePause,
+                              icon: Icon(
+                                _isPaused ? Icons.play_arrow : Icons.pause,
+                                color: Colors.white,
+                                size: 24,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
 
                   const SizedBox(height: 25),
 

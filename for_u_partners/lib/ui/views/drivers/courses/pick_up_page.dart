@@ -11,6 +11,7 @@ import 'package:flutter_polyline_points/flutter_polyline_points.dart';
 import 'package:for_u_partners/app/core/constants.dart';
 import 'package:for_u_partners/app/app.locator.dart';
 import 'package:for_u_partners/services/driver_service.dart';
+import 'package:for_u_partners/services/course_restoration_service.dart';
 import 'package:for_u_partners/app/app.router.dart';
 import 'package:stacked_services/stacked_services.dart';
 
@@ -49,6 +50,7 @@ class _PickUpPageState extends State<PickUpPage> with TickerProviderStateMixin {
   final FunctionsService _functionsService = FunctionsService();
   final _driverService = locator<DriverService>();
   final _navigationService = locator<NavigationService>();
+  final _restorationService = locator<CourseRestorationService>();
 
   late AnimationController _animationController;
   late Animation<double> _fadeAnimation;
@@ -474,8 +476,9 @@ class _PickUpPageState extends State<PickUpPage> with TickerProviderStateMixin {
 
       // Start the pickup course immediately
       print('🏁 [PickUpPage] Starting pickup course $_createdCourseId...');
-      await _driverService.startPickupCourse(_createdCourseId!);
+      final startResponse = await _driverService.startPickupCourse(_createdCourseId!);
       print('✅ [PickUpPage] Course started successfully');
+      print('📦 [PickUpPage] Start response: $startResponse');
 
       if (mounted) {
         // Close the dialog
@@ -486,12 +489,17 @@ class _PickUpPageState extends State<PickUpPage> with TickerProviderStateMixin {
           SnackBar(
             content: Text('Course démarrée avec succès! ID: $_createdCourseId'),
             backgroundColor: Colors.green,
-            duration: const Duration(seconds: 3),
+            duration: const Duration(seconds: 2),
           ),
         );
 
-        // Navigate to courses view to show the active course
-        // You can customize this navigation based on your app structure
+        // 🔥 Set the pickup course for restoration so the bottom sheet appears
+        if (startResponse != null && startResponse['course'] != null) {
+          print('🚀 [PickUpPage] Setting pending restoration for pickup course');
+          _restorationService.setPendingRestoration(startResponse['course']);
+        }
+
+        // Navigate to homemain view which will trigger the restoration
         _navigationService.clearStackAndShow(Routes.homemainView);
       }
     } catch (e) {

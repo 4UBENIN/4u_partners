@@ -29,7 +29,7 @@ String get getGlobalStats => "$baseUrl/conducteur/stats/global";
 
 // Pickup Course URLs
 String get createPickupCourseUrl => "$baseUrl/conducteur/course_pickup/lancer_course";
-String get listPickupCoursesUrl => "$baseUrl/conducteur/course_pickup";
+String get listPickupCoursesUrl => "$baseUrl/conducteur/courses_list";
 String pickupCourseDetailsUrl(int courseId) =>
     "$baseUrl/conducteur/course_pickup/$courseId";
 String startPickupCourseUrl(int courseId) =>
@@ -42,6 +42,11 @@ String startPickupPauseUrl(int courseId) =>
     "$baseUrl/conducteur/course_pickup/$courseId/start_pause";
 String stopPickupPauseUrl(int courseId) =>
     "$baseUrl/conducteur/course_pickup/$courseId/stop_pause";
+
+// Parrainage (Referral) URLs
+String get getUncollectedBonusesUrl => "$baseUrl/conducteur/parrainage/non-rembourses";
+String collectBonusUrl(int parrainageId) =>
+    "$baseUrl/conducteur/parrainage/remboursement/$parrainageId";
 
 Map<String, String> headers = {
   'Content-Type': 'application/json',

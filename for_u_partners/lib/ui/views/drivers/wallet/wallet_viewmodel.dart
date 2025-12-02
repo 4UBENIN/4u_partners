@@ -9,6 +9,7 @@ import 'package:for_u_partners/services/auth_service.dart';
 import 'package:for_u_partners/ui/common/app_colors.dart';
 import 'package:for_u_partners/ui/views/drivers/wallet/payment_webview.dart';
 import 'package:for_u_partners/app/api_constant.dart';
+import 'package:for_u_partners/app/models/parrainage_model.dart';
 
 class WalletViewModel extends BaseViewModel {
   final _walletService = locator<WalletService>();
@@ -16,9 +17,19 @@ class WalletViewModel extends BaseViewModel {
 
   double _balance = 0.0;
   List<Map<String, dynamic>> _transactions = [];
+  List<ParrainageModel> _uncollectedBonuses = [];
+  bool _isCollecting = false;
 
   double get balance => _balance;
   List<Map<String, dynamic>> get transactions => _transactions;
+  List<ParrainageModel> get uncollectedBonuses => _uncollectedBonuses;
+  bool get isCollecting => _isCollecting;
+
+  double get totalUncollectedAmount {
+    return _uncollectedBonuses.fold(0.0, (sum, bonus) => sum + (bonus.montant ?? 0));
+  }
+
+  bool get hasUncollectedBonuses => _uncollectedBonuses.isNotEmpty;
 
   WalletViewModel() {
     _loadWalletData();
@@ -31,6 +42,9 @@ class WalletViewModel extends BaseViewModel {
       final walletData = await _walletService.getWalletSold();
       _balance = (walletData.balance ?? 0).toDouble();
 
+      // Load uncollected bonuses
+      _uncollectedBonuses = await _walletService.getUncollectedBonuses();
+
       // TODO: Implement transaction history when API is ready
       _transactions = [];
 
@@ -39,6 +53,7 @@ class WalletViewModel extends BaseViewModel {
       print('Error loading wallet data: $e');
       _balance = 0.0;
       _transactions = [];
+      _uncollectedBonuses = [];
     } finally {
       setBusy(false);
     }
@@ -251,5 +266,105 @@ class WalletViewModel extends BaseViewModel {
 
   Future<void> refresh() async {
     await _loadWalletData();
+  }
+
+  Future<void> collectBonus(BuildContext context, ParrainageModel bonus) async {
+    if (_isCollecting) return;
+
+    _isCollecting = true;
+    notifyListeners();
+
+    try {
+      final result = await _walletService.collectBonus(bonus.id!);
+
+      // Reload wallet data to get updated balance and bonuses
+      await _loadWalletData();
+
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(result['message'] ?? 'Bonus collecté avec succès!'),
+            backgroundColor: Colors.green,
+            behavior: SnackBarBehavior.floating,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(10),
+            ),
+          ),
+        );
+      }
+    } catch (e) {
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(e.toString().replaceAll('Exception: ', '')),
+            backgroundColor: Colors.red,
+            behavior: SnackBarBehavior.floating,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(10),
+            ),
+          ),
+        );
+      }
+    } finally {
+      _isCollecting = false;
+      notifyListeners();
+    }
+  }
+
+  Future<void> collectAllBonuses(BuildContext context) async {
+    if (_isCollecting || _uncollectedBonuses.isEmpty) return;
+
+    _isCollecting = true;
+    notifyListeners();
+
+    int successCount = 0;
+    int totalAmount = 0;
+    List<String> errors = [];
+
+    for (var bonus in List.from(_uncollectedBonuses)) {
+      try {
+        final result = await _walletService.collectBonus(bonus.id!);
+        successCount++;
+        totalAmount += (result['montant'] as int? ?? 0);
+      } catch (e) {
+        errors.add(e.toString().replaceAll('Exception: ', ''));
+      }
+    }
+
+    // Reload wallet data
+    await _loadWalletData();
+
+    if (context.mounted) {
+      if (successCount > 0) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              '$successCount bonus collecté${successCount > 1 ? 's' : ''} • $totalAmount FCFA ajouté${successCount > 1 ? 's' : ''}',
+            ),
+            backgroundColor: Colors.green,
+            behavior: SnackBarBehavior.floating,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(10),
+            ),
+          ),
+        );
+      }
+
+      if (errors.isNotEmpty) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Erreurs: ${errors.join(', ')}'),
+            backgroundColor: Colors.orange,
+            behavior: SnackBarBehavior.floating,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(10),
+            ),
+          ),
+        );
+      }
+    }
+
+    _isCollecting = false;
+    notifyListeners();
   }
 }

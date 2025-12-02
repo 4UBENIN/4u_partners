@@ -18,6 +18,10 @@ class ClientData {
   final double? destLat;
   final double? depLong;
   final double? depLat;
+
+  // ✨ Service ID to identify pickup courses (service_id = 3)
+  final int? serviceId;
+
   ClientData({
     required this.name,
     required this.timeInfo,
@@ -35,7 +39,11 @@ class ClientData {
     this.destLat,
     this.depLong,
     this.depLat,
+    this.serviceId,
   });
+
+  // Helper to check if this is a pickup course
+  bool get isPickupCourse => serviceId == 3;
 
   // ✨ Méthodes utiles
   String get formattedPrice =>
@@ -68,6 +76,7 @@ class ClientData {
       'destLat': destLat,
       'depLong': depLong,
       'depLat': depLat,
+      'serviceId': serviceId,
     };
   }
 
@@ -88,6 +97,7 @@ class ClientData {
       destLat: json['destLat']?.toDouble(),
       depLong: json['depLong']?.toDouble(),
       depLat: json['depLat']?.toDouble(),
+      serviceId: json['serviceId'] as int?,
     );
   }
 

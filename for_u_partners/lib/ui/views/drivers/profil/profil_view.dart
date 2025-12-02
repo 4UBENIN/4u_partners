@@ -126,22 +126,6 @@ class ProfilView extends StackedView<ProfilViewModel> {
                               viewModel.navigationService.navigateTo(Routes.mesVehiculesView);
                             },
                           ),
-                          _buildMenuItem(
-                            icon: _buildDocumentsIcon(),
-                            text: 'Documents',
-                            onTap: () => viewModel.navigationService.navigateToDocumentsView(),
-                          ),
-                          _buildMenuItem(
-                            icon: _buildHistoryIcon(),
-                            text: 'Historique',
-                            onTap: () => viewModel.navigationService.navigateToActivityView(),
-                          ),
-                          _buildMenuItem(
-                            icon: _buildLogoutIcon(),
-                            text: 'Déconnexion',
-                            isLogout: true,
-                            onTap: () => viewModel.showLogoutConfirmationDialog(context),
-                          ),
                         ],
                       ),
                     ),
@@ -360,9 +344,6 @@ class ProfilView extends StackedView<ProfilViewModel> {
 
   Widget _buildUserIcon() => const Icon(Icons.person_outline, size: 24);
   Widget _buildCarIcon() => const Icon(Icons.directions_car_outlined, size: 24);
-  Widget _buildDocumentsIcon() => const Icon(Icons.description_outlined, size: 24);
-  Widget _buildHistoryIcon() => const Icon(Icons.history_outlined, size: 24);
-  Widget _buildLogoutIcon() => const Icon(Icons.logout_outlined, size: 24);
 
   @override
   ProfilViewModel viewModelBuilder(BuildContext context) => ProfilViewModel();

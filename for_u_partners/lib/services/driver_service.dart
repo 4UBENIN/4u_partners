@@ -362,6 +362,72 @@ class DriverService {
     }
   }
 
+  // ⚡ PICKUP: Démarrer une pause pour une course pickup
+  Future<Map<String, dynamic>> startPickupPause(int courseId) async {
+    final token = await sharedPreferencesService.getToken();
+    final url = Uri.parse(startPickupPauseUrl(courseId));
+    print("pickup-start-pause-url: $url");
+    try {
+      final response = await http.post(
+        url,
+        headers: {
+          'Accept': 'application/json',
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer $token',
+        },
+      );
+
+      print("pickup-start-pause-response: ${response.body}");
+
+      if (response.statusCode == 200 || response.statusCode == 201) {
+        final data = jsonDecode(response.body);
+        return {
+          'timestamp': data['timestamp'] as int,
+          'pause_start': data['pause_start'] as String,
+        };
+      } else {
+        throw Exception('Échec du démarrage de la pause pickup');
+      }
+    } catch (e) {
+      debugPrint('Erreur lors du démarrage de la pause pickup: $e');
+      rethrow;
+    }
+  }
+
+  // ⚡ PICKUP: Arrêter une pause pour une course pickup
+  Future<Map<String, dynamic>> stopPickupPause(int courseId) async {
+    final token = await sharedPreferencesService.getToken();
+    final url = Uri.parse(stopPickupPauseUrl(courseId));
+    print("pickup-stop-pause-url: $url");
+    try {
+      final response = await http.post(
+        url,
+        headers: {
+          'Accept': 'application/json',
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer $token',
+        },
+      );
+
+      print("pickup-stop-pause-response: ${response.body}");
+
+      if (response.statusCode == 200 || response.statusCode == 201) {
+        final data = jsonDecode(response.body);
+        return {
+          'pause_seconds': data['pause_seconds'] as int,
+          'total_pause': data['total_pause'] as int,
+          'montant_pause': data['montant_pause'] as int,
+          'message': data['message'] as String,
+        };
+      } else {
+        throw Exception('Échec de l\'arrêt de la pause pickup');
+      }
+    } catch (e) {
+      debugPrint('Erreur lors de l\'arrêt de la pause pickup: $e');
+      rethrow;
+    }
+  }
+
   // Terminer une course
   Future<void> completeCourse(int courseId) async {
     print("Debut de la fin de la course dans le service");
@@ -400,6 +466,49 @@ class DriverService {
       }
     } catch (e) {
       debugPrint('Erreur lors de la finalisation de la course: $e');
+      rethrow;
+    }
+  }
+
+  // ⚡ PICKUP: Terminer une course pickup
+  Future<void> completePickupCourse(int courseId, {double penalite = 0}) async {
+    print("⚡ [PICKUP] Debut de la fin de la course pickup dans le service");
+    final token = await sharedPreferencesService.getToken();
+    final url = Uri.parse(finishPickupCourseUrl(courseId));
+    print("⚡ pickup-complete-course-url: $url");
+
+    try {
+      final response = await http.patch(
+        url,
+        headers: {
+          'Accept': 'application/json',
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer $token',
+        },
+        body: jsonEncode({'penalite': penalite}),
+      );
+      print("⚡ pickup-complete-course-response: ${response.body}");
+
+      if (response.statusCode != 200) {
+        // Try to parse error message from response
+        try {
+          final responseData = jsonDecode(response.body);
+          final errorMessage = responseData['message'] ?? responseData['error'];
+
+          if (errorMessage != null && errorMessage.toString().contains('pause')) {
+            throw Exception('Impossible de terminer la course pickup : une pause est en cours. Veuillez reprendre la course avant de la terminer.');
+          }
+
+          throw Exception(errorMessage ?? 'Échec de la finalisation de la course pickup');
+        } catch (e) {
+          if (e.toString().contains('pause')) {
+            rethrow;
+          }
+          throw Exception('Échec de la finalisation de la course pickup');
+        }
+      }
+    } catch (e) {
+      debugPrint('⚡ Erreur lors de la finalisation de la course pickup: $e');
       rethrow;
     }
   }
@@ -1335,97 +1444,4 @@ class DriverService {
     }
   }
 
-  /// Start a pause on a pickup course
-  ///
-  /// Parameters:
-  /// - courseId: The ID of the pickup course
-  ///
-  /// Returns a Map with pause start time
-  Future<Map<String, dynamic>> startPickupPause(int courseId) async {
-    final token = await sharedPreferencesService.getToken();
-    final url = Uri.parse(startPickupPauseUrl(courseId));
-
-    debugPrint('========== START PICKUP PAUSE ==========');
-    debugPrint('Course ID: $courseId');
-    debugPrint('URL: $url');
-
-    try {
-      final response = await http.post(
-        url,
-        headers: {
-          'Accept': 'application/json',
-          'Content-Type': 'application/json',
-          'Authorization': 'Bearer $token',
-        },
-      );
-
-      debugPrint('Response Status: ${response.statusCode}');
-      debugPrint('Response Body: ${response.body}');
-
-      if (response.statusCode == 200) {
-        final data = jsonDecode(response.body);
-        debugPrint('✅ Pickup pause started');
-        return data;
-      } else if (response.statusCode == 400) {
-        final errorData = jsonDecode(response.body);
-        throw Exception(errorData['message'] ?? 'Une pause est déjà en cours');
-      } else if (response.statusCode == 404) {
-        throw Exception('Course non trouvée');
-      } else {
-        _checkAuthenticationError(response);
-        throw Exception('Erreur lors du démarrage de la pause: ${response.statusCode}');
-      }
-    } catch (e) {
-      debugPrint('❌ Error starting pickup pause: $e');
-      rethrow;
-    }
-  }
-
-  /// Stop a pause on a pickup course
-  ///
-  /// Parameters:
-  /// - courseId: The ID of the pickup course
-  ///
-  /// Returns a Map with pause duration and cost details
-  Future<Map<String, dynamic>> stopPickupPause(int courseId) async {
-    final token = await sharedPreferencesService.getToken();
-    final url = Uri.parse(stopPickupPauseUrl(courseId));
-
-    debugPrint('========== STOP PICKUP PAUSE ==========');
-    debugPrint('Course ID: $courseId');
-    debugPrint('URL: $url');
-
-    try {
-      final response = await http.post(
-        url,
-        headers: {
-          'Accept': 'application/json',
-          'Content-Type': 'application/json',
-          'Authorization': 'Bearer $token',
-        },
-      );
-
-      debugPrint('Response Status: ${response.statusCode}');
-      debugPrint('Response Body: ${response.body}');
-
-      if (response.statusCode == 200) {
-        final data = jsonDecode(response.body);
-        debugPrint('✅ Pickup pause stopped');
-        debugPrint('   Pause duration: ${data['pause_seconds']}s');
-        debugPrint('   Pause cost: ${data['montant_pause']} FCFA');
-        return data;
-      } else if (response.statusCode == 400) {
-        final errorData = jsonDecode(response.body);
-        throw Exception(errorData['message'] ?? 'Aucune pause active à arrêter');
-      } else if (response.statusCode == 404) {
-        throw Exception('Course non trouvée');
-      } else {
-        _checkAuthenticationError(response);
-        throw Exception('Erreur lors de l\'arrêt de la pause: ${response.statusCode}');
-      }
-    } catch (e) {
-      debugPrint('❌ Error stopping pickup pause: $e');
-      rethrow;
-    }
-  }
 }

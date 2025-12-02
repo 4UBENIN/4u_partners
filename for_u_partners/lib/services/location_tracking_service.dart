@@ -99,9 +99,34 @@ class LocationTrackingService {
           // Save to storage asynchronously (non-blocking)
           _saveLocationToStorage(locationData);
 
+          // 🔍 DETAILED LOGGING for debugging
+          debugPrint('📍 [LocationTracking] ========== LOCATION UPDATE ==========');
+          debugPrint('📍 [LocationTracking] Latitude: ${locationData.latitude}');
+          debugPrint('📍 [LocationTracking] Longitude: ${locationData.longitude}');
+          debugPrint('📍 [LocationTracking] Accuracy: ${locationData.accuracy}');
+          debugPrint('📍 [LocationTracking] Heading: ${locationData.heading}');
+          debugPrint('📍 [LocationTracking] Speed: ${locationData.speed}');
+          debugPrint('📍 [LocationTracking] Active course ID: $_activeCourseId');
+          debugPrint('📍 [LocationTracking] Backend callback set: ${_backendUpdateCallback != null}');
+
           // Send to backend if active course exists
           if (_activeCourseId != null && _backendUpdateCallback != null) {
-            _backendUpdateCallback!(locationData);
+            debugPrint('🌐 [LocationTracking] Triggering backend update callback...');
+            if (locationData.latitude != null && locationData.longitude != null) {
+              debugPrint('✅ [LocationTracking] Location data valid, calling callback');
+              _backendUpdateCallback!(locationData);
+              debugPrint('✅ [LocationTracking] Callback completed');
+            } else {
+              debugPrint('⚠️ [LocationTracking] SKIPPING callback - lat/lng is NULL!');
+              debugPrint('⚠️ [LocationTracking] This is the issue - location provider is not giving coordinates!');
+            }
+          } else {
+            if (_activeCourseId == null) {
+              debugPrint('ℹ️ [LocationTracking] No active course - backend update skipped');
+            }
+            if (_backendUpdateCallback == null) {
+              debugPrint('⚠️ [LocationTracking] Backend callback is NULL - this should not happen!');
+            }
           }
 
           debugPrint(
@@ -229,16 +254,38 @@ class LocationTrackingService {
     required int courseId,
     required Function(loc.LocationData) onLocationUpdate,
   }) {
+    debugPrint('🌐 [LocationTracking] ========== ENABLING BACKEND UPDATES ==========');
+    debugPrint('🌐 [LocationTracking] Course ID: $courseId');
+    debugPrint('🌐 [LocationTracking] Current tracking status: $_isTracking');
+    debugPrint('🌐 [LocationTracking] Current location: ${_currentLocation?.latitude}, ${_currentLocation?.longitude}');
+
     _activeCourseId = courseId;
     _backendUpdateCallback = onLocationUpdate;
-    debugPrint('🌐 [LocationTracking] Backend updates enabled for course $courseId');
+
+    debugPrint('✅ [LocationTracking] Backend updates ENABLED for course $courseId');
+    debugPrint('✅ [LocationTracking] Callback set: ${_backendUpdateCallback != null}');
+
+    // If tracking is already active and we have current location, trigger callback immediately
+    if (_isTracking && _currentLocation != null) {
+      debugPrint('🔔 [LocationTracking] Triggering immediate callback with current location');
+      onLocationUpdate(_currentLocation!);
+    } else {
+      debugPrint('ℹ️ [LocationTracking] Will wait for next location update');
+      if (!_isTracking) {
+        debugPrint('⚠️ [LocationTracking] WARNING: Tracking is NOT active! Call startTracking() first!');
+      }
+    }
   }
 
   /// Disable backend location updates
   void disableBackendUpdates() {
+    debugPrint('🌐 [LocationTracking] ========== DISABLING BACKEND UPDATES ==========');
+    debugPrint('🌐 [LocationTracking] Previous course ID: $_activeCourseId');
+
     _activeCourseId = null;
     _backendUpdateCallback = null;
-    debugPrint('🌐 [LocationTracking] Backend updates disabled');
+
+    debugPrint('✅ [LocationTracking] Backend updates DISABLED');
   }
 
   /// Check if backend updates are enabled
