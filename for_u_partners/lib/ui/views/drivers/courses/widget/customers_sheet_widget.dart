@@ -1255,9 +1255,22 @@ class _InProgressRideBottomSheetState extends State<InProgressRideBottomSheet>
     // ⚡ Check if this is a pickup course
     final isPickup = widget.isPickupCourse;
 
+    debugPrint('🔍🔍🔍 [PAUSE DEBUG] ========== PAUSE TOGGLE DEBUG ==========');
+    debugPrint('🔍 [PAUSE DEBUG] Course ID: $courseId');
+    debugPrint('🔍 [PAUSE DEBUG] widget.client.serviceId: ${widget.client.serviceId}');
+    debugPrint('🔍 [PAUSE DEBUG] widget.client.isPickupCourse: ${widget.client.isPickupCourse}');
+    debugPrint('🔍 [PAUSE DEBUG] widget.isPickupCourse: ${widget.isPickupCourse}');
+    debugPrint('🔍 [PAUSE DEBUG] isPickup (local variable): $isPickup');
+    debugPrint('🔍 [PAUSE DEBUG] Current pause state: ${_isPaused ? "PAUSED" : "NOT PAUSED"}');
+    debugPrint('🔍🔍🔍 [PAUSE DEBUG] ================================================');
+
     try {
       if (_isPaused) {
         // Reprendre la course
+        debugPrint('🟢 [PAUSE DEBUG] About to STOP pause');
+        debugPrint('🟢 [PAUSE DEBUG] Will call: ${isPickup ? "stopPickupPause" : "stopPause"}');
+        debugPrint('🟢 [PAUSE DEBUG] Expected endpoint: ${isPickup ? "/api/conducteur/course_pickup/$courseId/stop_pause" : "/api/conducteur/courses/$courseId/stop_pause"}');
+
         final pauseData = isPickup
             ? await _driverService.stopPickupPause(courseId)
             : await _driverService.stopPause(courseId);
@@ -1286,6 +1299,10 @@ class _InProgressRideBottomSheetState extends State<InProgressRideBottomSheet>
         }
       } else {
         // Mettre en pause
+        debugPrint('🔴 [PAUSE DEBUG] About to START pause');
+        debugPrint('🔴 [PAUSE DEBUG] Will call: ${isPickup ? "startPickupPause" : "startPause"}');
+        debugPrint('🔴 [PAUSE DEBUG] Expected endpoint: ${isPickup ? "/api/conducteur/course_pickup/$courseId/start_pause" : "/api/conducteur/courses/$courseId/start_pause"}');
+
         final response = isPickup
             ? await _driverService.startPickupPause(courseId)
             : await _driverService.startPause(courseId);

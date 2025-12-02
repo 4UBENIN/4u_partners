@@ -893,11 +893,21 @@ class CoursesViewModel extends BaseViewModel {
 
     // ⚡ Skip location tracking for pickup courses (service_id = 3)
     if (_currentCourse != null && _currentCourse!.courseId == courseId) {
+      debugPrint('🔍🔍🔍 [acceptCourse] LOCATION TRACKING CHECK:');
+      debugPrint('🔍 [acceptCourse] courseId: $courseId');
+      debugPrint('🔍 [acceptCourse] courseNumericId: $courseNumericId');
+      debugPrint('🔍 [acceptCourse] _currentCourse: $_currentCourse');
+      debugPrint('🔍 [acceptCourse] _currentCourse.serviceId: ${_currentCourse!.serviceId}');
+      debugPrint('🔍 [acceptCourse] _currentCourse.isPickupCourse: ${_currentCourse!.isPickupCourse}');
+      debugPrint('🔍🔍🔍 [acceptCourse] ================================================');
+
       if (_currentCourse!.isPickupCourse) {
-        print('⚡ [acceptCourse] PICKUP COURSE: Skipping backend location updates');
-        print('⚡ [acceptCourse] Pickup courses do not send real-time location to backend');
+        debugPrint('⚡⚡⚡ [acceptCourse] PICKUP COURSE DETECTED: Skipping backend location updates');
+        debugPrint('⚡ [acceptCourse] Pickup courses do not send real-time location to backend');
+        debugPrint('⚡ [acceptCourse] Location tracking will NOT be enabled');
       } else {
-        print('🌐 [acceptCourse] Enabling backend location updates for regular course $courseNumericId');
+        debugPrint('🌐🌐🌐 [acceptCourse] REGULAR COURSE: Enabling backend location updates');
+        debugPrint('🌐 [acceptCourse] Course ID: $courseNumericId');
         _locationService.enableBackendUpdates(
         courseId: courseNumericId,
         onLocationUpdate: (locationData) {
@@ -2260,9 +2270,20 @@ class CoursesViewModel extends BaseViewModel {
       }
 
       // Extract service_id to identify pickup courses
-      final serviceId = courseDetails['service_id'] as int?;
-      final isPickup = (serviceId == 3);
-      debugPrint('🔍 [Restoration] service_id: $serviceId, isPickup: $isPickup');
+      // Check both 'service_id' and 'is_pickup_course' fields
+      final apiServiceId = courseDetails['service_id'] as int?;
+      final isPickupFlag = courseDetails['is_pickup_course'] as bool?;
+
+      // ⚡ CRITICAL: If is_pickup_course is true but service_id is null, set it to 3
+      final serviceId = apiServiceId ?? (isPickupFlag == true ? 3 : null);
+      final isPickup = (serviceId == 3) || (isPickupFlag == true);
+
+      debugPrint('🔍🔍🔍 [Restoration] PICKUP DETECTION:');
+      debugPrint('🔍 [Restoration] API service_id: $apiServiceId');
+      debugPrint('🔍 [Restoration] API is_pickup_course: $isPickupFlag');
+      debugPrint('🔍 [Restoration] Computed serviceId: $serviceId');
+      debugPrint('🔍 [Restoration] isPickup: $isPickup');
+      debugPrint('🔍🔍🔍 [Restoration] ================================================');
 
       // Create ClientData object
       final restoredCourse = ClientData(
@@ -2278,11 +2299,19 @@ class CoursesViewModel extends BaseViewModel {
         destLong: arrLong,
         distance: (courseDetails['distance_km'] as num?)?.toDouble(),
         prix: (courseDetails['montant'] as num?)?.toDouble(),
-        serviceId: serviceId,
+        serviceId: serviceId,  // ⚡ Now properly set to 3 for pickup courses
       );
 
       _currentCourse = restoredCourse;
       debugPrint('✅ [Restoration] Course object created: ${_currentCourse?.courseId}');
+      debugPrint('🔍🔍🔍 [Restoration] DETAILED COURSE INFO:');
+      debugPrint('🔍 [Restoration] _currentCourse.courseId: ${_currentCourse?.courseId}');
+      debugPrint('🔍 [Restoration] _currentCourse.serviceId: ${_currentCourse?.serviceId}');
+      debugPrint('🔍 [Restoration] _currentCourse.isPickupCourse: ${_currentCourse?.isPickupCourse}');
+      debugPrint('🔍 [Restoration] serviceId variable: $serviceId');
+      debugPrint('🔍 [Restoration] isPickupFlag variable: $isPickupFlag');
+      debugPrint('🔍 [Restoration] isPickup variable: $isPickup');
+      debugPrint('🔍🔍🔍 [Restoration] ================================================');
 
       // Set state based on course status
       // 🚀 For pickup courses, skip chauffeur_en_route and chauffeur_arrive
@@ -2378,11 +2407,21 @@ class CoursesViewModel extends BaseViewModel {
       if (_currentCourse != null) {
         final courseNumericId = int.tryParse(courseId);
         if (courseNumericId != null) {
+          debugPrint('🔍🔍🔍 [Restoration] LOCATION TRACKING CHECK:');
+          debugPrint('🔍 [Restoration] courseId: $courseId');
+          debugPrint('🔍 [Restoration] courseNumericId: $courseNumericId');
+          debugPrint('🔍 [Restoration] _currentCourse: $_currentCourse');
+          debugPrint('🔍 [Restoration] _currentCourse.serviceId: ${_currentCourse!.serviceId}');
+          debugPrint('🔍 [Restoration] _currentCourse.isPickupCourse: ${_currentCourse!.isPickupCourse}');
+          debugPrint('🔍🔍🔍 [Restoration] ================================================');
+
           if (_currentCourse!.isPickupCourse) {
-            debugPrint('⚡ [Restoration] PICKUP COURSE: Skipping backend location updates');
+            debugPrint('⚡⚡⚡ [Restoration] PICKUP COURSE DETECTED: Skipping backend location updates');
             debugPrint('⚡ [Restoration] Pickup courses do not send real-time location to backend');
+            debugPrint('⚡ [Restoration] Location tracking will NOT be enabled');
           } else {
-            debugPrint('🌐 [Restoration] Enabling backend location updates for course $courseNumericId');
+            debugPrint('🌐🌐🌐 [Restoration] REGULAR COURSE: Enabling backend location updates');
+            debugPrint('🌐 [Restoration] Course ID: $courseNumericId');
             _locationService.enableBackendUpdates(
             courseId: courseNumericId,
             onLocationUpdate: (locationData) {
