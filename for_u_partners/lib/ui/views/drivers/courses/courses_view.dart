@@ -5,6 +5,7 @@ import 'package:for_u_partners/services/driver_service.dart';
 import 'package:for_u_partners/ui/common/app_colors.dart';
 import 'package:for_u_partners/ui/views/drivers/courses/chat_page.dart';
 import 'package:for_u_partners/ui/views/drivers/courses/recap_view.dart';
+import 'package:for_u_partners/ui/views/drivers/courses/pickup_recap_view.dart';
 import 'package:for_u_partners/ui/views/drivers/courses/pick_up_page.dart';
 import 'package:for_u_partners/ui/views/drivers/courses/course_denial_view.dart';
 import 'package:for_u_partners/ui/views/drivers/homemain/homemain_viewmodel_export.dart';
@@ -581,23 +582,35 @@ class CoursesView extends StackedView<CoursesViewModel> {
           currentLatitude: viewModel.currentPosiction?.latitude,
           currentLongitude: viewModel.currentPosiction?.longitude,
           onCancelRide: () {
+            final courseId = int.tryParse(viewModel.currentCourse!.courseId ?? '') ?? 0;
+            final isPickup = viewModel.currentCourse!.isPickupCourse;
+
             Navigator.push(
               context,
               MaterialPageRoute(
-                builder: (context) => RecapitulatifCoursePage(
-                  viewModel: viewModel,
-                  courseId:
-                      int.tryParse(viewModel.currentCourse!.courseId ?? '') ??
-                          0,
-                  onSoumettre: () {
-                    if (viewModel.currentCourse!.hasValidCourseId) {
-                      viewModel
-                          .removeCourse(viewModel.currentCourse!.courseId!);
-                    }
-                    final navigationService = locator<NavigationService>();
-                    navigationService.navigateToHomemainView();
-                  },
-                ),
+                builder: (context) => isPickup
+                    ? PickupRecapView(
+                        viewModel: viewModel,
+                        courseId: courseId,
+                        onSoumettre: () {
+                          if (viewModel.currentCourse!.hasValidCourseId) {
+                            viewModel.removeCourse(viewModel.currentCourse!.courseId!);
+                          }
+                          final navigationService = locator<NavigationService>();
+                          navigationService.navigateToHomemainView();
+                        },
+                      )
+                    : RecapitulatifCoursePage(
+                        viewModel: viewModel,
+                        courseId: courseId,
+                        onSoumettre: () {
+                          if (viewModel.currentCourse!.hasValidCourseId) {
+                            viewModel.removeCourse(viewModel.currentCourse!.courseId!);
+                          }
+                          final navigationService = locator<NavigationService>();
+                          navigationService.navigateToHomemainView();
+                        },
+                      ),
               ),
             );
           },

@@ -21,6 +21,7 @@ class CourseNotificationData {
   final double depLong;
   final double depLat;
   final DateTime timestamp;
+  final int? serviceId; // ⚡ Added to identify pickup courses (service_id = 3)
 
   CourseNotificationData(
     this.clientId, {
@@ -39,6 +40,7 @@ class CourseNotificationData {
     required this.destLat,
     required this.depLong,
     required this.depLat,
+    this.serviceId, // ⚡ Added
     DateTime? timestamp,
   }) : timestamp = timestamp ?? DateTime.now();
 
@@ -66,6 +68,7 @@ class CourseNotificationData {
           double.tryParse(data['destination_lat']?.toString() ?? '0') ?? 0.0,
       depLong: double.tryParse(data['depart_lng']?.toString() ?? '0') ?? 0.0,
       depLat: double.tryParse(data['depart_lat']?.toString() ?? '0') ?? 0.0,
+      serviceId: int.tryParse(data['service_id']?.toString() ?? ''), // ⚡ Added
       timestamp: receivedAt, // ✨ Utilise le timestamp fourni ou DateTime.now()
     );
   }
@@ -88,6 +91,7 @@ class CourseNotificationData {
       'destLat': destLat,
       'depLong': depLong,
       'depLat': depLat,
+      'serviceId': serviceId, // ⚡ Added
       'timestamp': timestamp.millisecondsSinceEpoch,
     };
   }
@@ -111,6 +115,7 @@ class CourseNotificationData {
       destLat: (json['destLat'] ?? 0.0).toDouble(),
       depLong: (json['depLong'] ?? 0.0).toDouble(),
       depLat: (json['depLat'] ?? 0.0).toDouble(),
+      serviceId: json['serviceId'] as int?, // ⚡ Added
       timestamp: DateTime.fromMillisecondsSinceEpoch(json['timestamp'] ?? 0),
     );
   }
@@ -146,6 +151,7 @@ class CourseNotificationData {
       destLat: destLat,
       depLong: depLong,
       depLat: depLat,
+      serviceId: serviceId, // ⚡ Added to properly identify pickup courses
     );
   }
 

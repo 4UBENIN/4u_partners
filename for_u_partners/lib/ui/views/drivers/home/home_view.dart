@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:for_u_partners/app/app.locator.dart';
 import 'package:for_u_partners/services/marker_icon_service.dart';
+import 'package:for_u_partners/services/sharedpreferences_service.dart';
 import 'package:for_u_partners/ui/common/app_colors.dart';
 import 'package:for_u_partners/ui/views/drivers/courses/pick_up_page.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
@@ -148,7 +150,7 @@ Widget _buildMap(HomeViewModel viewModel) {
   }
 
   return FutureBuilder<BitmapDescriptor>(
-    future: MarkerIconService.getDriverMarker(),
+    future: _getDriverMarkerWithVehicleType(),
     builder: (context, snapshot) {
       final driverIcon = snapshot.data ?? BitmapDescriptor.defaultMarker;
 
@@ -480,4 +482,11 @@ Widget _buildStatusToggle(HomeViewModel model) {
       ),
     ),
   );
+}
+
+/// Helper method to load vehicle type from SharedPreferences and get appropriate driver marker
+Future<BitmapDescriptor> _getDriverMarkerWithVehicleType() async {
+  final sharedPreferencesService = locator<SharedpreferencesService>();
+  final vehicleType = await sharedPreferencesService.getActiveVehicleType();
+  return MarkerIconService.getDriverMarker(vehicleType: vehicleType);
 }

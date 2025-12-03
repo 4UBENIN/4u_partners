@@ -9,11 +9,25 @@ import 'package:google_maps_flutter/google_maps_flutter.dart';
 class MarkerIconService {
   // Cache for loaded markers
   static BitmapDescriptor? _driverMarker;
+  static BitmapDescriptor? _driverMarkerMoto;
   static BitmapDescriptor? _pickupMarker;
   static BitmapDescriptor? _destinationMarker;
 
-  /// Get driver position marker
-  static Future<BitmapDescriptor> getDriverMarker() async {
+  /// Get driver position marker based on vehicle type
+  /// [vehicleType] - Type of vehicle (e.g., "moto", "voiture", etc.)
+  /// If vehicleType is "moto", returns motorcycle marker, otherwise returns car marker
+  static Future<BitmapDescriptor> getDriverMarker({String? vehicleType}) async {
+    // Use motorcycle marker if vehicle type is "moto"
+    if (vehicleType?.toLowerCase() == 'moto') {
+      if (_driverMarkerMoto != null) return _driverMarkerMoto!;
+      _driverMarkerMoto = await _loadSvgMarker(
+        'assets/markers/driver_marker_moto.svg',
+        width: 50,
+      );
+      return _driverMarkerMoto!;
+    }
+
+    // Default to car marker
     if (_driverMarker != null) return _driverMarker!;
     _driverMarker = await _loadSvgMarker(
       'assets/markers/driver_marker.svg',
@@ -119,14 +133,16 @@ class MarkerIconService {
   /// Clear cached markers (useful for memory management)
   static void clearCache() {
     _driverMarker = null;
+    _driverMarkerMoto = null;
     _pickupMarker = null;
     _destinationMarker = null;
   }
 
   /// Preload all markers (call during app initialization)
-  static Future<void> preloadMarkers() async {
+  /// [vehicleType] - Optional vehicle type to preload specific driver marker
+  static Future<void> preloadMarkers({String? vehicleType}) async {
     await Future.wait([
-      getDriverMarker(),
+      getDriverMarker(vehicleType: vehicleType),
       getPickupMarker(),
       getDestinationMarker(),
     ]);

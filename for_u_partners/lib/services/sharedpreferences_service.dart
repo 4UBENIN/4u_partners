@@ -9,6 +9,7 @@ class SharedpreferencesService {
   static const String _userName = 'user_name';
   static const String _profilStatuts = 'profil_statuts';
   static const String _onlineStatus = 'driver_online_status';
+  static const String _activeVehicleType = 'active_vehicle_type';
 
   //* USER TOKEN
 
@@ -187,5 +188,25 @@ class SharedpreferencesService {
   Future<void> removeProfilStatuts() async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.remove(_profilStatuts);
+  }
+
+  //* ACTIVE VEHICLE TYPE
+
+  // Enregistre le type de véhicule actif (moto, voiture, etc.)
+  Future<void> saveActiveVehicleType(String vehicleType) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString(_activeVehicleType, vehicleType);
+  }
+
+  // Récupère le type de véhicule actif
+  Future<String?> getActiveVehicleType() async {
+    final prefs = await SharedPreferences.getInstance();
+    return prefs.getString(_activeVehicleType);
+  }
+
+  // Supprimer le type de véhicule actif
+  Future<void> removeActiveVehicleType() async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.remove(_activeVehicleType);
   }
 }

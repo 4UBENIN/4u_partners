@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:convert';
 import 'package:for_u_partners/app/app.locator.dart';
 import 'package:for_u_partners/services/course_event_service.dart';
 import 'package:for_u_partners/services/course_notificationstorage_service.dart';
@@ -7,6 +8,7 @@ import 'package:for_u_partners/services/marker_icon_service.dart';
 import 'package:for_u_partners/services/location_tracking_service.dart';
 import 'package:for_u_partners/ui/common/app_colors.dart';
 import 'package:for_u_partners/ui/common/toast.dart';
+import 'package:for_u_partners/ui/common/api_constant.dart';
 import 'package:stacked/stacked.dart';
 import 'package:flutter/material.dart';
 import 'package:location/location.dart' as loc;
@@ -24,6 +26,7 @@ import 'package:for_u_partners/services/course_restoration_service.dart';
 import 'package:for_u_partners/services/arrival_state_service.dart';
 import 'package:for_u_partners/services/tracking_service.dart';
 import 'package:for_u_partners/services/sharedpreferences_service.dart';
+import 'package:http/http.dart' as http;
 
 class CoursesViewModel extends BaseViewModel {
   final _driverService = locator<DriverService>();
@@ -61,6 +64,9 @@ class CoursesViewModel extends BaseViewModel {
 
   // Current user location
   LatLng? _currentLocation;
+
+  // Current vehicle type (e.g., "moto", "voiture")
+  String? _vehicleType;
 
   // État du trajet
   bool _isGoingToPickup = false;
@@ -146,6 +152,16 @@ class CoursesViewModel extends BaseViewModel {
     }
     _isInitialized = true;
     print('✅ Initializing ViewModel for the first time...');
+
+    // Load vehicle type from SharedPreferences
+    _vehicleType = await _sharedPreferencesService.getActiveVehicleType();
+    debugPrint('🚗 [Vehicle] Loaded vehicle type from cache: $_vehicleType');
+
+    // TODO: If vehicle type is null, fetch it from API
+    // if (_vehicleType == null) {
+    //   debugPrint('⏳ [Vehicle] Vehicle type is null, fetching from API...');
+    //   await _fetchVehicleTypeFromAPI();
+    // }
 
     // Initialize location service and get last known location (instant)
     await _initializeLocation();
@@ -456,7 +472,7 @@ class CoursesViewModel extends BaseViewModel {
     } catch (e) {
       // Marker doesn't exist yet, create it
       debugPrint('⚠️ Driver marker not found, creating new one at ${location.latitude}, ${location.longitude}');
-      final driverIcon = await MarkerIconService.getDriverMarker();
+      final driverIcon = await MarkerIconService.getDriverMarker(vehicleType: _vehicleType);
       _markers.add(
         Marker(
           markerId: const MarkerId('user_location'),
@@ -521,7 +537,7 @@ class CoursesViewModel extends BaseViewModel {
     _markers.removeWhere((marker) => marker.markerId.value == 'user_location');
 
     if (_currentPosition != null) {
-      final driverIcon = await MarkerIconService.getDriverMarker();
+      final driverIcon = await MarkerIconService.getDriverMarker(vehicleType: _vehicleType);
       _markers.add(
         Marker(
           markerId: const MarkerId('user_location'),
@@ -1264,7 +1280,18 @@ class CoursesViewModel extends BaseViewModel {
     try {
       setBusy(true);
       print("🔄 Début démarrage course...");
-      await driverservice.startCourse(courseId);
+
+      // ⚡ Check if this is a pickup course
+      final isPickup = _currentCourse?.isPickupCourse ?? false;
+
+      if (isPickup) {
+        print('⚡ [PICKUP] Starting pickup course $courseId via service');
+        await driverservice.startPickupCourse(courseId);
+      } else {
+        print('🚗 [REGULAR] Starting regular course $courseId via service');
+        await driverservice.startCourse(courseId);
+      }
+
       await _arrivalStateService.clearCourseState(courseId);
       canStart = true;
       print("✅ Course démarrée avec succès");
@@ -1303,13 +1330,30 @@ class CoursesViewModel extends BaseViewModel {
       _locationService.disableBackendUpdates();
       print('🌐 Backend location updates disabled (course completing)');
 
-      await driverservice.completeCourse(courseId);
+      // ⚡ Check if this is a pickup course
+      final isPickup = _currentCourse?.isPickupCourse ?? false;
+
+      if (isPickup) {
+        print('⚡ [PICKUP] Completing pickup course $courseId via service');
+        await driverservice.completePickupCourse(courseId);
+      } else {
+        print('🚗 [REGULAR] Completing regular course $courseId via service');
+        await driverservice.completeCourse(courseId);
+      }
+
       canComplete = true;
       print("✅ Course terminée avec succès");
     } catch (e) {
       print('❌ Erreur fin course: $e');
       canComplete = false;
-      CustomToast.showError(context, message: e.toString());
+
+      // Check if error is related to pause and show appropriate dialog
+      final errorMessage = e.toString();
+      if (errorMessage.contains('pause')) {
+        _showPauseErrorDialog(context);
+      } else {
+        CustomToast.showError(context, message: errorMessage);
+      }
 
       // En cas d'erreur, réinitialiser l'état
       _isGoingToPickup = false;
@@ -1329,6 +1373,95 @@ class CoursesViewModel extends BaseViewModel {
         setBottomSheetType(BottomSheetAppType.none);
       }
     }
+  }
+
+  void _showPauseErrorDialog(BuildContext context) {
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (BuildContext dialogContext) {
+        return AlertDialog(
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16),
+          ),
+          title: Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  color: Colors.orange.withOpacity(0.1),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: const Icon(
+                  Icons.pause_circle_filled,
+                  color: Colors.orange,
+                  size: 28,
+                ),
+              ),
+              const SizedBox(width: 12),
+              const Expanded(
+                child: Text(
+                  'Course en pause',
+                  style: TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ),
+            ],
+          ),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Text(
+                'Vous ne pouvez pas terminer une course qui est actuellement en pause.',
+                style: TextStyle(fontSize: 15),
+              ),
+              const SizedBox(height: 16),
+              Container(
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: Colors.blue[50],
+                  borderRadius: BorderRadius.circular(8),
+                  border: Border.all(color: Colors.blue[200]!),
+                ),
+                child: Row(
+                  children: [
+                    Icon(Icons.info_outline, color: Colors.blue[700], size: 20),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: Text(
+                        'Veuillez d\'abord reprendre la course en cliquant sur le bouton de reprise.',
+                        style: TextStyle(
+                          fontSize: 13,
+                          color: Colors.blue[900],
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(dialogContext).pop(),
+              style: TextButton.styleFrom(
+                backgroundColor: kcPrimaryColor,
+                foregroundColor: Colors.white,
+                padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(8),
+                ),
+              ),
+              child: const Text('J\'ai compris'),
+            ),
+          ],
+        );
+      },
+    );
   }
 
   // ✨ Méthode pour gérer la réception d'une notification push
@@ -1726,8 +1859,17 @@ class CoursesViewModel extends BaseViewModel {
         // Sauvegarder l'état de la course
         await _saveRideState('in_progress');
 
-        // Appeler l'API pour démarrer la course
-        await driverservice.startCourse(int.parse(_currentCourse!.courseId!));
+        final courseId = int.parse(_currentCourse!.courseId!);
+        final isPickup = _currentCourse!.isPickupCourse;
+
+        // ⚡ Appeler l'API appropriée selon le type de course
+        if (isPickup) {
+          print('⚡ [PICKUP] Starting pickup course $courseId');
+          await driverservice.startPickupCourse(courseId);
+        } else {
+          print('🚗 [REGULAR] Starting regular course $courseId');
+          await driverservice.startCourse(courseId);
+        }
 
         // Afficher la notification de démarrage
         await LocalNotificationService.showCourseStartedNotification(
@@ -1866,6 +2008,25 @@ class CoursesViewModel extends BaseViewModel {
   }
 
   // ✨ Réinitialiser l'état de la course
+  /// Called by PickupRecapView after successful completion
+  Future<void> onPickupCourseCompleted(int courseId) async {
+    debugPrint('⚡ [PICKUP] Cleaning up after course completion: $courseId');
+
+    // Disable backend location updates
+    _locationService.disableBackendUpdates();
+    debugPrint('🌐 Backend location updates disabled (pickup course completed)');
+
+    // Remove from cache
+    await CourseNotificationStorage.removeNotification(courseId.toString());
+    debugPrint('🗑️ Course supprimée du cache: $courseId');
+
+    // Save state as completed
+    await _saveRideState('completed');
+
+    // Reset state
+    await _resetCourseState();
+  }
+
   Future<void> _resetCourseState() async {
     // Sauvegarder l'ID de la course avant de la supprimer
     final currentCourseId = _currentCourse?.courseId;
@@ -2134,7 +2295,7 @@ class CoursesViewModel extends BaseViewModel {
     _markers
         .removeWhere((marker) => marker.markerId.value.startsWith('driver_'));
 
-    final driverIcon = await MarkerIconService.getDriverMarker();
+    final driverIcon = await MarkerIconService.getDriverMarker(vehicleType: _vehicleType);
     for (var driver in _onlineDrivers) {
       final markerId = 'driver_${driver.id}';
       final marker = Marker(
@@ -2488,6 +2649,68 @@ class CoursesViewModel extends BaseViewModel {
       debugPrint('❌ [Restoration] Error restoring active course: $e');
       debugPrint('❌ [Restoration] Stack trace: ${StackTrace.current}');
       _isRestoringState = false;
+      notifyListeners();
+    }
+  }
+
+  /// Fetch vehicle type directly from API dashboard endpoint
+  Future<void> _fetchVehicleTypeFromAPI() async {
+    try {
+      debugPrint('🌐 [Vehicle] Fetching vehicle type from API...');
+      final token = await _sharedPreferencesService.getToken();
+      if (token == null) {
+        debugPrint('❌ [Vehicle] No auth token available');
+        return;
+      }
+
+      final url = Uri.parse('${ApiConstant.baseUrl}/conducteur/dashboard');
+      final response = await http.get(
+        url,
+        headers: {
+          'Authorization': 'Bearer $token',
+          'Accept': 'application/json',
+          'Content-Type': 'application/json',
+        },
+      );
+
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+        if (data['vehicule'] != null && data['vehicule']['type'] != null) {
+          final vehicleType = data['vehicule']['type'].toString();
+          _vehicleType = vehicleType;
+
+          // Save to SharedPreferences for future use
+          await _sharedPreferencesService.saveActiveVehicleType(vehicleType);
+
+          debugPrint('✅ [Vehicle] Fetched and saved vehicle type from API: $vehicleType');
+
+          // Update marker if we have a position
+          if (_currentPosition != null) {
+            await _addUserLocationMarker();
+            notifyListeners();
+          }
+        } else {
+          debugPrint('⚠️ [Vehicle] No vehicle type in API response');
+        }
+      } else {
+        debugPrint('❌ [Vehicle] API error: ${response.statusCode}');
+      }
+    } catch (e) {
+      debugPrint('❌ [Vehicle] Error fetching vehicle type from API: $e');
+    }
+  }
+
+  /// Reload vehicle type from SharedPreferences and update markers
+  /// Call this method when vehicle data is updated
+  Future<void> reloadVehicleType() async {
+    final oldVehicleType = _vehicleType;
+    _vehicleType = await _sharedPreferencesService.getActiveVehicleType();
+    debugPrint('🚗 [Vehicle] Reloaded vehicle type: $_vehicleType (was: $oldVehicleType)');
+
+    // If vehicle type changed, update the driver marker
+    if (oldVehicleType != _vehicleType && _currentPosition != null) {
+      debugPrint('🔄 [Vehicle] Vehicle type changed, updating marker...');
+      await _addUserLocationMarker();
       notifyListeners();
     }
   }

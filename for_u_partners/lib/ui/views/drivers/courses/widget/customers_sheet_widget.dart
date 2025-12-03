@@ -1320,7 +1320,31 @@ class _InProgressRideBottomSheetState extends State<InProgressRideBottomSheet>
           setState(() {});
         }
       }
+    } on PauseAlreadyActiveException catch (e) {
+      // Pause is already active on backend, sync local state
+      debugPrint('⚠️ [PAUSE SYNC] Pause already active on backend, syncing local state...');
+      debugPrint('⚠️ [PAUSE SYNC] Backend timestamp: ${e.timestamp}');
+      debugPrint('⚠️ [PAUSE SYNC] Backend pause_start: ${e.pauseStart}');
+
+      _pauseStartTimestamp = e.timestamp;
+      _isPaused = true;
+      _pauseTime = 0;
+      await _pauseStateService.setPaused(courseId, true);
+      await _pauseStateService.setPauseStartTimestamp(courseId, e.timestamp);
+      _startPauseTimer();
+
+      if (mounted) {
+        setState(() {});
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('La pause était déjà active. État synchronisé.'),
+            backgroundColor: Colors.orange,
+            duration: Duration(seconds: 2),
+          ),
+        );
+      }
     } catch (e) {
+      debugPrint('❌ [PAUSE ERROR] ${e.toString()}');
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text('Erreur: ${e.toString()}')),

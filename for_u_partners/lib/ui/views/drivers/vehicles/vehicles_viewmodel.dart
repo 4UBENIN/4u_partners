@@ -104,9 +104,17 @@ class MesVehiculesViewModel extends BaseViewModel {
             print('ℹ️ Type du véhicule: ${vehicle.type}');
             print('ℹ️ Nombre de places: ${vehicle.nombrePlaces}');
             print('ℹ️ Services - Course à l\'heure: ${vehicle.courseHeure}, Clim: ${vehicle.clim}, Basic: ${vehicle.basic}, Premium: ${vehicle.premium}');
-            
+
             _vehicules = [vehicle];
             _vehiculeActif = vehicle;
+
+            // Save vehicle type to SharedPreferences for marker selection
+            if (vehicle.type != null) {
+              await _saveVehicleType(vehicle.type!);
+            } else {
+              print('⚠️ [Vehicle] Type de véhicule est null, ne peut pas sauvegarder');
+            }
+
             print('✅ Véhicule récupéré: ID=${vehicle.id}, Modèle=${vehicle.model}, Statut="${vehicle.statut}"');
             
             _vehiculesApprouves = List<Vehicle>.from(_vehicules);
@@ -384,6 +392,21 @@ class MesVehiculesViewModel extends BaseViewModel {
       }
       
       await fetchDashboardData();
+    }
+  }
+
+  /// Save vehicle type to SharedPreferences for marker selection in CoursesView
+  Future<void> _saveVehicleType(String vehicleType) async {
+    try {
+      print('💾 [Vehicle] Tentative de sauvegarde du type de véhicule: "$vehicleType"');
+      final sharedPrefs = locator<SharedpreferencesService>();
+      await sharedPrefs.saveActiveVehicleType(vehicleType);
+
+      // Verify it was saved
+      final saved = await sharedPrefs.getActiveVehicleType();
+      print('✅ [Vehicle] Type de véhicule sauvegardé: "$vehicleType", vérification: "$saved"');
+    } catch (e) {
+      print('❌ [Vehicle] Erreur lors de la sauvegarde du type de véhicule: $e');
     }
   }
 }

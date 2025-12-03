@@ -11,6 +11,20 @@ import '../models/global_stats_model.dart';
 import '../models/user_model.dart';
 import 'package:url_launcher/url_launcher.dart';
 
+// Custom exception for when a pause is already active
+class PauseAlreadyActiveException implements Exception {
+  final int timestamp;
+  final String pauseStart;
+
+  PauseAlreadyActiveException({
+    required this.timestamp,
+    required this.pauseStart,
+  });
+
+  @override
+  String toString() => 'PauseAlreadyActiveException: Une pause est déjà en cours depuis $pauseStart';
+}
+
 class DriverLocation {
   final int id;
   final double latitude;
@@ -320,6 +334,25 @@ class DriverService {
           'pause_start': data['pause_start'] as String,
         };
       } else {
+        // Check if pause is already active
+        try {
+          final errorData = jsonDecode(response.body);
+          final message = errorData['message']?.toString() ?? '';
+
+          if (message.contains('déjà en cours') && errorData['pause_start'] != null) {
+            // Pause already exists, extract timestamp from pause_start
+            final pauseStart = DateTime.parse(errorData['pause_start']);
+            final timestamp = pauseStart.millisecondsSinceEpoch ~/ 1000;
+
+            throw PauseAlreadyActiveException(
+              timestamp: timestamp,
+              pauseStart: errorData['pause_start'],
+            );
+          }
+        } catch (e) {
+          if (e is PauseAlreadyActiveException) rethrow;
+        }
+
         throw Exception('Échec du démarrage de la pause');
       }
     } catch (e) {
@@ -386,6 +419,25 @@ class DriverService {
           'pause_start': data['pause_start'] as String,
         };
       } else {
+        // Check if pause is already active
+        try {
+          final errorData = jsonDecode(response.body);
+          final message = errorData['message']?.toString() ?? '';
+
+          if (message.contains('déjà en cours') && errorData['pause_start'] != null) {
+            // Pause already exists, extract timestamp from pause_start
+            final pauseStart = DateTime.parse(errorData['pause_start']);
+            final timestamp = pauseStart.millisecondsSinceEpoch ~/ 1000;
+
+            throw PauseAlreadyActiveException(
+              timestamp: timestamp,
+              pauseStart: errorData['pause_start'],
+            );
+          }
+        } catch (e) {
+          if (e is PauseAlreadyActiveException) rethrow;
+        }
+
         throw Exception('Échec du démarrage de la pause pickup');
       }
     } catch (e) {
@@ -471,7 +523,7 @@ class DriverService {
   }
 
   // ⚡ PICKUP: Terminer une course pickup
-  Future<void> completePickupCourse(int courseId, {double penalite = 0}) async {
+  Future<Map<String, dynamic>> completePickupCourse(int courseId, {double penalite = 0}) async {
     print("⚡ [PICKUP] Debut de la fin de la course pickup dans le service");
     final token = await sharedPreferencesService.getToken();
     final url = Uri.parse(finishPickupCourseUrl(courseId));
@@ -489,7 +541,10 @@ class DriverService {
       );
       print("⚡ pickup-complete-course-response: ${response.body}");
 
-      if (response.statusCode != 200) {
+      if (response.statusCode == 200) {
+        final responseData = jsonDecode(response.body);
+        return responseData as Map<String, dynamic>;
+      } else {
         // Try to parse error message from response
         try {
           final responseData = jsonDecode(response.body);
