@@ -80,6 +80,7 @@ class CoursesViewModel extends BaseViewModel {
   final CourseEventService _courseEventService = CourseEventService();
   StreamSubscription<CourseNotificationData>? _newCourseSubscription;
   StreamSubscription<CourseNotificationData>? _courseUpdateSubscription;
+  StreamSubscription<CourseCancellationEvent>? _courseCancelSubscription;
 
   // Liste des courses disponibles
   final List<ClientData> _availableCourses = [];
@@ -578,6 +579,16 @@ class CoursesViewModel extends BaseViewModel {
         print('❌ Erreur stream mise à jour course: $error');
       },
     );
+
+    _courseCancelSubscription =
+        _courseEventService.courseCancelStream.listen(
+      (cancellationEvent) async {
+        await _onCourseCancelled(cancellationEvent);
+      },
+      onError: (error) {
+        print('❌ Erreur stream annulation course: $error');
+      },
+    );
   }
 
   void _onNewCourseReceived(CourseNotificationData courseData) {
@@ -740,6 +751,46 @@ class CoursesViewModel extends BaseViewModel {
       notifyListeners();
       print('🔄 Course ${courseData.courseId} mise à jour');
     }
+  }
+
+  Future<void> _onCourseCancelled(CourseCancellationEvent cancellation) async {
+    final courseId = cancellation.courseId;
+    print('❌ Course annulée reçue dans ViewModel: $courseId');
+
+    // Nettoyer les notifications et la liste des courses
+    await CourseNotificationStorage.removeNotification(courseId);
+    _availableCourses.removeWhere((course) => course.courseId == courseId);
+    _updatePendingCoursesCount();
+
+    final isCurrentCourse = _currentCourse?.courseId == courseId;
+    if (isCurrentCourse) {
+      _locationService.disableBackendUpdates();
+      _currentCourse = null;
+      _isGoingToPickup = false;
+      _isOnTrip = false;
+      _destinationName = null;
+
+      await RidePersistenceService.clearRideState();
+      final parsedId = int.tryParse(courseId);
+      if (parsedId != null) {
+        await _arrivalStateService.clearCourseState(parsedId);
+      }
+    }
+
+    // Nettoyer les tracés liés à la course annulée
+    _polylines.clear();
+    _markers.removeWhere((marker) =>
+        marker.markerId.value == 'pickup_point' ||
+        marker.markerId.value == 'destination_point');
+
+    if (_availableCourses.isEmpty && _currentCourse == null) {
+      hideBottomSheet();
+    } else if (_availableCourses.isNotEmpty && _currentCourse == null) {
+      setBottomSheetType(BottomSheetAppType.clients);
+      await _drawRouteForNewCourse(_availableCourses.first);
+    }
+
+    notifyListeners();
   }
 
   // ✨ Supprimer une course (et du storage aussi)
@@ -1072,10 +1123,27 @@ class CoursesViewModel extends BaseViewModel {
           marker.markerId.value == 'destination_point'
         );
 
+        // 4bis. Toujours réinitialiser un éventuel état de course pour éviter un bottom sheet résiduel
+        _locationService.disableBackendUpdates();
+        await RidePersistenceService.clearRideState();
+        final parsedId = int.tryParse(courseId);
+        if (parsedId != null) {
+          await _arrivalStateService.clearCourseState(parsedId);
+        }
+        if (_currentCourse?.courseId == courseId) {
+          _currentCourse = null;
+          _isGoingToPickup = false;
+          _isOnTrip = false;
+        }
+
         // 5. Cacher le bottom sheet si plus de courses ET aucune course active
         if (_availableCourses.isEmpty && _currentCourse == null) {
           hideBottomSheet();
           print('🧹 No more courses, cleared route markers and polylines');
+        } else if (_availableCourses.isNotEmpty && _currentCourse == null) {
+          // Si on a d'autres demandes en attente, revenir sur la liste
+          setBottomSheetType(BottomSheetAppType.clients);
+          await _drawRouteForNewCourse(_availableCourses.first);
         } else if (_availableCourses.isNotEmpty) {
           // Draw route for the next available course
           await _drawRouteForNewCourse(_availableCourses.first);
@@ -1270,7 +1338,19 @@ class CoursesViewModel extends BaseViewModel {
       print("🔄 setBusy(false) appelé");
 
       if (canReject) {
+        // Réinitialiser complètement l'état de la course refusée
+        await RidePersistenceService.clearRideState();
+        _currentCourse = null;
+        _isGoingToPickup = false;
+        _isOnTrip = false;
+        _destinationName = null;
+        _currentLocation = null;
+        _polylines.clear();
+        _markers.removeWhere((marker) =>
+            marker.markerId.value == 'pickup_point' ||
+            marker.markerId.value == 'destination_point');
         hideBottomSheet();
+        notifyListeners();
       }
     }
   }
@@ -2074,6 +2154,7 @@ class CoursesViewModel extends BaseViewModel {
     _driversRefreshTimer?.cancel();
     _newCourseSubscription?.cancel();
     _courseUpdateSubscription?.cancel();
+    _courseCancelSubscription?.cancel();
     _locationStreamSubscription?.cancel();
     _locationService.stopTracking();
     _trackingService.dispose(); // Stop general position tracking

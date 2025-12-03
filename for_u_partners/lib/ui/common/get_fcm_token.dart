@@ -140,12 +140,58 @@ class FirebaseMessagingService {
 
         print(
             '✅ Notification course sauvée: ${courseData.courseId} à ${courseData.timestamp}');
+      } else if (_isCancellationPayload(data)) {
+        final courseId = data['course_id']?.toString();
+        final reason = _extractCancellationReason(data);
+
+        print('📱 Annulation détectée pour la course: $courseId');
+
+        if (courseId != null && courseId.isNotEmpty) {
+          await CourseNotificationStorage.removeNotification(courseId);
+
+          await LocalNotificationService.showCourseCancelledNotification(
+            courseId: courseId,
+            reason: reason,
+          );
+
+          _courseEventService.onCourseCancelled(data);
+        } else {
+          print('⚠️ Impossible de traiter l\'annulation: course_id manquant');
+        }
       } else {
         print('📱 Message non-course reçu: $data');
       }
     } catch (e) {
       print('❌ Erreur traitement message: $e');
     }
+  }
+
+  bool _isCancellationPayload(Map<String, dynamic> data) {
+    final hasCourseId =
+        data['course_id'] != null && data['course_id'].toString().isNotEmpty;
+    if (!hasCourseId) return false;
+
+    final status = data['status']?.toString().toLowerCase();
+    final type = data['type']?.toString().toLowerCase();
+    final hasDriverId = data.containsKey('conducteur_id');
+    final missingCourseDetails =
+        !data.containsKey('client_nom') && !data.containsKey('eta_minutes');
+
+    final explicitlyCancelled = status == 'cancelled' ||
+        type == 'cancelled' ||
+        type == 'course_cancelled';
+
+    // Cas observé : message avec seulement course_id, conducteur_id, etc.
+    return explicitlyCancelled || (hasDriverId && missingCourseDetails);
+  }
+
+  String? _extractCancellationReason(Map<String, dynamic> data) {
+    final possibleKeys = ['reason', 'motif', 'message'];
+    for (final key in possibleKeys) {
+      final value = data[key]?.toString();
+      if (value != null && value.isNotEmpty) return value;
+    }
+    return null;
   }
 
   Future<void> _setupMessageHandlers() async {

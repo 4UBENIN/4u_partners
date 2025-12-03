@@ -161,6 +161,19 @@ class CourseNotificationData {
   }
 }
 
+// Modèle pour les événements d'annulation de course
+class CourseCancellationEvent {
+  final String courseId;
+  final String? reason;
+  final Map<String, dynamic> rawData;
+
+  CourseCancellationEvent({
+    required this.courseId,
+    this.reason,
+    Map<String, dynamic>? rawData,
+  }) : rawData = rawData ?? const {};
+}
+
 // Service pour gérer les événements de course
 class CourseEventService {
   static final CourseEventService _instance = CourseEventService._internal();
@@ -175,11 +188,17 @@ class CourseEventService {
   final StreamController<CourseNotificationData> _courseUpdateController =
       StreamController<CourseNotificationData>.broadcast();
 
+  // Stream pour les annulations de course
+  final StreamController<CourseCancellationEvent> _courseCancelController =
+      StreamController<CourseCancellationEvent>.broadcast();
+
   // Getters pour écouter les streams
   Stream<CourseNotificationData> get newCourseStream =>
       _newCourseController.stream;
   Stream<CourseNotificationData> get courseUpdateStream =>
       _courseUpdateController.stream;
+  Stream<CourseCancellationEvent> get courseCancelStream =>
+      _courseCancelController.stream;
 
   // Méthode appelée depuis FirebaseMessagingService
   void onNewCourseReceived(Map<String, dynamic> firebaseData) {
@@ -203,9 +222,35 @@ class CourseEventService {
     }
   }
 
+  // Méthode appelée lorsqu'une course est annulée
+  void onCourseCancelled(Map<String, dynamic> firebaseData) {
+    try {
+      final courseId = firebaseData['course_id']?.toString() ?? '';
+      if (courseId.isEmpty) {
+        print('⚠️ Impossible de traiter l\'annulation: course_id manquant');
+        return;
+      }
+
+      final reason = firebaseData['reason']?.toString() ??
+          firebaseData['motif']?.toString();
+
+      print('❌ Course annulée: $courseId');
+      _courseCancelController.add(
+        CourseCancellationEvent(
+          courseId: courseId,
+          reason: reason,
+          rawData: firebaseData,
+        ),
+      );
+    } catch (e) {
+      print('❌ Erreur parsing course cancellation: $e');
+    }
+  }
+
   // Nettoyer les ressources
   void dispose() {
     _newCourseController.close();
     _courseUpdateController.close();
+    _courseCancelController.close();
   }
 }
