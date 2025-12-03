@@ -272,49 +272,10 @@ class _PickUpPageState extends State<PickUpPage> with TickerProviderStateMixin {
     }
   }
 
-  // 📏 Calculer uniquement distance et durée (sans tracer)
-  void _calculateDistanceAndDurationOnly() {
-    if (departLat == null || departLng == null || arriveeLat == null || arriveeLng == null) {
-      return;
-    }
-
-    // Calculer la distance directe
-    double totalDistance = Geolocator.distanceBetween(
-      departLat!,
-      departLng!,
-      arriveeLat!,
-      arriveeLng!,
-    );
-
-    // Convertir en kilomètres
-    double distanceInKm = totalDistance / 1000;
-
-    // Ajouter 30% pour tenir compte des routes
-    double adjustedDistance = distanceInKm * 1.3;
-    
-    // Vitesse moyenne en ville: 30 km/h
-    double durationInMinutes = (adjustedDistance / 30) * 60;
-
-    // 💰 Calculer le prix de la course
-    double baseFare = 500; // Prix de base en FCFA
-    double pricePerKm = 300; // Prix par kilomètre en FCFA
-    double calculatedPrice = baseFare + (adjustedDistance * pricePerKm);
-
-    setState(() {
-      _distance = distanceInKm < 1
-          ? '${(distanceInKm * 1000).toStringAsFixed(0)} m'
-          : '${distanceInKm.toStringAsFixed(1)} km';
-      
-      if (durationInMinutes < 60) {
-        _duration = '${durationInMinutes.toStringAsFixed(0)} min';
-      } else {
-        int hours = (durationInMinutes / 60).floor();
-        int minutes = (durationInMinutes % 60).toInt();
-        _duration = '${hours}h ${minutes}min';
-      }
-      
-      _price = calculatedPrice;
-    });
+  // 📏 Calculer uniquement distance et durée (sans tracer) - utilise l'API d'estimation
+  Future<void> _calculateDistanceAndDurationOnly() async {
+    // Appeler la méthode principale qui utilise maintenant l'API
+    await _calculateDistanceAndDuration();
   }
 
   // 🗺️ Tracer l'itinéraire entre départ et destination (NON UTILISÉ)
@@ -368,55 +329,126 @@ class _PickUpPageState extends State<PickUpPage> with TickerProviderStateMixin {
     }
   }
 
-  // 📏 Calculer la distance et la durée estimée
-  void _calculateDistanceAndDuration() {
-    if (_polylineCoordinates.length < 2) return;
-
-    double totalDistance = 0.0;
-
-    // Calculer la distance totale en mètres
-    for (int i = 0; i < _polylineCoordinates.length - 1; i++) {
-      totalDistance += Geolocator.distanceBetween(
-        _polylineCoordinates[i].latitude,
-        _polylineCoordinates[i].longitude,
-        _polylineCoordinates[i + 1].latitude,
-        _polylineCoordinates[i + 1].longitude,
-      );
+  // 📏 Calculer la distance et la durée estimée via l'API
+  Future<void> _calculateDistanceAndDuration() async {
+    if (departLat == null || departLng == null || arriveeLat == null || arriveeLng == null) {
+      debugPrint('❌ [PickUpPage] Missing coordinates for estimation');
+      return;
     }
 
-    // Convertir en kilomètres
-    double distanceInKm = totalDistance / 1000;
+    try {
+      debugPrint('⚡ [PickUpPage] Calling estimation API...');
 
-    // Calculer la durée estimée
-    // Si ligne droite (2 points), ajouter 30% pour tenir compte des routes
-    double adjustedDistance = _polylineCoordinates.length == 2 
-        ? distanceInKm * 1.3 
-        : distanceInKm;
-    
-    // Vitesse moyenne en ville: 30 km/h
-    double durationInMinutes = (adjustedDistance / 30) * 60;
-
-    // 💰 Calculer le prix de la course
-    // Formule: Prix de base + (distance × tarif au km)
-    double baseFare = 500; // Prix de base en FCFA
-    double pricePerKm = 300; // Prix par kilomètre en FCFA
-    double calculatedPrice = baseFare + (adjustedDistance * pricePerKm);
-
-    setState(() {
-      _distance = distanceInKm < 1
-          ? '${(distanceInKm * 1000).toStringAsFixed(0)} m'
-          : '${distanceInKm.toStringAsFixed(1)} km';
-      
-      if (durationInMinutes < 60) {
-        _duration = '${durationInMinutes.toStringAsFixed(0)} min';
+      // Calculer une durée estimée simple pour l'API
+      double totalDistance = 0.0;
+      if (_polylineCoordinates.length >= 2) {
+        for (int i = 0; i < _polylineCoordinates.length - 1; i++) {
+          totalDistance += Geolocator.distanceBetween(
+            _polylineCoordinates[i].latitude,
+            _polylineCoordinates[i].longitude,
+            _polylineCoordinates[i + 1].latitude,
+            _polylineCoordinates[i + 1].longitude,
+          );
+        }
       } else {
-        int hours = (durationInMinutes / 60).floor();
-        int minutes = (durationInMinutes % 60).toInt();
-        _duration = '${hours}h ${minutes}min';
+        totalDistance = Geolocator.distanceBetween(
+          departLat!,
+          departLng!,
+          arriveeLat!,
+          arriveeLng!,
+        );
       }
-      
-      _price = calculatedPrice;
-    });
+
+      double distanceInKm = totalDistance / 1000;
+      double adjustedDistance = _polylineCoordinates.length == 2 ? distanceInKm * 1.3 : distanceInKm;
+      int durationInMinutes = ((adjustedDistance / 30) * 60).toInt();
+
+      // Appeler l'API d'estimation
+      final estimationData = await _driverService.estimatePickupCourse(
+        typeCourse: 'distance', // ou 'temps' selon le type de course
+        departLat: departLat!,
+        departLng: departLng!,
+        arriveeLat: arriveeLat!,
+        arriveeLng: arriveeLng!,
+        dureeMin: durationInMinutes,
+        adresseDepart: _departController.text,
+        adresseArrivee: _destinationController.text,
+      );
+
+      debugPrint('✅ [PickUpPage] Estimation API response: $estimationData');
+
+      // Extraire les données de la réponse avec conversion de type sécurisée
+      final dynamic montantValue = estimationData['montant'] ?? 0;
+      final double montant = montantValue is int ? montantValue.toDouble() : (montantValue as num).toDouble();
+
+      final dynamic distanceValue = estimationData['distance_km'] ?? distanceInKm;
+      final double distanceKm = distanceValue is int ? distanceValue.toDouble() : (distanceValue as num).toDouble();
+
+      final dynamic dureeValue = estimationData['duree_estimee'] ?? durationInMinutes;
+      final int dureeEstimee = dureeValue is int ? dureeValue : (dureeValue as num).toInt();
+
+      setState(() {
+        // Utiliser les valeurs de l'API
+        _distance = distanceKm < 1
+            ? '${(distanceKm * 1000).toStringAsFixed(0)} m'
+            : '${distanceKm.toStringAsFixed(1)} km';
+
+        if (dureeEstimee < 60) {
+          _duration = '$dureeEstimee min';
+        } else {
+          int hours = (dureeEstimee / 60).floor();
+          int minutes = dureeEstimee % 60;
+          _duration = '${hours}h ${minutes}min';
+        }
+
+        _price = montant;
+      });
+    } catch (e) {
+      debugPrint('❌ [PickUpPage] Erreur lors de l\'estimation: $e');
+
+      // Fallback: calculer localement en cas d'erreur API
+      double totalDistance = 0.0;
+      if (_polylineCoordinates.length >= 2) {
+        for (int i = 0; i < _polylineCoordinates.length - 1; i++) {
+          totalDistance += Geolocator.distanceBetween(
+            _polylineCoordinates[i].latitude,
+            _polylineCoordinates[i].longitude,
+            _polylineCoordinates[i + 1].latitude,
+            _polylineCoordinates[i + 1].longitude,
+          );
+        }
+      } else {
+        totalDistance = Geolocator.distanceBetween(
+          departLat!,
+          departLng!,
+          arriveeLat!,
+          arriveeLng!,
+        );
+      }
+
+      double distanceInKm = totalDistance / 1000;
+      double adjustedDistance = _polylineCoordinates.length == 2 ? distanceInKm * 1.3 : distanceInKm;
+      double durationInMinutes = (adjustedDistance / 30) * 60;
+      double baseFare = 500;
+      double pricePerKm = 300;
+      double calculatedPrice = baseFare + (adjustedDistance * pricePerKm);
+
+      setState(() {
+        _distance = distanceInKm < 1
+            ? '${(distanceInKm * 1000).toStringAsFixed(0)} m'
+            : '${distanceInKm.toStringAsFixed(1)} km';
+
+        if (durationInMinutes < 60) {
+          _duration = '${durationInMinutes.toStringAsFixed(0)} min';
+        } else {
+          int hours = (durationInMinutes / 60).floor();
+          int minutes = (durationInMinutes % 60).toInt();
+          _duration = '${hours}h ${minutes}min';
+        }
+
+        _price = calculatedPrice;
+      });
+    }
   }
 
   // 📍 Ajuster la caméra pour afficher tout l'itinéraire
@@ -530,11 +562,9 @@ class _PickUpPageState extends State<PickUpPage> with TickerProviderStateMixin {
       context: context,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
-      isDismissible: false, // Empêche la fermeture en glissant vers le bas
-      enableDrag: false, // Empêche le glissement
-      builder: (context) => WillPopScope(
-        onWillPop: () async => false, // Empêche la fermeture avec le bouton retour
-        child: Container(
+      isDismissible: true, // Permet la fermeture en glissant vers le bas
+      enableDrag: true, // Permet le glissement
+      builder: (context) => Container(
         decoration: const BoxDecoration(
           color: Colors.white,
           borderRadius: BorderRadius.only(
@@ -560,17 +590,29 @@ class _PickUpPageState extends State<PickUpPage> with TickerProviderStateMixin {
                 ),
               ),
               const SizedBox(height: 24),
-              
-              // Titre
-              const Text(
-                'Détails de la course',
-                style: TextStyle(
-                  fontSize: 20,
-                  fontWeight: FontWeight.bold,
-                  color: Colors.black87,
-                ),
+
+              // Titre avec bouton de fermeture
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  const Text(
+                    'Détails de la course',
+                    style: TextStyle(
+                      fontSize: 20,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.black87,
+                    ),
+                  ),
+                  IconButton(
+                    onPressed: () => Navigator.of(context).pop(),
+                    icon: const Icon(Icons.close),
+                    iconSize: 24,
+                    color: Colors.grey[600],
+                    tooltip: 'Fermer',
+                  ),
+                ],
               ),
-              const SizedBox(height: 24),
+              const SizedBox(height: 16),
               
               // Détails du trajet
               Container(
@@ -879,7 +921,6 @@ class _PickUpPageState extends State<PickUpPage> with TickerProviderStateMixin {
               ),
             ],
           ),
-        ),
         ),
       ),
     );

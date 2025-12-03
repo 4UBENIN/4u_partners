@@ -568,6 +568,62 @@ class DriverService {
     }
   }
 
+  // ⚡ PICKUP: Estimer le prix d'une course pickup
+  Future<Map<String, dynamic>> estimatePickupCourse({
+    required String typeCourse,
+    required double departLat,
+    required double departLng,
+    required double arriveeLat,
+    required double arriveeLng,
+    required int dureeMin,
+    required String adresseDepart,
+    required String adresseArrivee,
+  }) async {
+    debugPrint("⚡ [PICKUP] Estimation du prix de la course pickup");
+    final token = await sharedPreferencesService.getToken();
+    final url = Uri.parse('$baseUrl/conducteur/course/estimate');
+    debugPrint("⚡ pickup-estimate-url: $url");
+
+    try {
+      final requestBody = {
+        'type_course': typeCourse,
+        'depart_lat': departLat,
+        'depart_lng': departLng,
+        'arrivee_lat': arriveeLat,
+        'arrivee_lng': arriveeLng,
+        'duree_min': dureeMin,
+        'adresse_depart': adresseDepart,
+        'adresse_arrivee': adresseArrivee,
+      };
+      debugPrint("⚡ pickup-estimate-request: ${jsonEncode(requestBody)}");
+
+      final response = await http.post(
+        url,
+        headers: {
+          'Accept': 'application/json',
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer $token',
+        },
+        body: jsonEncode(requestBody),
+      );
+      debugPrint("⚡ pickup-estimate-response: ${response.body}");
+
+      if (response.statusCode == 200) {
+        final responseData = jsonDecode(response.body);
+        return responseData as Map<String, dynamic>;
+      } else if (response.statusCode == 500) {
+        throw Exception('Impossible de calculer la distance');
+      } else {
+        final responseData = jsonDecode(response.body);
+        final errorMessage = responseData['message'] ?? responseData['error'] ?? 'Erreur inconnue';
+        throw Exception(errorMessage);
+      }
+    } catch (e) {
+      debugPrint('⚡ Erreur lors de l\'estimation de la course pickup: $e');
+      rethrow;
+    }
+  }
+
   // Récupérer les détails d'une course
   Future<Map<String, dynamic>> getRideDetails(int courseId) async {
     final token = await sharedPreferencesService.getToken();

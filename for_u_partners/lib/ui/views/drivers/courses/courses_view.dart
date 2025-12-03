@@ -583,6 +583,7 @@ class CoursesView extends StackedView<CoursesViewModel> {
           currentLongitude: viewModel.currentPosiction?.longitude,
           onCancelRide: () {
             final courseId = int.tryParse(viewModel.currentCourse!.courseId ?? '') ?? 0;
+            final courseIdString = viewModel.currentCourse!.courseId ?? '';
             final isPickup = viewModel.currentCourse!.isPickupCourse;
 
             Navigator.push(
@@ -593,8 +594,9 @@ class CoursesView extends StackedView<CoursesViewModel> {
                         viewModel: viewModel,
                         courseId: courseId,
                         onSoumettre: () {
-                          if (viewModel.currentCourse!.hasValidCourseId) {
-                            viewModel.removeCourse(viewModel.currentCourse!.courseId!);
+                          // Use the captured courseIdString instead of accessing viewModel.currentCourse
+                          if (courseIdString.isNotEmpty) {
+                            viewModel.removeCourse(courseIdString);
                           }
                           final navigationService = locator<NavigationService>();
                           navigationService.navigateToHomemainView();
@@ -604,8 +606,9 @@ class CoursesView extends StackedView<CoursesViewModel> {
                         viewModel: viewModel,
                         courseId: courseId,
                         onSoumettre: () {
-                          if (viewModel.currentCourse!.hasValidCourseId) {
-                            viewModel.removeCourse(viewModel.currentCourse!.courseId!);
+                          // Use the captured courseIdString instead of accessing viewModel.currentCourse
+                          if (courseIdString.isNotEmpty) {
+                            viewModel.removeCourse(courseIdString);
                           }
                           final navigationService = locator<NavigationService>();
                           navigationService.navigateToHomemainView();

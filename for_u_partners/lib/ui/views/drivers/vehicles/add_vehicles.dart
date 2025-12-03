@@ -6,7 +6,8 @@ import 'package:dio/dio.dart';
 import 'package:for_u_partners/models/vehicle_model.dart';
 import 'package:for_u_partners/services/vehicle_service.dart';
 import 'package:for_u_partners/app/app.locator.dart';
-import 'package:file_picker/file_picker.dart';
+import 'package:image_picker/image_picker.dart';
+import 'package:permission_handler/permission_handler.dart';
 
 class AddVehiclesView extends StatefulWidget {
   const AddVehiclesView({Key? key}) : super(key: key);
@@ -721,13 +722,13 @@ class _AddVehiclesViewState extends State<AddVehiclesView> {
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
                         Icon(
-                          Icons.cloud_upload_outlined,
+                          Icons.camera_alt,
                           size: 32,
                           color: Colors.grey[400],
                         ),
                         const SizedBox(height: 8),
                         Text(
-                          'Choisir une image',
+                          'Prendre une photo',
                           style: TextStyle(
                             fontSize: 13,
                             color: Colors.grey[600],
@@ -756,16 +757,30 @@ class AddVehiclesViewModel extends ChangeNotifier {
   File? permis;
 
   final _vehicleService = locator<VehicleService>();
+  final ImagePicker _picker = ImagePicker();
 
   Future<void> pickFile(Function(File) onFilePicked) async {
     try {
-      final FilePickerResult? result = await FilePicker.platform.pickFiles(
-        type: FileType.image,
-        allowMultiple: false,
+      // Demander la permission CAMERA
+      if (Platform.isAndroid) {
+        final cameraPermission = await Permission.camera.request();
+        if (!cameraPermission.isGranted) {
+          print("Permission caméra refusée");
+          return;
+        }
+      }
+
+      // Prendre une photo avec la caméra arrière
+      final XFile? photo = await _picker.pickImage(
+        source: ImageSource.camera,
+        preferredCameraDevice: CameraDevice.rear,
+        maxWidth: 1920,
+        maxHeight: 1080,
+        imageQuality: 85,
       );
 
-      if (result != null && result.files.single.path != null) {
-        final file = File(result.files.single.path!);
+      if (photo != null) {
+        final file = File(photo.path);
 
         // Vérification de la taille du fichier (max 5 MB)
         final fileSize = await file.length();
@@ -775,7 +790,7 @@ class AddVehiclesViewModel extends ChangeNotifier {
         onFilePicked(file);
       }
     } catch (e) {
-      print('Erreur lors de la sélection du fichier: $e');
+      print('Erreur lors de la prise de photo: $e');
       rethrow;
     }
   }

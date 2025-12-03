@@ -518,11 +518,15 @@ class _AcceptedClientBottomSheetState extends State<AcceptedClientBottomSheet> {
     print('🏗️ [AcceptedClientBottomSheet] build() called for course ${widget.courseId}');
     print('🏗️ [AcceptedClientBottomSheet] client: ${widget.client.name}');
     print('🏗️ [AcceptedClientBottomSheet] _arrivalConfirmed: $_arrivalConfirmed');
-    return DraggableScrollableSheet(
-      initialChildSize: 0.45,
-      minChildSize: 0.25,
-      maxChildSize: 0.6,
-      builder: (context, scrollController) {
+    return GestureDetector(
+      onTap: () {}, // Prevents taps on the sheet from closing it
+      child: DraggableScrollableSheet(
+        initialChildSize: 0.45,
+        minChildSize: 0.25,
+        maxChildSize: 0.6,
+        snap: true,
+        snapSizes: const [0.25, 0.45, 0.6],
+        builder: (context, scrollController) {
         print('🏗️ [AcceptedClientBottomSheet] DraggableScrollableSheet builder called');
         return Container(
           decoration: const BoxDecoration(
@@ -551,7 +555,7 @@ class _AcceptedClientBottomSheetState extends State<AcceptedClientBottomSheet> {
                     child: Container(
                       width: 40,
                       height: 5,
-                      margin: const EdgeInsets.only(bottom: 20),
+                      margin: const EdgeInsets.only(bottom: 16),
                       decoration: BoxDecoration(
                         color: Colors.grey[300],
                         borderRadius: BorderRadius.circular(2.5),
@@ -559,16 +563,34 @@ class _AcceptedClientBottomSheetState extends State<AcceptedClientBottomSheet> {
                     ),
                   ),
 
-                  // Titre
-                  const Center(
-                    child: Text(
-                      'Course acceptée',
-                      style: TextStyle(
-                        fontSize: 18,
-                        fontWeight: FontWeight.bold,
-                        color: Colors.black87,
+                  // Titre avec bouton de fermeture
+                  Stack(
+                    children: [
+                      const Center(
+                        child: Text(
+                          'Course acceptée',
+                          style: TextStyle(
+                            fontSize: 18,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.black87,
+                          ),
+                        ),
                       ),
-                    ),
+                      Positioned(
+                        right: 0,
+                        top: -8,
+                        child: IconButton(
+                          onPressed: () {
+                            // Minimize the sheet to its minimum size
+                            // Note: This doesn't cancel the ride, just minimizes the UI
+                          },
+                          icon: const Icon(Icons.keyboard_arrow_down),
+                          iconSize: 28,
+                          color: Colors.grey[600],
+                          tooltip: 'Réduire',
+                        ),
+                      ),
+                    ],
                   ),
 
                   const SizedBox(height: 12),
@@ -812,6 +834,7 @@ class _AcceptedClientBottomSheetState extends State<AcceptedClientBottomSheet> {
           ),
         );
       },
+      ),
     );
   }
 
@@ -947,181 +970,82 @@ class _AcceptedClientBottomSheetState extends State<AcceptedClientBottomSheet> {
     final seconds = (waitingTime % 60).toString().padLeft(2, '0');
     final waitingPrice = _calculateWaitingPrice();
     final isFree = waitingTime <= 300;
+    final accentColor = isFree ? Colors.green : Colors.orange;
 
     return Container(
-      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-      padding: const EdgeInsets.all(20),
+      padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        gradient: LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-          colors: isFree
-            ? [Colors.green[50]!, Colors.green[100]!]
-            : [Colors.orange[50]!, Colors.orange[100]!],
-        ),
-        borderRadius: BorderRadius.circular(20),
+        color: accentColor.withOpacity(0.08),
+        borderRadius: BorderRadius.circular(16),
         border: Border.all(
-          color: isFree ? Colors.green[300]! : Colors.orange[300]!,
-          width: 2,
+          color: accentColor.withOpacity(0.25),
+          width: 1.5,
         ),
-        boxShadow: [
-          BoxShadow(
-            color: (isFree ? Colors.green : Colors.orange).withOpacity(0.3),
-            blurRadius: 15,
-            offset: const Offset(0, 4),
-          ),
-        ],
       ),
       child: Column(
-        mainAxisSize: MainAxisSize.min,
         children: [
+          // Header
           Row(
-            mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              Container(
-                padding: const EdgeInsets.all(8),
-                decoration: BoxDecoration(
-                  color: isFree ? Colors.green : Colors.orange,
-                  borderRadius: BorderRadius.circular(10),
-                ),
-                child: Icon(
-                  isFree ? Icons.timer_outlined : Icons.schedule_rounded,
-                  color: Colors.white,
-                  size: 20,
-                ),
+              Icon(
+                isFree ? Icons.timer_outlined : Icons.pause_circle_filled,
+                color: accentColor,
+                size: 20,
               ),
-              const SizedBox(width: 12),
+              const SizedBox(width: 8),
               Text(
                 'Temps d\'attente',
                 style: TextStyle(
-                  fontSize: 18,
-                  color: isFree ? Colors.green[900] : Colors.orange[900],
-                  fontWeight: FontWeight.w600,
+                  fontSize: 16,
+                  fontWeight: FontWeight.w700,
+                  color: Colors.black87,
+                ),
+              ),
+              const Spacer(),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                decoration: BoxDecoration(
+                  color: accentColor,
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Text(
+                  isFree ? 'Gratuit' : '+${waitingPrice.toStringAsFixed(0)} FCFA',
+                  style: const TextStyle(
+                    fontSize: 13,
+                    fontWeight: FontWeight.w700,
+                    color: Colors.white,
+                  ),
                 ),
               ),
             ],
           ),
-          const SizedBox(height: 16),
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-            decoration: BoxDecoration(
-              color: Colors.white,
-              borderRadius: BorderRadius.circular(16),
-            ),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                _buildTimeSegment(hours, 'H'),
-                _buildTimeSeparator(),
-                _buildTimeSegment(minutes, 'MIN'),
-                _buildTimeSeparator(),
-                _buildTimeSegment(seconds, 'SEC'),
-              ],
-            ),
+          const SizedBox(height: 12),
+          // Time Display
+          Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Text(
+                '$hours:$minutes:$seconds',
+                style: TextStyle(
+                  fontSize: 28,
+                  fontWeight: FontWeight.w800,
+                  color: accentColor,
+                  letterSpacing: 1.1,
+                ),
+              ),
+            ],
           ),
-          const SizedBox(height: 16),
-          Container(
-            width: double.infinity,
-            padding: const EdgeInsets.all(14),
-            decoration: BoxDecoration(
-              color: isFree ? Colors.green : Colors.orange,
-              borderRadius: BorderRadius.circular(14),
-            ),
-            child: Row(
-              children: [
-                Container(
-                  padding: const EdgeInsets.all(8),
-                  decoration: BoxDecoration(
-                    color: Colors.white,
-                    borderRadius: BorderRadius.circular(10),
-                  ),
-                  child: Icon(
-                    isFree ? Icons.check_circle : Icons.payments_rounded,
-                    color: isFree ? Colors.green[700] : Colors.orange[700],
-                    size: 18,
-                  ),
-                ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: Text(
-                    isFree ? 'Attente gratuite' : 'Frais d\'attente',
-                    style: const TextStyle(
-                      fontSize: 14,
-                      color: Colors.white,
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-                ),
-                Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 14,
-                    vertical: 6,
-                  ),
-                  decoration: BoxDecoration(
-                    color: Colors.white,
-                    borderRadius: BorderRadius.circular(20),
-                  ),
-                  child: Text(
-                    isFree
-                      ? '5 min gratuites'
-                      : '+${waitingPrice.toStringAsFixed(0)} FCFA',
-                    style: TextStyle(
-                      fontSize: 14,
-                      fontWeight: FontWeight.bold,
-                      color: isFree ? Colors.green[700] : Colors.orange[700],
-                    ),
-                  ),
-                ),
-              ],
+          const SizedBox(height: 8),
+          // Info Text
+          Text(
+            isFree ? '5 minutes gratuites incluses' : 'Facturation après 5 min',
+            style: TextStyle(
+              fontSize: 13,
+              fontWeight: FontWeight.w600,
+              color: accentColor,
             ),
           ),
         ],
-      ),
-    );
-  }
-
-  Widget _buildTimeSegment(String value, String label) {
-    return Column(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        Container(
-          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
-          decoration: BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.circular(10),
-          ),
-          child: Text(
-            value,
-            style: const TextStyle(
-              fontSize: 24,
-              fontWeight: FontWeight.bold,
-              color: kcPrimaryColor,
-            ),
-          ),
-        ),
-        const SizedBox(height: 4),
-        Text(
-          label,
-          style: TextStyle(
-            fontSize: 10,
-            color: Colors.grey[600],
-            fontWeight: FontWeight.w500,
-          ),
-        ),
-      ],
-    );
-  }
-
-  Widget _buildTimeSeparator() {
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 6),
-      child: Text(
-        ':',
-        style: TextStyle(
-          fontSize: 24,
-          fontWeight: FontWeight.bold,
-          color: kcPrimaryColor.withOpacity(0.6),
-        ),
       ),
     );
   }
@@ -1359,139 +1283,145 @@ class _InProgressRideBottomSheetState extends State<InProgressRideBottomSheet>
   }) {
     showDialog(
       context: context,
-      builder: (context) => AlertDialog(
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(16),
-        ),
-        title: Row(
-          children: [
-            Container(
-              padding: const EdgeInsets.all(8),
-              decoration: BoxDecoration(
-                color: Colors.green.withOpacity(0.1),
-                borderRadius: BorderRadius.circular(8),
-              ),
-              child: const Icon(
-                Icons.play_arrow,
-                color: Colors.green,
-                size: 24,
-              ),
-            ),
-            const SizedBox(width: 12),
-            const Text(
-              'Course reprise',
-              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-            ),
-          ],
-        ),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            const Text(
-              'Résumé de la pause',
-              style: TextStyle(
-                fontSize: 14,
-                fontWeight: FontWeight.w600,
-                color: Colors.grey,
-              ),
-            ),
-            const SizedBox(height: 16),
-            Container(
-              padding: const EdgeInsets.all(16),
-              decoration: BoxDecoration(
-                color: Colors.grey[100],
-                borderRadius: BorderRadius.circular(12),
-              ),
-              child: Column(
-                children: [
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Row(
-                        children: [
-                          Icon(Icons.timer_outlined, size: 20, color: Colors.grey[700]),
-                          const SizedBox(width: 8),
-                          const Text(
-                            'Durée de la pause',
-                            style: TextStyle(fontSize: 14),
-                          ),
-                        ],
-                      ),
-                      Text(
-                        duration,
-                        style: const TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 12),
-                  const Divider(),
-                  const SizedBox(height: 12),
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Row(
-                        children: [
-                          Icon(Icons.payments, size: 20, color: Colors.orange[700]),
-                          const SizedBox(width: 8),
-                          const Text(
-                            'Frais de pause',
-                            style: TextStyle(fontSize: 14),
-                          ),
-                        ],
-                      ),
-                      Text(
-                        '$amount FCFA',
-                        style: TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.bold,
-                          color: amount > 0 ? Colors.orange[700] : Colors.green,
-                        ),
-                      ),
-                    ],
-                  ),
-                ],
-              ),
-            ),
-            if (amount == 0)
+      barrierColor: Colors.black.withOpacity(0.5),
+      builder: (context) => Dialog(
+        backgroundColor: Colors.transparent,
+        elevation: 0,
+        child: Container(
+          constraints: const BoxConstraints(maxWidth: 320),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(14),
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              // Header
               Padding(
-                padding: const EdgeInsets.only(top: 12),
-                child: Row(
+                padding: const EdgeInsets.only(top: 24, bottom: 8),
+                child: Text(
+                  'Course reprise',
+                  style: TextStyle(
+                    fontSize: 17,
+                    fontWeight: FontWeight.w600,
+                    color: Colors.black.withOpacity(0.85),
+                  ),
+                  textAlign: TextAlign.center,
+                ),
+              ),
+
+              // Subtitle
+              if (amount == 0)
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 24),
+                  child: Text(
+                    'Pause gratuite',
+                    style: TextStyle(
+                      fontSize: 13,
+                      color: Colors.black.withOpacity(0.5),
+                    ),
+                    textAlign: TextAlign.center,
+                  ),
+                ),
+
+              const SizedBox(height: 16),
+
+              // Content - Simple rows
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 24),
+                child: Column(
                   children: [
-                    Icon(Icons.check_circle, size: 16, color: Colors.green[600]),
-                    const SizedBox(width: 6),
-                    Expanded(
-                      child: Text(
-                        'Pause gratuite (moins de 5 minutes)',
-                        style: TextStyle(
-                          fontSize: 12,
-                          color: Colors.green[600],
-                          fontStyle: FontStyle.italic,
+                    // Duration row
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Text(
+                          'Durée',
+                          style: TextStyle(
+                            fontSize: 15,
+                            color: Colors.black.withOpacity(0.5),
+                          ),
                         ),
+                        Text(
+                          duration,
+                          style: const TextStyle(
+                            fontSize: 15,
+                            fontWeight: FontWeight.w500,
+                            color: Colors.black,
+                          ),
+                        ),
+                      ],
+                    ),
+
+                    // Divider
+                    Padding(
+                      padding: const EdgeInsets.symmetric(vertical: 12),
+                      child: Container(
+                        height: 0.5,
+                        color: Colors.black.withOpacity(0.1),
                       ),
+                    ),
+
+                    // Amount row
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Text(
+                          'Montant',
+                          style: TextStyle(
+                            fontSize: 15,
+                            color: Colors.black.withOpacity(0.5),
+                          ),
+                        ),
+                        Text(
+                          '$amount FCFA',
+                          style: TextStyle(
+                            fontSize: 15,
+                            fontWeight: FontWeight.w600,
+                            color: amount > 0 ? Colors.orange[700] : Colors.green,
+                          ),
+                        ),
+                      ],
                     ),
                   ],
                 ),
               ),
-          ],
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(),
-            style: TextButton.styleFrom(
-              backgroundColor: kcPrimaryColor,
-              foregroundColor: Colors.white,
-              padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(8),
+
+              const SizedBox(height: 24),
+
+              // Divider before button
+              Container(
+                height: 0.5,
+                color: Colors.black.withOpacity(0.1),
               ),
-            ),
-            child: const Text('Continuer'),
+
+              // Action button - iOS style
+              Material(
+                color: Colors.transparent,
+                child: InkWell(
+                  onTap: () => Navigator.of(context).pop(),
+                  borderRadius: const BorderRadius.only(
+                    bottomLeft: Radius.circular(14),
+                    bottomRight: Radius.circular(14),
+                  ),
+                  child: Container(
+                    width: double.infinity,
+                    padding: const EdgeInsets.symmetric(vertical: 16),
+                    child: Text(
+                      'Continuer',
+                      textAlign: TextAlign.center,
+                      style: TextStyle(
+                        fontSize: 17,
+                        fontWeight: FontWeight.w600,
+                        color: kcPrimaryColor,
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+            ],
           ),
-        ],
+        ),
       ),
     );
   }
@@ -1798,111 +1728,6 @@ class _InProgressRideBottomSheetState extends State<InProgressRideBottomSheet>
                   if (_isPaused)
                     const SizedBox(height: 20),
 
-                  // OPTION 1: Container avec bordure animée et prix qui pulse
-                  AnimatedBuilder(
-                    animation: _pulseAnimation,
-                    builder: (context, child) {
-                      return Container(
-                        height: 60,
-                        width: double.infinity,
-                        padding: const EdgeInsets.symmetric(horizontal: 16),
-                        decoration: BoxDecoration(
-                          color: Colors.green.withOpacity(0.1),
-                          borderRadius: BorderRadius.circular(12),
-                          border: Border.all(
-                            color: Colors.green.withOpacity(0.3),
-                            width: 2,
-                          ),
-                          boxShadow: [
-                            BoxShadow(
-                              color: Colors.green.withOpacity(0.1),
-                              blurRadius: 8,
-                              spreadRadius: _pulseAnimation.value * 2,
-                            ),
-                          ],
-                        ),
-                        child: Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          children: [
-                            const Row(
-                              children: [
-                                Icon(
-                                  Icons.timer,
-                                  color: Colors.green,
-                                  size: 20,
-                                ),
-                                SizedBox(width: 8),
-                                Text(
-                                  'Course en cours',
-                                  style: TextStyle(
-                                    fontSize: 16,
-                                    color: Colors.green,
-                                    fontWeight: FontWeight.w600,
-                                  ),
-                                ),
-                              ],
-                            ),
-                            Transform.scale(
-                              scale: _pulseAnimation.value,
-                              child: Container(
-                                padding: const EdgeInsets.symmetric(
-                                  horizontal: 12,
-                                  vertical: 6,
-                                ),
-                                decoration: BoxDecoration(
-                                  color: Colors.green,
-                                  borderRadius: BorderRadius.circular(20),
-                                ),
-                                child: Text(
-                                  '${widget.price.toStringAsFixed(0)} FCFA',
-                                  style: const TextStyle(
-                                    fontSize: 16,
-                                    fontWeight: FontWeight.bold,
-                                    color: Colors.white,
-                                  ),
-                                ),
-                              ),
-                            ),
-                          ],
-                        ),
-                      );
-                    },
-                  ),
-
-                  const SizedBox(height: 12),
-
-                  // OPTION 2: Barre de progression animée
-                  Container(
-                    height: 6,
-                    width: double.infinity,
-                    decoration: BoxDecoration(
-                      color: Colors.grey[200],
-                      borderRadius: BorderRadius.circular(3),
-                    ),
-                    child: AnimatedBuilder(
-                      animation: _progressAnimation,
-                      builder: (context, child) {
-                        return FractionallySizedBox(
-                          alignment: Alignment.centerLeft,
-                          widthFactor: _progressAnimation.value,
-                          child: Container(
-                            decoration: BoxDecoration(
-                              gradient: const LinearGradient(
-                                colors: [
-                                  kcPrimaryColor,
-                                  Colors.green,
-                                ],
-                              ),
-                              borderRadius: BorderRadius.circular(3),
-                            ),
-                          ),
-                        );
-                      },
-                    ),
-                  ),
-
-                  const SizedBox(height: 20),
-
                   // Warning message when paused
                   if (_isPaused)
                     Container(
@@ -2013,427 +1838,82 @@ class _InProgressRideBottomSheetState extends State<InProgressRideBottomSheet>
     final seconds = (pauseTime % 60).toString().padLeft(2, '0');
     final pausePrice = _calculatePausePrice();
     final isFree = pauseTime <= 300;
+    final accentColor = isFree ? Colors.green : Colors.orange;
 
     return Container(
-      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-      padding: const EdgeInsets.all(20),
+      padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        gradient: LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-          colors: isFree
-            ? [Colors.green[50]!, Colors.green[100]!]
-            : [Colors.orange[50]!, Colors.orange[100]!],
-        ),
-        borderRadius: BorderRadius.circular(20),
+        color: accentColor.withOpacity(0.08),
+        borderRadius: BorderRadius.circular(16),
         border: Border.all(
-          color: isFree ? Colors.green[300]! : Colors.orange[300]!,
-          width: 2,
+          color: accentColor.withOpacity(0.25),
+          width: 1.5,
         ),
-        boxShadow: [
-          BoxShadow(
-            color: (isFree ? Colors.green : Colors.orange).withOpacity(0.3),
-            blurRadius: 15,
-            offset: const Offset(0, 4),
-          ),
-        ],
       ),
       child: Column(
-        mainAxisSize: MainAxisSize.min,
         children: [
+          // Header
+          Row(
+            children: [
+              Icon(
+                isFree ? Icons.timer_outlined : Icons.pause_circle_filled,
+                color: accentColor,
+                size: 20,
+              ),
+              const SizedBox(width: 8),
+              Text(
+                'Course en pause',
+                style: TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.w700,
+                  color: Colors.black87,
+                ),
+              ),
+              const Spacer(),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                decoration: BoxDecoration(
+                  color: accentColor,
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Text(
+                  isFree ? 'Gratuit' : '+${pausePrice.toStringAsFixed(0)} FCFA',
+                  style: const TextStyle(
+                    fontSize: 13,
+                    fontWeight: FontWeight.w700,
+                    color: Colors.white,
+                  ),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
+          // Time Display
           Row(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              Container(
-                padding: const EdgeInsets.all(8),
-                decoration: BoxDecoration(
-                  color: isFree ? Colors.green : Colors.orange,
-                  borderRadius: BorderRadius.circular(10),
-                ),
-                child: Icon(
-                  isFree ? Icons.timer_outlined : Icons.pause_circle_filled,
-                  color: Colors.white,
-                  size: 20,
-                ),
-              ),
-              const SizedBox(width: 12),
               Text(
-                'Temps de pause',
+                '$hours:$minutes:$seconds',
                 style: TextStyle(
-                  fontSize: 18,
-                  color: isFree ? Colors.green[900] : Colors.orange[900],
-                  fontWeight: FontWeight.w600,
+                  fontSize: 28,
+                  fontWeight: FontWeight.w800,
+                  color: accentColor,
+                  letterSpacing: 1.1,
                 ),
               ),
             ],
           ),
-          const SizedBox(height: 16),
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-            decoration: BoxDecoration(
-              color: Colors.white,
-              borderRadius: BorderRadius.circular(16),
-            ),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                _buildTimeSegment(hours, 'H'),
-                _buildTimeSeparator(),
-                _buildTimeSegment(minutes, 'MIN'),
-                _buildTimeSeparator(),
-                _buildTimeSegment(seconds, 'SEC'),
-              ],
-            ),
-          ),
-          const SizedBox(height: 16),
-          Container(
-            width: double.infinity,
-            padding: const EdgeInsets.all(14),
-            decoration: BoxDecoration(
-              color: isFree ? Colors.green : Colors.orange,
-              borderRadius: BorderRadius.circular(14),
-            ),
-            child: Row(
-              children: [
-                Container(
-                  padding: const EdgeInsets.all(8),
-                  decoration: BoxDecoration(
-                    color: Colors.white,
-                    borderRadius: BorderRadius.circular(10),
-                  ),
-                  child: Icon(
-                    isFree ? Icons.check_circle : Icons.payments_rounded,
-                    color: isFree ? Colors.green[700] : Colors.orange[700],
-                    size: 18,
-                  ),
-                ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: Text(
-                    isFree ? 'Pause gratuite' : 'Frais de pause',
-                    style: const TextStyle(
-                      fontSize: 14,
-                      color: Colors.white,
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-                ),
-                Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 14,
-                    vertical: 6,
-                  ),
-                  decoration: BoxDecoration(
-                    color: Colors.white,
-                    borderRadius: BorderRadius.circular(20),
-                  ),
-                  child: Text(
-                    isFree
-                      ? '5 min gratuites'
-                      : '+${pausePrice.toStringAsFixed(0)} FCFA',
-                    style: TextStyle(
-                      fontSize: 14,
-                      fontWeight: FontWeight.bold,
-                      color: isFree ? Colors.green[700] : Colors.orange[700],
-                    ),
-                  ),
-                ),
-              ],
+          const SizedBox(height: 8),
+          // Info Text
+          Text(
+            isFree ? '5 minutes gratuites incluses' : 'Facturation après 5 min',
+            style: TextStyle(
+              fontSize: 13,
+              fontWeight: FontWeight.w600,
+              color: accentColor,
             ),
           ),
         ],
-      ),
-    );
-  }
-
-  Widget _buildTimerWidget() {
-    // Utiliser 0 comme valeur par défaut si _waitingTime est null
-    final waitingTime = _waitingTime ?? 0;
-    final hours = (waitingTime ~/ 3600).toString().padLeft(2, '0');
-    final minutes = ((waitingTime % 3600) ~/ 60).toString().padLeft(2, '0');
-    final seconds = (waitingTime % 60).toString().padLeft(2, '0');
-
-    // Calcul du prix d'attente (exemple: 50 FCFA par minute après les 2 premières minutes gratuites)
-    final double waitingPrice = _calculateWaitingPrice();
-
-    return Container(
-      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-      padding: const EdgeInsets.all(24),
-      decoration: BoxDecoration(
-        gradient: LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-          colors: [
-            Colors.white,
-            Colors.grey[50]!,
-          ],
-        ),
-        borderRadius: BorderRadius.circular(20),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.08),
-            blurRadius: 20,
-            offset: const Offset(0, 4),
-            spreadRadius: 0,
-          ),
-          BoxShadow(
-            color: Colors.black.withOpacity(0.04),
-            blurRadius: 4,
-            offset: const Offset(0, 1),
-            spreadRadius: 0,
-          ),
-        ],
-      ),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          // Header avec icône et titre
-          Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Container(
-                padding: const EdgeInsets.all(8),
-                decoration: BoxDecoration(
-                  color: kcPrimaryColor.withOpacity(0.1),
-                  borderRadius: BorderRadius.circular(10),
-                ),
-                child: const Icon(
-                  Icons.schedule_rounded,
-                  color: kcPrimaryColor,
-                  size: 20,
-                ),
-              ),
-              const SizedBox(width: 12),
-              Text(
-                'Temps d\'attente',
-                style: TextStyle(
-                  fontSize: 18,
-                  color: Colors.grey[700],
-                  fontWeight: FontWeight.w600,
-                  letterSpacing: 0.5,
-                ),
-              ),
-            ],
-          ),
-
-          const SizedBox(height: 20),
-
-          // Timer principal
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
-            decoration: BoxDecoration(
-              color: kcPrimaryColor.withOpacity(0.05),
-              borderRadius: BorderRadius.circular(16),
-              border: Border.all(
-                color: kcPrimaryColor.withOpacity(0.1),
-                width: 1,
-              ),
-            ),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                _buildTimeSegment(hours, 'H'),
-                _buildTimeSeparator(),
-                _buildTimeSegment(minutes, 'MIN'),
-                _buildTimeSeparator(),
-                _buildTimeSegment(seconds, 'SEC'),
-              ],
-            ),
-          ),
-
-          const SizedBox(height: 20),
-
-          // Section prix d'attente
-          Container(
-            width: double.infinity,
-            padding: const EdgeInsets.all(16),
-            decoration: BoxDecoration(
-              gradient: LinearGradient(
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-                colors: waitingPrice > 0
-                    ? [Colors.orange[100]!, Colors.orange[50]!]
-                    : [Colors.green[100]!, Colors.green[50]!],
-              ),
-              borderRadius: BorderRadius.circular(14),
-              border: Border.all(
-                color:
-                waitingPrice > 0 ? Colors.orange[200]! : Colors.green[200]!,
-                width: 1,
-              ),
-            ),
-            child: Row(
-              children: [
-                Container(
-                  padding: const EdgeInsets.all(10),
-                  decoration: BoxDecoration(
-                    color: waitingPrice > 0 ? Colors.orange : Colors.green,
-                    borderRadius: BorderRadius.circular(10),
-                  ),
-                  child: Icon(
-                    waitingPrice > 0
-                        ? Icons.payments_rounded
-                        : Icons.timer_outlined,
-                    color: Colors.white,
-                    size: 20,
-                  ),
-                ),
-                const SizedBox(width: 16),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        waitingPrice > 0
-                            ? 'Frais d\'attente'
-                            : 'Attente gratuite',
-                        style: TextStyle(
-                          fontSize: 14,
-                          color: waitingPrice > 0
-                              ? Colors.orange[700]
-                              : Colors.green[700],
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
-                      const SizedBox(height: 2),
-                      Text(
-                        waitingPrice > 0
-                            ? 'Facturation après 2 min'
-                            : '2 minutes gratuites',
-                        style: TextStyle(
-                          fontSize: 12,
-                          color: Colors.grey[600],
-                          fontWeight: FontWeight.w400,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-                Container(
-                  padding:
-                  const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                  decoration: BoxDecoration(
-                    color: waitingPrice > 0 ? Colors.orange : Colors.green,
-                    borderRadius: BorderRadius.circular(20),
-                  ),
-                  child: Text(
-                    waitingPrice > 0
-                        ? '+${waitingPrice.toStringAsFixed(0)} FCFA'
-                        : '0 FCFA',
-                    style: const TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.bold,
-                      color: Colors.white,
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          ),
-
-          const SizedBox(height: 16),
-
-          // Status indicator
-          Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Container(
-                width: 8,
-                height: 8,
-                decoration: BoxDecoration(
-                  color: (_waitingTime ?? 0) > 120
-                      ? Colors.orange
-                      : kcPrimaryColor,
-                  shape: BoxShape.circle,
-                  boxShadow: [
-                    BoxShadow(
-                      color: ((_waitingTime ?? 0) > 120
-                          ? Colors.orange
-                          : kcPrimaryColor)
-                          .withOpacity(0.4),
-                      blurRadius: 8,
-                      spreadRadius: 2,
-                    ),
-                  ],
-                ),
-              ),
-              const SizedBox(width: 12),
-              Text(
-                (_waitingTime ?? 0) <= 120
-                    ? 'En attente du client...'
-                    : 'Facturation en cours',
-                style: TextStyle(
-                  color: (_waitingTime ?? 0) > 120
-                      ? Colors.orange[700]
-                      : Colors.grey[600],
-                  fontWeight: FontWeight.w500,
-                  fontSize: 14,
-                ),
-              ),
-            ],
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildTimeSegment(String value, String label) {
-    return Column(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        Container(
-          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-          decoration: BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.circular(12),
-            border: Border.all(
-              color: kcPrimaryColor.withOpacity(0.1),
-              width: 1,
-            ),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withOpacity(0.04),
-                blurRadius: 4,
-                offset: const Offset(0, 2),
-              ),
-            ],
-          ),
-          child: Text(
-            value,
-            style: const TextStyle(
-              fontSize: 28,
-              fontWeight: FontWeight.bold,
-              color: kcPrimaryColor,
-              fontFeatures: [FontFeature.tabularFigures()],
-              height: 1.0,
-            ),
-          ),
-        ),
-        const SizedBox(height: 6),
-        Text(
-          label,
-          style: TextStyle(
-            fontSize: 11,
-            color: Colors.grey[600],
-            fontWeight: FontWeight.w500,
-            letterSpacing: 0.8,
-          ),
-        ),
-      ],
-    );
-  }
-
-  Widget _buildTimeSeparator() {
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 8),
-      child: Text(
-        ':',
-        style: TextStyle(
-          fontSize: 28,
-          fontWeight: FontWeight.bold,
-          color: kcPrimaryColor.withOpacity(0.6),
-          height: 1.0,
-        ),
       ),
     );
   }

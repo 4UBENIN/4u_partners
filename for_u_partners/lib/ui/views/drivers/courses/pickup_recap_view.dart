@@ -61,19 +61,16 @@ class _PickupRecapViewState extends State<PickupRecapView> {
       backgroundColor: Colors.grey[50],
       appBar: AppBar(
         backgroundColor: Colors.white,
-        elevation: 2,
-        shadowColor: Colors.black12,
+        elevation: 0,
         leading: IconButton(
           icon: const Icon(Icons.close, color: Colors.black87),
-          onPressed: () {
-            widget.onSoumettre();
-          },
+          onPressed: widget.onSoumettre,
         ),
         title: const Text(
-          'Course Pickup Terminée',
+          'Course Terminée',
           style: TextStyle(
-            color: Colors.black,
-            fontSize: 18,
+            color: Colors.black87,
+            fontSize: 17,
             fontWeight: FontWeight.w600,
           ),
         ),
@@ -89,15 +86,14 @@ class _PickupRecapViewState extends State<PickupRecapView> {
                 children: [
                   LoadingAnimationWidget.fourRotatingDots(
                     color: kcPrimaryColor,
-                    size: 60,
+                    size: 50,
                   ),
-                  const SizedBox(height: 16),
-                  const Text(
-                    'Finalisation de la course pickup...',
+                  const SizedBox(height: 20),
+                  Text(
+                    'Finalisation en cours...',
                     style: TextStyle(
-                      fontSize: 16,
-                      color: Colors.grey,
-                      fontWeight: FontWeight.w500,
+                      fontSize: 15,
+                      color: Colors.grey[600],
                     ),
                   ),
                 ],
@@ -108,32 +104,25 @@ class _PickupRecapViewState extends State<PickupRecapView> {
           if (snapshot.hasError) {
             return Center(
               child: Padding(
-                padding: const EdgeInsets.all(24.0),
+                padding: const EdgeInsets.all(32.0),
                 child: Column(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    Container(
-                      padding: const EdgeInsets.all(16),
-                      decoration: BoxDecoration(
-                        color: Colors.red[50],
-                        shape: BoxShape.circle,
-                      ),
-                      child: Icon(
-                        Icons.error_outline,
-                        size: 48,
-                        color: Colors.red[400],
-                      ),
+                    Icon(
+                      Icons.error_outline,
+                      size: 64,
+                      color: Colors.grey[400],
                     ),
-                    const SizedBox(height: 24),
-                    Text(
-                      'Erreur de finalisation',
+                    const SizedBox(height: 20),
+                    const Text(
+                      'Erreur',
                       style: TextStyle(
-                        fontSize: 20,
-                        fontWeight: FontWeight.bold,
-                        color: Colors.red[700],
+                        fontSize: 22,
+                        fontWeight: FontWeight.w600,
+                        color: Colors.black87,
                       ),
                     ),
-                    const SizedBox(height: 12),
+                    const SizedBox(height: 8),
                     Text(
                       '${snapshot.error}',
                       textAlign: TextAlign.center,
@@ -143,21 +132,13 @@ class _PickupRecapViewState extends State<PickupRecapView> {
                       ),
                     ),
                     const SizedBox(height: 24),
-                    ElevatedButton.icon(
+                    TextButton(
                       onPressed: () {
                         setState(() {
                           _completionFuture = _completePickupCourse();
                         });
                       },
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: kcPrimaryColor,
-                        padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                      ),
-                      icon: const Icon(Icons.refresh),
-                      label: const Text('Réessayer'),
+                      child: const Text('Réessayer'),
                     ),
                   ],
                 ),
@@ -168,8 +149,8 @@ class _PickupRecapViewState extends State<PickupRecapView> {
           if (!snapshot.hasData) {
             return const Center(
               child: Text(
-                'Aucune donnée disponible',
-                style: TextStyle(fontSize: 16, color: Colors.grey),
+                'Aucune donnée',
+                style: TextStyle(fontSize: 15, color: Colors.grey),
               ),
             );
           }
@@ -178,210 +159,172 @@ class _PickupRecapViewState extends State<PickupRecapView> {
 
           return Column(
             children: [
-              // Success header
-              Container(
-                width: double.infinity,
-                padding: const EdgeInsets.all(24),
-                decoration: BoxDecoration(
-                  gradient: LinearGradient(
-                    begin: Alignment.topLeft,
-                    end: Alignment.bottomRight,
-                    colors: [
-                      kcPrimaryColor.withOpacity(0.1),
-                      Colors.green[50]!,
-                    ],
-                  ),
-                  borderRadius: const BorderRadius.only(
-                    bottomLeft: Radius.circular(24),
-                    bottomRight: Radius.circular(24),
-                  ),
-                ),
-                child: Column(
-                  children: [
-                    // Success icon
-                    Container(
-                      padding: const EdgeInsets.all(16),
-                      decoration: BoxDecoration(
-                        color: Colors.green,
-                        shape: BoxShape.circle,
-                        boxShadow: [
-                          BoxShadow(
-                            color: Colors.green.withOpacity(0.3),
-                            blurRadius: 12,
-                            spreadRadius: 2,
-                          ),
-                        ],
-                      ),
-                      child: const Icon(
-                        Icons.check,
-                        size: 48,
-                        color: Colors.white,
-                      ),
-                    ),
-                    const SizedBox(height: 16),
-                    // Status badge
-                    Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                      decoration: BoxDecoration(
-                        color: Colors.green,
-                        borderRadius: BorderRadius.circular(20),
-                      ),
-                      child: Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          const Icon(Icons.local_taxi, color: Colors.white, size: 18),
-                          const SizedBox(width: 6),
-                          Text(
-                            data['statut']?.toString().toUpperCase() ?? 'TERMINÉ',
-                            style: const TextStyle(
-                              color: Colors.white,
-                              fontWeight: FontWeight.bold,
-                              fontSize: 14,
-                              letterSpacing: 0.5,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                    const SizedBox(height: 20),
-                    // Message
-                    Text(
-                      data['message'] ?? 'Course terminée avec succès',
-                      textAlign: TextAlign.center,
-                      style: TextStyle(
-                        fontSize: 16,
-                        color: Colors.grey[700],
-                        fontWeight: FontWeight.w500,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-
               Expanded(
                 child: SingleChildScrollView(
-                  padding: const EdgeInsets.all(20),
+                  padding: const EdgeInsets.symmetric(horizontal: 20),
                   child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      // Course ID Card
-                      _buildInfoCard(
-                        icon: Icons.confirmation_number_outlined,
-                        iconColor: kcPrimaryColor,
-                        title: 'ID de la course',
-                        value: '#${data['course_id']}',
+                      const SizedBox(height: 32),
+
+                      // Success icon
+                      Container(
+                        width: 80,
+                        height: 80,
+                        decoration: BoxDecoration(
+                          color: kcPrimaryColor.withOpacity(0.1),
+                          shape: BoxShape.circle,
+                        ),
+                        child: const Icon(
+                          Icons.check,
+                          size: 48,
+                          color: kcPrimaryColor,
+                        ),
                       ),
 
-                      const SizedBox(height: 16),
+                      const SizedBox(height: 24),
 
-                      // Amount Card (if available)
-                      if (data['montant'] != null && data['montant'] > 0)
-                        _buildInfoCard(
-                          icon: Icons.payments_outlined,
-                          iconColor: Colors.green,
-                          title: 'Montant',
-                          value: '${data['montant']} FCFA',
-                          subtitle: 'Mode: ${_getPaymentMethodLabel(data['payment_status'])}',
+                      // Title
+                      const Text(
+                        'Course terminée',
+                        style: TextStyle(
+                          fontSize: 24,
+                          fontWeight: FontWeight.w600,
+                          color: Colors.black87,
                         ),
-
-                      if (data['montant'] != null && data['montant'] > 0)
-                        const SizedBox(height: 16),
-
-                      // Payment Status Card
-                      _buildInfoCard(
-                        icon: Icons.account_balance_wallet_outlined,
-                        iconColor: Colors.orange,
-                        title: 'Statut du paiement',
-                        value: _getPaymentStatusLabel(data['payment_status']),
-                        subtitle: data['paiement_id'] != null
-                          ? 'ID Paiement: #${data['paiement_id']}'
-                          : null,
                       ),
 
-                      const SizedBox(height: 16),
+                      const SizedBox(height: 8),
 
-                      // Commission Card (if available)
-                      if (data['commission_amount'] != null)
-                        _buildInfoCard(
-                          icon: Icons.percent_outlined,
-                          iconColor: Colors.blue,
-                          title: 'Commission',
-                          value: '${data['commission_amount']} FCFA',
-                          subtitle: 'Taux: ${data['commission_pct']}%',
+                      // Message
+                      Text(
+                        data['message'] ?? 'Paiement géré avec succès',
+                        textAlign: TextAlign.center,
+                        style: TextStyle(
+                          fontSize: 15,
+                          color: Colors.grey[600],
                         ),
+                      ),
 
-                      if (data['commission_amount'] != null)
-                        const SizedBox(height: 16),
+                      const SizedBox(height: 40),
 
-                      // Wallet Balance Card (if available)
-                      if (data['driver_wallet_balance'] != null)
-                        _buildInfoCard(
-                          icon: Icons.account_balance,
-                          iconColor: Colors.purple,
-                          title: 'Solde du portefeuille',
-                          value: '${data['driver_wallet_balance']} FCFA',
-                          subtitle: 'Solde actuel après cette course',
+                      // Details Card
+                      Container(
+                        decoration: BoxDecoration(
+                          color: Colors.white,
+                          borderRadius: BorderRadius.circular(12),
                         ),
+                        child: Column(
+                          children: [
+                            // Course ID
+                            _buildDetailRow(
+                              'N° de course',
+                              '#${data['course_id']}',
+                              isFirst: true,
+                            ),
+
+                            // Amount
+                            if (data['montant'] != null && data['montant'] > 0)
+                              _buildDetailRow(
+                                'Montant',
+                                '${data['montant']} FCFA',
+                              ),
+
+                            // Payment Status
+                            _buildDetailRow(
+                              'Paiement',
+                              _getPaymentStatusLabel(data['payment_status']),
+                            ),
+
+                            // Commission
+                            if (data['commission_amount'] != null)
+                              _buildDetailRow(
+                                'Commission (${data['commission_pct']}%)',
+                                '${data['commission_amount']} FCFA',
+                              ),
+
+                            // Wallet Balance
+                            if (data['driver_wallet_balance'] != null)
+                              _buildDetailRow(
+                                'Solde portefeuille',
+                                '${data['driver_wallet_balance']} FCFA',
+                                isLast: true,
+                              ),
+                          ],
+                        ),
+                      ),
 
                       const SizedBox(height: 24),
 
                       // Pickup Badge
                       if (data['is_pickup_client'] == true)
-                        Center(
-                          child: Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-                            decoration: BoxDecoration(
-                              color: kcPrimaryColor.withOpacity(0.1),
-                              borderRadius: BorderRadius.circular(12),
-                              border: Border.all(color: kcPrimaryColor.withOpacity(0.3)),
-                            ),
-                            child: Row(
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                Icon(Icons.electric_bolt, color: kcPrimaryColor, size: 20),
-                                const SizedBox(width: 8),
-                                const Text(
-                                  'Course Pickup',
-                                  style: TextStyle(
-                                    color: kcPrimaryColor,
-                                    fontWeight: FontWeight.bold,
-                                    fontSize: 14,
-                                  ),
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                          decoration: BoxDecoration(
+                            color: kcPrimaryColor.withOpacity(0.1),
+                            borderRadius: BorderRadius.circular(6),
+                          ),
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Icon(
+                                Icons.electric_bolt,
+                                size: 16,
+                                color: kcPrimaryColor,
+                              ),
+                              const SizedBox(width: 4),
+                              Text(
+                                'Course Pickup',
+                                style: TextStyle(
+                                  fontSize: 13,
+                                  color: kcPrimaryColor,
+                                  fontWeight: FontWeight.w500,
                                 ),
-                              ],
-                            ),
+                              ),
+                            ],
                           ),
                         ),
-
-                      const SizedBox(height: 32),
-
-                      // Continue button
-                      SizedBox(
-                        width: double.infinity,
-                        height: 52,
-                        child: ElevatedButton(
-                          onPressed: widget.onSoumettre,
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: kcPrimaryColor,
-                            foregroundColor: Colors.white,
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(16),
-                            ),
-                            elevation: 2,
-                          ),
-                          child: const Text(
-                            'Terminer',
-                            style: TextStyle(
-                              fontSize: 16,
-                              fontWeight: FontWeight.w600,
-                              letterSpacing: 0.5,
-                            ),
-                          ),
-                        ),
-                      ),
 
                       const SizedBox(height: 16),
                     ],
+                  ),
+                ),
+              ),
+
+              // Bottom Button
+              Container(
+                padding: const EdgeInsets.all(20),
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withOpacity(0.05),
+                      blurRadius: 10,
+                      offset: const Offset(0, -2),
+                    ),
+                  ],
+                ),
+                child: SafeArea(
+                  child: SizedBox(
+                    width: double.infinity,
+                    height: 50,
+                    child: ElevatedButton(
+                      onPressed: widget.onSoumettre,
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: kcPrimaryColor,
+                        foregroundColor: Colors.white,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        elevation: 0,
+                      ),
+                      child: const Text(
+                        'Terminer',
+                        style: TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ),
                   ),
                 ),
               ),
@@ -392,69 +335,35 @@ class _PickupRecapViewState extends State<PickupRecapView> {
     );
   }
 
-  Widget _buildInfoCard({
-    required IconData icon,
-    required Color iconColor,
-    required String title,
-    required String value,
-    String? subtitle,
-  }) {
+  Widget _buildDetailRow(String label, String value, {bool isFirst = false, bool isLast = false}) {
     return Container(
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
       decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.05),
-            blurRadius: 10,
-            offset: const Offset(0, 2),
-          ),
-        ],
+        border: Border(
+          bottom: isLast
+              ? BorderSide.none
+              : BorderSide(
+                  color: Colors.grey[200]!,
+                  width: 0.5,
+                ),
+        ),
       ),
       child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          Container(
-            padding: const EdgeInsets.all(12),
-            decoration: BoxDecoration(
-              color: iconColor.withOpacity(0.1),
-              borderRadius: BorderRadius.circular(12),
+          Text(
+            label,
+            style: TextStyle(
+              fontSize: 15,
+              color: Colors.grey[700],
             ),
-            child: Icon(icon, color: iconColor, size: 24),
           ),
-          const SizedBox(width: 16),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  title,
-                  style: TextStyle(
-                    fontSize: 12,
-                    color: Colors.grey[600],
-                    fontWeight: FontWeight.w500,
-                  ),
-                ),
-                const SizedBox(height: 4),
-                Text(
-                  value,
-                  style: const TextStyle(
-                    fontSize: 18,
-                    fontWeight: FontWeight.bold,
-                    color: Colors.black87,
-                  ),
-                ),
-                if (subtitle != null) ...[
-                  const SizedBox(height: 2),
-                  Text(
-                    subtitle,
-                    style: TextStyle(
-                      fontSize: 12,
-                      color: Colors.grey[500],
-                    ),
-                  ),
-                ],
-              ],
+          Text(
+            value,
+            style: const TextStyle(
+              fontSize: 15,
+              fontWeight: FontWeight.w600,
+              color: Colors.black87,
             ),
           ),
         ],
@@ -465,7 +374,7 @@ class _PickupRecapViewState extends State<PickupRecapView> {
   String _getPaymentStatusLabel(String? status) {
     switch (status) {
       case 'pending_cash':
-        return 'En attente (Espèces)';
+        return 'Espèces';
       case 'completed':
         return 'Complété';
       case 'pending':
@@ -473,12 +382,5 @@ class _PickupRecapViewState extends State<PickupRecapView> {
       default:
         return status ?? 'Inconnu';
     }
-  }
-
-  String _getPaymentMethodLabel(String? status) {
-    if (status?.contains('cash') == true) {
-      return 'Espèces';
-    }
-    return 'Autre';
   }
 }

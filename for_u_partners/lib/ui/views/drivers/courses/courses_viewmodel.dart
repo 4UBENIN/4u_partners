@@ -2458,8 +2458,8 @@ class CoursesViewModel extends BaseViewModel {
         depLong: depLong,
         destLat: arrLat,
         destLong: arrLong,
-        distance: (courseDetails['distance_km'] as num?)?.toDouble(),
-        prix: (courseDetails['montant'] as num?)?.toDouble(),
+        distance: _parseNumericValue(courseDetails['distance_km']),
+        prix: _parseNumericValue(courseDetails['montant']),
         serviceId: serviceId,  // ⚡ Now properly set to 3 for pickup courses
       );
 
@@ -2713,5 +2713,16 @@ class CoursesViewModel extends BaseViewModel {
       await _addUserLocationMarker();
       notifyListeners();
     }
+  }
+
+  /// Helper method to parse numeric values from API that may come as String or num
+  double? _parseNumericValue(dynamic value) {
+    if (value == null) return null;
+    if (value is num) return value.toDouble();
+    if (value is String) {
+      final parsed = double.tryParse(value);
+      if (parsed != null) return parsed;
+    }
+    return null;
   }
 }
