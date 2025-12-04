@@ -167,6 +167,16 @@ class CoursesViewModel extends BaseViewModel {
     // Initialize location service and get last known location (instant)
     await _initializeLocation();
 
+    // ⚡ CRITICAL: Check for pending course restoration BEFORE loading notifications
+    // This ensures active courses are restored before any state clearing logic
+    await _checkPendingRestoration();
+
+    // ⚡ FALLBACK: If no pending restoration, check persisted ride state
+    // This handles cases where the view was rebuilt and restoration data was already consumed
+    if (_currentCourse == null) {
+      await checkAndRestoreRideState();
+    }
+
     // Load stored notifications
     await _loadStoredNotifications();
 
@@ -177,9 +187,6 @@ class CoursesViewModel extends BaseViewModel {
 
     // Démarrer le rafraîchissement des conducteurs en ligne
     startDriversRefresh();
-
-    // Check for pending course restoration
-    await _checkPendingRestoration();
 
     // ✅ Start continuous general position tracking if driver is online
     await _startGeneralPositionTracking();
@@ -2224,6 +2231,7 @@ class CoursesViewModel extends BaseViewModel {
               : (rideState['depLat'] is int
                   ? (rideState['depLat'] as int).toDouble()
                   : null),
+          serviceId: rideState['serviceId'] as int?,  // ⚡ CRITICAL: Restore serviceId to identify pickup courses
         );
 
         // Mettre à jour l'état en fonction du statut
@@ -2325,6 +2333,7 @@ class CoursesViewModel extends BaseViewModel {
       'destLat': _currentCourse!.destLat,
       'depLong': _currentCourse!.depLong,
       'depLat': _currentCourse!.depLat,
+      'serviceId': _currentCourse!.serviceId,  // ⚡ CRITICAL: Save serviceId to identify pickup courses
       'status': status,
       'timestamp': DateTime.now().toIso8601String(),
     };
@@ -2514,7 +2523,11 @@ class CoursesViewModel extends BaseViewModel {
       // Extract service_id to identify pickup courses
       // Check both 'service_id' and 'is_pickup_course' fields
       final apiServiceId = courseDetails['service_id'] as int?;
-      final isPickupFlag = courseDetails['is_pickup_course'] as bool?;
+      // Handle is_pickup_course as either bool or int (0/1)
+      final isPickupRaw = courseDetails['is_pickup_course'];
+      final isPickupFlag = isPickupRaw is bool
+          ? isPickupRaw
+          : (isPickupRaw is int ? isPickupRaw == 1 : null);
 
       // ⚡ CRITICAL: If is_pickup_course is true but service_id is null, set it to 3
       final serviceId = apiServiceId ?? (isPickupFlag == true ? 3 : null);
