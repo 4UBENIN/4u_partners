@@ -33,7 +33,7 @@ String get getGlobalStats => "$baseUrl/conducteur/stats/global";
 String get createPickupCourseUrl => "$baseUrl/conducteur/course_pickup/lancer_course";
 String get listPickupCoursesUrl => "$baseUrl/conducteur/courses_list";
 String pickupCourseDetailsUrl(int courseId) =>
-    "$baseUrl/conducteur/course_pickup/$courseId";
+    "$baseUrl/conducteur/courses/$courseId/detail";
 String startPickupCourseUrl(int courseId) =>
     "$baseUrl/conducteur/course_pickup/$courseId/start";
 String finishPickupCourseUrl(int courseId) =>
