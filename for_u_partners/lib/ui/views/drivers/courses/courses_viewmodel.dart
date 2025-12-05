@@ -1413,12 +1413,38 @@ class CoursesViewModel extends BaseViewModel {
       setBusy(true);
       print("🔄 Début fin course...");
 
+      // ⚡ Check if this is a pickup course
+      final isPickup = _currentCourse?.isPickupCourse ?? false;
+
+      // 🔍 SYNC PAUSE STATE FROM BACKEND BEFORE COMPLETING
+      // This ensures we know if the customer approved a pause request
+      if (!isPickup) {
+        print('🔍 [PAUSE SYNC] Checking pause status from backend...');
+        try {
+          final pauseStatus = await driverservice.checkPauseStatus(courseId);
+          final backendIsPaused = pauseStatus['isPaused'] == true;
+
+          if (backendIsPaused) {
+            print('⚠️ [PAUSE SYNC] Backend shows course is PAUSED!');
+            print('⚠️ [PAUSE SYNC] This means customer approved the pause request');
+            print('⚠️ [PAUSE SYNC] Cannot complete course while paused');
+
+            // Show the pause error dialog
+            _showPauseErrorDialog(context);
+            setBusy(false);
+            return; // Exit early, don't attempt to complete
+          } else {
+            print('✅ [PAUSE SYNC] Course is not paused, can proceed with completion');
+          }
+        } catch (e) {
+          print('⚠️ [PAUSE SYNC] Failed to check pause status: $e');
+          // Continue anyway - the backend will reject if there's an active pause
+        }
+      }
+
       // 🌐 Disable backend location updates BEFORE completing course
       _locationService.disableBackendUpdates();
       print('🌐 Backend location updates disabled (course completing)');
-
-      // ⚡ Check if this is a pickup course
-      final isPickup = _currentCourse?.isPickupCourse ?? false;
 
       if (isPickup) {
         print('⚡ [PICKUP] Completing pickup course $courseId via service');
@@ -2004,10 +2030,7 @@ class CoursesViewModel extends BaseViewModel {
         await CourseNotificationStorage.removeNotification(courseId);
         print('🗑️ Course supprimée du cache: $courseId');
 
-        // Sauvegarder l'état de la course comme terminée
-        await _saveRideState('completed');
-
-        // Réinitialiser l'état
+        // Réinitialiser l'état (cela efface aussi le stockage local)
         await _resetCourseState();
       } catch (e) {
         print('❌ Erreur lors de la fin de la course: $e');
@@ -2040,10 +2063,7 @@ class CoursesViewModel extends BaseViewModel {
         await CourseNotificationStorage.removeNotification(courseId);
         print('🗑️ Course rejetée supprimée du cache: $courseId');
 
-        // Sauvegarder l'état de la course comme rejetée
-        await _saveRideState('rejected');
-
-        // Réinitialiser l'état
+        // Réinitialiser l'état (cela efface aussi le stockage local)
         await _resetCourseState();
       } catch (e) {
         print('❌ Erreur lors de l\'annulation de la course: $e');
@@ -2179,7 +2199,43 @@ class CoursesViewModel extends BaseViewModel {
 
       if (rideState != null && status != null) {
         print(
-            '🔍 Tentative de restauration de la course avec le statut: $status');
+            '🔍 Tentative de restauration de la course avec le statut local: $status');
+
+        // ⚡ CRITICAL: Validate against API before restoring
+        final courseId = rideState['courseId']?.toString();
+        if (courseId != null) {
+          try {
+            // Check if it's a pickup course
+            final isPickup = rideState['serviceId'] != null;
+
+            Map<String, dynamic> apiCourseDetails;
+            if (isPickup) {
+              print('🔍 Validating pickup course $courseId against API...');
+              apiCourseDetails = await driverservice.getPickupCourseDetails(int.parse(courseId));
+            } else {
+              print('🔍 Validating regular course $courseId against API...');
+              apiCourseDetails = await driverservice.getCourseDetails(int.parse(courseId));
+            }
+
+            final apiStatus = apiCourseDetails['statut']?.toString().toLowerCase();
+            print('✅ API returned status: $apiStatus for course $courseId');
+
+            // Only restore if the course is actually still active in the API
+            if (apiStatus == 'termine' || apiStatus == 'annule' || apiStatus == 'rejected') {
+              print('⚠️ Course $courseId is already finished (status: $apiStatus). Clearing local storage.');
+              await RidePersistenceService.clearRideState();
+              print('ℹ️ Aucune restauration: la course est terminée sur le serveur');
+              return;
+            }
+
+            print('✅ Course $courseId is still active (status: $apiStatus). Proceeding with restoration.');
+          } catch (e) {
+            print('⚠️ Failed to validate course against API: $e');
+            print('⚠️ Clearing stale local data to prevent issues');
+            await RidePersistenceService.clearRideState();
+            return;
+          }
+        }
 
         // Créer un ClientData avec les données sauvegardées
         _currentCourse = ClientData(
@@ -2239,6 +2295,7 @@ class CoursesViewModel extends BaseViewModel {
 
         // Si la course est en cours ou acceptée, on la retire de availableCourses
         if (status == 'in_progress' ||
+            status == 'inprogress' ||  // Handle both formats
             status == 'picked_up' ||
             status == 'accepted') {
           _availableCourses.removeWhere(

@@ -12,6 +12,8 @@ String rejectCourseUrl(int courseId) =>
     "$baseUrl/conducteur/courses/$courseId/deny";
 String startCourseUrl(int courseId) =>
     "$baseUrl/conducteur/courses/$courseId/start";
+String requestPauseUrl(int courseId) =>
+    "$baseUrl/conducteur/courses/$courseId/demande_pause";
 String startPauseUrl(int courseId) =>
     "$baseUrl/conducteur/courses/$courseId/start_pause";
 String stopPauseUrl(int courseId) =>

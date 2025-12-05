@@ -1093,6 +1093,7 @@ class _InProgressRideBottomSheetState extends State<InProgressRideBottomSheet>
 
   Timer? _pauseTimer;
   bool _isPaused = false;
+  bool _pauseRequested = false; // Track if pause request is pending customer approval
   int _pauseTime = 0;
   int? _pauseStartTimestamp;
 
@@ -1224,24 +1225,43 @@ class _InProgressRideBottomSheetState extends State<InProgressRideBottomSheet>
       } else {
         // Mettre en pause
         debugPrint('🔴 [PAUSE DEBUG] About to START pause');
-        debugPrint('🔴 [PAUSE DEBUG] Will call: ${isPickup ? "startPickupPause" : "startPause"}');
-        debugPrint('🔴 [PAUSE DEBUG] Expected endpoint: ${isPickup ? "/api/conducteur/course_pickup/$courseId/start_pause" : "/api/conducteur/courses/$courseId/start_pause"}');
+        debugPrint('🔴 [PAUSE DEBUG] Will call: ${isPickup ? "startPickupPause" : "requestPause"}');
+        debugPrint('🔴 [PAUSE DEBUG] Expected endpoint: ${isPickup ? "/api/conducteur/course_pickup/$courseId/start_pause" : "/api/conducteur/courses/$courseId/demande_pause"}');
 
-        final response = isPickup
-            ? await _driverService.startPickupPause(courseId)
-            : await _driverService.startPause(courseId);
+        if (isPickup) {
+          // For pickup courses, directly start the pause
+          final response = await _driverService.startPickupPause(courseId);
+          final timestamp = response['timestamp'] as int;
 
-        final timestamp = response['timestamp'] as int;
+          _pauseStartTimestamp = timestamp;
+          _isPaused = true;
+          _pauseTime = 0;
+          await _pauseStateService.setPaused(courseId, true);
+          await _pauseStateService.setPauseStartTimestamp(courseId, timestamp);
+          _startPauseTimer();
 
-        _pauseStartTimestamp = timestamp;
-        _isPaused = true;
-        _pauseTime = 0;
-        await _pauseStateService.setPaused(courseId, true);
-        await _pauseStateService.setPauseStartTimestamp(courseId, timestamp);
-        _startPauseTimer();
+          if (mounted) {
+            setState(() {});
+          }
+        } else {
+          // For standard courses, request pause from customer
+          final response = await _driverService.requestPause(courseId);
 
-        if (mounted) {
-          setState(() {});
+          // Set pause requested flag (pause is not active yet, waiting for customer approval)
+          _pauseRequested = true;
+
+          if (mounted) {
+            setState(() {});
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: Text(
+                  response['message'] ?? 'Demande de pause envoyée au client',
+                ),
+                backgroundColor: Colors.green,
+                duration: const Duration(seconds: 3),
+              ),
+            );
+          }
         }
       }
     } on PauseAlreadyActiveException catch (e) {
@@ -1620,13 +1640,17 @@ class _InProgressRideBottomSheetState extends State<InProgressRideBottomSheet>
                             width: 50,
                             height: 50,
                             decoration: BoxDecoration(
-                              color: _isPaused ? Colors.green : Colors.orange,
+                              color: _isPaused
+                                  ? Colors.green
+                                  : (_pauseRequested ? Colors.amber : Colors.orange),
                               shape: BoxShape.circle,
                             ),
                             child: IconButton(
-                              onPressed: _togglePause,
+                              onPressed: _pauseRequested ? null : _togglePause,
                               icon: Icon(
-                                _isPaused ? Icons.play_arrow : Icons.pause,
+                                _isPaused
+                                    ? Icons.play_arrow
+                                    : (_pauseRequested ? Icons.hourglass_bottom : Icons.pause),
                                 color: Colors.white,
                                 size: 24,
                               ),

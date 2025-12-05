@@ -311,6 +311,52 @@ class DriverService {
   }
 
   // Démarrer une pause
+  /// Request pause from customer (for standard courses)
+  /// Sends a pause request notification to the customer
+  Future<Map<String, dynamic>> requestPause(int courseId) async {
+    final token = await sharedPreferencesService.getToken();
+    final url = Uri.parse(requestPauseUrl(courseId));
+
+    debugPrint('========== REQUEST PAUSE ==========');
+    debugPrint('URL: $url');
+    debugPrint('Course ID: $courseId');
+
+    try {
+      final response = await http.post(
+        url,
+        headers: {
+          'Accept': 'application/json',
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer $token',
+        },
+      );
+
+      debugPrint('Response Status: ${response.statusCode}');
+      debugPrint('Response Body: ${response.body}');
+
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+        debugPrint('✅ Pause request sent successfully');
+        return data;
+      } else if (response.statusCode == 400) {
+        final errorData = jsonDecode(response.body);
+        throw Exception(errorData['message'] ?? 'Course non démarrée');
+      } else if (response.statusCode == 403) {
+        final errorData = jsonDecode(response.body);
+        throw Exception(errorData['message'] ?? 'Non autorisé');
+      } else if (response.statusCode == 404) {
+        final errorData = jsonDecode(response.body);
+        throw Exception(errorData['message'] ?? 'Course introuvable');
+      } else {
+        _checkAuthenticationError(response);
+        throw Exception('Erreur lors de la demande de pause: ${response.statusCode}');
+      }
+    } catch (e) {
+      debugPrint('❌ Error requesting pause: $e');
+      rethrow;
+    }
+  }
+
   Future<Map<String, dynamic>> startPause(int courseId) async {
     final token = await sharedPreferencesService.getToken();
     final url = Uri.parse(startPauseUrl(courseId));
@@ -357,6 +403,47 @@ class DriverService {
       }
     } catch (e) {
       debugPrint('Erreur lors du démarrage de la pause: $e');
+      rethrow;
+    }
+  }
+
+  /// Check if course has an active pause by fetching course details
+  /// Returns pause info: {isPaused: bool, pauseStart: String?, timestamp: int?}
+  Future<Map<String, dynamic>> checkPauseStatus(int courseId) async {
+    try {
+      debugPrint('========== CHECK PAUSE STATUS ==========');
+      debugPrint('Course ID: $courseId');
+
+      final details = await getCourseDetails(courseId);
+
+      // Check if pause_start exists and is not null
+      final pauseStart = details['pause_start'];
+      final isPaused = pauseStart != null && pauseStart.toString().isNotEmpty;
+
+      debugPrint('Pause Start: $pauseStart');
+      debugPrint('Is Paused: $isPaused');
+
+      if (isPaused) {
+        final pauseStartTime = DateTime.parse(pauseStart);
+        final timestamp = pauseStartTime.millisecondsSinceEpoch ~/ 1000;
+
+        debugPrint('✅ Course is PAUSED');
+        debugPrint('Pause Start Time: $pauseStart');
+        debugPrint('Timestamp: $timestamp');
+
+        return {
+          'isPaused': true,
+          'pauseStart': pauseStart,
+          'timestamp': timestamp,
+        };
+      } else {
+        debugPrint('ℹ️ Course is NOT paused');
+        return {
+          'isPaused': false,
+        };
+      }
+    } catch (e) {
+      debugPrint('❌ Error checking pause status: $e');
       rethrow;
     }
   }
@@ -1310,14 +1397,16 @@ class DriverService {
     try {
       final courses = await listPickupCourses();
 
-      // Look for courses with active statuses
+      // Look for courses with active statuses AND is_pickup_course: true
       final activeCourse = courses.firstWhere(
         (course) {
           final status = course['statut']?.toString().toLowerCase() ?? '';
-          return status == 'en_cours' ||
+          final isPickupCourse = course['is_pickup_course'] == true;
+          final isActive = status == 'en_cours' ||
                  status == 'en_pause' ||
                  status == 'chauffeur_en_route' ||
                  status == 'chauffeur_arrive';
+          return isPickupCourse && isActive;
         },
         orElse: () => {},
       );
