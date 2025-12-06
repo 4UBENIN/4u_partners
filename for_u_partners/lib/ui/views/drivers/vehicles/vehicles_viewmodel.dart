@@ -15,7 +15,9 @@ class MesVehiculesViewModel extends BaseViewModel {
   Vehicle? _vehiculeActif;
   List<Vehicle> _vehicules = [];
   List<Vehicle> _vehiculesApprouves = [];
+  List<Vehicle> _vehiculesEnAttente = [];
   bool _isApprovedExpanded = true;
+  bool _isPendingExpanded = true;
   String? _errorMessage;
 
   static String get baseUrl => api.baseUrl.replaceAll('/api', '');
@@ -23,7 +25,9 @@ class MesVehiculesViewModel extends BaseViewModel {
   Vehicle? get vehiculeActif => _vehiculeActif;
   List<Vehicle> get vehicules => _vehicules;
   List<Vehicle> get vehiculesApprouves => _vehiculesApprouves;
+  List<Vehicle> get vehiculesEnAttente => _vehiculesEnAttente;
   bool get isApprovedExpanded => _isApprovedExpanded;
+  bool get isPendingExpanded => _isPendingExpanded;
   String? get errorMessage => _errorMessage;
 
   Future<void> initialise() async {
@@ -116,21 +120,27 @@ class MesVehiculesViewModel extends BaseViewModel {
             }
 
             print('✅ Véhicule récupéré: ID=${vehicle.id}, Modèle=${vehicle.model}, Statut="${vehicle.statut}"');
-            
-            _vehiculesApprouves = List<Vehicle>.from(_vehicules);
-            
+
+            // Séparer les véhicules par statut
             if (vehicle.statut?.toLowerCase() == 'en_attente') {
-              print('ℹ️ Le véhicule est en attente de validation mais sera affiché');
+              print('ℹ️ Le véhicule est en attente de validation');
+              _vehiculesEnAttente = [vehicle];
+              _vehiculesApprouves = [];
+            } else {
+              _vehiculesApprouves = [vehicle];
+              _vehiculesEnAttente = [];
             }
           } else if (data['message'] != null) {
             _errorMessage = data['message'];
             print('ℹ️ Message du serveur: $_errorMessage');
             _vehicules = [];
             _vehiculesApprouves = [];
+            _vehiculesEnAttente = [];
           } else {
             _errorMessage = 'Aucun véhicule trouvé';
             _vehicules = [];
             _vehiculesApprouves = [];
+            _vehiculesEnAttente = [];
           }
         } catch (e, stackTrace) {
           print('❌ Erreur lors du décodage de la réponse: $e');
@@ -171,6 +181,11 @@ class MesVehiculesViewModel extends BaseViewModel {
 
   void toggleApprovedExpanded() {
     _isApprovedExpanded = !_isApprovedExpanded;
+    notifyListeners();
+  }
+
+  void togglePendingExpanded() {
+    _isPendingExpanded = !_isPendingExpanded;
     notifyListeners();
   }
 

@@ -101,12 +101,14 @@ class VehicleService {
     required String immatriculation,
     required String couleur,
     required String annee,
-    required String type, 
-    required int nombrePlaces, 
+    required String type,
+    required int nombrePlaces,
     String categorie = 'standard',
     File? carteGrise,
     File? assurance,
     File? permis,
+    required String expirationCarteGrise,
+    required String expirationAssurance,
   }) async {
     try {
       // 🆕 Debug du token avant l'appel API
@@ -120,15 +122,17 @@ class VehicleService {
       // Créer FormData pour upload avec fichiers
       final formData = FormData();
       formData.fields.addAll([
-        MapEntry('type', type), 
+        MapEntry('type', type),
         MapEntry('marque', marque),
         MapEntry('modele', modele),
         MapEntry('immatriculation', immatriculation),
         MapEntry('couleur', couleur),
         MapEntry('categorie', categorie),
-        MapEntry('nombre_places', nombrePlaces.toString()), 
+        MapEntry('nombre_places', nombrePlaces.toString()),
         const MapEntry('statut', 'en_attente'),
         MapEntry('annee', annee),
+        MapEntry('expiration_carte_grise', expirationCarteGrise),
+        MapEntry('expiration_assurance', expirationAssurance),
       ]);
 
       if (carteGrise != null) {

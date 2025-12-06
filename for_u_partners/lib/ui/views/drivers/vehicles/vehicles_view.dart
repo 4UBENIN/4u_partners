@@ -218,6 +218,95 @@ class _MesVehiculesView extends StatelessWidget {
 
                       const SizedBox(height: 24),
 
+                      // Véhicules en attente
+                      if (viewModel.vehiculesEnAttente.isNotEmpty)
+                        Padding(
+                          padding: const EdgeInsets.symmetric(horizontal: 16.0),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Row(
+                                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                children: [
+                                  Row(
+                                    children: [
+                                      const Text(
+                                        'Véhicules en attente',
+                                        style: TextStyle(
+                                          fontSize: 18,
+                                          fontWeight: FontWeight.bold,
+                                        ),
+                                      ),
+                                      const SizedBox(width: 8),
+                                      Container(
+                                        padding: const EdgeInsets.symmetric(
+                                          horizontal: 10,
+                                          vertical: 4,
+                                        ),
+                                        decoration: BoxDecoration(
+                                          color: Colors.orange[600],
+                                          borderRadius: BorderRadius.circular(12),
+                                        ),
+                                        child: Text(
+                                          '${viewModel.vehiculesEnAttente.length}',
+                                          style: const TextStyle(
+                                            color: Colors.white,
+                                            fontSize: 12,
+                                            fontWeight: FontWeight.bold,
+                                          ),
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                  IconButton(
+                                    icon: Icon(
+                                      viewModel.isPendingExpanded
+                                          ? Icons.keyboard_arrow_up
+                                          : Icons.keyboard_arrow_down,
+                                    ),
+                                    onPressed: viewModel.togglePendingExpanded,
+                                  ),
+                                ],
+                              ),
+                              if (viewModel.isPendingExpanded) ...[
+                                const SizedBox(height: 12),
+                                ...viewModel.vehiculesEnAttente
+                                    .map((vehicle) =>
+                                        _buildPendingVehicleCard(vehicle))
+                                    .toList(),
+                                const SizedBox(height: 12),
+                                Container(
+                                  padding: const EdgeInsets.all(16),
+                                  decoration: BoxDecoration(
+                                    color: Colors.orange[50],
+                                    borderRadius: BorderRadius.circular(12),
+                                    border: Border.all(color: Colors.orange[200]!),
+                                  ),
+                                  child: Row(
+                                    children: [
+                                      Icon(Icons.info_outline, color: Colors.orange[800], size: 24),
+                                      const SizedBox(width: 12),
+                                      Expanded(
+                                        child: Text(
+                                          'Ce véhicule est en attente de validation par notre équipe. Vous serez notifié une fois la validation effectuée.',
+                                          style: TextStyle(
+                                            fontSize: 13,
+                                            color: Colors.orange[900],
+                                            height: 1.4,
+                                          ),
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ],
+                            ],
+                          ),
+                        ),
+
+                      if (viewModel.vehiculesEnAttente.isNotEmpty)
+                        const SizedBox(height: 24),
+
                       // Véhicules approuvés
                       Padding(
                         padding: const EdgeInsets.symmetric(horizontal: 16.0),
@@ -510,6 +599,121 @@ class _MesVehiculesView extends StatelessWidget {
               onToggle: (value) => viewModel.toggleClim(value),
             ),
           ],
+        ],
+      ),
+    );
+  }
+
+  Widget _buildPendingVehicleCard(Vehicle vehicle) {
+    return Container(
+      margin: const EdgeInsets.only(bottom: 12),
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: Colors.orange[200]!, width: 2),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.orange.withOpacity(0.1),
+            blurRadius: 8,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      '${vehicle.marque} ${vehicle.model}',
+                      style: const TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      vehicle.immatriculation,
+                      style: TextStyle(
+                        fontSize: 14,
+                        color: Colors.grey[600],
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                decoration: BoxDecoration(
+                  color: Colors.orange[50],
+                  borderRadius: BorderRadius.circular(20),
+                  border: Border.all(
+                    color: Colors.orange[300]!,
+                    width: 1.5,
+                  ),
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(Icons.pending, size: 16, color: Colors.orange[800]),
+                    const SizedBox(width: 6),
+                    Text(
+                      'En attente',
+                      style: TextStyle(
+                        fontSize: 12,
+                        color: Colors.orange[800],
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
+          Divider(color: Colors.orange[100]),
+          const SizedBox(height: 12),
+          Row(
+            children: [
+              Icon(Icons.category, size: 14, color: Colors.grey[600]),
+              const SizedBox(width: 4),
+              Text(
+                vehicle.categorie?.toUpperCase() ?? 'N/A',
+                style: TextStyle(
+                  fontSize: 12,
+                  color: Colors.grey[800],
+                ),
+              ),
+              const SizedBox(width: 16),
+              Icon(Icons.color_lens, size: 14, color: Colors.grey[600]),
+              const SizedBox(width: 4),
+              Text(
+                vehicle.couleur?.isNotEmpty == true
+                    ? '${vehicle.couleur![0].toUpperCase()}${vehicle.couleur!.substring(1).toLowerCase()}'
+                    : 'N/A',
+                style: TextStyle(
+                  fontSize: 12,
+                  color: Colors.grey[800],
+                ),
+              ),
+              const SizedBox(width: 16),
+              Icon(Icons.people_outline, size: 14, color: Colors.grey[600]),
+              const SizedBox(width: 4),
+              Text(
+                '${_getPlacesText(vehicle)} places',
+                style: TextStyle(
+                  fontSize: 12,
+                  color: Colors.grey[800],
+                ),
+              ),
+            ],
+          ),
         ],
       ),
     );

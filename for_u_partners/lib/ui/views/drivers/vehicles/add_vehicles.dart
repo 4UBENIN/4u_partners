@@ -26,6 +26,8 @@ class _AddVehiclesViewState extends State<AddVehiclesView> {
   final _couleurController = TextEditingController();
   final _anneeController = TextEditingController();
   final _nombrePlacesController = TextEditingController(text: '4'); // Valeur par défaut
+  final _expirationCarteGriseController = TextEditingController();
+  final _expirationAssuranceController = TextEditingController();
 
   @override
   void dispose() {
@@ -35,6 +37,8 @@ class _AddVehiclesViewState extends State<AddVehiclesView> {
     _couleurController.dispose();
     _anneeController.dispose();
     _nombrePlacesController.dispose();
+    _expirationCarteGriseController.dispose();
+    _expirationAssuranceController.dispose();
     super.dispose();
   }
 
@@ -90,6 +94,8 @@ class _AddVehiclesViewState extends State<AddVehiclesView> {
       permis: viewModel.permis,
       vehicleType: viewModel.selectedVehicleType,
       annee: _anneeController.text.trim(),
+      expirationCarteGrise: _expirationCarteGriseController.text.trim(),
+      expirationAssurance: _expirationAssuranceController.text.trim(),
     );
   }
 
@@ -527,6 +533,70 @@ class _AddVehiclesViewState extends State<AddVehiclesView> {
                         _formKey.currentState?.validate();
                       },
                     ),
+                    const SizedBox(height: 20),
+
+                    // Date d'expiration de la carte grise
+                    TextFormField(
+                      controller: _expirationCarteGriseController,
+                      readOnly: true,
+                      decoration: _buildInputDecoration(
+                        'Expiration carte grise *',
+                        'Sélectionner une date',
+                        Icons.date_range,
+                      ),
+                      validator: (value) {
+                        if (value == null || value.trim().isEmpty) {
+                          return 'La date d\'expiration de la carte grise est requise';
+                        }
+                        return null;
+                      },
+                      onTap: () async {
+                        final DateTime? picked = await showDatePicker(
+                          context: context,
+                          initialDate: DateTime.now().add(const Duration(days: 365)),
+                          firstDate: DateTime.now(),
+                          lastDate: DateTime.now().add(const Duration(days: 3650)),
+                        );
+                        if (picked != null) {
+                          setState(() {
+                            _expirationCarteGriseController.text =
+                                '${picked.year}-${picked.month.toString().padLeft(2, '0')}-${picked.day.toString().padLeft(2, '0')}';
+                          });
+                        }
+                      },
+                    ),
+                    const SizedBox(height: 20),
+
+                    // Date d'expiration de l'assurance
+                    TextFormField(
+                      controller: _expirationAssuranceController,
+                      readOnly: true,
+                      decoration: _buildInputDecoration(
+                        'Expiration assurance *',
+                        'Sélectionner une date',
+                        Icons.date_range,
+                      ),
+                      validator: (value) {
+                        if (value == null || value.trim().isEmpty) {
+                          return 'La date d\'expiration de l\'assurance est requise';
+                        }
+                        return null;
+                      },
+                      onTap: () async {
+                        final DateTime? picked = await showDatePicker(
+                          context: context,
+                          initialDate: DateTime.now().add(const Duration(days: 365)),
+                          firstDate: DateTime.now(),
+                          lastDate: DateTime.now().add(const Duration(days: 3650)),
+                        );
+                        if (picked != null) {
+                          setState(() {
+                            _expirationAssuranceController.text =
+                                '${picked.year}-${picked.month.toString().padLeft(2, '0')}-${picked.day.toString().padLeft(2, '0')}';
+                          });
+                        }
+                      },
+                    ),
                     const SizedBox(height: 28),
 
                     // Documents
@@ -536,15 +606,6 @@ class _AddVehiclesViewState extends State<AddVehiclesView> {
                         fontSize: 16,
                         fontWeight: FontWeight.w700,
                         color: Colors.black87,
-                      ),
-                    ),
-                    const SizedBox(height: 8),
-                    Text(
-                      'Formats acceptés: JPG, PNG, PDF (max 5 MB)',
-                      style: TextStyle(
-                        fontSize: 12,
-                        color: Colors.grey[600],
-                        fontStyle: FontStyle.italic,
                       ),
                     ),
                     const SizedBox(height: 16),
@@ -803,6 +864,8 @@ class AddVehiclesViewModel extends ChangeNotifier {
     required File? permis,
     required String vehicleType,
     required String annee,
+    required String expirationCarteGrise,
+    required String expirationAssurance,
   }) async {
     _isLoading = true;
     notifyListeners();
@@ -826,6 +889,8 @@ class AddVehiclesViewModel extends ChangeNotifier {
         carteGrise: carteGriseFile,
         assurance: assuranceFile,
         permis: permisFile,
+        expirationCarteGrise: expirationCarteGrise,
+        expirationAssurance: expirationAssurance,
       );
       // Ajuster selon le type de véhicule
       if (selectedCategory == 'moto') {
