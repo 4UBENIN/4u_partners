@@ -134,20 +134,27 @@ class FactureCourse {
   });
 
   factory FactureCourse.fromJson(Map<String, dynamic> json) {
+    num? parseNumber(dynamic value) {
+      if (value == null) return null;
+      if (value is num) return value;
+      if (value is String) return num.tryParse(value);
+      return null;
+    }
+
     return FactureCourse(
-      courseId: json['course_id'],
+      courseId: parseNumber(json['course_id'])?.toInt() ?? 0,
       adresseDepart: json['adresse_depart'],
       adresseArrivee: json['adresse_arrivee'],
-      distanceKm: (json['distance_km'] as num).toDouble(),
-      dureeMin: json['duree_min'],
-      montant: json['montant'],
+      distanceKm: parseNumber(json['distance_km'])?.toDouble() ?? 0.0,
+      dureeMin: parseNumber(json['duree_min'])?.toInt() ?? 0,
+      montant: parseNumber(json['montant'])?.toInt() ?? 0,
       modePaiement: json['mode_paiement'],
-      tarifParMinute: json['tarif_par_minute'],
-      tarifParKm: json['tarif_par_km'],
-      tempsAttente: json['temps_attente'] ?? 0,
-      tempsPause: json['temps_pause'] ?? 0,
-      montantAttente: json['montant_attente'] ?? 0,
-      montantPause: json['montant_pause'] ?? 0,
+      tarifParMinute: parseNumber(json['tarif_par_minute'])?.toInt() ?? 0,
+      tarifParKm: parseNumber(json['tarif_par_km'])?.toInt() ?? 0,
+      tempsAttente: parseNumber(json['temps_attente'])?.toInt() ?? 0,
+      tempsPause: parseNumber(json['temps_pause'])?.toInt() ?? 0,
+      montantAttente: parseNumber(json['montant_attente'])?.toInt() ?? 0,
+      montantPause: parseNumber(json['montant_pause'])?.toInt() ?? 0,
       vehicule: json['vehicule'] ?? {},
       chauffeur: json['chauffeur'] ?? {},
       client: json['client'] ?? {},
@@ -181,11 +188,18 @@ class CourseDetail {
   });
 
   factory CourseDetail.fromJson(Map<String, dynamic> json) {
+    num? parseNumber(dynamic value) {
+      if (value == null) return null;
+      if (value is num) return value;
+      if (value is String) return num.tryParse(value);
+      return null;
+    }
+
     return CourseDetail(
-      courseId: json['course_id'],
+      courseId: parseNumber(json['course_id'])?.toInt() ?? 0,
       statut: json['statut'],
-      distanceKm: (json['distance_km'] as num).toDouble(),
-      montant: json['montant'],
+      distanceKm: parseNumber(json['distance_km'])?.toDouble() ?? 0.0,
+      montant: parseNumber(json['montant'])?.toInt() ?? 0,
       modePaiement: json['mode_paiement'],
       vehicule: json['vehicule'] ?? {},
       chauffeur: json['chauffeur'] ?? {},

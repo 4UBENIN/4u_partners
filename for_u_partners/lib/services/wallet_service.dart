@@ -41,9 +41,10 @@ class WalletService {
 
       if (response.statusCode == 200) {
         final jsonData = jsonDecode(response.body);
-        // Vérifier si la réponse contient 'balance' ou 'solde'
+        // The API returns 'balance' as the correct wallet balance field
+        // 'solde' is a legacy/incorrect field and should be ignored
+        // Ensure we always use 'balance' - fallback to 'solde' only if 'balance' doesn't exist
         if (jsonData['balance'] == null && jsonData['solde'] != null) {
-          // Si 'balance' n'existe pas mais 'solde' existe, créer un nouvel objet avec 'balance'
           jsonData['balance'] = jsonData['solde'];
         }
         return WalletModel.fromJson(jsonData);
@@ -63,8 +64,17 @@ class WalletService {
 
   //* GET UNCOLLECTED BONUSES
   // Récupérer les bonus non remboursés
+  // TODO: Update this endpoint when the correct API route is provided
+  // Current route "/api/conducteur/parrainage/non-rembourses" returns 404
   Future<List<ParrainageModel>> getUncollectedBonuses() async {
     try {
+      // Temporarily return empty list until correct endpoint is provided
+      // The API documentation only shows POST /api/conducteur/parrainage/remboursement/{id}
+      // but no GET endpoint for listing uncollected bonuses
+      debugPrint('⚠️ [WalletService] Uncollected bonuses endpoint not available - returning empty list');
+      return [];
+
+      /* COMMENTED OUT UNTIL CORRECT ENDPOINT IS PROVIDED
       final url = Uri.parse(getUncollectedBonusesUrl);
       final response = await http.get(
         url,
@@ -93,9 +103,11 @@ class WalletService {
       } else {
         throw Exception('Erreur lors du chargement des bonus');
       }
+      */
     } catch (e) {
       print("Erreur uncollected bonuses: $e");
-      rethrow;
+      // Return empty list instead of rethrowing to prevent app crashes
+      return [];
     }
   }
 

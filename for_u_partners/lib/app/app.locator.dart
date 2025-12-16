@@ -12,14 +12,17 @@ import 'package:stacked_services/src/navigation/navigation_service.dart';
 import 'package:stacked_services/src/snackbar/snackbar_service.dart';
 import 'package:stacked_shared/stacked_shared.dart';
 
+import '../repositories/chat_repository.dart';
+import '../repositories/chat_repository_impl.dart';
 import '../services/active_course_checker_service.dart';
 import '../services/arrival_state_service.dart';
 import '../services/auth_service.dart';
-import '../services/chat_service.dart';
+import '../services/chat_service_api.dart';
 import '../services/course_restoration_service.dart';
 import '../services/driver_service.dart';
 import '../services/location_tracking_service.dart';
 import '../services/pause_state_service.dart';
+import '../services/payout_service.dart';
 import '../services/pickers_service.dart';
 import '../services/profile_photo_service.dart';
 import '../services/sharedpreferences_service.dart';
@@ -49,7 +52,8 @@ Future<void> setupLocator({
   locator.registerLazySingleton(() => AuthService());
   locator.registerLazySingleton(() => DriverService());
   locator.registerLazySingleton(() => WalletService());
-  locator.registerLazySingleton(() => ChatService());
+  locator.registerLazySingleton<ChatRepository>(() => ChatRepositoryImpl());
+  locator.registerLazySingleton(() => ChatServiceApi());
   locator.registerLazySingleton(() => PickersService());
   locator.registerLazySingleton(() => VehicleService());
   locator.registerLazySingleton(() => ActiveCourseCheckerService());
@@ -57,6 +61,7 @@ Future<void> setupLocator({
   locator.registerLazySingleton(() => ArrivalStateService());
   locator.registerLazySingleton(() => PauseStateService());
   locator.registerLazySingleton(() => LocationTrackingService());
+  locator.registerLazySingleton(() => PayoutService());
   locator.registerSingleton(HomemainViewModel());
   locator.registerSingleton(MesVehiculesViewModel());
   locator.registerSingleton(DocumentsViewModel());

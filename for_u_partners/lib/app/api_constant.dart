@@ -50,6 +50,11 @@ String get getUncollectedBonusesUrl => "$baseUrl/conducteur/parrainage/non-rembo
 String collectBonusUrl(int parrainageId) =>
     "$baseUrl/conducteur/parrainage/remboursement/$parrainageId";
 
+// Payout URLs
+String get createPayoutUrl => "$baseUrl/conducteur/payouts/create";
+String get listPayoutsUrl => "$baseUrl/conducteur/payouts";
+String payoutDetailsUrl(int payoutId) => "$baseUrl/conducteur/payouts/$payoutId";
+
 Map<String, String> headers = {
   'Content-Type': 'application/json',
   'Accept': 'application/json'

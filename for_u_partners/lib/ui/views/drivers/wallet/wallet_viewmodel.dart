@@ -3,7 +3,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:http/http.dart' as http;
 import 'package:stacked/stacked.dart';
+import 'package:stacked_services/stacked_services.dart';
 import 'package:for_u_partners/app/app.locator.dart';
+import 'package:for_u_partners/app/app.router.dart';
 import 'package:for_u_partners/services/wallet_service.dart';
 import 'package:for_u_partners/services/auth_service.dart';
 import 'package:for_u_partners/ui/common/app_colors.dart';
@@ -14,6 +16,7 @@ import 'package:for_u_partners/app/models/parrainage_model.dart';
 class WalletViewModel extends BaseViewModel {
   final _walletService = locator<WalletService>();
   final _authService = locator<AuthService>();
+  final _navigationService = locator<NavigationService>();
 
   double _balance = 0.0;
   List<Map<String, dynamic>> _transactions = [];
@@ -366,5 +369,9 @@ class WalletViewModel extends BaseViewModel {
 
     _isCollecting = false;
     notifyListeners();
+  }
+
+  void navigateToPayoutHistory() {
+    _navigationService.navigateTo(Routes.payoutHistoryView);
   }
 }

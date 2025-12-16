@@ -1,23 +1,23 @@
 import 'dart:async';
 
-import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
-import 'package:for_u_partners/services/chat_service.dart';
+import 'package:for_u_partners/app/app.locator.dart';
+import 'package:for_u_partners/models/chat/chat_message_entity.dart';
+import 'package:for_u_partners/models/chat/typing_status_entity.dart';
+import 'package:for_u_partners/services/chat_service_api.dart';
 import 'package:for_u_partners/ui/common/app_colors.dart';
 import 'package:for_u_partners/ui/common/text_component.dart';
 
 class ChatPage extends StatefulWidget {
   final String receiverUserName;
-  final String receiverUserId;
-  final String conversationId;
-  final String currentUserId;
+  final int courseId;
+  final String driverPhone;
 
   const ChatPage({
     super.key,
     required this.receiverUserName,
-    required this.receiverUserId,
-    required this.conversationId,
-    required this.currentUserId,
+    required this.courseId,
+    required this.driverPhone,
   });
 
   @override
@@ -26,44 +26,40 @@ class ChatPage extends StatefulWidget {
 
 class _ChatPageState extends State<ChatPage> {
   final TextEditingController _messageController = TextEditingController();
-  final ChatService _chatService = ChatService();
+  final ChatServiceApi _chatService = locator<ChatServiceApi>();
   final ScrollController _scrollController = ScrollController();
   Timer? _typingDebounceTimer;
+  Timer? _typingSendTimer;
   bool _isTyping = false;
 
   @override
   void initState() {
     super.initState();
-    // Marquer les messages comme lus quand on ouvre la conversation
-    _chatService.markMessagesAsRead(
-      conversationId: widget.conversationId,
-      currentUserId: widget.currentUserId,
-    );
+    // Mark messages as read when opening the chat
+    _chatService.markMessagesAsRead(widget.courseId);
 
-    // Écouter les changements dans le champ de texte
+    // Listen to text changes
     _messageController.addListener(_onTextChanged);
 
-    print(" RecEIVER NAME : ${widget.receiverUserName}");
-    print(" RecEIVER ID : ${widget.receiverUserId}");
-    print(" CONVERSATION ID : ${widget.conversationId}");
-    print(" CURRENT USER ID : ${widget.currentUserId}");
+    print("📱 [CHAT_PAGE] Receiver Name: ${widget.receiverUserName}");
+    print("📱 [CHAT_PAGE] Course ID: ${widget.courseId}");
+    print("📱 [CHAT_PAGE] Driver Phone: ${widget.driverPhone}");
   }
 
   @override
   void dispose() {
-    // Arrêter le statut typing avant de quitter
-    if (_isTyping) {
-      _chatService.stopTyping(
-        conversationId: widget.conversationId,
-        userId: widget.currentUserId,
-      );
-    }
-
+    // Stop typing status before leaving
     _typingDebounceTimer?.cancel();
+    _typingSendTimer?.cancel();
+
     _messageController.removeListener(_onTextChanged);
     _messageController.dispose();
     _scrollController.dispose();
-    _chatService.dispose();
+
+    // Stop polling when leaving the chat
+    _chatService.stopMessagesPolling();
+    _chatService.stopTypingPolling();
+
     super.dispose();
   }
 
@@ -71,21 +67,21 @@ class _ChatPageState extends State<ChatPage> {
     final text = _messageController.text.trim();
 
     if (text.isNotEmpty && !_isTyping) {
-      // Commencer à indiquer qu'on est en train de taper
+      // Start indicating typing
       _startTyping();
     }
 
-    // Annuler le timer précédent
+    // Cancel previous timer
     _typingDebounceTimer?.cancel();
 
-    // Créer un nouveau timer qui arrêtera le typing après 1 seconde d'inactivité
+    // Create a new timer that will stop typing after 1 second of inactivity
     _typingDebounceTimer = Timer(const Duration(seconds: 1), () {
       if (_isTyping) {
         _stopTyping();
       }
     });
 
-    // Si le champ est vide, arrêter immédiatement le typing
+    // If field is empty, stop typing immediately
     if (text.isEmpty && _isTyping) {
       _stopTyping();
     }
@@ -95,20 +91,24 @@ class _ChatPageState extends State<ChatPage> {
     setState(() {
       _isTyping = true;
     });
-    _chatService.startTyping(
-      conversationId: widget.conversationId,
-      userId: widget.currentUserId,
-    );
+
+    // Send typing status to backend
+    _chatService.setTypingStatus(widget.courseId);
+
+    // Send typing status every 2 seconds while typing
+    _typingSendTimer?.cancel();
+    _typingSendTimer = Timer.periodic(const Duration(seconds: 2), (_) {
+      if (_isTyping) {
+        _chatService.setTypingStatus(widget.courseId);
+      }
+    });
   }
 
   void _stopTyping() {
     setState(() {
       _isTyping = false;
     });
-    _chatService.stopTyping(
-      conversationId: widget.conversationId,
-      userId: widget.currentUserId,
-    );
+    _typingSendTimer?.cancel();
   }
 
   void _sendMessage() async {
@@ -116,18 +116,12 @@ class _ChatPageState extends State<ChatPage> {
     if (message.isEmpty) return;
 
     try {
-      // Le service se charge d'arrêter le typing automatiquement
-      await _chatService.sendMessage(
-        conversationId: widget.conversationId,
-        senderId: widget.currentUserId,
-        receiverId: widget.receiverUserId,
-        message: message,
-      );
+      // Stop typing when sending
+      _stopTyping();
+
+      await _chatService.sendMessage(widget.courseId, message);
 
       _messageController.clear();
-      setState(() {
-        _isTyping = false;
-      });
       _scrollToBottom();
     } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -178,26 +172,17 @@ class _ChatPageState extends State<ChatPage> {
                     fontsize: 16,
                     fontweight: FontWeight.w600,
                   ),
-                  // Indicateur de statut avec typing status
-                  StreamBuilder<DocumentSnapshot>(
-                    stream: _chatService.getTypingStatus(widget.conversationId),
+                  // Typing status indicator
+                  StreamBuilder<TypingStatusEntity>(
+                    stream: _chatService.getTypingStatusStream(widget.courseId),
                     builder: (context, snapshot) {
-                      if (snapshot.hasData && snapshot.data!.exists) {
-                        final data =
-                            snapshot.data!.data() as Map<String, dynamic>;
-                        final isOtherTyping = _chatService.isOtherUserTyping(
-                          conversationData: data,
-                          currentUserId: widget.currentUserId,
+                      if (snapshot.hasData && snapshot.data!.isTyping) {
+                        return const TextComponent(
+                          'écrit...',
+                          fontsize: 12,
+                          textcolor: Colors.green,
+                          fontweight: FontWeight.w500,
                         );
-
-                        if (isOtherTyping) {
-                          return const TextComponent(
-                            'écrit...',
-                            fontsize: 12,
-                            textcolor: Colors.green,
-                            fontweight: FontWeight.w500,
-                          );
-                        }
                       }
 
                       return const TextComponent(
@@ -216,17 +201,17 @@ class _ChatPageState extends State<ChatPage> {
           IconButton(
             icon: const Icon(Icons.phone),
             onPressed: () {
-              // TODO: Implémenter l'appel
+              // TODO: Implement call functionality
             },
           ),
         ],
       ),
       body: Column(
         children: [
-          // Liste des messages
+          // Message list
           Expanded(
-            child: StreamBuilder<QuerySnapshot>(
-              stream: _chatService.getMessages(widget.conversationId),
+            child: StreamBuilder<List<ChatMessageEntity>>(
+              stream: _chatService.getMessagesStream(widget.courseId),
               builder: (context, snapshot) {
                 if (snapshot.connectionState == ConnectionState.waiting) {
                   return const Center(child: CircularProgressIndicator());
@@ -241,7 +226,7 @@ class _ChatPageState extends State<ChatPage> {
                   );
                 }
 
-                if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
+                if (!snapshot.hasData || snapshot.data!.isEmpty) {
                   return const Center(
                     child: TextComponent(
                       'Aucun message pour le moment.\nCommencez la conversation !',
@@ -251,7 +236,7 @@ class _ChatPageState extends State<ChatPage> {
                   );
                 }
 
-                final messages = snapshot.data!.docs;
+                final messages = snapshot.data!;
 
                 return ListView.builder(
                   controller: _scrollController,
@@ -259,19 +244,15 @@ class _ChatPageState extends State<ChatPage> {
                   padding: const EdgeInsets.all(16),
                   itemCount: messages.length,
                   itemBuilder: (context, index) {
-                    final messageData =
-                        messages[index].data() as Map<String, dynamic>;
-                    final isCurrentUser =
-                        messageData['senderId'] == widget.currentUserId;
-                    final message = messageData['message'] ?? '';
-                    final timestamp = messageData['timestamp'] as Timestamp?;
-                    final isRead = messageData['isRead'] ?? false;
+                    final message = messages[index];
+                    // For driver app, current user is the driver
+                    final isCurrentUser = message.isFromDriver;
 
                     return _buildMessageBubble(
-                      message: message,
+                      message: message.message,
                       isCurrentUser: isCurrentUser,
-                      timestamp: timestamp,
-                      isRead: isRead,
+                      timestamp: message.createdAt,
+                      isRead: message.isRead,
                     );
                   },
                 );
@@ -279,91 +260,79 @@ class _ChatPageState extends State<ChatPage> {
             ),
           ),
 
-          // Indicateur "is typing" en bas de la liste des messages
-          StreamBuilder<DocumentSnapshot>(
-            stream: _chatService.getTypingStatus(widget.conversationId),
+          // Typing indicator at the bottom
+          StreamBuilder<TypingStatusEntity>(
+            stream: _chatService.getTypingStatusStream(widget.courseId),
             builder: (context, snapshot) {
-              if (snapshot.hasData && snapshot.data!.exists) {
-                final data = snapshot.data!.data() as Map<String, dynamic>;
-                final isOtherTyping = _chatService.isOtherUserTyping(
-                  conversationData: data,
-                  currentUserId: widget.currentUserId,
-                );
-
-                if (isOtherTyping) {
-                  return Container(
-                    padding:
-                        const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                    child: Row(
-                      children: [
-                        CircleAvatar(
-                          radius: 12,
-                          backgroundColor: primaryColor,
-                          child: Text(
-                            widget.receiverUserName.isNotEmpty
-                                ? widget.receiverUserName[0].toUpperCase()
-                                : 'C',
-                            style: const TextStyle(
-                              color: Colors.white,
-                              fontSize: 10,
-                              fontWeight: FontWeight.bold,
+              if (snapshot.hasData && snapshot.data!.isTyping) {
+                return Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                  child: Row(
+                    children: [
+                      CircleAvatar(
+                        radius: 12,
+                        backgroundColor: primaryColor,
+                        child: Text(
+                          widget.receiverUserName.isNotEmpty
+                              ? widget.receiverUserName[0].toUpperCase()
+                              : 'C',
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontSize: 10,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                        decoration: BoxDecoration(
+                          color: Colors.grey[200],
+                          borderRadius: BorderRadius.circular(15),
+                        ),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            const TextComponent(
+                              'écrit',
+                              fontsize: 13,
+                              textcolor: Colors.grey,
                             ),
-                          ),
-                        ),
-                        const SizedBox(width: 8),
-                        Container(
-                          padding: const EdgeInsets.symmetric(
-                              horizontal: 12, vertical: 6),
-                          decoration: BoxDecoration(
-                            color: Colors.grey[200],
-                            borderRadius: BorderRadius.circular(15),
-                          ),
-                          child: Row(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              const TextComponent(
-                                'écrit',
-                                fontsize: 13,
-                                textcolor: Colors.grey,
-                              ),
-                              const SizedBox(width: 4),
-                              // Animation de points
-                              SizedBox(
-                                width: 20,
-                                child: Row(
-                                  children: List.generate(3, (index) {
-                                    return AnimatedContainer(
-                                      duration: Duration(
-                                          milliseconds: 600 + (index * 200)),
-                                      curve: Curves.easeInOut,
-                                      margin: const EdgeInsets.symmetric(
-                                          horizontal: 1),
-                                      child: Container(
-                                        width: 4,
-                                        height: 4,
-                                        decoration: BoxDecoration(
-                                          color: Colors.grey[400],
-                                          shape: BoxShape.circle,
-                                        ),
+                            const SizedBox(width: 4),
+                            // Animated dots
+                            SizedBox(
+                              width: 20,
+                              child: Row(
+                                children: List.generate(3, (index) {
+                                  return AnimatedContainer(
+                                    duration: Duration(milliseconds: 600 + (index * 200)),
+                                    curve: Curves.easeInOut,
+                                    margin: const EdgeInsets.symmetric(horizontal: 1),
+                                    child: Container(
+                                      width: 4,
+                                      height: 4,
+                                      decoration: BoxDecoration(
+                                        color: Colors.grey[400],
+                                        shape: BoxShape.circle,
                                       ),
-                                    );
-                                  }),
-                                ),
+                                    ),
+                                  );
+                                }),
                               ),
-                            ],
-                          ),
+                            ),
+                          ],
                         ),
-                      ],
-                    ),
-                  );
-                }
+                      ),
+                    ],
+                  ),
+                );
               }
 
               return const SizedBox.shrink();
             },
           ),
 
-          // Zone de saisie
+          // Message input
           _buildMessageInput(),
         ],
       ),
@@ -373,7 +342,7 @@ class _ChatPageState extends State<ChatPage> {
   Widget _buildMessageBubble({
     required String message,
     required bool isCurrentUser,
-    Timestamp? timestamp,
+    required DateTime timestamp,
     required bool isRead,
   }) {
     return Padding(
@@ -422,28 +391,26 @@ class _ChatPageState extends State<ChatPage> {
                     textcolor: isCurrentUser ? Colors.white : Colors.black87,
                     fontsize: 15,
                   ),
-                  if (timestamp != null) ...[
-                    const SizedBox(height: 4),
-                    Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        TextComponent(
-                          _formatTime(timestamp),
-                          fontsize: 11,
-                          textcolor:
-                              isCurrentUser ? Colors.white70 : Colors.grey[600],
+                  const SizedBox(height: 4),
+                  Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      TextComponent(
+                        _formatTime(timestamp),
+                        fontsize: 11,
+                        textcolor:
+                            isCurrentUser ? Colors.white70 : Colors.grey[600],
+                      ),
+                      if (isCurrentUser) ...[
+                        const SizedBox(width: 4),
+                        Icon(
+                          isRead ? Icons.done_all : Icons.done,
+                          size: 14,
+                          color: isRead ? Colors.blue[300] : Colors.white70,
                         ),
-                        if (isCurrentUser) ...[
-                          const SizedBox(width: 4),
-                          Icon(
-                            isRead ? Icons.done_all : Icons.done,
-                            size: 14,
-                            color: isRead ? Colors.blue[300] : Colors.white70,
-                          ),
-                        ],
                       ],
-                    ),
-                  ],
+                    ],
+                  ),
                 ],
               ),
             ),
@@ -517,8 +484,7 @@ class _ChatPageState extends State<ChatPage> {
     );
   }
 
-  String _formatTime(Timestamp timestamp) {
-    final dateTime = timestamp.toDate();
+  String _formatTime(DateTime dateTime) {
     final now = DateTime.now();
     final difference = now.difference(dateTime);
 

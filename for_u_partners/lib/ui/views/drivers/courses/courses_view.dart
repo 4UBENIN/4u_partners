@@ -1,5 +1,4 @@
 import 'package:for_u_partners/app/app.router.dart';
-import 'package:for_u_partners/services/chat_service.dart';
 import 'package:for_u_partners/services/sharedpreferences_service.dart';
 import 'package:for_u_partners/services/driver_service.dart';
 import 'package:for_u_partners/ui/common/app_colors.dart';
@@ -315,7 +314,7 @@ class CoursesView extends StackedView<CoursesViewModel> {
     required String clientId,
     required String clientName,
     required String? courseId,
-    required ChatService chatService,
+    String? clientPhone,
   }) async {
     // Empêcher les clics multiples
     if (_isChatLoading) return;
@@ -328,57 +327,26 @@ class CoursesView extends StackedView<CoursesViewModel> {
     }
 
     try {
-      // Récupérer les infos de l'utilisateur connecté
-      final currentUserInfo = await chatService.getCurrentUserInfo();
-      print(" BB CURRENT USER INFO : $currentUserInfo");
-      final a = await locator<SharedpreferencesService>().getUserTypeId();
-      print(" BB CURRENT USER ID : $a");
-      if (currentUserInfo == null) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Erreur: Utilisateur non connecté'),
-            backgroundColor: Colors.red,
-          ),
-        );
-        return;
-      }
+      // Parse courseId with fallback - no restrictions
+      final courseIdInt = int.tryParse(courseId ?? '0') ?? 0;
 
-      // Créer ou récupérer la conversation
-      final conversationId = await chatService.createOrGetConversation(
-        currentUserId: currentUserInfo['id'],
-        clientId: clientId,
-        clientName: clientName,
-        tripId: courseId,
+      print("📱 [CHAT] Opening chat for course: $courseIdInt");
+      print("📱 [CHAT] Client name: $clientName");
+      print("📱 [CHAT] Client phone: ${clientPhone ?? 'N/A'}");
+
+      // Naviguer vers la page de chat avec la nouvelle API - always allow
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (context) => ChatPage(
+            receiverUserName: clientName,
+            courseId: courseIdInt,
+            driverPhone: clientPhone ?? '',
+          ),
+        ),
       );
-
-      print(" BB RecEIVER NAME : $clientName ");
-      print(" BB RecEIVER ID : $clientId");
-      print(" BB CONVERSATION ID : $conversationId");
-      print(" BB CURRENT USER ID : ${currentUserInfo['id']}");
-
-      if (conversationId != null) {
-        // Naviguer vers la page de chat
-        Navigator.push(
-          context,
-          MaterialPageRoute(
-            builder: (context) => ChatPage(
-              receiverUserName: clientName,
-              receiverUserId: clientId,
-              conversationId: conversationId,
-              currentUserId: currentUserInfo['id'],
-            ),
-          ),
-        );
-      } else {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Erreur lors de l\'ouverture du chat'),
-            backgroundColor: Colors.red,
-          ),
-        );
-      }
     } catch (e) {
-      print('Erreur ouverture chat: $e');
+      print('❌ [CHAT] Erreur ouverture chat: $e');
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
           content: Text('Une erreur est survenue'),
@@ -476,21 +444,20 @@ class CoursesView extends StackedView<CoursesViewModel> {
         print('✅ [BottomSheet] pickupCourse.clientId: ${pickupCourse.clientId}');
         print('✅ [BottomSheet] pickupCourse.hasValidCourseId: ${pickupCourse.hasValidCourseId}');
 
-        final chatService = locator<ChatService>();
-        print('✅ [BottomSheet] ChatService obtained, building AcceptedClientBottomSheet...');
+        // Parse courseId once and reuse
+        final parsedCourseId = int.tryParse(pickupCourse.courseId ?? '0') ?? 0;
 
         return AcceptedClientBottomSheet(
             key: ValueKey('pickup-${pickupCourse.courseId}'),
             client: pickupCourse,
             clientId: pickupCourse.clientId,
-            courseId: int.tryParse(pickupCourse.courseId!)!,
+            courseId: parsedCourseId,
             currentLatitude: viewModel.currentPosiction?.latitude,
             currentLongitude: viewModel.currentPosiction?.longitude,
             onCancelRide: () {
               // Annuler la course acceptée - PAS de WidgetsBinding ici
               if (pickupCourse.hasValidCourseId) {
-                viewModel.rejectCourseService(
-                    int.tryParse(pickupCourse.courseId!)!, context);
+                viewModel.rejectCourseService(parsedCourseId, context);
                 viewModel.removeCourse(pickupCourse.courseId!);
               }
               viewModel.setBottomSheetType(BottomSheetAppType.none);
@@ -498,31 +465,20 @@ class CoursesView extends StackedView<CoursesViewModel> {
             onStartRide: () {
               // PAS de WidgetsBinding ici
               viewModel.startTrip();
-              viewModel.startCourseService(
-                  int.tryParse(pickupCourse.courseId!)!, context);
+              viewModel.startCourseService(parsedCourseId, context);
             },
             onCallClients: () {
               // Logique d'appel du client
             },
             onChatClients: () async {
-              if (pickupCourse.clientId == null ||
-                  pickupCourse.clientId!.isEmpty) {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(
-                    content:
-                        Text('Impossible d\'ouvrir le chat pour le moment'),
-                    backgroundColor: Colors.red,
-                  ),
-                );
-                return;
-              }
-
+              // No restrictions - chat can always be opened with the course ID
+              print("📱 [CHAT] Opening chat with courseId: $parsedCourseId");
               await _openChatWithLoading(
                 context: context,
-                clientId: pickupCourse.clientId!,
+                clientId: pickupCourse.clientId ?? '',
                 clientName: pickupCourse.name,
-                courseId: pickupCourse.courseId,
-                chatService: chatService,
+                courseId: parsedCourseId.toString(),
+                clientPhone: null, // Phone not available in pickup course model
               );
             },
             onDenyRide: () async {
@@ -954,11 +910,25 @@ class _StatusToggleWidgetState extends State<_StatusToggleWidget> {
                   );
                 },
                 child: Container(
-                  padding: const EdgeInsets.all(8),
-                  child: const Icon(
-                    Icons.add_circle_outline_rounded,
-                    color: Colors.black,
-                    size: 32,
+                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                  child: const Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(
+                        Icons.add_location_alt,
+                        color: Colors.black,
+                        size: 26,
+                      ),
+                      SizedBox(width: 6),
+                      Text(
+                        'PICKUP',
+                        style: TextStyle(
+                          color: Colors.black,
+                          fontSize: 18,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ],
                   ),
                 ),
               ),

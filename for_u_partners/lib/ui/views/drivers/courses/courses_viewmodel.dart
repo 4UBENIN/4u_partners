@@ -131,6 +131,7 @@ class CoursesViewModel extends BaseViewModel {
   final navigationService = locator<NavigationService>();
   final _locationService = locator<LocationTrackingService>();
   StreamSubscription<loc.LocationData>? _locationStreamSubscription;
+  int _locationUpdateFailureCount = 0;
 
   static const String _googleApiKey = 'AIzaSyAVtrvygnbsdnL6VMEJS_DB0JfEa0piHqM';
   static const Set<String> _allowedCourseStatuses = {
@@ -436,6 +437,24 @@ class CoursesViewModel extends BaseViewModel {
         // Update driver marker position smoothly
         _updateDriverMarkerPosition(locationData);
 
+        // Auto-restore backend callbacks if we still have an active course
+        if (_currentCourse != null &&
+            !_currentCourse!.isPickupCourse &&
+            !_locationService.isBackendUpdatesEnabled) {
+          final courseId = _currentCourse!.courseId;
+          final courseNumericId = courseId != null ? int.tryParse(courseId) : null;
+          if (courseNumericId != null) {
+            debugPrint('🔄 [LocationTracking] Auto-restoring backend callback for active course $courseNumericId');
+            _enableBackendLocationUpdatesForCourse(
+              courseNumericId: courseNumericId,
+              courseId: courseId!,
+              sourceTag: 'auto_restore',
+            );
+          } else {
+            debugPrint('⚠️ [LocationTracking] Cannot auto-restore backend callback - invalid courseId: $courseId');
+          }
+        }
+
         print(
             "📍 Location updated: ${locationData.latitude}, ${locationData.longitude}");
       },
@@ -443,6 +462,81 @@ class CoursesViewModel extends BaseViewModel {
         print('❌ Location stream error: $error');
       },
     );
+  }
+
+  // Centralized backend location update registration to avoid losing callbacks
+  void _enableBackendLocationUpdatesForCourse({
+    required int courseNumericId,
+    required String courseId,
+    required String sourceTag,
+  }) {
+    final current = _currentCourse;
+
+    if (current == null) {
+      debugPrint('⚠️ [$sourceTag] Cannot enable backend updates - _currentCourse is null');
+      return;
+    }
+
+    if (current.courseId != courseId) {
+      debugPrint('⚠️ [$sourceTag] Course mismatch - expected $courseId, current ${current.courseId}');
+      return;
+    }
+
+    if (current.isPickupCourse) {
+      debugPrint('⚡ [$sourceTag] Pickup course detected - backend updates are skipped');
+      return;
+    }
+
+    if (_locationService.isBackendUpdatesEnabled &&
+        _locationService.activeCourseId == courseNumericId) {
+      debugPrint('ℹ️ [$sourceTag] Backend updates already enabled for course $courseNumericId');
+      return;
+    }
+
+    _locationService.enableBackendUpdates(
+      courseId: courseNumericId,
+      onLocationUpdate: (locationData) {
+        debugPrint('🔔 [$sourceTag CALLBACK] ========== LOCATION CALLBACK TRIGGERED ==========');
+        debugPrint('🔔 [$sourceTag CALLBACK] Course ID: $courseNumericId');
+        debugPrint('🔔 [$sourceTag CALLBACK] Latitude: ${locationData.latitude}');
+        debugPrint('🔔 [$sourceTag CALLBACK] Longitude: ${locationData.longitude}');
+        debugPrint('🔔 [$sourceTag CALLBACK] Accuracy: ${locationData.accuracy}');
+        debugPrint('🔔 [$sourceTag CALLBACK] Heading: ${locationData.heading}');
+        debugPrint('🔔 [$sourceTag CALLBACK] Speed: ${locationData.speed}');
+
+        if (locationData.latitude != null && locationData.longitude != null) {
+          // Ensure we are still on the same course
+          if (_currentCourse?.courseId != courseId) {
+            debugPrint('⚠️ [$sourceTag CALLBACK] Course changed - skipping update (expected $courseId, current ${_currentCourse?.courseId})');
+            return;
+          }
+
+          driverservice.sendLocationUpdate(
+            courseId: courseNumericId,
+            latitude: locationData.latitude!,
+            longitude: locationData.longitude!,
+            heading: locationData.heading,
+            speed: locationData.speed,
+            accuracy: locationData.accuracy,
+          ).then((success) {
+            if (success) {
+              _locationUpdateFailureCount = 0;
+              debugPrint('✅ [$sourceTag CALLBACK] API call successful for course $courseNumericId');
+            } else {
+              _locationUpdateFailureCount++;
+              debugPrint('❌ [$sourceTag CALLBACK] API call failed (count: $_locationUpdateFailureCount) for course $courseNumericId');
+            }
+          }).catchError((error) {
+            _locationUpdateFailureCount++;
+            debugPrint('❌ [$sourceTag CALLBACK] API call exception (count: $_locationUpdateFailureCount): $error');
+          });
+        } else {
+          debugPrint('⚠️ [$sourceTag CALLBACK] CRITICAL: Location data has NULL lat/lng!');
+          debugPrint('⚠️ [$sourceTag CALLBACK] GPS provider is not returning coordinates');
+        }
+      },
+    );
+    debugPrint('✅ [$sourceTag] Backend location updates enabled for course $courseNumericId');
   }
 
   // Update driver marker position without full reload
@@ -982,68 +1076,11 @@ class CoursesViewModel extends BaseViewModel {
       } else {
         debugPrint('🌐🌐🌐 [acceptCourse] REGULAR COURSE: Enabling backend location updates');
         debugPrint('🌐 [acceptCourse] Course ID: $courseNumericId');
-        _locationService.enableBackendUpdates(
-        courseId: courseNumericId,
-        onLocationUpdate: (locationData) {
-          debugPrint('🔔 [CALLBACK] ========== LOCATION CALLBACK TRIGGERED ==========');
-          debugPrint('🔔 [CALLBACK] Course ID: $courseNumericId');
-          debugPrint('🔔 [CALLBACK] Latitude: ${locationData.latitude}');
-          debugPrint('🔔 [CALLBACK] Longitude: ${locationData.longitude}');
-          debugPrint('🔔 [CALLBACK] Accuracy: ${locationData.accuracy}');
-          debugPrint('🔔 [CALLBACK] Heading: ${locationData.heading}');
-          debugPrint('🔔 [CALLBACK] Speed: ${locationData.speed}');
-
-          if (locationData.latitude != null && locationData.longitude != null) {
-            // ✅ Additional safety check: Only send if course is still current
-            if (_currentCourse?.courseId != courseId.toString()) {
-              debugPrint('⚠️ [CALLBACK] Course has changed or ended - skipping update');
-              debugPrint('⚠️ [CALLBACK] Expected: $courseId, Current: ${_currentCourse?.courseId}');
-              debugPrint('⚠️ [CALLBACK] Disabling backend updates...');
-              _locationService.disableBackendUpdates();
-              return;
-            }
-
-            debugPrint('✅ [CALLBACK] Calling sendLocationUpdate API...');
-            debugPrint('✅ [CALLBACK] Request details:');
-            debugPrint('   - Course ID: $courseNumericId');
-            debugPrint('   - Latitude: ${locationData.latitude}');
-            debugPrint('   - Longitude: ${locationData.longitude}');
-            debugPrint('   - Heading: ${locationData.heading}');
-            debugPrint('   - Speed: ${locationData.speed}');
-            debugPrint('   - Accuracy: ${locationData.accuracy}');
-
-            driverservice.sendLocationUpdate(
-              courseId: courseNumericId,
-              latitude: locationData.latitude!,
-              longitude: locationData.longitude!,
-              heading: locationData.heading,
-              speed: locationData.speed,
-              accuracy: locationData.accuracy,
-            ).then((success) {
-              if (success) {
-                debugPrint('✅ [CALLBACK] API call successful for course $courseNumericId');
-              } else {
-                debugPrint('❌ [CALLBACK] ========== API CALL FAILED ==========');
-                debugPrint('❌ [CALLBACK] Course ID: $courseNumericId');
-                debugPrint('❌ [CALLBACK] REASON: Server returned non-200 status');
-                debugPrint('❌ [CALLBACK] This usually means the course has ended or changed status');
-                debugPrint('❌ [CALLBACK] Disabling backend updates to prevent further errors...');
-                _locationService.disableBackendUpdates();
-              }
-            }).catchError((error) {
-              debugPrint('❌ [CALLBACK] ========== API CALL EXCEPTION ==========');
-              debugPrint('❌ [CALLBACK] Exception: $error');
-              debugPrint('❌ [CALLBACK] Course ID: $courseNumericId');
-              debugPrint('❌ [CALLBACK] Disabling backend updates...');
-              _locationService.disableBackendUpdates();
-            });
-          } else {
-            debugPrint('⚠️ [CALLBACK] CRITICAL: Location data has NULL lat/lng!');
-            debugPrint('⚠️ [CALLBACK] This means GPS is not providing coordinates');
-          }
-        },
-      );
-        print('✅ [acceptCourse] Backend location updates enabled for course $courseNumericId');
+        _enableBackendLocationUpdatesForCourse(
+          courseNumericId: courseNumericId,
+          courseId: courseId,
+          sourceTag: 'acceptCourse',
+        );
       }
     } else {
       print('⚠️ [acceptCourse] Cannot enable backend updates: _currentCourse is null or changed');
@@ -2140,6 +2177,7 @@ class CoursesViewModel extends BaseViewModel {
 
     // 🌐 CRITICAL: Disable backend location updates FIRST
     _locationService.disableBackendUpdates();
+    _locationUpdateFailureCount = 0;
     debugPrint('🌐 [_resetCourseState] Backend location updates DISABLED');
     debugPrint('🌐 [_resetCourseState] Previous course ID: $currentCourseId');
 
@@ -2734,54 +2772,11 @@ class CoursesViewModel extends BaseViewModel {
           } else {
             debugPrint('🌐🌐🌐 [Restoration] REGULAR COURSE: Enabling backend location updates');
             debugPrint('🌐 [Restoration] Course ID: $courseNumericId');
-            _locationService.enableBackendUpdates(
-            courseId: courseNumericId,
-            onLocationUpdate: (locationData) {
-              debugPrint('🔔 [RESTORATION CALLBACK] ========== LOCATION CALLBACK TRIGGERED ==========');
-              debugPrint('🔔 [RESTORATION CALLBACK] Course ID: $courseNumericId');
-              debugPrint('🔔 [RESTORATION CALLBACK] Latitude: ${locationData.latitude}');
-              debugPrint('🔔 [RESTORATION CALLBACK] Longitude: ${locationData.longitude}');
-              debugPrint('🔔 [RESTORATION CALLBACK] Accuracy: ${locationData.accuracy}');
-              debugPrint('🔔 [RESTORATION CALLBACK] Heading: ${locationData.heading}');
-              debugPrint('🔔 [RESTORATION CALLBACK] Speed: ${locationData.speed}');
-
-              if (locationData.latitude != null && locationData.longitude != null) {
-                // ✅ Additional safety check: Only send if course is still current
-                if (_currentCourse?.courseId != courseId) {
-                  debugPrint('⚠️ [RESTORATION CALLBACK] Course has changed or ended - skipping update');
-                  debugPrint('⚠️ [RESTORATION CALLBACK] Expected: $courseId, Current: ${_currentCourse?.courseId}');
-                  debugPrint('⚠️ [RESTORATION CALLBACK] Disabling backend updates...');
-                  _locationService.disableBackendUpdates();
-                  return;
-                }
-
-                debugPrint('✅ [RESTORATION CALLBACK] Calling sendLocationUpdate API...');
-                driverservice.sendLocationUpdate(
-                  courseId: courseNumericId,
-                  latitude: locationData.latitude!,
-                  longitude: locationData.longitude!,
-                  heading: locationData.heading,
-                  speed: locationData.speed,
-                  accuracy: locationData.accuracy,
-                ).then((success) {
-                  if (success) {
-                    debugPrint('✅ [RESTORATION CALLBACK] API call successful');
-                  } else {
-                    debugPrint('❌ [RESTORATION CALLBACK] API call FAILED');
-                    debugPrint('❌ [RESTORATION CALLBACK] Course likely ended/changed - disabling updates');
-                    _locationService.disableBackendUpdates();
-                  }
-                }).catchError((error) {
-                  debugPrint('❌ [RESTORATION CALLBACK] API call threw exception: $error');
-                  debugPrint('❌ [RESTORATION CALLBACK] Disabling backend updates...');
-                  _locationService.disableBackendUpdates();
-                });
-              } else {
-                debugPrint('⚠️ [RESTORATION CALLBACK] CRITICAL: Location data has NULL lat/lng!');
-                debugPrint('⚠️ [RESTORATION CALLBACK] This means GPS is not providing coordinates');
-              }
-            },
-          );
+            _enableBackendLocationUpdatesForCourse(
+              courseNumericId: courseNumericId,
+              courseId: courseId,
+              sourceTag: 'restoration',
+            );
             debugPrint('✅ [Restoration] Backend location updates enabled for course $courseNumericId');
           }
         } else {

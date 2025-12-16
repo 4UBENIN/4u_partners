@@ -7,11 +7,12 @@ import 'dart:async' as _i20;
 import 'dart:io' as _i24;
 import 'dart:ui' as _i21;
 
-import 'package:cloud_firestore/cloud_firestore.dart' as _i34;
+import 'package:cloud_firestore/cloud_firestore.dart' as _i35;
 import 'package:dio/dio.dart' as _i3;
 import 'package:flutter/material.dart' as _i19;
 import 'package:for_u_partners/app/models/course_model.dart' as _i5;
 import 'package:for_u_partners/app/models/login_model.dart' as _i25;
+import 'package:for_u_partners/app/models/parrainage_model.dart' as _i33;
 import 'package:for_u_partners/app/models/pressing_depot_models/depot_detail_model.dart'
     as _i11;
 import 'package:for_u_partners/app/models/pressing_depot_models/depot_model.dart'
@@ -37,9 +38,9 @@ import 'package:for_u_partners/models/daily_stats_model.dart' as _i6;
 import 'package:for_u_partners/models/global_stats_model.dart' as _i7;
 import 'package:for_u_partners/models/user_model.dart' as _i8;
 import 'package:for_u_partners/services/auth_service.dart' as _i23;
-import 'package:for_u_partners/services/chat_service.dart' as _i33;
+import 'package:for_u_partners/services/chat_service.dart' as _i34;
 import 'package:for_u_partners/services/driver_service.dart' as _i27;
-import 'package:for_u_partners/services/pickers_service.dart' as _i35;
+import 'package:for_u_partners/services/pickers_service.dart' as _i36;
 import 'package:for_u_partners/services/pressing_service.dart' as _i28;
 import 'package:for_u_partners/services/sharedpreferences_service.dart' as _i4;
 import 'package:for_u_partners/services/wallet_service.dart' as _i32;
@@ -1146,6 +1147,37 @@ class MockSharedpreferencesService extends _i1.Mock
         returnValue: _i20.Future<void>.value(),
         returnValueForMissingStub: _i20.Future<void>.value(),
       ) as _i20.Future<void>);
+
+  @override
+  _i20.Future<void> saveActiveVehicleType(String? vehicleType) =>
+      (super.noSuchMethod(
+        Invocation.method(
+          #saveActiveVehicleType,
+          [vehicleType],
+        ),
+        returnValue: _i20.Future<void>.value(),
+        returnValueForMissingStub: _i20.Future<void>.value(),
+      ) as _i20.Future<void>);
+
+  @override
+  _i20.Future<String?> getActiveVehicleType() => (super.noSuchMethod(
+        Invocation.method(
+          #getActiveVehicleType,
+          [],
+        ),
+        returnValue: _i20.Future<String?>.value(),
+        returnValueForMissingStub: _i20.Future<String?>.value(),
+      ) as _i20.Future<String?>);
+
+  @override
+  _i20.Future<void> removeActiveVehicleType() => (super.noSuchMethod(
+        Invocation.method(
+          #removeActiveVehicleType,
+          [],
+        ),
+        returnValue: _i20.Future<void>.value(),
+        returnValueForMissingStub: _i20.Future<void>.value(),
+      ) as _i20.Future<void>);
 }
 
 /// A class which mocks [AuthService].
@@ -1414,10 +1446,36 @@ class MockDriverService extends _i1.Mock implements _i27.DriverService {
       ) as _i20.Future<void>);
 
   @override
+  _i20.Future<Map<String, dynamic>> requestPause(int? courseId) =>
+      (super.noSuchMethod(
+        Invocation.method(
+          #requestPause,
+          [courseId],
+        ),
+        returnValue:
+            _i20.Future<Map<String, dynamic>>.value(<String, dynamic>{}),
+        returnValueForMissingStub:
+            _i20.Future<Map<String, dynamic>>.value(<String, dynamic>{}),
+      ) as _i20.Future<Map<String, dynamic>>);
+
+  @override
   _i20.Future<Map<String, dynamic>> startPause(int? courseId) =>
       (super.noSuchMethod(
         Invocation.method(
           #startPause,
+          [courseId],
+        ),
+        returnValue:
+            _i20.Future<Map<String, dynamic>>.value(<String, dynamic>{}),
+        returnValueForMissingStub:
+            _i20.Future<Map<String, dynamic>>.value(<String, dynamic>{}),
+      ) as _i20.Future<Map<String, dynamic>>);
+
+  @override
+  _i20.Future<Map<String, dynamic>> checkPauseStatus(int? courseId) =>
+      (super.noSuchMethod(
+        Invocation.method(
+          #checkPauseStatus,
           [courseId],
         ),
         returnValue:
@@ -1440,6 +1498,32 @@ class MockDriverService extends _i1.Mock implements _i27.DriverService {
       ) as _i20.Future<Map<String, dynamic>>);
 
   @override
+  _i20.Future<Map<String, dynamic>> startPickupPause(int? courseId) =>
+      (super.noSuchMethod(
+        Invocation.method(
+          #startPickupPause,
+          [courseId],
+        ),
+        returnValue:
+            _i20.Future<Map<String, dynamic>>.value(<String, dynamic>{}),
+        returnValueForMissingStub:
+            _i20.Future<Map<String, dynamic>>.value(<String, dynamic>{}),
+      ) as _i20.Future<Map<String, dynamic>>);
+
+  @override
+  _i20.Future<Map<String, dynamic>> stopPickupPause(int? courseId) =>
+      (super.noSuchMethod(
+        Invocation.method(
+          #stopPickupPause,
+          [courseId],
+        ),
+        returnValue:
+            _i20.Future<Map<String, dynamic>>.value(<String, dynamic>{}),
+        returnValueForMissingStub:
+            _i20.Future<Map<String, dynamic>>.value(<String, dynamic>{}),
+      ) as _i20.Future<Map<String, dynamic>>);
+
+  @override
   _i20.Future<void> completeCourse(int? courseId) => (super.noSuchMethod(
         Invocation.method(
           #completeCourse,
@@ -1448,6 +1532,55 @@ class MockDriverService extends _i1.Mock implements _i27.DriverService {
         returnValue: _i20.Future<void>.value(),
         returnValueForMissingStub: _i20.Future<void>.value(),
       ) as _i20.Future<void>);
+
+  @override
+  _i20.Future<Map<String, dynamic>> completePickupCourse(
+    int? courseId, {
+    double? penalite = 0.0,
+  }) =>
+      (super.noSuchMethod(
+        Invocation.method(
+          #completePickupCourse,
+          [courseId],
+          {#penalite: penalite},
+        ),
+        returnValue:
+            _i20.Future<Map<String, dynamic>>.value(<String, dynamic>{}),
+        returnValueForMissingStub:
+            _i20.Future<Map<String, dynamic>>.value(<String, dynamic>{}),
+      ) as _i20.Future<Map<String, dynamic>>);
+
+  @override
+  _i20.Future<Map<String, dynamic>> estimatePickupCourse({
+    required String? typeCourse,
+    required double? departLat,
+    required double? departLng,
+    required double? arriveeLat,
+    required double? arriveeLng,
+    required int? dureeMin,
+    required String? adresseDepart,
+    required String? adresseArrivee,
+  }) =>
+      (super.noSuchMethod(
+        Invocation.method(
+          #estimatePickupCourse,
+          [],
+          {
+            #typeCourse: typeCourse,
+            #departLat: departLat,
+            #departLng: departLng,
+            #arriveeLat: arriveeLat,
+            #arriveeLng: arriveeLng,
+            #dureeMin: dureeMin,
+            #adresseDepart: adresseDepart,
+            #adresseArrivee: adresseArrivee,
+          },
+        ),
+        returnValue:
+            _i20.Future<Map<String, dynamic>>.value(<String, dynamic>{}),
+        returnValueForMissingStub:
+            _i20.Future<Map<String, dynamic>>.value(<String, dynamic>{}),
+      ) as _i20.Future<Map<String, dynamic>>);
 
   @override
   _i20.Future<Map<String, dynamic>> getRideDetails(int? courseId) =>
@@ -1895,32 +2028,6 @@ class MockDriverService extends _i1.Mock implements _i27.DriverService {
         returnValueForMissingStub:
             _i20.Future<Map<String, dynamic>>.value(<String, dynamic>{}),
       ) as _i20.Future<Map<String, dynamic>>);
-
-  @override
-  _i20.Future<Map<String, dynamic>> startPickupPause(int? courseId) =>
-      (super.noSuchMethod(
-        Invocation.method(
-          #startPickupPause,
-          [courseId],
-        ),
-        returnValue:
-            _i20.Future<Map<String, dynamic>>.value(<String, dynamic>{}),
-        returnValueForMissingStub:
-            _i20.Future<Map<String, dynamic>>.value(<String, dynamic>{}),
-      ) as _i20.Future<Map<String, dynamic>>);
-
-  @override
-  _i20.Future<Map<String, dynamic>> stopPickupPause(int? courseId) =>
-      (super.noSuchMethod(
-        Invocation.method(
-          #stopPickupPause,
-          [courseId],
-        ),
-        returnValue:
-            _i20.Future<Map<String, dynamic>>.value(<String, dynamic>{}),
-        returnValueForMissingStub:
-            _i20.Future<Map<String, dynamic>>.value(<String, dynamic>{}),
-      ) as _i20.Future<Map<String, dynamic>>);
 }
 
 /// A class which mocks [PressingService].
@@ -2137,12 +2244,39 @@ class MockWalletService extends _i1.Mock implements _i32.WalletService {
           ),
         )),
       ) as _i20.Future<_i13.WalletModel>);
+
+  @override
+  _i20.Future<List<_i33.ParrainageModel>> getUncollectedBonuses() =>
+      (super.noSuchMethod(
+        Invocation.method(
+          #getUncollectedBonuses,
+          [],
+        ),
+        returnValue: _i20.Future<List<_i33.ParrainageModel>>.value(
+            <_i33.ParrainageModel>[]),
+        returnValueForMissingStub:
+            _i20.Future<List<_i33.ParrainageModel>>.value(
+                <_i33.ParrainageModel>[]),
+      ) as _i20.Future<List<_i33.ParrainageModel>>);
+
+  @override
+  _i20.Future<Map<String, dynamic>> collectBonus(int? parrainageId) =>
+      (super.noSuchMethod(
+        Invocation.method(
+          #collectBonus,
+          [parrainageId],
+        ),
+        returnValue:
+            _i20.Future<Map<String, dynamic>>.value(<String, dynamic>{}),
+        returnValueForMissingStub:
+            _i20.Future<Map<String, dynamic>>.value(<String, dynamic>{}),
+      ) as _i20.Future<Map<String, dynamic>>);
 }
 
 /// A class which mocks [ChatService].
 ///
 /// See the documentation for Mockito's code generation for more information.
-class MockChatService extends _i1.Mock implements _i33.ChatService {
+class MockChatService extends _i1.Mock implements _i34.ChatService {
   @override
   _i20.Future<Map<String, dynamic>?> getCurrentUserInfo() =>
       (super.noSuchMethod(
@@ -2201,17 +2335,17 @@ class MockChatService extends _i1.Mock implements _i33.ChatService {
       ) as _i20.Future<void>);
 
   @override
-  _i20.Stream<_i34.QuerySnapshot<Object?>> getMessages(
+  _i20.Stream<_i35.QuerySnapshot<Object?>> getMessages(
           String? conversationId) =>
       (super.noSuchMethod(
         Invocation.method(
           #getMessages,
           [conversationId],
         ),
-        returnValue: _i20.Stream<_i34.QuerySnapshot<Object?>>.empty(),
+        returnValue: _i20.Stream<_i35.QuerySnapshot<Object?>>.empty(),
         returnValueForMissingStub:
-            _i20.Stream<_i34.QuerySnapshot<Object?>>.empty(),
-      ) as _i20.Stream<_i34.QuerySnapshot<Object?>>);
+            _i20.Stream<_i35.QuerySnapshot<Object?>>.empty(),
+      ) as _i20.Stream<_i35.QuerySnapshot<Object?>>);
 
   @override
   _i20.Future<void> markMessagesAsRead({
@@ -2268,17 +2402,17 @@ class MockChatService extends _i1.Mock implements _i33.ChatService {
       ) as _i20.Future<void>);
 
   @override
-  _i20.Stream<_i34.DocumentSnapshot<Object?>> getTypingStatus(
+  _i20.Stream<_i35.DocumentSnapshot<Object?>> getTypingStatus(
           String? conversationId) =>
       (super.noSuchMethod(
         Invocation.method(
           #getTypingStatus,
           [conversationId],
         ),
-        returnValue: _i20.Stream<_i34.DocumentSnapshot<Object?>>.empty(),
+        returnValue: _i20.Stream<_i35.DocumentSnapshot<Object?>>.empty(),
         returnValueForMissingStub:
-            _i20.Stream<_i34.DocumentSnapshot<Object?>>.empty(),
-      ) as _i20.Stream<_i34.DocumentSnapshot<Object?>>);
+            _i20.Stream<_i35.DocumentSnapshot<Object?>>.empty(),
+      ) as _i20.Stream<_i35.DocumentSnapshot<Object?>>);
 
   @override
   bool isOtherUserTyping({
@@ -2322,7 +2456,7 @@ class MockChatService extends _i1.Mock implements _i33.ChatService {
 /// A class which mocks [PickersService].
 ///
 /// See the documentation for Mockito's code generation for more information.
-class MockPickersService extends _i1.Mock implements _i35.PickersService {
+class MockPickersService extends _i1.Mock implements _i36.PickersService {
   @override
   _i20.Future<Map<String, String>> getAuthenticatedHeaders() =>
       (super.noSuchMethod(

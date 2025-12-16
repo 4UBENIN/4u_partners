@@ -44,10 +44,21 @@ class ChatService {
     String? tripId,
   }) async {
     try {
+      print('📱 [CHAT_SERVICE] createOrGetConversation called');
+      print('📱 [CHAT_SERVICE] currentUserId: $currentUserId');
+      print('📱 [CHAT_SERVICE] clientId: $clientId');
+      print('📱 [CHAT_SERVICE] clientName: $clientName');
+      print('📱 [CHAT_SERVICE] tripId: $tripId');
+
+      // IMPORTANT: Ensure both users have Firestore documents
+      await _ensureUserDocumentExists(clientId, clientName, 'client');
+      print('✅ [CHAT_SERVICE] Client document verified/created');
+
       // Créer un ID de conversation unique basé sur les deux utilisateurs
       final List<String> participants = [currentUserId, clientId];
       participants.sort(); // Trier pour avoir toujours le même ordre
       final String conversationId = '${participants[0]}_${participants[1]}';
+      print('📱 [CHAT_SERVICE] conversationId: $conversationId');
 
       final conversationRef =
           _firestore.collection('conversations').doc(conversationId);
@@ -55,6 +66,7 @@ class ChatService {
       final conversationDoc = await conversationRef.get();
 
       if (!conversationDoc.exists) {
+        print('📱 [CHAT_SERVICE] Conversation does not exist, creating new one');
         // Créer une nouvelle conversation
         await conversationRef.set({
           'participants': participants,
@@ -70,7 +82,9 @@ class ChatService {
           'typingUsers': <String>[],
           'typingTimestamps': <String, dynamic>{},
         });
+        print('✅ [CHAT_SERVICE] Conversation created successfully');
       } else {
+        print('📱 [CHAT_SERVICE] Conversation already exists');
         // Si la conversation existe déjà mais n'a pas les champs typing, les ajouter
         final data = conversationDoc.data();
         if (data != null && !data.containsKey('typingUsers')) {
@@ -78,13 +92,54 @@ class ChatService {
             'typingUsers': <String>[],
             'typingTimestamps': <String, dynamic>{},
           });
+          print('✅ [CHAT_SERVICE] Added typing fields to existing conversation');
         }
       }
 
+      print('✅ [CHAT_SERVICE] Returning conversationId: $conversationId');
       return conversationId;
     } catch (e) {
-      print('Erreur création conversation: $e');
+      print('❌ [CHAT_SERVICE] Erreur création conversation: $e');
+      print('❌ [CHAT_SERVICE] Stack trace: ${StackTrace.current}');
       return null;
+    }
+  }
+
+  // Méthode helper pour s'assurer qu'un document utilisateur existe
+  Future<void> _ensureUserDocumentExists(
+      String userId, String userName, String role) async {
+    try {
+      print('📱 [CHAT_SERVICE] _ensureUserDocumentExists for userId: $userId');
+      final userDoc = _firestore.collection('users').doc(userId);
+      final docSnapshot = await userDoc.get();
+
+      if (!docSnapshot.exists) {
+        print('⚠️ [CHAT_SERVICE] User document does not exist, creating it');
+
+        // Parse the name into first and last name
+        final nameParts = userName.trim().split(' ');
+        final prenom = nameParts.isNotEmpty ? nameParts.first : '';
+        final nom = nameParts.length > 1 ? nameParts.sublist(1).join(' ') : '';
+
+        await userDoc.set({
+          'id': userId,
+          'prenom': prenom,
+          'nom': nom,
+          'role': role,
+          'createdAt': FieldValue.serverTimestamp(),
+          'lastSeen': FieldValue.serverTimestamp(),
+        });
+        print('✅ [CHAT_SERVICE] User document created for $userId');
+      } else {
+        print('✅ [CHAT_SERVICE] User document already exists for $userId');
+        // Update lastSeen
+        await userDoc.update({
+          'lastSeen': FieldValue.serverTimestamp(),
+        });
+      }
+    } catch (e) {
+      print('❌ [CHAT_SERVICE] Error ensuring user document exists: $e');
+      // Don't throw - we can still create the conversation even if this fails
     }
   }
 

@@ -204,11 +204,17 @@ class AuthService {
   Future<void> _syncUserToFirestore(Map<String, dynamic> userData, String type,
       String firestoreUserId) async {
     try {
+      print('🔥 [AUTH_SERVICE] _syncUserToFirestore called');
+      print('🔥 [AUTH_SERVICE] firestoreUserId (document ID): $firestoreUserId');
+      print('🔥 [AUTH_SERVICE] userData[id]: ${userData['id']}');
+      print('🔥 [AUTH_SERVICE] type: $type');
+
       final userDoc = _firestore.collection('users').doc(firestoreUserId);
       final docSnapshot = await userDoc.get();
 
+      // IMPORTANT: The 'id' field must match the document ID (firestoreUserId)
       Map<String, dynamic> baseUserData = {
-        'id': userData['id'],
+        'id': firestoreUserId, // Changed from userData['id'] to firestoreUserId
         'nom': userData['nom'] ?? '',
         'prenom': userData['prenom'] ?? '',
         'email': userData['email'] ?? '',
@@ -218,6 +224,11 @@ class AuthService {
         'lastSeen': FieldValue.serverTimestamp(),
       };
 
+      // Keep track of the original user ID if different
+      if (userData['id'].toString() != firestoreUserId) {
+        baseUserData['originalUserId'] = userData['id'];
+      }
+
       if (userData['conducteur'] != null) {
         baseUserData['conducteurId'] = userData['conducteur']['id'];
       }
@@ -226,6 +237,7 @@ class AuthService {
         baseUserData['createdAt'] = FieldValue.serverTimestamp();
         await userDoc.set(baseUserData);
         print('✅ Nouvel utilisateur créé dans Firestore: $firestoreUserId');
+        print('✅ Document ID: $firestoreUserId, id field: $firestoreUserId');
       } else {
         await userDoc.update({
           'lastSeen': FieldValue.serverTimestamp(),
@@ -235,6 +247,7 @@ class AuthService {
       }
     } catch (e) {
       print('❌ Erreur lors de la synchronisation Firestore: $e');
+      print('❌ Stack trace: ${StackTrace.current}');
     }
   }
 
@@ -798,9 +811,15 @@ class AuthService {
     String firestoreUserId,
   ) async {
     try {
+      print('🔥 [AUTH_SERVICE] _syncRegisteredUserToFirestore called');
+      print('🔥 [AUTH_SERVICE] firestoreUserId (document ID): $firestoreUserId');
+      print('🔥 [AUTH_SERVICE] userData[id]: ${userData['id']}');
+
       final userDoc = _firestore.collection('users').doc(firestoreUserId);
+
+      // IMPORTANT: The 'id' field must match the document ID (firestoreUserId)
       Map<String, dynamic> baseUserData = {
-        'id': userData['id'],
+        'id': firestoreUserId, // Changed from userData['id'] to firestoreUserId
         'nom': registrationModel.nom,
         'prenom': registrationModel.prenom ?? '',
         'email': registrationModel.email,
@@ -814,14 +833,21 @@ class AuthService {
         'dateNaissance': registrationModel.dateNaissance,
       };
 
+      // Keep track of the original user ID if different
+      if (userData['id'].toString() != firestoreUserId) {
+        baseUserData['originalUserId'] = userData['id'];
+      }
+
       if (userData['conducteur'] != null) {
         baseUserData['conducteurId'] = userData['conducteur']['id'];
       }
 
       await userDoc.set(baseUserData);
       print('✅ Nouvel utilisateur inscrit dans Firestore: $firestoreUserId');
+      print('✅ Document ID: $firestoreUserId, id field: $firestoreUserId');
     } catch (e) {
       print('❌ Erreur lors de la synchro Firestore: $e');
+      print('❌ Stack trace: ${StackTrace.current}');
     }
   }
 

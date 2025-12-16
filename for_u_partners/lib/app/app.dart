@@ -37,14 +37,21 @@ import 'package:for_u_partners/ui/views/pressing/notifications_pressing/notifica
 import 'package:for_u_partners/services/auth_service.dart';
 import 'package:for_u_partners/services/driver_service.dart';
 import 'package:for_u_partners/services/wallet_service.dart';
-import 'package:for_u_partners/services/chat_service.dart';
+// import 'package:for_u_partners/services/chat_service.dart'; // OLD Firestore-based chat
+import 'package:for_u_partners/services/chat_service_api.dart';
+import 'package:for_u_partners/repositories/chat_repository.dart';
+import 'package:for_u_partners/repositories/chat_repository_impl.dart';
 import 'package:for_u_partners/services/pickers_service.dart';
+import 'package:http/http.dart' as http;
 import 'package:for_u_partners/services/vehicle_service.dart';
 import 'package:for_u_partners/services/active_course_checker_service.dart';
 import 'package:for_u_partners/services/course_restoration_service.dart';
 import 'package:for_u_partners/services/arrival_state_service.dart';
 import 'package:for_u_partners/services/pause_state_service.dart';
 import 'package:for_u_partners/services/location_tracking_service.dart';
+import 'package:for_u_partners/services/payout_service.dart';
+import 'package:for_u_partners/ui/views/drivers/payout/create_payout_view.dart';
+import 'package:for_u_partners/ui/views/drivers/payout/payout_history_view.dart';
 // @stacked-import
 
 @StackedApp(
@@ -75,6 +82,8 @@ import 'package:for_u_partners/services/location_tracking_service.dart';
     MaterialRoute(page: DocumentsView),
     MaterialRoute(page: AddDocumentView),
     MaterialRoute(page: DocumentViewerView),
+    MaterialRoute(page: CreatePayoutView),
+    MaterialRoute(page: PayoutHistoryView),
 // @stacked-route
   ],
   dependencies: const [
@@ -86,7 +95,10 @@ import 'package:for_u_partners/services/location_tracking_service.dart';
     LazySingleton(classType: AuthService),
     LazySingleton(classType: DriverService),
     LazySingleton(classType: WalletService),
-    LazySingleton(classType: ChatService),
+    // OLD: LazySingleton(classType: ChatService), // Replaced by ChatServiceApi
+    // New Chat API dependencies
+    LazySingleton(classType: ChatRepositoryImpl, asType: ChatRepository),
+    LazySingleton(classType: ChatServiceApi),
     LazySingleton(classType: PickersService),
     LazySingleton(classType: VehicleService),
     LazySingleton(classType: ActiveCourseCheckerService),
@@ -94,6 +106,7 @@ import 'package:for_u_partners/services/location_tracking_service.dart';
     LazySingleton(classType: ArrivalStateService),
     LazySingleton(classType: PauseStateService),
     LazySingleton(classType: LocationTrackingService),
+    LazySingleton(classType: PayoutService),
     Singleton(classType: HomemainViewModel),
     Singleton(classType: vehicle_vm.MesVehiculesViewModel),
     Singleton(classType: DocumentsViewModel),

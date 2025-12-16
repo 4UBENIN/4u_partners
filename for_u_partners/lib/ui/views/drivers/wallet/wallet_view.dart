@@ -295,6 +295,14 @@ class WalletView extends StackedView<WalletViewModel> {
               onPressed: () => viewModel.rechargeWallet(context),
             ),
           ),
+          Expanded(
+            child: _buildActionButton(
+              icon: Icons.account_balance_wallet_rounded,
+              label: 'Payout',
+              color: const Color(0xFF34C759),
+              onPressed: () => viewModel.navigateToPayoutHistory(),
+            ),
+          ),
         ],
       ),
     );
