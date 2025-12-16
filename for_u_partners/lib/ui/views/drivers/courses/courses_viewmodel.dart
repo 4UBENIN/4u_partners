@@ -1444,8 +1444,9 @@ class CoursesViewModel extends BaseViewModel {
     }
   }
 
-  Future<void> completeCourseService(int courseId, BuildContext context) async {
+  Future<Map<String, dynamic>?> completeCourseService(int courseId, BuildContext context) async {
     bool canComplete = false;
+    Map<String, dynamic>? completionData;
     try {
       setBusy(true);
       print("🔄 Début fin course...");
@@ -1469,7 +1470,7 @@ class CoursesViewModel extends BaseViewModel {
             // Show the pause error dialog
             _showPauseErrorDialog(context);
             setBusy(false);
-            return; // Exit early, don't attempt to complete
+            return null; // Exit early, don't attempt to complete
           } else {
             print('✅ [PAUSE SYNC] Course is not paused, can proceed with completion');
           }
@@ -1485,10 +1486,10 @@ class CoursesViewModel extends BaseViewModel {
 
       if (isPickup) {
         print('⚡ [PICKUP] Completing pickup course $courseId via service');
-        await driverservice.completePickupCourse(courseId);
+        completionData = await driverservice.completePickupCourse(courseId);
       } else {
         print('🚗 [REGULAR] Completing regular course $courseId via service');
-        await driverservice.completeCourse(courseId);
+        completionData = await driverservice.completeCourse(courseId);
       }
 
       canComplete = true;
@@ -1523,6 +1524,7 @@ class CoursesViewModel extends BaseViewModel {
         setBottomSheetType(BottomSheetAppType.none);
       }
     }
+    return completionData;
   }
 
   void _showPauseErrorDialog(BuildContext context) {

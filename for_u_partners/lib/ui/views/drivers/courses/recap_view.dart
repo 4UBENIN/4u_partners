@@ -41,17 +41,65 @@ class _RecapitulatifCoursePageState extends State<RecapitulatifCoursePage> {
 
   // Méthode corrigée : on attend que completeCourseService se termine avant de fetch la facture
   Future<FactureCourse> _initializeData() async {
+    Map<String, dynamic>? completionData;
+    // D'abord on complète le service de course
     try {
-      // D'abord on complète le service de course
-      await widget.viewModel.completeCourseService(widget.courseId, context);
-
-      // Ensuite on récupère la facture
-      return await _driverService.fetchFactureCourse(widget.courseId);
+      completionData = await widget.viewModel.completeCourseService(widget.courseId, context);
     } catch (e) {
-      // Gestion d'erreur améliorée
-      print('Erreur lors de l\'initialisation: $e');
+      print('❌ Erreur lors de la finalisation de la course: $e');
       rethrow; // On relance l'erreur pour que le FutureBuilder puisse la capturer
     }
+
+    // Si la finalisation n'a rien retourné, on évite d'aller plus loin
+    if (completionData == null) {
+      throw Exception('La course n\'a pas pu être finalisée.');
+    }
+
+    // Ensuite on récupère la facture, avec un fallback en cas d'erreur serveur
+    try {
+      return await _driverService.fetchFactureCourse(widget.courseId);
+    } catch (e) {
+      print('⚠️ Erreur lors de la récupération de la facture, tentative de fallback: $e');
+      try {
+        final details = await _driverService.getCourseDetails(widget.courseId);
+        return _buildFallbackFacture(details, completionData);
+      } catch (fallbackError) {
+        print('❌ Échec du fallback facture: $fallbackError');
+        rethrow;
+      }
+    }
+  }
+
+  FactureCourse _buildFallbackFacture(
+      Map<String, dynamic> details, Map<String, dynamic>? completionData) {
+    num? parseNumber(dynamic value) {
+      if (value == null) return null;
+      if (value is num) return value;
+      if (value is String) return num.tryParse(value);
+      return null;
+    }
+
+    final pointDepart = (details['point_depart'] as Map<String, dynamic>?) ?? {};
+    final pointArrivee = (details['point_arrivee'] as Map<String, dynamic>?) ?? {};
+
+    return FactureCourse(
+      courseId: parseNumber(details['course_id'] ?? completionData?['course_id'] ?? widget.courseId)?.toInt() ?? widget.courseId,
+      adresseDepart: pointDepart['adresse'] ?? '',
+      adresseArrivee: pointArrivee['adresse'] ?? '',
+      distanceKm: parseNumber(details['distance_km'])?.toDouble() ?? 0.0,
+      dureeMin: parseNumber(completionData?['duree_min'])?.toInt() ?? 0,
+      montant: parseNumber(completionData?['finalAmount'] ?? completionData?['montant'] ?? details['montant'])?.toInt() ?? 0,
+      modePaiement: details['mode_paiement'] ?? completionData?['mode_paiement'] ?? 'Non disponible',
+      tarifParMinute: parseNumber(completionData?['tarif_par_minute'])?.toInt() ?? 0,
+      tarifParKm: parseNumber(completionData?['tarif_par_km'])?.toInt() ?? 0,
+      tempsAttente: parseNumber(completionData?['temps_attente'])?.toInt() ?? 0,
+      tempsPause: parseNumber(completionData?['temps_pause'])?.toInt() ?? 0,
+      montantAttente: parseNumber(completionData?['montant_attente'])?.toInt() ?? 0,
+      montantPause: parseNumber(completionData?['montant_pause'])?.toInt() ?? 0,
+      vehicule: details['vehicule'] ?? {},
+      chauffeur: details['chauffeur'] ?? {},
+      client: details['client'] ?? {},
+    );
   }
 
   @override

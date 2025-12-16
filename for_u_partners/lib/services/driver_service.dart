@@ -568,7 +568,7 @@ class DriverService {
   }
 
   // Terminer une course
-  Future<void> completeCourse(int courseId) async {
+  Future<Map<String, dynamic>> completeCourse(int courseId) async {
     print("Debut de la fin de la course dans le service");
     final token = await sharedPreferencesService.getToken();
     final url = Uri.parse(completeCourseUrl(courseId));
@@ -602,6 +602,12 @@ class DriverService {
           }
           throw Exception('Échec de la finalisation de la course');
         }
+      }
+      try {
+        // Retourner la réponse pour pouvoir réutiliser les montants/ids en fallback
+        return jsonDecode(response.body) as Map<String, dynamic>;
+      } catch (_) {
+        return {};
       }
     } catch (e) {
       debugPrint('Erreur lors de la finalisation de la course: $e');

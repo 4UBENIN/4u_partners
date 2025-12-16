@@ -31,24 +31,24 @@ class ChatServiceApi {
     return _typingController.stream;
   }
 
-  // Start polling messages every 2 seconds
+  // Start polling messages every 10 seconds (reduced to avoid rate limits)
   void _startMessagesPolling(int courseId) {
     _messagesPollingTimer?.cancel();
     _fetchMessages(courseId);
 
     _messagesPollingTimer = Timer.periodic(
-      const Duration(seconds: 2),
+      const Duration(seconds: 10),
       (_) => _fetchMessages(courseId),
     );
   }
 
-  // Start polling typing status every 2 seconds
+  // Start polling typing status every 10 seconds (reduced to avoid rate limits)
   void _startTypingPolling(int courseId) {
     _typingPollingTimer?.cancel();
     _fetchTypingStatus(courseId);
 
     _typingPollingTimer = Timer.periodic(
-      const Duration(seconds: 2),
+      const Duration(seconds: 10),
       (_) => _fetchTypingStatus(courseId),
     );
   }

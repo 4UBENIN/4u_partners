@@ -41,6 +41,11 @@ class _ChatPageState extends State<ChatPage> {
     // Listen to text changes
     _messageController.addListener(_onTextChanged);
 
+    // Scroll to bottom after initial load
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _scrollToBottom();
+    });
+
     print("📱 [CHAT_PAGE] Receiver Name: ${widget.receiverUserName}");
     print("📱 [CHAT_PAGE] Course ID: ${widget.courseId}");
     print("📱 [CHAT_PAGE] Driver Phone: ${widget.driverPhone}");
@@ -135,11 +140,16 @@ class _ChatPageState extends State<ChatPage> {
 
   void _scrollToBottom() {
     if (_scrollController.hasClients) {
-      _scrollController.animateTo(
-        0.0,
-        duration: const Duration(milliseconds: 300),
-        curve: Curves.easeOut,
-      );
+      // Use a short delay to ensure the list has been built
+      Future.delayed(const Duration(milliseconds: 100), () {
+        if (_scrollController.hasClients) {
+          _scrollController.animateTo(
+            _scrollController.position.maxScrollExtent,
+            duration: const Duration(milliseconds: 300),
+            curve: Curves.easeOut,
+          );
+        }
+      });
     }
   }
 
@@ -206,13 +216,15 @@ class _ChatPageState extends State<ChatPage> {
           ),
         ],
       ),
-      body: Column(
-        children: [
-          // Message list
-          Expanded(
-            child: StreamBuilder<List<ChatMessageEntity>>(
-              stream: _chatService.getMessagesStream(widget.courseId),
-              builder: (context, snapshot) {
+      body: Container(
+        color: Colors.grey[100], // Background color for chat area
+        child: Column(
+          children: [
+            // Message list
+            Expanded(
+              child: StreamBuilder<List<ChatMessageEntity>>(
+                stream: _chatService.getMessagesStream(widget.courseId),
+                builder: (context, snapshot) {
                 if (snapshot.connectionState == ConnectionState.waiting) {
                   return const Center(child: CircularProgressIndicator());
                 }
@@ -236,15 +248,17 @@ class _ChatPageState extends State<ChatPage> {
                   );
                 }
 
-                final messages = snapshot.data!;
+                // Sort messages chronologically (oldest first)
+                final sortedMessages = List<ChatMessageEntity>.from(snapshot.data!)
+                  ..sort((a, b) => a.createdAt.compareTo(b.createdAt));
 
                 return ListView.builder(
                   controller: _scrollController,
-                  reverse: true,
-                  padding: const EdgeInsets.all(16),
-                  itemCount: messages.length,
+                  reverse: false, // Changed to false for chronological order
+                  padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 8),
+                  itemCount: sortedMessages.length,
                   itemBuilder: (context, index) {
-                    final message = messages[index];
+                    final message = sortedMessages[index];
                     // For driver app, current user is the driver
                     final isCurrentUser = message.isFromDriver;
 
@@ -256,11 +270,11 @@ class _ChatPageState extends State<ChatPage> {
                     );
                   },
                 );
-              },
+                },
+              ),
             ),
-          ),
 
-          // Typing indicator at the bottom
+            // Typing indicator at the bottom
           StreamBuilder<TypingStatusEntity>(
             stream: _chatService.getTypingStatusStream(widget.courseId),
             builder: (context, snapshot) {
@@ -332,9 +346,10 @@ class _ChatPageState extends State<ChatPage> {
             },
           ),
 
-          // Message input
-          _buildMessageInput(),
-        ],
+            // Message input
+            _buildMessageInput(),
+          ],
+        ),
       ),
     );
   }
@@ -346,83 +361,73 @@ class _ChatPageState extends State<ChatPage> {
     required bool isRead,
   }) {
     return Padding(
-      padding: const EdgeInsets.only(bottom: 12),
-      child: Row(
-        mainAxisAlignment:
-            isCurrentUser ? MainAxisAlignment.end : MainAxisAlignment.start,
-        crossAxisAlignment: CrossAxisAlignment.end,
+      padding: EdgeInsets.only(
+        bottom: 8,
+        left: isCurrentUser ? 60 : 12,
+        right: isCurrentUser ? 12 : 60,
+      ),
+      child: Column(
+        crossAxisAlignment:
+            isCurrentUser ? CrossAxisAlignment.end : CrossAxisAlignment.start,
         children: [
-          if (!isCurrentUser) ...[
-            CircleAvatar(
-              radius: 16,
-              backgroundColor: primaryColor,
-              child: Text(
-                widget.receiverUserName.isNotEmpty
-                    ? widget.receiverUserName[0].toUpperCase()
-                    : 'C',
-                style: const TextStyle(
-                  color: Colors.white,
-                  fontSize: 12,
-                  fontWeight: FontWeight.bold,
-                ),
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+            decoration: BoxDecoration(
+              color: isCurrentUser ? primaryColor : Colors.white,
+              borderRadius: BorderRadius.circular(16).copyWith(
+                bottomLeft: isCurrentUser
+                    ? const Radius.circular(16)
+                    : const Radius.circular(4),
+                bottomRight: isCurrentUser
+                    ? const Radius.circular(4)
+                    : const Radius.circular(16),
               ),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withOpacity(0.08),
+                  blurRadius: 4,
+                  offset: const Offset(0, 2),
+                ),
+              ],
             ),
-            const SizedBox(width: 8),
-          ],
-          Flexible(
-            child: Container(
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-              decoration: BoxDecoration(
-                color: isCurrentUser ? primaryColor : Colors.grey[200],
-                borderRadius: BorderRadius.circular(18).copyWith(
-                  bottomLeft: isCurrentUser
-                      ? const Radius.circular(18)
-                      : const Radius.circular(4),
-                  bottomRight: isCurrentUser
-                      ? const Radius.circular(4)
-                      : const Radius.circular(18),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(
+                  message,
+                  style: TextStyle(
+                    color: isCurrentUser ? Colors.white : Colors.black87,
+                    fontSize: 15,
+                    height: 1.4,
+                  ),
                 ),
-              ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  TextComponent(
-                    message,
-                    textcolor: isCurrentUser ? Colors.white : Colors.black87,
-                    fontsize: 15,
-                  ),
-                  const SizedBox(height: 4),
-                  Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      TextComponent(
-                        _formatTime(timestamp),
-                        fontsize: 11,
-                        textcolor:
-                            isCurrentUser ? Colors.white70 : Colors.grey[600],
+                const SizedBox(height: 4),
+                Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Text(
+                      _formatTime(timestamp),
+                      style: TextStyle(
+                        fontSize: 11,
+                        color: isCurrentUser
+                            ? Colors.white.withOpacity(0.7)
+                            : Colors.grey[600],
                       ),
-                      if (isCurrentUser) ...[
-                        const SizedBox(width: 4),
-                        Icon(
-                          isRead ? Icons.done_all : Icons.done,
-                          size: 14,
-                          color: isRead ? Colors.blue[300] : Colors.white70,
-                        ),
-                      ],
+                    ),
+                    if (isCurrentUser) ...[
+                      const SizedBox(width: 4),
+                      Icon(
+                        isRead ? Icons.done_all : Icons.done,
+                        size: 14,
+                        color: isRead ? Colors.blue[200] : Colors.white.withOpacity(0.7),
+                      ),
                     ],
-                  ),
-                ],
-              ),
+                  ],
+                ),
+              ],
             ),
           ),
-          if (isCurrentUser) ...[
-            const SizedBox(width: 8),
-            CircleAvatar(
-              radius: 16,
-              backgroundColor: Colors.grey[300],
-              child: const Icon(Icons.person, size: 16, color: Colors.grey),
-            ),
-          ],
         ],
       ),
     );
