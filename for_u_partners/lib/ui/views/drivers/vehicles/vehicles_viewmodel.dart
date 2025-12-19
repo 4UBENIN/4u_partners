@@ -68,76 +68,55 @@ class MesVehiculesViewModel extends BaseViewModel {
         try {
           final data = jsonDecode(response.body);
           print('🔍 Données décodées: $data');
-          
-          if (data['vehicule'] != null) {
-            final vehicleData = Map<String, dynamic>.from(data['vehicule']);
-            final categorie = vehicleData['categorie']?.toString()?.toLowerCase() ?? 'standard';
-            
-            // Déterminer les valeurs des switches en fonction de la catégorie
-            bool basicValue = false;
-            bool premiumValue = false;
-            
-            if (categorie == 'standard') {
-              basicValue = true;
-              premiumValue = false;
-            } else if (categorie == 'premium') {
-              basicValue = false;
-              premiumValue = true;
-            } else if (categorie == 'vip') {
-              basicValue = false;
-              premiumValue = true; // VIP est considéré comme Premium+
-            }
-            
-            final vehicle = Vehicle(
-              id: vehicleData['id']?.toString() ?? '',
-              model: vehicleData['modele']?.toString() ?? 'Modèle non spécifié',
-              marque: vehicleData['marque']?.toString() ?? 'Marque inconnue',
-              immatriculation: vehicleData['immatriculation']?.toString() ?? '',
-              statut: vehicleData['statut']?.toString(),
-              categorie: categorie,
-              couleur: vehicleData['couleur']?.toString() ?? 'Noire',
-              type: vehicleData['type']?.toString(),
-              nombrePlaces: vehicleData['nombre_places'] as int?,
-              courseHeure: vehicleData['course_heure'] == true || vehicleData['course_heure'] == 1,
-              clim: vehicleData['clim'] == true || vehicleData['clim'] == 1,
-              basic: basicValue,
-              premium: premiumValue,
-            );
-            
-            print('ℹ️ Catégorie du véhicule: ${vehicle.categorie}');
-            print('ℹ️ Type du véhicule: ${vehicle.type}');
-            print('ℹ️ Nombre de places: ${vehicle.nombrePlaces}');
-            print('ℹ️ Services - Course à l\'heure: ${vehicle.courseHeure}, Clim: ${vehicle.clim}, Basic: ${vehicle.basic}, Premium: ${vehicle.premium}');
 
-            _vehicules = [vehicle];
-            _vehiculeActif = vehicle;
+          // Log success message if present
+          if (data['message'] != null) {
+            print('ℹ️ Message du serveur: ${data['message']}');
+          }
 
-            // Save vehicle type to SharedPreferences for marker selection
-            if (vehicle.type != null) {
-              await _saveVehicleType(vehicle.type!);
-            } else {
-              print('⚠️ [Vehicle] Type de véhicule est null, ne peut pas sauvegarder');
-            }
+          // Handle new API structure with vehicules (plural) containing actifs and en_attente arrays
+          if (data['vehicules'] != null) {
+            final vehiculesData = data['vehicules'];
+            final List<dynamic> actifs = vehiculesData['actifs'] ?? [];
+            final List<dynamic> enAttente = vehiculesData['en_attente'] ?? [];
 
-            print('✅ Véhicule récupéré: ID=${vehicle.id}, Modèle=${vehicle.model}, Statut="${vehicle.statut}"');
+            print('📊 Véhicules actifs: ${actifs.length}, En attente: ${enAttente.length}');
 
-            // Séparer les véhicules par statut
-            if (vehicle.statut?.toLowerCase() == 'en_attente') {
-              print('ℹ️ Le véhicule est en attente de validation');
-              _vehiculesEnAttente = [vehicle];
-              _vehiculesApprouves = [];
-            } else {
-              _vehiculesApprouves = [vehicle];
-              _vehiculesEnAttente = [];
-            }
-          } else if (data['message'] != null) {
-            _errorMessage = data['message'];
-            print('ℹ️ Message du serveur: $_errorMessage');
-            _vehicules = [];
             _vehiculesApprouves = [];
             _vehiculesEnAttente = [];
+            _vehicules = [];
+
+            // Process active vehicles
+            for (var vehicleData in actifs) {
+              final vehicle = _parseVehicle(vehicleData);
+              _vehiculesApprouves.add(vehicle);
+              _vehicules.add(vehicle);
+
+              // Set first active vehicle as active vehicle
+              if (_vehiculeActif == null) {
+                _vehiculeActif = vehicle;
+                if (vehicle.type != null) {
+                  await _saveVehicleType(vehicle.type!);
+                }
+              }
+            }
+
+            // Process pending vehicles
+            for (var vehicleData in enAttente) {
+              final vehicle = _parseVehicle(vehicleData);
+              _vehiculesEnAttente.add(vehicle);
+              _vehicules.add(vehicle);
+            }
+
+            if (_vehicules.isEmpty) {
+              _errorMessage = 'Aucun véhicule trouvé';
+              print('⚠️ Aucun véhicule trouvé dans la réponse');
+            } else {
+              print('✅ ${_vehicules.length} véhicule(s) récupéré(s): ${_vehiculesApprouves.length} actif(s), ${_vehiculesEnAttente.length} en attente');
+            }
           } else {
             _errorMessage = 'Aucun véhicule trouvé';
+            print('⚠️ Pas de données véhicules dans la réponse');
             _vehicules = [];
             _vehiculesApprouves = [];
             _vehiculesEnAttente = [];
@@ -177,6 +156,44 @@ class MesVehiculesViewModel extends BaseViewModel {
       print('❌ Erreur lors de la récupération du token: $e');
       rethrow;
     }
+  }
+
+  Vehicle _parseVehicle(Map<String, dynamic> vehicleData) {
+    final categorie = (vehicleData['categorie']?.toString() ?? 'standard').toLowerCase();
+
+    // Déterminer les valeurs des switches en fonction de la catégorie
+    bool basicValue = false;
+    bool premiumValue = false;
+
+    if (categorie == 'standard') {
+      basicValue = true;
+      premiumValue = false;
+    } else if (categorie == 'premium') {
+      basicValue = false;
+      premiumValue = true;
+    } else if (categorie == 'vip') {
+      basicValue = false;
+      premiumValue = true; // VIP est considéré comme Premium+
+    }
+
+    final vehicle = Vehicle(
+      id: vehicleData['id']?.toString() ?? '',
+      model: vehicleData['modele']?.toString() ?? 'Modèle non spécifié',
+      marque: vehicleData['marque']?.toString() ?? 'Marque inconnue',
+      immatriculation: vehicleData['immatriculation']?.toString() ?? '',
+      statut: vehicleData['statut']?.toString(),
+      categorie: categorie,
+      couleur: vehicleData['couleur']?.toString() ?? 'Noire',
+      type: vehicleData['type']?.toString(),
+      nombrePlaces: vehicleData['nombre_places'] as int?,
+      courseHeure: vehicleData['course_heure'] == true || vehicleData['course_heure'] == 1,
+      clim: vehicleData['clim'] == true || vehicleData['clim'] == 1,
+      basic: basicValue,
+      premium: premiumValue,
+    );
+
+    print('✅ Véhicule parsé: ID=${vehicle.id}, Modèle=${vehicle.model}, Statut="${vehicle.statut}", Catégorie=${vehicle.categorie}');
+    return vehicle;
   }
 
   void toggleApprovedExpanded() {

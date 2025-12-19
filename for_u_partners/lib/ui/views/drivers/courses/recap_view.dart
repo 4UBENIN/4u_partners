@@ -381,19 +381,37 @@ class _RecapitulatifCoursePageState extends State<RecapitulatifCoursePage> {
                               'Date', _dateFormat.format(DateTime.now())),
                           const Divider(height: 32),
 
+                          // Tarif de base (si disponible)
+                          if (facture.tarifBase != null && facture.tarifBase! > 0) ...[
+                            _buildCalculationRow(
+                              label: 'Tarif de base',
+                              calculation: 'Prise en charge',
+                              result: '${facture.tarifBase} FCFA',
+                            ),
+                            const SizedBox(height: 12),
+                          ],
+
                           // Distance avec calcul
                           _buildCalculationRow(
                             label: 'Distance parcourue',
-                            calculation: '${facture.distanceKm.toStringAsFixed(1)} km × ${facture.tarifParKm} FCFA',
-                            result: '${(facture.distanceKm * facture.tarifParKm).toStringAsFixed(0)} FCFA',
+                            calculation: facture.montantDistance != null
+                                ? '${facture.distanceKm.toStringAsFixed(1)} km'
+                                : '${facture.distanceKm.toStringAsFixed(1)} km × ${facture.tarifParKm} FCFA',
+                            result: facture.montantDistance != null
+                                ? '${facture.montantDistance} FCFA'
+                                : '${(facture.distanceKm * facture.tarifParKm).toStringAsFixed(0)} FCFA',
                           ),
                           const SizedBox(height: 12),
 
                           // Durée avec calcul
                           _buildCalculationRow(
                             label: 'Temps de course',
-                            calculation: '${facture.dureeMin} min × ${facture.tarifParMinute} FCFA',
-                            result: '${(facture.dureeMin * facture.tarifParMinute).toStringAsFixed(0)} FCFA',
+                            calculation: facture.montantMinute != null
+                                ? '${facture.dureeMin} min'
+                                : '${facture.dureeMin} min × ${facture.tarifParMinute} FCFA',
+                            result: facture.montantMinute != null
+                                ? '${facture.montantMinute} FCFA'
+                                : '${(facture.dureeMin * facture.tarifParMinute).toStringAsFixed(0)} FCFA',
                           ),
 
                           // Temps d'attente (si > 0)

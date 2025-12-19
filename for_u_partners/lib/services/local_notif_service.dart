@@ -19,7 +19,7 @@ class LocalNotificationService {
   );
 
   // Canaux de notification pour les chauffeurs
-  static const String _channelId = '4u_driver_notifications';
+  static const String _channelId = '4u_driver_notifications_v2'; // Updated to force channel recreation with new sound
   static const String _channelName = 'Notifications Chauffeur';
   static const String _channelDescription =
       'Notifications pour les chauffeurs (nouvelles courses, mises à jour, etc.)';
@@ -91,7 +91,7 @@ class LocalNotificationService {
       _channelId,
       _channelName,
       description: _channelDescription,
-      importance: Importance.high,
+      importance: Importance.max, // Maximum importance for loudest volume
       playSound: true,
       sound: RawResourceAndroidNotificationSound('car_horn_beep'),
       enableVibration: true,
@@ -167,14 +167,15 @@ class LocalNotificationService {
         _channelId,
         _channelName,
         channelDescription: _channelDescription,
-        importance: Importance.high,
-        priority: Priority.high,
+        importance: Importance.max, // Maximum importance for loudest volume
+        priority: Priority.max, // Maximum priority
         icon: '@mipmap/ic_launcher',
         color: const Color(0xFF184E9C),
         enableVibration: true,
         playSound: true,
         sound: const RawResourceAndroidNotificationSound('car_horn_beep'),
         timeoutAfter: const Duration(seconds: 30).inMilliseconds,
+        audioAttributesUsage: AudioAttributesUsage.notification,
         styleInformation: BigTextStyleInformation(
           'Nouvelle course disponible à $pickupAddress\n'
           'Prix: ${price.toStringAsFixed(2)}€ • Distance: ${distance}km',
@@ -191,6 +192,7 @@ class LocalNotificationService {
         sound: 'car_horn_beep.mp3',
         subtitle: 'Nouvelle course disponible',
         categoryIdentifier: 'NEW_COURSE',
+        interruptionLevel: InterruptionLevel.timeSensitive, // iOS: time-sensitive for maximum prominence
       );
 
       final details = NotificationDetails(

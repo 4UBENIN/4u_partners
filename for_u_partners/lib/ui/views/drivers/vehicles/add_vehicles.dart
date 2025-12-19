@@ -1,4 +1,5 @@
 import 'dart:io';
+import 'dart:convert';
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -96,6 +97,7 @@ class _AddVehiclesViewState extends State<AddVehiclesView> {
       annee: _anneeController.text.trim(),
       expirationCarteGrise: _expirationCarteGriseController.text.trim(),
       expirationAssurance: _expirationAssuranceController.text.trim(),
+      nombrePlaces: int.tryParse(_nombrePlacesController.text) ?? 4,
     );
   }
 
@@ -257,7 +259,7 @@ class _AddVehiclesViewState extends State<AddVehiclesView> {
                             onTap: () {
                               setState(() {
                                 viewModel.selectedVehicleType = 'tricycle';
-                                _nombrePlacesController.text = '3'; // 3 places pour un tricycle
+                                _nombrePlacesController.text = '2'; // 2 places pour un tricycle
                               });
                             },
                             child: Container(
@@ -436,15 +438,45 @@ class _AddVehiclesViewState extends State<AddVehiclesView> {
                     ),
                     const SizedBox(height: 20),
 
-                    // Nombre de places (défini automatiquement selon le type de véhicule)
+                    // Nombre de places (modifiable)
                     TextFormField(
                       controller: _nombrePlacesController,
-                      enabled: false, // Désactivé car défini automatiquement
+                      keyboardType: TextInputType.number,
+                      inputFormatters: [
+                        FilteringTextInputFormatter.digitsOnly,
+                        LengthLimitingTextInputFormatter(1),
+                      ],
                       decoration: _buildInputDecoration(
-                        'Nombre de places',
-                        'Défini automatiquement',
+                        'Nombre de places *',
+                        'Ex: 2, 3 ou 4',
                         Icons.people_outline,
+                      ).copyWith(
+                        helperText: 'Moto: 2 | Tricycle: 2-3 | Voiture: 4',
+                        helperStyle: TextStyle(fontSize: 11, color: Colors.grey[600]),
                       ),
+                      validator: (value) {
+                        if (value == null || value.trim().isEmpty) {
+                          return 'Le nombre de places est requis';
+                        }
+                        final places = int.tryParse(value);
+                        if (places == null || places < 1) {
+                          return 'Nombre invalide';
+                        }
+                        if (places > 4) {
+                          return 'Maximum 4 places';
+                        }
+                        // Validate based on vehicle type
+                        if (viewModel.selectedVehicleType == 'moto' && places != 2) {
+                          return 'Une moto doit avoir 2 places';
+                        }
+                        if (viewModel.selectedVehicleType == 'tricycle' && (places < 2 || places > 3)) {
+                          return 'Un tricycle doit avoir 2 ou 3 places';
+                        }
+                        return null;
+                      },
+                      onChanged: (value) {
+                        _formKey.currentState?.validate();
+                      },
                     ),
                     const SizedBox(height: 20),
 
@@ -866,6 +898,7 @@ class AddVehiclesViewModel extends ChangeNotifier {
     required String annee,
     required String expirationCarteGrise,
     required String expirationAssurance,
+    required int nombrePlaces,
   }) async {
     _isLoading = true;
     notifyListeners();
@@ -883,7 +916,7 @@ class AddVehiclesViewModel extends ChangeNotifier {
         immatriculation: vehicle.immatriculation,
         couleur: vehicle.couleur ?? 'Noire',
         type: vehicleType,
-        nombrePlaces: vehicle.courseHeure ? 2 : 4,
+        nombrePlaces: nombrePlaces,
         annee: annee,
         categorie: selectedCategory,
         carteGrise: carteGriseFile,
@@ -928,7 +961,8 @@ class AddVehiclesViewModel extends ChangeNotifier {
           return 'Authentification échouée. Reconnectez-vous.';
         }
         if (e.response?.statusCode == 422) {
-          return 'Données invalides. Vérifiez les informations saisies.';
+          // Extract specific validation errors from response
+          return _extractValidationErrors(e.response?.data);
         }
         if (e.response?.statusCode == 413) {
           return 'Les fichiers sont trop volumineux.';
@@ -940,6 +974,52 @@ class AddVehiclesViewModel extends ChangeNotifier {
         return 'Erreur de certificat de sécurité.';
       default:
         return 'Une erreur est survenue.';
+    }
+  }
+
+  String _extractValidationErrors(dynamic responseData) {
+    if (responseData == null) {
+      return 'Données invalides. Vérifiez les informations saisies.';
+    }
+
+    try {
+      // Handle both Map and String response data
+      Map<String, dynamic> data;
+      if (responseData is String) {
+        data = jsonDecode(responseData);
+      } else if (responseData is Map<String, dynamic>) {
+        data = responseData;
+      } else {
+        return 'Données invalides. Vérifiez les informations saisies.';
+      }
+
+      // Extract errors from the response
+      if (data['errors'] != null && data['errors'] is Map) {
+        final errors = data['errors'] as Map<String, dynamic>;
+        final errorMessages = <String>[];
+
+        errors.forEach((field, messages) {
+          if (messages is List && messages.isNotEmpty) {
+            // Add all error messages for this field
+            errorMessages.addAll(messages.map((msg) => msg.toString()));
+          }
+        });
+
+        if (errorMessages.isNotEmpty) {
+          // Join all error messages with line breaks
+          return errorMessages.join('\n');
+        }
+      }
+
+      // Fallback to main message if available
+      if (data['message'] != null) {
+        return data['message'].toString();
+      }
+
+      return 'Données invalides. Vérifiez les informations saisies.';
+    } catch (e) {
+      print('❌ Erreur lors de l\'extraction des erreurs de validation: $e');
+      return 'Données invalides. Vérifiez les informations saisies.';
     }
   }
 
@@ -965,20 +1045,34 @@ class AddVehiclesViewModel extends ChangeNotifier {
 
   void _showErrorSnackBar(BuildContext context, String message) {
     if (!context.mounted) return;
+
+    // Calculate duration based on message length (longer for multiline messages)
+    final lineCount = message.split('\n').length;
+    final duration = Duration(seconds: 4 + (lineCount > 1 ? 2 : 0));
+
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             const Icon(Icons.error_outline, color: Colors.white),
             const SizedBox(width: 12),
-            Expanded(child: Text(message)),
+            Expanded(
+              child: Text(
+                message,
+                style: const TextStyle(fontSize: 14),
+                maxLines: 10,
+                overflow: TextOverflow.visible,
+              ),
+            ),
           ],
         ),
         backgroundColor: Colors.red[600],
         behavior: SnackBarBehavior.floating,
         margin: const EdgeInsets.all(16),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-        duration: const Duration(seconds: 4),
+        duration: duration,
+        padding: const EdgeInsets.all(16),
       ),
     );
   }

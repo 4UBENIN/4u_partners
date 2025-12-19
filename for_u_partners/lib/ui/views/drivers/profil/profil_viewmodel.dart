@@ -11,7 +11,7 @@ import 'package:stacked/stacked.dart';
 import 'package:for_u_partners/app/app.router.dart';
 import 'package:for_u_partners/app/app.locator.dart';
 import 'package:stacked_services/stacked_services.dart';
-import 'package:file_picker/file_picker.dart';
+import 'package:image_picker/image_picker.dart';
 
 class ProfilViewModel extends BaseViewModel {
   final navigationService = locator<NavigationService>();
@@ -48,39 +48,89 @@ class ProfilViewModel extends BaseViewModel {
     ]);
   }
 
+  /// Sélectionne et upload une photo de profil
+  ///
+  /// Affiche un dialogue pour choisir entre la caméra ou la galerie,
+  /// puis optimise et upload l'image sélectionnée
   Future<void> pickAndUploadPhoto(BuildContext context) async {
     try {
-      // Utiliser le sélecteur natif (Android 13+ inclut caméra et galerie)
-      final result = await FilePicker.platform.pickFiles(
-        type: FileType.image,
-        allowMultiple: false,
+      debugPrint('🖼️ [PHOTO] Starting photo selection process...');
+
+      final picker = ImagePicker();
+
+      // 1. Afficher un dialogue pour choisir la source
+      final ImageSource? source = await showDialog<ImageSource>(
+        context: context,
+        builder: (BuildContext context) {
+          return AlertDialog(
+            title: const Text('Choisir une source'),
+            content: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                ListTile(
+                  leading: const Icon(Icons.photo_library),
+                  title: const Text('Galerie'),
+                  onTap: () => Navigator.pop(context, ImageSource.gallery),
+                ),
+                ListTile(
+                  leading: const Icon(Icons.camera_alt),
+                  title: const Text('Caméra'),
+                  onTap: () => Navigator.pop(context, ImageSource.camera),
+                ),
+              ],
+            ),
+          );
+        },
       );
 
-      if (result == null || result.files.single.path == null) return;
+      if (source == null) {
+        debugPrint('🖼️ [PHOTO] User cancelled source selection');
+        return;
+      }
 
-      final imageFile = File(result.files.single.path!);
+      debugPrint('🖼️ [PHOTO] Selected source: $source');
 
-      // Upload de la photo
+      // 2. Sélectionner l'image avec optimisation automatique
+      final XFile? pickedFile = await picker.pickImage(
+        source: source,
+        maxWidth: 1024, // Limite la largeur à 1024px
+        maxHeight: 1024, // Limite la hauteur à 1024px
+        imageQuality: 85, // Qualité de compression (0-100)
+      );
+
+      if (pickedFile == null) {
+        debugPrint('🖼️ [PHOTO] No image selected');
+        return;
+      }
+
+      final photoFile = File(pickedFile.path);
+      final fileSize = await photoFile.length();
+      debugPrint('🖼️ [PHOTO] Image selected: ${pickedFile.path}');
+      debugPrint('🖼️ [PHOTO] Image size: ${(fileSize / 1024).toStringAsFixed(2)} KB');
+
+      // 3. Upload de la photo
       _isUploadingPhoto = true;
       notifyListeners();
 
-      await _profilePhotoService.updateProfilePhoto(imageFile);
+      await _profilePhotoService.updateProfilePhoto(photoFile, context: context);
 
-      // Mettre à jour l'utilisateur avec la nouvelle URL
+      // 4. Mettre à jour l'utilisateur avec la nouvelle URL
+      debugPrint('🖼️ [PHOTO] Refreshing user profile...');
       await loadUserProfile();
 
       _isUploadingPhoto = false;
       notifyListeners();
 
-      //  Afficher le SnackBar APRÈS avoir mis à jour l'état
+      // 5. Afficher le SnackBar de succès APRÈS avoir mis à jour l'état
       if (context.mounted) {
         _showSuccessSnackBar(context, 'Photo de profil mise à jour avec succès');
       }
     } catch (e) {
+      debugPrint('❌ [PHOTO ERROR] Failed to update photo: $e');
       _isUploadingPhoto = false;
       notifyListeners();
 
-      //  Vérifier que le context est toujours monté
+      // Vérifier que le context est toujours monté
       if (context.mounted) {
         _showErrorSnackBar(context, 'Erreur lors de la mise à jour de la photo: $e');
       }

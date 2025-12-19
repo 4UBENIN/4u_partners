@@ -52,6 +52,8 @@ import 'package:for_u_partners/services/location_tracking_service.dart';
 import 'package:for_u_partners/services/payout_service.dart';
 import 'package:for_u_partners/ui/views/drivers/payout/create_payout_view.dart';
 import 'package:for_u_partners/ui/views/drivers/payout/payout_history_view.dart';
+import 'package:for_u_partners/ui/views/drivers/assistance/assistance_view.dart';
+import 'package:for_u_partners/ui/views/drivers/statistiques/statistiques_view.dart';
 // @stacked-import
 
 @StackedApp(
@@ -84,6 +86,8 @@ import 'package:for_u_partners/ui/views/drivers/payout/payout_history_view.dart'
     MaterialRoute(page: DocumentViewerView),
     MaterialRoute(page: CreatePayoutView),
     MaterialRoute(page: PayoutHistoryView),
+    MaterialRoute(page: AssistanceTechniqueView),
+    MaterialRoute(page: StatistiquesView),
 // @stacked-route
   ],
   dependencies: const [

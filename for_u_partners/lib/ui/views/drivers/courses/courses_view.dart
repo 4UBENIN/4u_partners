@@ -692,64 +692,6 @@ class CoursesView extends StackedView<CoursesViewModel> {
                 ),
               ),
             ),
-            const SizedBox(width: 12),
-            Expanded(
-              child: Container(
-                padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
-                decoration: BoxDecoration(
-                  color: Colors.white,
-                  borderRadius: BorderRadius.circular(25),
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.black.withOpacity(0.1),
-                      blurRadius: 12,
-                      offset: const Offset(0, 2),
-                    ),
-                  ],
-                ),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceAround,
-                  children: [
-                    Row(
-                      children: [
-                        const Icon(
-                          Icons.payments_outlined,
-                          color: kcPrimaryColor,
-                          size: 24,
-                        ),
-                        const SizedBox(width: 8),
-                        Text(
-                          '${montantGainToday.toStringAsFixed(0)} FCFA',
-                          style: const TextStyle(
-                            fontSize: 16,
-                            fontWeight: FontWeight.bold,
-                            color: kcPrimaryColor,
-                          ),
-                        ),
-                      ],
-                    ),
-                    Row(
-                      children: [
-                        const Icon(
-                          Icons.directions_car_filled_outlined,
-                          color: kcPrimaryColor,
-                          size: 24,
-                        ),
-                        const SizedBox(width: 8),
-                        Text(
-                          '$todayCourses',
-                          style: const TextStyle(
-                            fontSize: 16,
-                            fontWeight: FontWeight.bold,
-                            color: kcPrimaryColor,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ],
-                ),
-              ),
-            ),
           ],
         );
       },

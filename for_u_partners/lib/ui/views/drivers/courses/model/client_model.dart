@@ -22,6 +22,9 @@ class ClientData {
   // ✨ Service ID to identify pickup courses (service_id = 3)
   final int? serviceId;
 
+  // Phone number of the client
+  final String? phoneNumber;
+
   ClientData({
     required this.name,
     required this.timeInfo,
@@ -40,6 +43,7 @@ class ClientData {
     this.depLong,
     this.depLat,
     this.serviceId,
+    this.phoneNumber,
   });
 
   // Helper to check if this is a pickup course
@@ -77,6 +81,7 @@ class ClientData {
       'depLong': depLong,
       'depLat': depLat,
       'serviceId': serviceId,
+      'phoneNumber': phoneNumber,
     };
   }
 
@@ -98,6 +103,7 @@ class ClientData {
       depLong: json['depLong']?.toDouble(),
       depLat: json['depLat']?.toDouble(),
       serviceId: json['serviceId'] as int?,
+      phoneNumber: json['phoneNumber'] as String?,
     );
   }
 

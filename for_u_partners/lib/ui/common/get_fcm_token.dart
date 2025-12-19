@@ -515,20 +515,25 @@ class FirebaseMessagingService {
           notification.hashCode,
           notification.title,
           notification.body,
-          NotificationDetails(
-            android: android != null
-                ? const AndroidNotificationDetails(
-                    'channel_id',
-                    'channel_name',
-                    importance: Importance.max,
-                    priority: Priority.high,
-                    icon: '@mipmap/ic_launcher',
-                  )
-                : null,
-            iOS: const DarwinNotificationDetails(
+          const NotificationDetails(
+            android: AndroidNotificationDetails(
+              '4u_driver_notifications_v2', // Updated to match new channel ID
+              'Notifications Chauffeur',
+              channelDescription: 'Notifications pour les chauffeurs (nouvelles courses, mises à jour, etc.)',
+              importance: Importance.max, // Maximum importance for loudest volume
+              priority: Priority.max, // Maximum priority
+              icon: '@mipmap/ic_launcher',
+              playSound: true,
+              sound: RawResourceAndroidNotificationSound('car_horn_beep'),
+              enableVibration: true,
+              audioAttributesUsage: AudioAttributesUsage.notification,
+            ),
+            iOS: DarwinNotificationDetails(
               presentAlert: true,
               presentBadge: true,
               presentSound: true,
+              sound: 'car_horn_beep.mp3',
+              interruptionLevel: InterruptionLevel.timeSensitive, // iOS: time-sensitive for maximum prominence
             ),
           ),
         );
@@ -542,18 +547,21 @@ class FirebaseMessagingService {
 Future<void> firebaseMessagingBackgroundHandler(RemoteMessage message) async {
   // Initialize Firebase
   await Firebase.initializeApp();
-  
+
   try {
     // Set up dependency injection
     await setupLocator();
-    
+
+    // Initialize local notifications service for background
+    await LocalNotificationService.initialize();
+
     print("Message en arrière-plan: ${message.messageId}");
 
     // Process message data if available
     final data = message.data;
     if (data.isNotEmpty) {
       print('Données du message: $data');
-      
+
       // Handle course notifications if the required data is present
       if (data.containsKey('course_id') && data.containsKey('client_nom')) {
         try {
@@ -564,6 +572,15 @@ Future<void> firebaseMessagingBackgroundHandler(RemoteMessage message) async {
           );
           await CourseNotificationStorage.saveNotification(courseData);
           print('Notification background sauvée: ${data['course_id']}');
+
+          // Show notification with sound (IMPORTANT: So user hears it in background!)
+          await LocalNotificationService.showNewCourseNotification(
+            courseId: data['course_id'].toString(),
+            pickupAddress: data['depart_adresse'] ?? 'Adresse de départ',
+            price: double.tryParse(data['prix']?.toString() ?? '0') ?? 0.0,
+            distance: int.tryParse(data['distance']?.toString() ?? '0') ?? 0,
+          );
+          print('✅ Notification background affichée avec son pour course: ${data['course_id']}');
         } catch (e) {
           print('Erreur lors du traitement de la notification de course: $e');
         }

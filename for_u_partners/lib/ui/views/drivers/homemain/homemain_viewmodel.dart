@@ -5,20 +5,27 @@ import 'package:for_u_partners/app/app.locator.dart';
 import 'package:for_u_partners/app/app.router.dart';
 import 'package:for_u_partners/services/sharedpreferences_service.dart';
 import 'package:for_u_partners/services/driver_service.dart';
+import 'package:for_u_partners/services/profile_photo_service.dart';
+import 'package:for_u_partners/models/user_model.dart';
 import 'package:for_u_partners/ui/common/app_colors.dart';
 import 'package:for_u_partners/ui/views/drivers/courses/courses_view.dart';
 import 'package:for_u_partners/ui/views/drivers/courses/courses_viewmodel.dart';
-import 'package:for_u_partners/ui/views/drivers/profil/profil_view.dart';
 import 'package:for_u_partners/ui/views/drivers/activity/activity_view.dart';
 import 'package:for_u_partners/ui/views/drivers/notifications/notifications_view.dart';
 import 'package:for_u_partners/ui/views/drivers/wallet/wallet_view.dart';
+import 'package:for_u_partners/ui/views/drivers/profil/edit_profile_view.dart';
+import 'package:for_u_partners/ui/views/drivers/profil/profil_viewmodel.dart';
 import 'package:stacked_services/stacked_services.dart';
+import 'package:image_picker/image_picker.dart';
 import 'dart:io';
 
 class HomemainViewModel extends IndexTrackingViewModel {
   final _sharedpreferencesService = locator<SharedpreferencesService>();
   final _navigationService = locator<NavigationService>();
   final _driverService = locator<DriverService>();
+
+  // Lazy getter for ProfilePhotoService to avoid initialization issues
+  ProfilePhotoService get _profilePhotoService => locator<ProfilePhotoService>();
 
   // Référence au CoursesViewModel pour notifier les changements de statut
   CoursesViewModel? _coursesViewModel;
@@ -38,9 +45,15 @@ class HomemainViewModel extends IndexTrackingViewModel {
   // User data
   String? _userName;
   bool _isOnline = false;
+  UserModel? _user;
+  bool _isUploadingPhoto = false;
+  String _initials = '';
 
   String? get userName => _userName;
   bool get isOnline => _isOnline;
+  UserModel? get user => _user;
+  bool get isUploadingPhoto => _isUploadingPhoto;
+  String get initials => _initials;
 
   HomemainViewModel() {
     _loadUserData();
@@ -49,7 +62,198 @@ class HomemainViewModel extends IndexTrackingViewModel {
   Future<void> _loadUserData() async {
     _userName = await _sharedpreferencesService.getUserName();
     _isOnline = await _sharedpreferencesService.getOnlineStatus() ?? false;
+
+    // Load full user profile
+    try {
+      _user = await _driverService.getUserProfile();
+      if (_user != null) {
+        _initials = _user!.nom[0].toUpperCase() + _user!.prenom[0].toUpperCase();
+      }
+    } catch (e) {
+      debugPrint('Error loading user profile: $e');
+    }
+
     notifyListeners();
+  }
+
+  /// Pick and upload profile photo
+  Future<void> pickAndUploadPhoto(BuildContext context) async {
+    try {
+      debugPrint('🖼️ [PHOTO] Starting photo selection process...');
+
+      final picker = ImagePicker();
+
+      // Show dialog to choose source
+      final ImageSource? source = await showDialog<ImageSource>(
+        context: context,
+        builder: (BuildContext context) {
+          return AlertDialog(
+            title: const Text('Choisir une source'),
+            content: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                ListTile(
+                  leading: const Icon(Icons.photo_library),
+                  title: const Text('Galerie'),
+                  onTap: () => Navigator.pop(context, ImageSource.gallery),
+                ),
+                ListTile(
+                  leading: const Icon(Icons.camera_alt),
+                  title: const Text('Caméra'),
+                  onTap: () => Navigator.pop(context, ImageSource.camera),
+                ),
+              ],
+            ),
+          );
+        },
+      );
+
+      if (source == null) {
+        debugPrint('🖼️ [PHOTO] User cancelled source selection');
+        return;
+      }
+
+      debugPrint('🖼️ [PHOTO] Selected source: $source');
+
+      // Select image with automatic optimization
+      final XFile? pickedFile = await picker.pickImage(
+        source: source,
+        maxWidth: 1024,
+        maxHeight: 1024,
+        imageQuality: 85,
+      );
+
+      if (pickedFile == null) {
+        debugPrint('🖼️ [PHOTO] No image selected');
+        return;
+      }
+
+      final photoFile = File(pickedFile.path);
+      final fileSize = await photoFile.length();
+      debugPrint('🖼️ [PHOTO] Image selected: ${pickedFile.path}');
+      debugPrint('🖼️ [PHOTO] Image size: ${(fileSize / 1024).toStringAsFixed(2)} KB');
+
+      // Upload photo
+      _isUploadingPhoto = true;
+      notifyListeners();
+
+      await _profilePhotoService.updateProfilePhoto(photoFile, context: context);
+
+      // Refresh user profile
+      debugPrint('🖼️ [PHOTO] Refreshing user profile...');
+      await _loadUserData();
+
+      _isUploadingPhoto = false;
+      notifyListeners();
+
+      // Show success message
+      if (context.mounted) {
+        _showSuccessSnackBar(context, 'Photo de profil mise à jour avec succès');
+      }
+    } catch (e) {
+      debugPrint('❌ [PHOTO ERROR] Failed to update photo: $e');
+      _isUploadingPhoto = false;
+      notifyListeners();
+
+      if (context.mounted) {
+        _showErrorSnackBar(context, 'Erreur lors de la mise à jour de la photo: $e');
+      }
+    }
+  }
+
+  Future<void> deleteProfilePhoto(BuildContext context) async {
+    try {
+      final confirmed = await _showDeletePhotoConfirmation(context);
+      if (!confirmed) return;
+
+      _isUploadingPhoto = true;
+      notifyListeners();
+
+      await _profilePhotoService.deleteProfilePhoto();
+      await _loadUserData();
+
+      _isUploadingPhoto = false;
+      notifyListeners();
+
+      if (context.mounted) {
+        _showSuccessSnackBar(context, 'Photo de profil supprimée');
+      }
+    } catch (e) {
+      _isUploadingPhoto = false;
+      notifyListeners();
+
+      if (context.mounted) {
+        _showErrorSnackBar(context, 'Erreur lors de la suppression: $e');
+      }
+    }
+  }
+
+  Future<bool> _showDeletePhotoConfirmation(BuildContext context) async {
+    if (Platform.isIOS) {
+      return await showCupertinoDialog<bool>(
+        context: context,
+        builder: (context) => CupertinoAlertDialog(
+          title: const Text('Supprimer la photo'),
+          content: const Text('Voulez-vous vraiment supprimer votre photo de profil ?'),
+          actions: [
+            CupertinoDialogAction(
+              onPressed: () => Navigator.pop(context, false),
+              child: const Text('Annuler'),
+            ),
+            CupertinoDialogAction(
+              isDestructiveAction: true,
+              onPressed: () => Navigator.pop(context, true),
+              child: const Text('Supprimer'),
+            ),
+          ],
+        ),
+      ) ?? false;
+    } else {
+      return await showDialog<bool>(
+        context: context,
+        builder: (context) => AlertDialog(
+          title: const Text('Supprimer la photo'),
+          content: const Text('Voulez-vous vraiment supprimer votre photo de profil ?'),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context, false),
+              child: const Text('Annuler'),
+            ),
+            TextButton(
+              onPressed: () => Navigator.pop(context, true),
+              style: TextButton.styleFrom(foregroundColor: Colors.red),
+              child: const Text('Supprimer'),
+            ),
+          ],
+        ),
+      ) ?? false;
+    }
+  }
+
+  void _showSuccessSnackBar(BuildContext context, String message) {
+    if (!context.mounted) return;
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(message),
+        backgroundColor: Colors.green,
+        behavior: SnackBarBehavior.floating,
+        duration: const Duration(seconds: 2),
+      ),
+    );
+  }
+
+  void _showErrorSnackBar(BuildContext context, String message) {
+    if (!context.mounted) return;
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(message),
+        backgroundColor: Colors.red,
+        behavior: SnackBarBehavior.floating,
+        duration: const Duration(seconds: 3),
+      ),
+    );
   }
 
   // Mettre à jour le compteur de courses en attente
@@ -79,8 +283,6 @@ class HomemainViewModel extends IndexTrackingViewModel {
         return const WalletView();
       case 3:
         return const NotificationsView();
-      case 4:
-        return const ProfilView();
       default:
         return const CoursesView();
     }
@@ -119,10 +321,34 @@ class HomemainViewModel extends IndexTrackingViewModel {
   void handleNavigationSelection(int index) {
     closeNavigation();
 
-    // Handle special cases (Documents and Logout)
+    // Handle special cases (Documents, Assistance, Mon compte, Mes véhicules, Statistiques, and Logout)
     if (index == 5) {
       // Navigate to Documents
       _navigationService.navigateToDocumentsView();
+      return;
+    }
+
+    if (index == 7) {
+      // Navigate to Assistance
+      _navigationService.navigateToAssistanceTechniqueView();
+      return;
+    }
+
+    if (index == 8) {
+      // Navigate to Edit Profile (Mon compte)
+      navigateToEditProfile();
+      return;
+    }
+
+    if (index == 9) {
+      // Navigate to Mes véhicules
+      _navigationService.navigateToMesVehiculesView();
+      return;
+    }
+
+    if (index == 10) {
+      // Navigate to Statistiques
+      _navigationService.navigateToStatistiquesView();
       return;
     }
 
@@ -135,6 +361,27 @@ class HomemainViewModel extends IndexTrackingViewModel {
     // Handle normal navigation
     if (currentIndex != index) {
       setIndex(index);
+    }
+  }
+
+  void navigateToEditProfile() {
+    if (_user != null) {
+      final context = _navigationService.navigatorKey?.currentContext;
+      if (context != null) {
+        // Create a ProfilViewModel instance for EditProfileView
+        final profilViewModel = ProfilViewModel();
+        Navigator.of(context).push(
+          MaterialPageRoute(
+            builder: (context) => EditProfileView(
+              user: _user!,
+              viewModel: profilViewModel,
+            ),
+          ),
+        ).then((_) {
+          // Reload user data when returning from edit profile
+          _loadUserData();
+        });
+      }
     }
   }
 

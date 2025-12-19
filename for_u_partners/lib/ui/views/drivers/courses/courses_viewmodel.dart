@@ -26,6 +26,7 @@ import 'package:for_u_partners/services/course_restoration_service.dart';
 import 'package:for_u_partners/services/arrival_state_service.dart';
 import 'package:for_u_partners/services/tracking_service.dart';
 import 'package:for_u_partners/services/sharedpreferences_service.dart';
+import 'package:for_u_partners/services/active_course_checker_service.dart';
 import 'package:http/http.dart' as http;
 
 class CoursesViewModel extends BaseViewModel {
@@ -33,6 +34,8 @@ class CoursesViewModel extends BaseViewModel {
   final _arrivalStateService = locator<ArrivalStateService>();
   final _trackingService = TrackingService();
   final _sharedPreferencesService = locator<SharedpreferencesService>();
+
+  bool _isDisposed = false;
 
   GoogleMapController? _mapController;
   GoogleMapController? get mapController => _mapController;
@@ -350,7 +353,7 @@ class CoursesViewModel extends BaseViewModel {
       print('Erreur dans onMapCreated: $e');
       // En cas d'erreur, on réessaie d'initialiser la carte après un court délai
       await Future.delayed(const Duration(milliseconds: 500));
-      if (_mapController != null) {
+      if (_mapController != null && !_isDisposed) {
         await onMapCreated(_mapController!);
       }
     }
@@ -375,7 +378,7 @@ class CoursesViewModel extends BaseViewModel {
         _mapCenter = LatLng(_currentPosition!.latitude!, _currentPosition!.longitude!);
 
         // Move map to last known position
-        if (_mapController != null) {
+        if (_mapController != null && !_isDisposed) {
           await _moveToPosition(_mapCenter);
         }
 
@@ -407,7 +410,7 @@ class CoursesViewModel extends BaseViewModel {
         if (location.latitude != null && location.longitude != null) {
           _mapCenter = LatLng(location.latitude!, location.longitude!);
 
-          if (_mapController != null) {
+          if (_mapController != null && !_isDisposed) {
             await _moveToPosition(_mapCenter);
           }
         }
@@ -525,10 +528,26 @@ class CoursesViewModel extends BaseViewModel {
             } else {
               _locationUpdateFailureCount++;
               debugPrint('❌ [$sourceTag CALLBACK] API call failed (count: $_locationUpdateFailureCount) for course $courseNumericId');
+
+              // ⚠️ If location updates keep failing, the course might be finished
+              // Stop tracking after multiple consecutive failures to avoid spamming the backend
+              if (_locationUpdateFailureCount >= 3) {
+                debugPrint('🛑 [$sourceTag CALLBACK] Multiple consecutive failures - stopping location updates');
+                debugPrint('🛑 [$sourceTag CALLBACK] The course may have been completed/cancelled');
+                _locationService.disableBackendUpdates();
+                _locationUpdateFailureCount = 0;
+              }
             }
           }).catchError((error) {
             _locationUpdateFailureCount++;
             debugPrint('❌ [$sourceTag CALLBACK] API call exception (count: $_locationUpdateFailureCount): $error');
+
+            // Stop tracking after multiple consecutive exceptions
+            if (_locationUpdateFailureCount >= 3) {
+              debugPrint('🛑 [$sourceTag CALLBACK] Multiple consecutive exceptions - stopping location updates');
+              _locationService.disableBackendUpdates();
+              _locationUpdateFailureCount = 0;
+            }
           });
         } else {
           debugPrint('⚠️ [$sourceTag CALLBACK] CRITICAL: Location data has NULL lat/lng!');
@@ -541,6 +560,12 @@ class CoursesViewModel extends BaseViewModel {
 
   // Update driver marker position without full reload
   void _updateDriverMarkerPosition(loc.LocationData location) async {
+    // Check if disposed first to prevent operations on disposed controller
+    if (_isDisposed) {
+      debugPrint('⚠️ Skipping marker update - ViewModel is disposed');
+      return;
+    }
+
     if (location.latitude == null || location.longitude == null) return;
 
     final newPosition = LatLng(location.latitude!, location.longitude!);
@@ -562,10 +587,14 @@ class CoursesViewModel extends BaseViewModel {
       );
 
       // Move camera to follow driver with street-level zoom
-      if (_mapController != null) {
-        _mapController!.animateCamera(
-          CameraUpdate.newLatLngZoom(newPosition, 16.5),
-        );
+      if (_mapController != null && !_isDisposed) {
+        try {
+          await _mapController!.animateCamera(
+            CameraUpdate.newLatLngZoom(newPosition, 16.5),
+          );
+        } catch (e) {
+          debugPrint('⚠️ Error animating camera: $e');
+        }
       }
 
       debugPrint('🚗 Driver marker updated: ${location.latitude}, ${location.longitude}');
@@ -588,10 +617,14 @@ class CoursesViewModel extends BaseViewModel {
       );
 
       // Move camera to new marker with street-level zoom
-      if (_mapController != null) {
-        _mapController!.animateCamera(
-          CameraUpdate.newLatLngZoom(newPosition, 16.5),
-        );
+      if (_mapController != null && !_isDisposed) {
+        try {
+          await _mapController!.animateCamera(
+            CameraUpdate.newLatLngZoom(newPosition, 16.5),
+          );
+        } catch (e) {
+          debugPrint('⚠️ Error animating camera: $e');
+        }
       }
 
       debugPrint('✅ Driver marker created');
@@ -602,8 +635,8 @@ class CoursesViewModel extends BaseViewModel {
 
   Future<void> _moveToPosition(LatLng position) async {
     try {
-      if (_mapController == null) {
-        print('Erreur: _mapController est null dans _moveToPosition');
+      if (_mapController == null || _isDisposed) {
+        print('Erreur: _mapController est null ou ViewModel disposed dans _moveToPosition');
         return;
       }
 
@@ -628,7 +661,7 @@ class CoursesViewModel extends BaseViewModel {
       print('Erreur dans _moveToPosition: $e');
       // En cas d'erreur, on réessaie après un court délai
       await Future.delayed(const Duration(milliseconds: 300));
-      if (_mapController != null) {
+      if (_mapController != null && !_isDisposed) {
         _moveToPosition(position);
       }
     }
@@ -821,17 +854,21 @@ class CoursesViewModel extends BaseViewModel {
       }
 
       // Animate camera to show all markers
-      if (_mapController != null) {
-        final currentLatLng = LatLng(_currentPosition!.latitude!, _currentPosition!.longitude!);
-        final bounds = _calculateBounds([
-          currentLatLng,
-          pickupLatLng,
-          destLatLng,
-        ]);
+      if (_mapController != null && !_isDisposed) {
+        try {
+          final currentLatLng = LatLng(_currentPosition!.latitude!, _currentPosition!.longitude!);
+          final bounds = _calculateBounds([
+            currentLatLng,
+            pickupLatLng,
+            destLatLng,
+          ]);
 
-        await _mapController!.animateCamera(
-          CameraUpdate.newLatLngBounds(bounds, 100),
-        );
+          await _mapController!.animateCamera(
+            CameraUpdate.newLatLngBounds(bounds, 100),
+          );
+        } catch (e) {
+          debugPrint('⚠️ Error animating camera to bounds: $e');
+        }
       }
 
       notifyListeners();
@@ -986,7 +1023,7 @@ class CoursesViewModel extends BaseViewModel {
 
   Future<void> changeMapCenter(LatLng newCenter) async {
     _mapCenter = newCenter;
-    if (_mapController != null) {
+    if (_mapController != null && !_isDisposed) {
       await _moveToPosition(newCenter);
     }
     notifyListeners();
@@ -994,10 +1031,14 @@ class CoursesViewModel extends BaseViewModel {
 
   void changeZoom(double newZoom) {
     _mapZoom = newZoom;
-    if (_mapController != null) {
-      _mapController!.animateCamera(
-        CameraUpdate.newLatLngZoom(_mapCenter, newZoom),
-      );
+    if (_mapController != null && !_isDisposed) {
+      try {
+        _mapController!.animateCamera(
+          CameraUpdate.newLatLngZoom(_mapCenter, newZoom),
+        );
+      } catch (e) {
+        debugPrint('⚠️ Error changing zoom: $e');
+      }
     }
     notifyListeners();
   }
@@ -1294,7 +1335,20 @@ class CoursesViewModel extends BaseViewModel {
       canAccept = false;
 
       // Détecter le type d'erreur
-      if (errorMessage.contains('déjà prise') ||
+      if (errorMessage.contains('wallet') ||
+          errorMessage.contains('positif')) {
+        // Erreur de solde wallet insuffisant
+        print('⚠️ Course $courseId: Wallet insuffisant');
+
+        // Supprimer de la liste et du cache
+        removeCourse(courseId.toString());
+
+        // Message approprié
+        if (context.mounted) {
+          CustomToast.showError(context,
+              message: "Votre wallet doit être positif pour accepter la course");
+        }
+      } else if (errorMessage.contains('déjà prise') ||
           errorMessage.contains('introuvable') ||
           errorMessage.contains('conflict')) {
         // Course déjà prise par quelqu'un d'autre
@@ -1339,12 +1393,18 @@ class CoursesViewModel extends BaseViewModel {
         // Recentrer la carte
         if (_currentCourse != null &&
             _currentCourse!.depLat != null &&
-            _currentCourse!.depLong != null) {
-          final pickupLatLng =
-              LatLng(_currentCourse!.depLat!, _currentCourse!.depLong!);
-          _mapController?.animateCamera(
-            CameraUpdate.newLatLngZoom(pickupLatLng, 15.0),
-          );
+            _currentCourse!.depLong != null &&
+            _mapController != null &&
+            !_isDisposed) {
+          try {
+            final pickupLatLng =
+                LatLng(_currentCourse!.depLat!, _currentCourse!.depLong!);
+            await _mapController!.animateCamera(
+              CameraUpdate.newLatLngZoom(pickupLatLng, 15.0),
+            );
+          } catch (e) {
+            debugPrint('⚠️ Error animating camera to pickup location: $e');
+          }
         }
       } else {
         hideBottomSheet();
@@ -1790,14 +1850,18 @@ class CoursesViewModel extends BaseViewModel {
       );
 
       // Ajuster la caméra
-      if (_mapController != null) {
-        final bounds = _calculateBounds([
-          LatLng(_currentPosition!.latitude!, _currentPosition!.longitude!),
-          pickupLatLng,
-        ]);
-        _mapController!.animateCamera(
-          CameraUpdate.newLatLngBounds(bounds, 100),
-        );
+      if (_mapController != null && !_isDisposed) {
+        try {
+          final bounds = _calculateBounds([
+            LatLng(_currentPosition!.latitude!, _currentPosition!.longitude!),
+            pickupLatLng,
+          ]);
+          await _mapController!.animateCamera(
+            CameraUpdate.newLatLngBounds(bounds, 100),
+          );
+        } catch (e) {
+          debugPrint('⚠️ Error animating camera to pickup bounds: $e');
+        }
       }
     } catch (e) {
       print('❌ Erreur calcul route pickup: $e');
@@ -1901,11 +1965,15 @@ class CoursesViewModel extends BaseViewModel {
       ]);
 
       // Ajuster la caméra
-      if (_mapController != null) {
-        final bounds = _calculateBounds([pickupLatLng, destinationLatLng]);
-        _mapController!.animateCamera(
-          CameraUpdate.newLatLngBounds(bounds, 100),
-        );
+      if (_mapController != null && !_isDisposed) {
+        try {
+          final bounds = _calculateBounds([pickupLatLng, destinationLatLng]);
+          await _mapController!.animateCamera(
+            CameraUpdate.newLatLngBounds(bounds, 100),
+          );
+        } catch (e) {
+          debugPrint('⚠️ Error animating camera to destination bounds: $e');
+        }
       }
     } catch (e) {
       print('❌ Erreur calcul route destination: $e');
@@ -2217,7 +2285,10 @@ class CoursesViewModel extends BaseViewModel {
 
   @override
   void dispose() {
-    _mapController?.dispose();
+    // Set disposed flag first to prevent any pending operations
+    _isDisposed = true;
+
+    // Cancel all subscriptions and timers BEFORE disposing controller
     _driversRefreshTimer?.cancel();
     _newCourseSubscription?.cancel();
     _courseUpdateSubscription?.cancel();
@@ -2225,6 +2296,11 @@ class CoursesViewModel extends BaseViewModel {
     _locationStreamSubscription?.cancel();
     _locationService.stopTracking();
     _trackingService.dispose(); // Stop general position tracking
+
+    // Dispose map controller last, after all subscriptions are cancelled
+    _mapController?.dispose();
+    _mapController = null;
+
     super.dispose();
   }
 
@@ -2583,6 +2659,19 @@ class CoursesViewModel extends BaseViewModel {
         notifyListeners();
         return;
       }
+
+      // ⚠️ CRITICAL: Check if status is still active before restoring
+      // This prevents restoring courses that were finished/cancelled after the initial check
+      final activeStatuses = ActiveCourseCheckerService.activeStatuses;
+      if (!activeStatuses.contains(status)) {
+        debugPrint('⚠️ [Restoration] Course status "$status" is not active - aborting restoration');
+        debugPrint('⚠️ [Restoration] Active statuses: $activeStatuses');
+        debugPrint('ℹ️ [Restoration] This course was likely finished/cancelled between check and restoration');
+        _isRestoringState = false;
+        notifyListeners();
+        return;
+      }
+      debugPrint('✅ [Restoration] Status "$status" is active - proceeding with restoration');
 
       // Parse client data
       final clientData = courseDetails['client'] as Map<String, dynamic>?;

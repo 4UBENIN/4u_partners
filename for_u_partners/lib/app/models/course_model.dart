@@ -109,6 +109,11 @@ class FactureCourse {
   final int montantAttente;
   final int montantPause;
 
+  // Additional fields from new API structure
+  final int? tarifBase;
+  final int? montantDistance;
+  final int? montantMinute;
+
   // Tu peux remplacer les types Map<String, dynamic> par des classes précises pour `vehicule`, `chauffeur`, `client` si besoin.
   final Map<String, dynamic> vehicule;
   final Map<String, dynamic> chauffeur;
@@ -128,6 +133,9 @@ class FactureCourse {
     required this.tempsPause,
     required this.montantAttente,
     required this.montantPause,
+    this.tarifBase,
+    this.montantDistance,
+    this.montantMinute,
     required this.vehicule,
     required this.chauffeur,
     required this.client,
@@ -141,20 +149,60 @@ class FactureCourse {
       return null;
     }
 
+    // Extract nested details and pricing objects
+    final details = json['details'] as Map<String, dynamic>? ?? {};
+    final pricing = json['pricing'] as Map<String, dynamic>? ?? {};
+
+    // Get montant from pricing.final_amount or details.total_facture
+    final montantValue = parseNumber(pricing['final_amount']) ??
+                        parseNumber(details['total_facture']) ??
+                        parseNumber(json['montant']) ?? 0;
+
+    // Get distance from nested or root level
+    final distanceKm = parseNumber(details['distance_km'])?.toDouble() ??
+                       parseNumber(json['distance_km'])?.toDouble() ?? 0.0;
+
+    // Get duration from nested or root level
+    final dureeMin = parseNumber(details['duree_min'])?.toInt() ??
+                     parseNumber(json['duree_min'])?.toInt() ?? 0;
+
+    // Get actual amounts from details
+    final montantDistance = parseNumber(details['montant_distance'])?.toInt();
+    final montantMinuteValue = parseNumber(details['montant_minute'])?.toInt();
+    final tarifBaseValue = parseNumber(details['tarif_base'])?.toInt();
+
+    // Calculate rates per km and per minute for display
+    // If montantDistance exists, calculate rate per km, otherwise use fallback
+    final tarifParKm = montantDistance != null && distanceKm > 0
+        ? (montantDistance / distanceKm).round()
+        : (parseNumber(json['tarif_par_km'])?.toInt() ?? 0);
+
+    // If montantMinute exists, calculate rate per minute, otherwise use fallback
+    final tarifParMinute = montantMinuteValue != null && dureeMin > 0
+        ? (montantMinuteValue / dureeMin).round()
+        : (parseNumber(json['tarif_par_minute'])?.toInt() ?? 0);
+
     return FactureCourse(
       courseId: parseNumber(json['course_id'])?.toInt() ?? 0,
-      adresseDepart: json['adresse_depart'],
-      adresseArrivee: json['adresse_arrivee'],
-      distanceKm: parseNumber(json['distance_km'])?.toDouble() ?? 0.0,
-      dureeMin: parseNumber(json['duree_min'])?.toInt() ?? 0,
-      montant: parseNumber(json['montant'])?.toInt() ?? 0,
-      modePaiement: json['mode_paiement'],
-      tarifParMinute: parseNumber(json['tarif_par_minute'])?.toInt() ?? 0,
-      tarifParKm: parseNumber(json['tarif_par_km'])?.toInt() ?? 0,
-      tempsAttente: parseNumber(json['temps_attente'])?.toInt() ?? 0,
-      tempsPause: parseNumber(json['temps_pause'])?.toInt() ?? 0,
-      montantAttente: parseNumber(json['montant_attente'])?.toInt() ?? 0,
-      montantPause: parseNumber(json['montant_pause'])?.toInt() ?? 0,
+      adresseDepart: json['adresse_depart'] ?? '',
+      adresseArrivee: json['adresse_arrivee'] ?? '',
+      distanceKm: distanceKm,
+      dureeMin: dureeMin,
+      montant: montantValue.toInt(),
+      modePaiement: json['mode_paiement'] ?? '',
+      tarifParMinute: tarifParMinute,
+      tarifParKm: tarifParKm,
+      tempsAttente: parseNumber(details['temps_attente'])?.toInt() ??
+                    parseNumber(json['temps_attente'])?.toInt() ?? 0,
+      tempsPause: parseNumber(details['temps_pause'])?.toInt() ??
+                  parseNumber(json['temps_pause'])?.toInt() ?? 0,
+      montantAttente: parseNumber(details['montant_attente'])?.toInt() ??
+                      parseNumber(json['montant_attente'])?.toInt() ?? 0,
+      montantPause: parseNumber(details['montant_pause'])?.toInt() ??
+                    parseNumber(json['montant_pause'])?.toInt() ?? 0,
+      tarifBase: tarifBaseValue,
+      montantDistance: montantDistance,
+      montantMinute: montantMinuteValue,
       vehicule: json['vehicule'] ?? {},
       chauffeur: json['chauffeur'] ?? {},
       client: json['client'] ?? {},

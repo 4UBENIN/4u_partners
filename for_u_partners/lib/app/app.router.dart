@@ -6,8 +6,8 @@
 
 // ignore_for_file: no_leading_underscores_for_library_prefixes
 import 'package:flutter/material.dart';
-import 'package:flutter/material.dart' as _i30;
-import 'package:for_u_partners/models/document_model.dart' as _i32;
+import 'package:flutter/material.dart' as _i32;
+import 'package:for_u_partners/models/document_model.dart' as _i34;
 import 'package:for_u_partners/ui/views/auth/login/login_view.dart' as _i10;
 import 'package:for_u_partners/ui/views/auth/register/register_view.dart'
     as _i11;
@@ -28,9 +28,11 @@ import 'package:for_u_partners/ui/views/delivery/notifications_delivery/notifica
 import 'package:for_u_partners/ui/views/drivers/activity/activity_view.dart'
     as _i4;
 import 'package:for_u_partners/ui/views/drivers/activity/models/activity_model.dart'
-    as _i31;
+    as _i33;
 import 'package:for_u_partners/ui/views/drivers/activitydetails/activitydetails_view.dart'
     as _i9;
+import 'package:for_u_partners/ui/views/drivers/assistance/assistance_view.dart'
+    as _i30;
 import 'package:for_u_partners/ui/views/drivers/courses/courses_view.dart'
     as _i5;
 import 'package:for_u_partners/ui/views/drivers/documents/add_document.dart'
@@ -49,6 +51,8 @@ import 'package:for_u_partners/ui/views/drivers/payout/create_payout_view.dart'
 import 'package:for_u_partners/ui/views/drivers/payout/payout_history_view.dart'
     as _i29;
 import 'package:for_u_partners/ui/views/drivers/profil/profil_view.dart' as _i7;
+import 'package:for_u_partners/ui/views/drivers/statistiques/statistiques_view.dart'
+    as _i31;
 import 'package:for_u_partners/ui/views/drivers/vehicles/vehicles_view.dart'
     as _i24;
 import 'package:for_u_partners/ui/views/pressing/activites_pressing/activites_pressing_view.dart'
@@ -63,7 +67,7 @@ import 'package:for_u_partners/ui/views/pressing/notifications_pressing/notifica
     as _i16;
 import 'package:for_u_partners/ui/views/startup/startup_view.dart' as _i2;
 import 'package:stacked/stacked.dart' as _i1;
-import 'package:stacked_services/stacked_services.dart' as _i33;
+import 'package:stacked_services/stacked_services.dart' as _i35;
 
 class Routes {
   static const startupView = '/startup-view';
@@ -122,6 +126,10 @@ class Routes {
 
   static const payoutHistoryView = '/payout-history-view';
 
+  static const assistanceTechniqueView = '/assistance-technique-view';
+
+  static const statistiquesView = '/statistiques-view';
+
   static const all = <String>{
     startupView,
     homeView,
@@ -151,6 +159,8 @@ class Routes {
     documentViewerView,
     createPayoutView,
     payoutHistoryView,
+    assistanceTechniqueView,
+    statistiquesView,
   };
 }
 
@@ -268,11 +278,19 @@ class StackedRouter extends _i1.RouterBase {
       Routes.payoutHistoryView,
       page: _i29.PayoutHistoryView,
     ),
+    _i1.RouteDef(
+      Routes.assistanceTechniqueView,
+      page: _i30.AssistanceTechniqueView,
+    ),
+    _i1.RouteDef(
+      Routes.statistiquesView,
+      page: _i31.StatistiquesView,
+    ),
   ];
 
   final _pagesMap = <Type, _i1.StackedRouteFactory>{
     _i2.StartupView: (data) {
-      return _i30.MaterialPageRoute<dynamic>(
+      return _i32.MaterialPageRoute<dynamic>(
         builder: (context) => const _i2.StartupView(),
         settings: data,
       );
@@ -281,38 +299,38 @@ class StackedRouter extends _i1.RouterBase {
       final args = data.getArgs<HomeViewArguments>(
         orElse: () => const HomeViewArguments(),
       );
-      return _i30.MaterialPageRoute<dynamic>(
+      return _i32.MaterialPageRoute<dynamic>(
         builder: (context) =>
             _i3.HomeView(key: args.key, onMenuTap: args.onMenuTap),
         settings: data,
       );
     },
     _i4.ActivityView: (data) {
-      return _i30.MaterialPageRoute<dynamic>(
+      return _i32.MaterialPageRoute<dynamic>(
         builder: (context) => const _i4.ActivityView(),
         settings: data,
       );
     },
     _i5.CoursesView: (data) {
-      return _i30.MaterialPageRoute<dynamic>(
+      return _i32.MaterialPageRoute<dynamic>(
         builder: (context) => const _i5.CoursesView(),
         settings: data,
       );
     },
     _i6.NotificationsView: (data) {
-      return _i30.MaterialPageRoute<dynamic>(
+      return _i32.MaterialPageRoute<dynamic>(
         builder: (context) => const _i6.NotificationsView(),
         settings: data,
       );
     },
     _i7.ProfilView: (data) {
-      return _i30.MaterialPageRoute<dynamic>(
+      return _i32.MaterialPageRoute<dynamic>(
         builder: (context) => const _i7.ProfilView(),
         settings: data,
       );
     },
     _i8.HomemainView: (data) {
-      return _i30.MaterialPageRoute<dynamic>(
+      return _i32.MaterialPageRoute<dynamic>(
         builder: (context) => const _i8.HomemainView(),
         settings: data,
       );
@@ -321,27 +339,27 @@ class StackedRouter extends _i1.RouterBase {
       final args = data.getArgs<ActivitydetailsViewArguments>(
         orElse: () => const ActivitydetailsViewArguments(),
       );
-      return _i30.MaterialPageRoute<dynamic>(
+      return _i32.MaterialPageRoute<dynamic>(
         builder: (context) =>
             _i9.ActivitydetailsView(key: args.key, activity: args.activity),
         settings: data,
       );
     },
     _i10.LoginView: (data) {
-      return _i30.MaterialPageRoute<dynamic>(
+      return _i32.MaterialPageRoute<dynamic>(
         builder: (context) => const _i10.LoginView(),
         settings: data,
       );
     },
     _i11.RegisterView: (data) {
-      return _i30.MaterialPageRoute<dynamic>(
+      return _i32.MaterialPageRoute<dynamic>(
         builder: (context) => const _i11.RegisterView(),
         settings: data,
       );
     },
     _i12.RegisterProfileView: (data) {
       final args = data.getArgs<RegisterProfileViewArguments>(nullOk: false);
-      return _i30.MaterialPageRoute<dynamic>(
+      return _i32.MaterialPageRoute<dynamic>(
         builder: (context) => _i12.RegisterProfileView(
             args.selectedProfile,
             args.phoneNumber,
@@ -356,106 +374,118 @@ class StackedRouter extends _i1.RouterBase {
       );
     },
     _i13.HomePressingView: (data) {
-      return _i30.MaterialPageRoute<dynamic>(
+      return _i32.MaterialPageRoute<dynamic>(
         builder: (context) => const _i13.HomePressingView(),
         settings: data,
       );
     },
     _i14.NavBarPressingView: (data) {
-      return _i30.MaterialPageRoute<dynamic>(
+      return _i32.MaterialPageRoute<dynamic>(
         builder: (context) => const _i14.NavBarPressingView(),
         settings: data,
       );
     },
     _i15.ActivitesPressingView: (data) {
-      return _i30.MaterialPageRoute<dynamic>(
+      return _i32.MaterialPageRoute<dynamic>(
         builder: (context) => const _i15.ActivitesPressingView(),
         settings: data,
       );
     },
     _i16.NotificationsPressingView: (data) {
-      return _i30.MaterialPageRoute<dynamic>(
+      return _i32.MaterialPageRoute<dynamic>(
         builder: (context) => const _i16.NotificationsPressingView(),
         settings: data,
       );
     },
     _i17.ComptePressingView: (data) {
-      return _i30.MaterialPageRoute<dynamic>(
+      return _i32.MaterialPageRoute<dynamic>(
         builder: (context) => const _i17.ComptePressingView(),
         settings: data,
       );
     },
     _i18.DeliveryNavBarView: (data) {
-      return _i30.MaterialPageRoute<dynamic>(
+      return _i32.MaterialPageRoute<dynamic>(
         builder: (context) => const _i18.DeliveryNavBarView(),
         settings: data,
       );
     },
     _i19.DeliveryHomeView: (data) {
-      return _i30.MaterialPageRoute<dynamic>(
+      return _i32.MaterialPageRoute<dynamic>(
         builder: (context) => const _i19.DeliveryHomeView(),
         settings: data,
       );
     },
     _i20.NotificationsDeliveryView: (data) {
-      return _i30.MaterialPageRoute<dynamic>(
+      return _i32.MaterialPageRoute<dynamic>(
         builder: (context) => const _i20.NotificationsDeliveryView(),
         settings: data,
       );
     },
     _i21.CompteDeliveryView: (data) {
-      return _i30.MaterialPageRoute<dynamic>(
+      return _i32.MaterialPageRoute<dynamic>(
         builder: (context) => const _i21.CompteDeliveryView(),
         settings: data,
       );
     },
     _i22.ActivitiesDeliveryView: (data) {
-      return _i30.MaterialPageRoute<dynamic>(
+      return _i32.MaterialPageRoute<dynamic>(
         builder: (context) => const _i22.ActivitiesDeliveryView(),
         settings: data,
       );
     },
     _i23.CoursesDeliveryView: (data) {
-      return _i30.MaterialPageRoute<dynamic>(
+      return _i32.MaterialPageRoute<dynamic>(
         builder: (context) => const _i23.CoursesDeliveryView(),
         settings: data,
       );
     },
     _i24.MesVehiculesView: (data) {
-      return _i30.MaterialPageRoute<dynamic>(
+      return _i32.MaterialPageRoute<dynamic>(
         builder: (context) => const _i24.MesVehiculesView(),
         settings: data,
       );
     },
     _i25.DocumentsView: (data) {
-      return _i30.MaterialPageRoute<dynamic>(
+      return _i32.MaterialPageRoute<dynamic>(
         builder: (context) => const _i25.DocumentsView(),
         settings: data,
       );
     },
     _i26.AddDocumentView: (data) {
-      return _i30.MaterialPageRoute<dynamic>(
+      return _i32.MaterialPageRoute<dynamic>(
         builder: (context) => const _i26.AddDocumentView(),
         settings: data,
       );
     },
     _i27.DocumentViewerView: (data) {
       final args = data.getArgs<DocumentViewerViewArguments>(nullOk: false);
-      return _i30.MaterialPageRoute<dynamic>(
+      return _i32.MaterialPageRoute<dynamic>(
         builder: (context) =>
             _i27.DocumentViewerView(key: args.key, document: args.document),
         settings: data,
       );
     },
     _i28.CreatePayoutView: (data) {
-      return _i30.MaterialPageRoute<dynamic>(
+      return _i32.MaterialPageRoute<dynamic>(
         builder: (context) => const _i28.CreatePayoutView(),
         settings: data,
       );
     },
     _i29.PayoutHistoryView: (data) {
-      return _i30.MaterialPageRoute<dynamic>(
+      return _i32.MaterialPageRoute<dynamic>(
         builder: (context) => const _i29.PayoutHistoryView(),
+        settings: data,
+      );
+    },
+    _i30.AssistanceTechniqueView: (data) {
+      return _i32.MaterialPageRoute<dynamic>(
+        builder: (context) => const _i30.AssistanceTechniqueView(),
+        settings: data,
+      );
+    },
+    _i31.StatistiquesView: (data) {
+      return _i32.MaterialPageRoute<dynamic>(
+        builder: (context) => const _i31.StatistiquesView(),
         settings: data,
       );
     },
@@ -474,7 +504,7 @@ class HomeViewArguments {
     this.onMenuTap,
   });
 
-  final _i30.Key? key;
+  final _i32.Key? key;
 
   final void Function()? onMenuTap;
 
@@ -501,9 +531,9 @@ class ActivitydetailsViewArguments {
     this.activity,
   });
 
-  final _i30.Key? key;
+  final _i32.Key? key;
 
-  final _i31.ActivityModel? activity;
+  final _i33.ActivityModel? activity;
 
   @override
   String toString() {
@@ -551,7 +581,7 @@ class RegisterProfileViewArguments {
 
   final String? otpCode;
 
-  final _i30.Key? key;
+  final _i32.Key? key;
 
   @override
   String toString() {
@@ -592,9 +622,9 @@ class DocumentViewerViewArguments {
     required this.document,
   });
 
-  final _i30.Key? key;
+  final _i32.Key? key;
 
-  final _i32.Document document;
+  final _i34.Document document;
 
   @override
   String toString() {
@@ -613,7 +643,7 @@ class DocumentViewerViewArguments {
   }
 }
 
-extension NavigatorStateExtension on _i33.NavigationService {
+extension NavigatorStateExtension on _i35.NavigationService {
   Future<dynamic> navigateToStartupView([
     int? routerId,
     bool preventDuplicates = true,
@@ -629,7 +659,7 @@ extension NavigatorStateExtension on _i33.NavigationService {
   }
 
   Future<dynamic> navigateToHomeView({
-    _i30.Key? key,
+    _i32.Key? key,
     void Function()? onMenuTap,
     int? routerId,
     bool preventDuplicates = true,
@@ -716,8 +746,8 @@ extension NavigatorStateExtension on _i33.NavigationService {
   }
 
   Future<dynamic> navigateToActivitydetailsView({
-    _i30.Key? key,
-    _i31.ActivityModel? activity,
+    _i32.Key? key,
+    _i33.ActivityModel? activity,
     int? routerId,
     bool preventDuplicates = true,
     Map<String, String>? parameters,
@@ -769,7 +799,7 @@ extension NavigatorStateExtension on _i33.NavigationService {
     required String lastName,
     required String address,
     String? otpCode,
-    _i30.Key? key,
+    _i32.Key? key,
     int? routerId,
     bool preventDuplicates = true,
     Map<String, String>? parameters,
@@ -990,8 +1020,8 @@ extension NavigatorStateExtension on _i33.NavigationService {
   }
 
   Future<dynamic> navigateToDocumentViewerView({
-    _i30.Key? key,
-    required _i32.Document document,
+    _i32.Key? key,
+    required _i34.Document document,
     int? routerId,
     bool preventDuplicates = true,
     Map<String, String>? parameters,
@@ -1034,6 +1064,34 @@ extension NavigatorStateExtension on _i33.NavigationService {
         transition: transition);
   }
 
+  Future<dynamic> navigateToAssistanceTechniqueView([
+    int? routerId,
+    bool preventDuplicates = true,
+    Map<String, String>? parameters,
+    Widget Function(BuildContext, Animation<double>, Animation<double>, Widget)?
+        transition,
+  ]) async {
+    return navigateTo<dynamic>(Routes.assistanceTechniqueView,
+        id: routerId,
+        preventDuplicates: preventDuplicates,
+        parameters: parameters,
+        transition: transition);
+  }
+
+  Future<dynamic> navigateToStatistiquesView([
+    int? routerId,
+    bool preventDuplicates = true,
+    Map<String, String>? parameters,
+    Widget Function(BuildContext, Animation<double>, Animation<double>, Widget)?
+        transition,
+  ]) async {
+    return navigateTo<dynamic>(Routes.statistiquesView,
+        id: routerId,
+        preventDuplicates: preventDuplicates,
+        parameters: parameters,
+        transition: transition);
+  }
+
   Future<dynamic> replaceWithStartupView([
     int? routerId,
     bool preventDuplicates = true,
@@ -1049,7 +1107,7 @@ extension NavigatorStateExtension on _i33.NavigationService {
   }
 
   Future<dynamic> replaceWithHomeView({
-    _i30.Key? key,
+    _i32.Key? key,
     void Function()? onMenuTap,
     int? routerId,
     bool preventDuplicates = true,
@@ -1136,8 +1194,8 @@ extension NavigatorStateExtension on _i33.NavigationService {
   }
 
   Future<dynamic> replaceWithActivitydetailsView({
-    _i30.Key? key,
-    _i31.ActivityModel? activity,
+    _i32.Key? key,
+    _i33.ActivityModel? activity,
     int? routerId,
     bool preventDuplicates = true,
     Map<String, String>? parameters,
@@ -1189,7 +1247,7 @@ extension NavigatorStateExtension on _i33.NavigationService {
     required String lastName,
     required String address,
     String? otpCode,
-    _i30.Key? key,
+    _i32.Key? key,
     int? routerId,
     bool preventDuplicates = true,
     Map<String, String>? parameters,
@@ -1410,8 +1468,8 @@ extension NavigatorStateExtension on _i33.NavigationService {
   }
 
   Future<dynamic> replaceWithDocumentViewerView({
-    _i30.Key? key,
-    required _i32.Document document,
+    _i32.Key? key,
+    required _i34.Document document,
     int? routerId,
     bool preventDuplicates = true,
     Map<String, String>? parameters,
@@ -1448,6 +1506,34 @@ extension NavigatorStateExtension on _i33.NavigationService {
         transition,
   ]) async {
     return replaceWith<dynamic>(Routes.payoutHistoryView,
+        id: routerId,
+        preventDuplicates: preventDuplicates,
+        parameters: parameters,
+        transition: transition);
+  }
+
+  Future<dynamic> replaceWithAssistanceTechniqueView([
+    int? routerId,
+    bool preventDuplicates = true,
+    Map<String, String>? parameters,
+    Widget Function(BuildContext, Animation<double>, Animation<double>, Widget)?
+        transition,
+  ]) async {
+    return replaceWith<dynamic>(Routes.assistanceTechniqueView,
+        id: routerId,
+        preventDuplicates: preventDuplicates,
+        parameters: parameters,
+        transition: transition);
+  }
+
+  Future<dynamic> replaceWithStatistiquesView([
+    int? routerId,
+    bool preventDuplicates = true,
+    Map<String, String>? parameters,
+    Widget Function(BuildContext, Animation<double>, Animation<double>, Widget)?
+        transition,
+  ]) async {
+    return replaceWith<dynamic>(Routes.statistiquesView,
         id: routerId,
         preventDuplicates: preventDuplicates,
         parameters: parameters,
