@@ -36,6 +36,7 @@ class _PickUpPageState extends State<PickUpPage> with TickerProviderStateMixin {
   bool isFocus1 = false;
   bool isFocus2 = false;
   bool isCurrentLocationVisible = true;
+  bool isLoadingCurrentLocation = false;
 
   double? departLat;
   double? departLng;
@@ -219,57 +220,256 @@ class _PickUpPageState extends State<PickUpPage> with TickerProviderStateMixin {
   }
 
   Future<void> _getCurrentLocation() async {
+    // Prevent multiple simultaneous calls
+    if (isLoadingCurrentLocation) {
+      debugPrint('⚠️ [PickUpPage] Location request already in progress');
+      return;
+    }
+
+    setState(() => isLoadingCurrentLocation = true);
+
     try {
+      debugPrint('📍 [PickUpPage] Starting location request...');
+
+      // 1. Check if location services are enabled
       bool serviceEnabled = await Geolocator.isLocationServiceEnabled();
-      if (!serviceEnabled) return;
-
-      LocationPermission permission = await Geolocator.checkPermission();
-      if (permission == LocationPermission.denied) {
-        permission = await Geolocator.requestPermission();
-        if (permission == LocationPermission.denied) return;
+      if (!serviceEnabled) {
+        debugPrint('❌ [PickUpPage] Location services disabled');
+        if (mounted) {
+          _showLocationServiceDialog();
+        }
+        return;
       }
-      if (permission == LocationPermission.deniedForever) return;
 
+      // 2. Check and request permissions
+      LocationPermission permission = await Geolocator.checkPermission();
+      debugPrint('📍 [PickUpPage] Current permission: $permission');
+
+      if (permission == LocationPermission.denied) {
+        debugPrint('📍 [PickUpPage] Requesting location permission...');
+        permission = await Geolocator.requestPermission();
+
+        if (permission == LocationPermission.denied) {
+          debugPrint('❌ [PickUpPage] Location permission denied');
+          if (mounted) {
+            _showPermissionDeniedMessage();
+          }
+          return;
+        }
+      }
+
+      if (permission == LocationPermission.deniedForever) {
+        debugPrint('❌ [PickUpPage] Location permission permanently denied');
+        if (mounted) {
+          _showPermissionPermanentlyDeniedDialog();
+        }
+        return;
+      }
+
+      debugPrint('✅ [PickUpPage] Permission granted, getting location...');
+
+      // 3. Get current position with timeout
       final position = await Geolocator.getCurrentPosition(
-          desiredAccuracy: LocationAccuracy.high);
-      List<Placemark> placemarks =
-          await placemarkFromCoordinates(position.latitude, position.longitude);
+        desiredAccuracy: LocationAccuracy.high,
+        timeLimit: const Duration(seconds: 15),
+      );
 
+      debugPrint('✅ [PickUpPage] Location obtained: ${position.latitude}, ${position.longitude}');
+
+      // 4. Reverse geocode to get address
+      List<Placemark> placemarks = [];
+      try {
+        placemarks = await placemarkFromCoordinates(
+          position.latitude,
+          position.longitude,
+        ).timeout(const Duration(seconds: 10));
+      } catch (e) {
+        debugPrint('⚠️ [PickUpPage] Geocoding failed: $e (using coordinates only)');
+      }
+
+      String address = 'Position actuelle';
       if (placemarks.isNotEmpty) {
         final place = placemarks.first;
-        final address = [
-          if (place.street != null) place.street,
-          if (place.subLocality != null) place.subLocality,
-          if (place.locality != null) place.locality,
-        ].where((s) => s != null && s.isNotEmpty).join(', ');
+        final addressParts = [
+          if (place.street != null && place.street!.isNotEmpty) place.street,
+          if (place.subLocality != null && place.subLocality!.isNotEmpty) place.subLocality,
+          if (place.locality != null && place.locality!.isNotEmpty) place.locality,
+        ];
+        address = addressParts.isNotEmpty ? addressParts.join(', ') : 'Position actuelle';
+      }
 
-        // Load custom pickup marker
-        final pickupIcon = await MarkerIconService.getPickupMarker();
+      debugPrint('✅ [PickUpPage] Address: $address');
 
+      // 5. Load custom pickup marker
+      final pickupIcon = await MarkerIconService.getPickupMarker();
+
+      // 6. Update UI
+      if (mounted) {
         setState(() {
           isCurrentLocationVisible = false;
-          _departController.text = address.isNotEmpty ? address : 'Position actuelle';
+          _departController.text = address;
           departLat = position.latitude;
           departLng = position.longitude;
           _markers.removeWhere((m) => m.markerId.value == 'depart');
           _markers.add(Marker(
-              markerId: const MarkerId('depart'),
-              position: LatLng(departLat!, departLng!),
-              icon: pickupIcon,
-              infoWindow: InfoWindow(
-                title: '📍 Départ (Position actuelle)',
-                snippet: _departController.text,
-              )));
-          _mapController?.animateCamera(
-              CameraUpdate.newLatLng(LatLng(departLat!, departLng!)));
+            markerId: const MarkerId('depart'),
+            position: LatLng(departLat!, departLng!),
+            icon: pickupIcon,
+            infoWindow: InfoWindow(
+              title: '📍 Départ (Position actuelle)',
+              snippet: _departController.text,
+            ),
+          ));
         });
+
+        // Animate camera to new position
+        _mapController?.animateCamera(
+          CameraUpdate.newLatLngZoom(LatLng(departLat!, departLng!), 15),
+        );
+
+        // Show success message
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Row(
+              children: [
+                Icon(Icons.check_circle, color: Colors.white),
+                SizedBox(width: 8),
+                Text('Position actuelle obtenue avec succès'),
+              ],
+            ),
+            backgroundColor: Colors.green,
+            duration: Duration(seconds: 2),
+          ),
+        );
+
+        // Calculate route if destination is set
+        if (arriveeLat != null && arriveeLng != null) {
+          _calculateDistanceAndDurationOnly();
+        }
       }
-    } catch (e) {
+
+      debugPrint('✅ [PickUpPage] Location set successfully');
+    } on TimeoutException catch (e) {
+      debugPrint('❌ [PickUpPage] Location timeout: $e');
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text('Erreur localisation: $e')));
+          const SnackBar(
+            content: Row(
+              children: [
+                Icon(Icons.error_outline, color: Colors.white),
+                SizedBox(width: 8),
+                Expanded(
+                  child: Text(
+                    'Impossible d\'obtenir votre position. Vérifiez que vous êtes à l\'extérieur ou près d\'une fenêtre.',
+                  ),
+                ),
+              ],
+            ),
+            backgroundColor: Colors.orange,
+            duration: Duration(seconds: 4),
+          ),
+        );
+      }
+    } catch (e) {
+      debugPrint('❌ [PickUpPage] Location error: $e');
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Row(
+              children: [
+                const Icon(Icons.error_outline, color: Colors.white),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: Text('Erreur lors de la récupération de la position: $e'),
+                ),
+              ],
+            ),
+            backgroundColor: Colors.red,
+            duration: const Duration(seconds: 4),
+          ),
+        );
+      }
+    } finally {
+      if (mounted) {
+        setState(() => isLoadingCurrentLocation = false);
       }
     }
+  }
+
+  void _showLocationServiceDialog() {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Row(
+          children: [
+            Icon(Icons.location_off, color: Colors.orange),
+            SizedBox(width: 8),
+            Text('Services de localisation désactivés'),
+          ],
+        ),
+        content: const Text(
+          'Veuillez activer les services de localisation dans les paramètres de votre appareil pour utiliser cette fonctionnalité.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('OK'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _showPermissionDeniedMessage() {
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        content: Row(
+          children: [
+            Icon(Icons.location_off, color: Colors.white),
+            SizedBox(width: 8),
+            Expanded(
+              child: Text('Permission de localisation refusée. Activez-la pour utiliser cette fonctionnalité.'),
+            ),
+          ],
+        ),
+        backgroundColor: Colors.orange,
+        duration: Duration(seconds: 4),
+      ),
+    );
+  }
+
+  void _showPermissionPermanentlyDeniedDialog() {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Row(
+          children: [
+            Icon(Icons.location_off, color: Colors.red),
+            SizedBox(width: 8),
+            Expanded(child: Text('Permission refusée')),
+          ],
+        ),
+        content: const Text(
+          'La permission de localisation a été définitivement refusée. Veuillez l\'activer manuellement dans les paramètres de l\'application.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Annuler'),
+          ),
+          ElevatedButton(
+            onPressed: () {
+              Navigator.pop(context);
+              Geolocator.openLocationSettings();
+            },
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AppColors.logo,
+            ),
+            child: const Text('Ouvrir les paramètres'),
+          ),
+        ],
+      ),
+    );
   }
 
   // 📏 Calculer uniquement distance et durée (sans tracer) - utilise l'API d'estimation
@@ -939,8 +1139,12 @@ class _PickUpPageState extends State<PickUpPage> with TickerProviderStateMixin {
 
   @override
   Widget build(BuildContext context) {
+    final keyboardHeight = MediaQuery.of(context).viewInsets.bottom;
+    final isKeyboardVisible = keyboardHeight > 0;
+
     return Scaffold(
       backgroundColor: Colors.grey[50],
+      resizeToAvoidBottomInset: true,
       appBar: AppBar(
         backgroundColor: Colors.white,
         elevation: 0,
@@ -951,224 +1155,486 @@ class _PickUpPageState extends State<PickUpPage> with TickerProviderStateMixin {
         title: const Text(
           'Démarrer une course',
           style: TextStyle(
-            color: Colors.white,
-            fontSize: 16,
-            fontWeight: FontWeight.w500,
+            color: Colors.black87,
+            fontSize: 18,
+            fontWeight: FontWeight.w600,
+            letterSpacing: -0.5,
           ),
         ),
         centerTitle: true,
       ),
-      body: Column(
+      body: Stack(
         children: [
-          // Carte Google Maps
-          SizedBox(
-            height: 250,
-            child: GoogleMap(
-              initialCameraPosition:
-                  CameraPosition(target: _initialPosition, zoom: 12),
-              myLocationEnabled: true,
-              myLocationButtonEnabled: true,
-              markers: _markers,
-              onMapCreated: (controller) => _mapController = controller,
-            ),
-          ),
-          Expanded(
-            child: SingleChildScrollView(
-              child: Column(
-                children: [
-                  const SizedBox(height: 24),
-                  // Formulaire et suggestions
-                  Container(
-                    margin: const EdgeInsets.symmetric(horizontal: 20),
-                    padding: const EdgeInsets.all(20),
-                    decoration: BoxDecoration(
-                      color: Colors.white,
-                      borderRadius: BorderRadius.circular(16),
-                      boxShadow: [
-                        BoxShadow(
-                          color: Colors.black.withOpacity(0.05),
-                          blurRadius: 10,
-                          offset: const Offset(0, 2),
-                        ),
-                      ],
-                    ),
-                    child: Row(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        // Indicateurs visuels
-                        Padding(
-                          padding: const EdgeInsets.only(top: 16, right: 16),
-                          child: Column(
-                            children: [
-                              Container(
-                                height: 16,
-                                width: 16,
-                                decoration: BoxDecoration(
-                                  shape: BoxShape.circle,
-                                  border: Border.all(
-                                    color: (isFocus1 || isFocus2)
-                                        ? AppColors.logo
-                                        : Colors.grey[400]!,
-                                    width: 2,
-                                  ),
-                                ),
-                              ),
-                              Container(
-                                height: 40,
-                                width: 2,
-                                margin: const EdgeInsets.symmetric(vertical: 8),
-                                decoration: BoxDecoration(
-                                  color: (isFocus1 || isFocus2)
-                                      ? AppColors.logo
-                                      : Colors.grey[300],
-                                  borderRadius: BorderRadius.circular(1),
-                                ),
-                              ),
-                              Icon(
-                                Iconsax.location,
-                                size: 16,
-                                color: isFocus2 ? AppColors.logo : Colors.grey[400],
-                              ),
-                            ],
-                          ),
-                        ),
-                        // Champs de texte
-                        Expanded(
-                          child: Column(
-                            children: [
-                              TextField(
-                                controller: _departController,
-                                focusNode: _departFocus,
-                                cursorColor: AppColors.logo,
-                                decoration: InputDecoration(
-                                  hintText: 'Votre point de départ',
-                                  border: OutlineInputBorder(
-                                    borderRadius: BorderRadius.circular(12),
-                                  ),
-                                  filled: true,
-                                  fillColor: Colors.grey[50],
-                                ),
-                              ),
-                              const SizedBox(height: 16),
-                              TextField(
-                                controller: _destinationController,
-                                focusNode: _destinationFocus,
-                                cursorColor: AppColors.logo,
-                                decoration: InputDecoration(
-                                  hintText: 'Votre destination',
-                                  border: OutlineInputBorder(
-                                    borderRadius: BorderRadius.circular(12),
-                                  ),
-                                  filled: true,
-                                  fillColor: Colors.grey[50],
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                      ],
+          Column(
+            children: [
+              // Carte Google Maps - Compacte quand clavier est ouvert
+              AnimatedContainer(
+                duration: const Duration(milliseconds: 300),
+                curve: Curves.easeInOut,
+                height: isKeyboardVisible ? 180 : 280,
+                child: GoogleMap(
+                  initialCameraPosition:
+                      CameraPosition(target: _initialPosition, zoom: 12),
+                  myLocationEnabled: true,
+                  myLocationButtonEnabled: true,
+                  markers: _markers,
+                  zoomControlsEnabled: false,
+                  onMapCreated: (controller) => _mapController = controller,
+                ),
+              ),
+
+              // Content area
+              Expanded(
+                child: Container(
+                  decoration: const BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.only(
+                      topLeft: Radius.circular(24),
+                      topRight: Radius.circular(24),
                     ),
                   ),
-                  _buildAddressSuggestions(),
-                  const SizedBox(height: 16),
-                  
-                  if (isCurrentLocationVisible)
-                    AnimatedBuilder(
-                      animation: _fadeAnimation,
-                      builder: (context, child) {
-                        return Opacity(
-                          opacity: _fadeAnimation.value,
-                          child: Padding(
-                            padding: const EdgeInsets.symmetric(horizontal: 20),
-                            child: GestureDetector(
-                              onTap: isLoadingAddresses ? null : _getCurrentLocation,
+                  child: Column(
+                    children: [
+                      const SizedBox(height: 8),
+                      // Handle bar (Apple style)
+                      Center(
+                        child: Container(
+                          width: 36,
+                          height: 4,
+                          decoration: BoxDecoration(
+                            color: Colors.grey[300],
+                            borderRadius: BorderRadius.circular(2),
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: 20),
+
+                      // Input fields card
+                      Container(
+                        margin: const EdgeInsets.symmetric(horizontal: 16),
+                        padding: const EdgeInsets.all(16),
+                        decoration: BoxDecoration(
+                          color: Colors.grey[50],
+                          borderRadius: BorderRadius.circular(16),
+                          border: Border.all(
+                            color: Colors.grey[200]!,
+                            width: 1,
+                          ),
+                        ),
+                        child: Column(
+                          children: [
+                            // Departure field
+                            _buildInputField(
+                              controller: _departController,
+                              focusNode: _departFocus,
+                              hint: 'Point de départ',
+                              icon: Icons.circle_outlined,
+                              iconColor: Colors.green,
+                            ),
+
+                            // Separator
+                            Padding(
+                              padding: const EdgeInsets.symmetric(vertical: 12),
                               child: Row(
                                 children: [
-                                  if (isLoadingAddresses)
-                                    const SizedBox(
-                                      width: 20,
-                                      height: 20,
-                                      child: CircularProgressIndicator(
-                                        strokeWidth: 2,
-                                        valueColor:
-                                            AlwaysStoppedAnimation<Color>(AppColors.logo),
-                                      ),
-                                    )
-                                  else
-                                    const Icon(
-                                      Iconsax.location,
-                                      color: AppColors.logo,
-                                      size: 20,
+                                  const SizedBox(width: 12),
+                                  Container(
+                                    width: 2,
+                                    height: 24,
+                                    decoration: BoxDecoration(
+                                      color: Colors.grey[300],
+                                      borderRadius: BorderRadius.circular(1),
                                     ),
-                                  const SizedBox(width: 8),
-                                  Text(
-                                    'Position actuelle',
-                                    style: TextStyle(
-                                      color: isLoadingAddresses
-                                          ? Colors.grey
-                                          : AppColors.logo,
-                                      fontSize: 14,
-                                      fontWeight: FontWeight.w500,
+                                  ),
+                                  const SizedBox(width: 12),
+                                  Expanded(
+                                    child: Container(
+                                      height: 1,
+                                      color: Colors.grey[200],
                                     ),
                                   ),
                                 ],
                               ),
                             ),
+
+                            // Destination field
+                            _buildInputField(
+                              controller: _destinationController,
+                              focusNode: _destinationFocus,
+                              hint: 'Destination',
+                              icon: Iconsax.location,
+                              iconColor: AppColors.logo,
+                            ),
+                          ],
+                        ),
+                      ),
+
+                      const SizedBox(height: 16),
+
+                      // Position actuelle button
+                      if (isCurrentLocationVisible && !isKeyboardVisible)
+                        Padding(
+                          padding: const EdgeInsets.symmetric(horizontal: 16),
+                          child: Material(
+                            color: Colors.transparent,
+                            child: InkWell(
+                              onTap: (isLoadingAddresses || isLoadingCurrentLocation)
+                                  ? null
+                                  : _getCurrentLocation,
+                              borderRadius: BorderRadius.circular(12),
+                              child: Container(
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 16,
+                                  vertical: 14,
+                                ),
+                                decoration: BoxDecoration(
+                                  color: AppColors.logo.withOpacity(0.05),
+                                  borderRadius: BorderRadius.circular(12),
+                                  border: Border.all(
+                                    color: AppColors.logo.withOpacity(0.2),
+                                    width: 1,
+                                  ),
+                                ),
+                                child: Row(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    if (isLoadingCurrentLocation)
+                                      SizedBox(
+                                        width: 18,
+                                        height: 18,
+                                        child: CircularProgressIndicator(
+                                          strokeWidth: 2,
+                                          valueColor: AlwaysStoppedAnimation<Color>(
+                                            AppColors.logo,
+                                          ),
+                                        ),
+                                      )
+                                    else
+                                      Icon(
+                                        Icons.my_location_rounded,
+                                        color: AppColors.logo,
+                                        size: 18,
+                                      ),
+                                    const SizedBox(width: 8),
+                                    Text(
+                                      isLoadingCurrentLocation
+                                          ? 'Localisation...'
+                                          : 'Utiliser ma position actuelle',
+                                      style: TextStyle(
+                                        color: AppColors.logo,
+                                        fontSize: 14,
+                                        fontWeight: FontWeight.w600,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ),
                           ),
-                        );
-                      },
+                        ),
+
+                      const Spacer(),
+                    ],
+                  ),
+                ),
+              ),
+
+              // Bottom button - Fixed at bottom
+              if (!isKeyboardVisible)
+                Container(
+                  padding: const EdgeInsets.fromLTRB(16, 12, 16, 16),
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withOpacity(0.05),
+                        blurRadius: 10,
+                        offset: const Offset(0, -2),
+                      ),
+                    ],
+                  ),
+                  child: SafeArea(
+                    child: SizedBox(
+                      width: double.infinity,
+                      height: 54,
+                      child: ElevatedButton(
+                        onPressed: _canContinue ? _showTripDetailsDialog : null,
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: _canContinue ? AppColors.logo : Colors.grey[300],
+                          foregroundColor: Colors.white,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(14),
+                          ),
+                          elevation: 0,
+                          disabledBackgroundColor: Colors.grey[300],
+                          shadowColor: Colors.transparent,
+                        ),
+                        child: Text(
+                          'Continuer',
+                          style: TextStyle(
+                            fontSize: 17,
+                            fontWeight: FontWeight.w600,
+                            letterSpacing: -0.3,
+                            color: _canContinue ? Colors.white : Colors.grey[500],
+                          ),
+                        ),
+                      ),
                     ),
-                ],
+                  ),
+                ),
+            ],
+          ),
+
+          // Suggestions overlay - Always above keyboard
+          if ((isFocus1 || isFocus2) && (isLoadingAddresses || addressSuggestions.isNotEmpty))
+            _buildSuggestionsOverlay(context, keyboardHeight),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildInputField({
+    required TextEditingController controller,
+    required FocusNode focusNode,
+    required String hint,
+    required IconData icon,
+    required Color iconColor,
+  }) {
+    return Container(
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: Row(
+        children: [
+          Container(
+            padding: const EdgeInsets.all(10),
+            child: Icon(
+              icon,
+              color: iconColor,
+              size: 20,
+            ),
+          ),
+          Expanded(
+            child: TextField(
+              controller: controller,
+              focusNode: focusNode,
+              style: const TextStyle(
+                fontSize: 16,
+                fontWeight: FontWeight.w500,
+                color: Colors.black87,
+              ),
+              cursorColor: AppColors.logo,
+              decoration: InputDecoration(
+                hintText: hint,
+                hintStyle: TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.w400,
+                  color: Colors.grey[400],
+                ),
+                border: InputBorder.none,
+                contentPadding: const EdgeInsets.symmetric(
+                  horizontal: 8,
+                  vertical: 12,
+                ),
               ),
             ),
           ),
-          // Bouton "Voir détails"
-          Container(
-            padding: const EdgeInsets.all(20),
+          if (controller.text.isNotEmpty)
+            GestureDetector(
+              onTap: () {
+                setState(() {
+                  controller.clear();
+                  if (focusNode == _departFocus) {
+                    departLat = null;
+                    departLng = null;
+                    _markers.removeWhere((m) => m.markerId.value == 'depart');
+                  } else {
+                    arriveeLat = null;
+                    arriveeLng = null;
+                    _markers.removeWhere((m) => m.markerId.value == 'arrivee');
+                  }
+                });
+              },
+              child: Container(
+                padding: const EdgeInsets.all(8),
+                child: Icon(
+                  Icons.cancel,
+                  color: Colors.grey[400],
+                  size: 20,
+                ),
+              ),
+            ),
+          const SizedBox(width: 8),
+        ],
+      ),
+    );
+  }
+
+  // Suggestions overlay - Apple Maps style, always above keyboard
+  Widget _buildSuggestionsOverlay(BuildContext context, double keyboardHeight) {
+    final screenHeight = MediaQuery.of(context).size.height;
+    final appBarHeight = AppBar().preferredSize.height + MediaQuery.of(context).padding.top;
+    final mapHeight = keyboardHeight > 0 ? 180.0 : 280.0;
+
+    // Calculate available space above keyboard
+    final availableHeight = screenHeight - appBarHeight - mapHeight - keyboardHeight - 100;
+    final maxHeight = availableHeight.clamp(200.0, 450.0);
+
+    return Positioned(
+      left: 0,
+      right: 0,
+      bottom: keyboardHeight,
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 250),
+        curve: Curves.easeOut,
+        height: maxHeight,
+        child: Material(
+          color: Colors.transparent,
+          child: Container(
+            margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
             decoration: BoxDecoration(
               color: Colors.white,
+              borderRadius: BorderRadius.circular(20),
               boxShadow: [
                 BoxShadow(
-                  color: Colors.black.withOpacity(0.05),
-                  blurRadius: 10,
-                  offset: const Offset(0, -2),
+                  color: Colors.black.withOpacity(0.15),
+                  blurRadius: 30,
+                  offset: const Offset(0, 10),
+                  spreadRadius: 0,
                 ),
               ],
             ),
-            child: SafeArea(
-              child: SizedBox(
-                width: double.infinity,
-                height: 56,
-                child: ElevatedButton(
-                  onPressed: _canContinue
-                      ? () {
-                          print('👆 [PickUpPage] "Voir détails" button pressed');
-                          print('✅ [PickUpPage] _canContinue: $_canContinue');
-                          _showTripDetailsDialog();
-                        }
-                      : () {
-                          print('⚠️ [PickUpPage] "Voir détails" button pressed but disabled');
-                          print('❌ [PickUpPage] _canContinue: $_canContinue');
-                          print('📝 [PickUpPage] Departure text: "${_departController.text}"');
-                          print('📝 [PickUpPage] Destination text: "${_destinationController.text}"');
-                          print('📍 [PickUpPage] departLat: $departLat, arriveeLat: $arriveeLat');
-                        },
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: _canContinue ? AppColors.logo : Colors.grey[300],
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12),
+            child: Column(
+              children: [
+                // Header - Fixed height
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+                  decoration: BoxDecoration(
+                    color: Colors.grey[50],
+                    borderRadius: const BorderRadius.only(
+                      topLeft: Radius.circular(20),
+                      topRight: Radius.circular(20),
+                    ),
+                    border: Border(
+                      bottom: BorderSide(
+                        color: Colors.grey[200]!,
+                        width: 0.5,
+                      ),
                     ),
                   ),
-                  child: const Text(
-                    'Voir détails',
-                    style: TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.w600,
-                      color: Colors.white,
-                    ),
+                  child: Row(
+                    children: [
+                      Icon(
+                        Icons.search_rounded,
+                        color: AppColors.logo,
+                        size: 22,
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: Text(
+                          isFocus1 ? "Point de départ" : "Destination",
+                          style: const TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.w600,
+                            color: Colors.black87,
+                            letterSpacing: -0.3,
+                          ),
+                        ),
+                      ),
+                      GestureDetector(
+                        onTap: () {
+                          setState(() => addressSuggestions.clear());
+                          (isFocus1 ? _departFocus : _destinationFocus).unfocus();
+                        },
+                        child: Container(
+                          padding: const EdgeInsets.all(6),
+                          decoration: BoxDecoration(
+                            color: Colors.grey[200],
+                            shape: BoxShape.circle,
+                          ),
+                          child: Icon(
+                            Icons.close_rounded,
+                            size: 18,
+                            color: Colors.grey[700],
+                          ),
+                        ),
+                      ),
+                    ],
                   ),
                 ),
+
+                // Content - Expanded to fill remaining space
+                Expanded(
+                  child: _buildSuggestionsContent(),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildSuggestionsContent() {
+    if (isLoadingAddresses) {
+      return Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            CircularProgressIndicator(
+              strokeWidth: 3,
+              valueColor: AlwaysStoppedAnimation<Color>(AppColors.logo),
+            ),
+            const SizedBox(height: 16),
+            Text(
+              'Recherche en cours...',
+              style: TextStyle(
+                fontSize: 14,
+                color: Colors.grey[600],
+                fontWeight: FontWeight.w500,
               ),
+            ),
+          ],
+        ),
+      );
+    }
+
+    if (addressSuggestions.isNotEmpty) {
+      return ListView.separated(
+        padding: const EdgeInsets.symmetric(vertical: 8),
+        itemCount: addressSuggestions.length,
+        physics: const BouncingScrollPhysics(),
+        separatorBuilder: (_, __) => Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 16),
+          child: Divider(
+            height: 1,
+            thickness: 0.5,
+            color: Colors.grey[200],
+          ),
+        ),
+        itemBuilder: (context, index) =>
+            _buildSuggestionItem(addressSuggestions[index]),
+      );
+    }
+
+    // No results
+    return Center(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Icon(
+            Icons.search_off_rounded,
+            size: 48,
+            color: Colors.grey[300],
+          ),
+          const SizedBox(height: 12),
+          Text(
+            'Aucun résultat',
+            style: TextStyle(
+              fontSize: 16,
+              color: Colors.grey[500],
+              fontWeight: FontWeight.w500,
             ),
           ),
         ],
@@ -1176,120 +1642,70 @@ class _PickUpPageState extends State<PickUpPage> with TickerProviderStateMixin {
     );
   }
 
-  // Widgets pour suggestions
-  Widget _buildAddressSuggestions() {
-    return (isFocus1 || isFocus2) &&
-            (isLoadingAddresses || addressSuggestions.isNotEmpty)
-        ? Container(
-            margin: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
-            constraints: const BoxConstraints(maxHeight: 300),
-            decoration: BoxDecoration(
-              color: Colors.white,
-              borderRadius: BorderRadius.circular(16),
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black.withOpacity(0.1),
-                  blurRadius: 16,
-                  offset: const Offset(0, 4),
+  Widget _buildSuggestionItem(Map<String, String> suggestion) {
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: () => _onAddressSelected(suggestion),
+        borderRadius: BorderRadius.circular(12),
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+          child: Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(10),
+                decoration: BoxDecoration(
+                  color: AppColors.logo.withOpacity(0.08),
+                  borderRadius: BorderRadius.circular(10),
                 ),
-              ],
-            ),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Container(
-                  padding: const EdgeInsets.all(16),
-                  decoration: BoxDecoration(
-                    color: AppColors.logo.withOpacity(0.05),
-                    borderRadius: const BorderRadius.only(
-                      topLeft: Radius.circular(16),
-                      topRight: Radius.circular(16),
-                    ),
-                  ),
-                  child: Row(
-                    children: [
-                      const Icon(Iconsax.search_normal_1,
-                          color: AppColors.logo, size: 18),
-                      const SizedBox(width: 8),
-                      Text(
-                        isFocus1 ? "Point de départ" : "Destination",
-                        style: const TextStyle(
-                            fontSize: 14,
-                            fontWeight: FontWeight.w600,
-                            color: AppColors.logo),
+                child: Icon(
+                  Icons.location_on_rounded,
+                  color: AppColors.logo,
+                  size: 20,
+                ),
+              ),
+              const SizedBox(width: 14),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      suggestion['description']!.split(',').first,
+                      style: const TextStyle(
+                        fontSize: 15,
+                        fontWeight: FontWeight.w600,
+                        color: Colors.black87,
+                        letterSpacing: -0.2,
                       ),
-                      const Spacer(),
-                      GestureDetector(
-                        onTap: () {
-                          setState(() => addressSuggestions.clear());
-                          (isFocus1 ? _departFocus : _destinationFocus).unfocus();
-                        },
-                        child: Container(
-                          padding: const EdgeInsets.all(4),
-                          decoration: BoxDecoration(
-                            color: Colors.grey[100],
-                            shape: BoxShape.circle,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                    if (suggestion['description']!.contains(','))
+                      Padding(
+                        padding: const EdgeInsets.only(top: 2),
+                        child: Text(
+                          suggestion['description']!.split(',').skip(1).join(',').trim(),
+                          style: TextStyle(
+                            fontSize: 13,
+                            color: Colors.grey[600],
+                            fontWeight: FontWeight.w400,
                           ),
-                          child: Icon(Icons.close, size: 14, color: Colors.grey[600]),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
                         ),
                       ),
-                    ],
-                  ),
+                  ],
                 ),
-                if (isLoadingAddresses)
-                  const Padding(
-                      padding: EdgeInsets.all(24),
-                      child: CircularProgressIndicator()),
-                if (!isLoadingAddresses && addressSuggestions.isNotEmpty)
-                  Flexible(
-                    child: ListView.separated(
-                      shrinkWrap: true,
-                      padding: const EdgeInsets.symmetric(vertical: 8),
-                      itemCount: addressSuggestions.length,
-                      separatorBuilder: (_, __) =>
-                          Divider(height: 1, color: Colors.grey[100], indent: 48),
-                      itemBuilder: (context, index) =>
-                          _buildSuggestionItem(addressSuggestions[index]),
-                    ),
-                  ),
-                if (!isLoadingAddresses && addressSuggestions.isEmpty)
-                  const Padding(
-                      padding: EdgeInsets.all(24),
-                      child: Text("Aucun résultat")),
-              ],
-            ),
-          )
-        : const SizedBox.shrink();
-  }
-
-  Widget _buildSuggestionItem(Map<String, String> suggestion) => Material(
-        color: Colors.transparent,
-        child: InkWell(
-          onTap: () => _onAddressSelected(suggestion),
-          child: Container(
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-            child: Row(
-              children: [
-                Container(
-                  padding: const EdgeInsets.all(6),
-                  decoration: BoxDecoration(
-                    color: AppColors.logo.withOpacity(0.1),
-                    borderRadius: BorderRadius.circular(6),
-                  ),
-                  child: const Icon(Iconsax.location, color: AppColors.logo, size: 14),
-                ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: Text(
-                    suggestion['description']!,
-                    style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w500),
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                ),
-              ],
-            ),
+              ),
+              Icon(
+                Icons.arrow_forward_ios_rounded,
+                size: 14,
+                color: Colors.grey[400],
+              ),
+            ],
           ),
         ),
-      );
+      ),
+    );
+  }
 }

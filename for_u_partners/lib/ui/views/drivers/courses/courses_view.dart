@@ -736,13 +736,25 @@ class CoursesView extends StackedView<CoursesViewModel> {
 
   @override
   CoursesViewModel viewModelBuilder(BuildContext context) {
-    // Utiliser locator pour obtenir l'instance de HomemainViewModel
+    // Use locator to get the singleton instance instead of creating a new one
+    final viewModel = locator<CoursesViewModel>();
+
+    // Set up HomemainViewModel reference
     final homeMainViewModel = locator<HomemainViewModel>();
-    final viewModel = CoursesViewModel();
     viewModel.setHomeMainViewModel(homeMainViewModel);
-    // Initialiser le ViewModel
+
+    // Initialize the ViewModel (has guard to prevent double initialization)
     viewModel.initializeViewModel();
     return viewModel;
+  }
+
+  @override
+  void onViewModelReady(CoursesViewModel viewModel) {
+    super.onViewModelReady(viewModel);
+
+    // ⚡ CRITICAL: Check for pending restoration every time the view is shown
+    // This ensures pickup courses started from PickUpPage are properly restored
+    viewModel.checkPendingRestoration();
   }
 }
 

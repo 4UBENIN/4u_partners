@@ -162,18 +162,18 @@ class CoursesViewModel extends BaseViewModel {
     _vehicleType = await _sharedPreferencesService.getActiveVehicleType();
     debugPrint('🚗 [Vehicle] Loaded vehicle type from cache: $_vehicleType');
 
-    // TODO: If vehicle type is null, fetch it from API
-    // if (_vehicleType == null) {
-    //   debugPrint('⏳ [Vehicle] Vehicle type is null, fetching from API...');
-    //   await _fetchVehicleTypeFromAPI();
-    // }
+    // Fallback: If vehicle type is null, fetch it from API
+    if (_vehicleType == null) {
+      debugPrint('⏳ [Vehicle] Vehicle type is null, fetching from API...');
+      await _fetchVehicleTypeFromAPI();
+    }
 
     // Initialize location service and get last known location (instant)
     await _initializeLocation();
 
     // ⚡ CRITICAL: Check for pending course restoration BEFORE loading notifications
     // This ensures active courses are restored before any state clearing logic
-    await _checkPendingRestoration();
+    await checkPendingRestoration();
 
     // ⚡ FALLBACK: If no pending restoration, check persisted ride state
     // This handles cases where the view was rebuilt and restoration data was already consumed
@@ -212,7 +212,8 @@ class CoursesViewModel extends BaseViewModel {
   }
 
   /// Check for pending course restoration from app resume
-  Future<void> _checkPendingRestoration() async {
+  /// This method is public so it can be called every time the view is shown
+  Future<void> checkPendingRestoration() async {
     try {
       debugPrint('🔍 [Restoration] Checking for pending course restoration...');
       final restorationService = locator<CourseRestorationService>();
@@ -2251,6 +2252,11 @@ class CoursesViewModel extends BaseViewModel {
     debugPrint('🌐 [_resetCourseState] Backend location updates DISABLED');
     debugPrint('🌐 [_resetCourseState] Previous course ID: $currentCourseId');
 
+    // 🧹 CRITICAL: Clear course restoration service to prevent re-restoration
+    final restorationService = locator<CourseRestorationService>();
+    restorationService.clearPendingRestoration();
+    debugPrint('🧹 [_resetCourseState] Course restoration service CLEARED');
+
     _currentCourse = null;
     _isGoingToPickup = false;
     _isOnTrip = false;
@@ -2404,6 +2410,7 @@ class CoursesViewModel extends BaseViewModel {
                   ? (rideState['depLat'] as int).toDouble()
                   : null),
           serviceId: rideState['serviceId'] as int?,  // ⚡ CRITICAL: Restore serviceId to identify pickup courses
+          phoneNumber: rideState['phoneNumber']?.toString(),  // Restore phone number
         );
 
         // Mettre à jour l'état en fonction du statut
@@ -2678,6 +2685,7 @@ class CoursesViewModel extends BaseViewModel {
       final clientName = clientData != null
           ? '${clientData['prenom'] ?? ''} ${clientData['nom'] ?? ''}'.trim()
           : 'Client';
+      final clientTelephone = clientData?['telephone'] as String?;
 
       // Parse coordinates (handle both String and double types)
       final pointDepart = courseDetails['point_depart'] as Map<String, dynamic>?;
@@ -2741,6 +2749,7 @@ class CoursesViewModel extends BaseViewModel {
         distance: _parseNumericValue(courseDetails['distance_km']),
         prix: _parseNumericValue(courseDetails['montant']),
         serviceId: serviceId,  // ⚡ Now properly set to 3 for pickup courses
+        phoneNumber: clientTelephone,  // Add phone number from API
       );
 
       _currentCourse = restoredCourse;

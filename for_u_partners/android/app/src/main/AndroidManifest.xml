@@ -6,7 +6,6 @@
 <uses-permission android:name="android.permission.CAMERA" />
 <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" android:maxSdkVersion="32" />
 <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" android:maxSdkVersion="32" />
-<uses-permission android:name="android.permission.READ_MEDIA_IMAGES" />
 
 <uses-permission android:name="android.permission.INTERNET" />
 
@@ -27,6 +26,17 @@
           <meta-data
             android:name="com.google.android.geo.API_KEY"
             android:value="AIzaSyAVtrvygnbsdnL6VMEJS_DB0JfEa0piHqM" />
+
+        <!-- Firebase Cloud Messaging Configuration -->
+        <!-- Default notification channel for Firebase -->
+        <meta-data
+            android:name="com.google.firebase.messaging.default_notification_channel_id"
+            android:value="4u_driver_notifications_v2" />
+
+        <!-- Default notification icon -->
+        <meta-data
+            android:name="com.google.firebase.messaging.default_notification_icon"
+            android:resource="@mipmap/ic_launcher" />
 
         <!-- NOUVEAU SERVICE FIREBASE MESSAGING -->
         <service

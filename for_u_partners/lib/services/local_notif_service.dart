@@ -3,6 +3,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:timezone/data/latest.dart' as tz;
 import 'package:logger/logger.dart';
+import 'package:for_u_partners/app/app.locator.dart';
+import 'package:stacked_services/stacked_services.dart';
+import 'package:for_u_partners/app/app.router.dart';
 
 class LocalNotificationService {
   static final FlutterLocalNotificationsPlugin
@@ -123,35 +126,38 @@ class LocalNotificationService {
     _logger.i(
         'Notification tappée - ID: ${response.id}, Type: $type, Data: $data');
 
-    // Navigation en fonction du type de notification
-    switch (type) {
-      case _typeNewCourse:
-        if (data.isNotEmpty) {
-          // Naviguer vers la page de détails de la nouvelle course
-          // Ex: NavigationService.navigateTo('/course/${data[0]}');
-        }
-        break;
-      case _typeCourseAccepted:
-        // Naviguer vers la page de suivi de course
-        // Ex: NavigationService.navigateTo('/course/tracking/${data[0]}');
-        break;
-      case _typeCourseCancelled:
-        // Afficher un message d'annulation
-        break;
-      case _typePaymentReceived:
-        // Naviguer vers l'historique des paiements
-        // Ex: NavigationService.navigateTo('/wallet');
-        break;
-      case _typeCourseCompleted:
-        // Naviguer vers les détails de la course terminée
-        // Ex: NavigationService.navigateTo('/course/${data[0]}/completed');
-        break;
-      case _typeCourseStatusUpdate:
-        // Mettre à jour l'interface utilisateur avec le nouveau statut
-        break;
-      default:
-        _logger.w('Type de notification inconnu: $type');
-        break;
+    try {
+      final navigationService = locator<NavigationService>();
+
+      // Navigation en fonction du type de notification
+      switch (type) {
+        case _typeNewCourse:
+          _logger.i('📱 [LOCAL NOTIF TAP] New course notification tapped, navigating to CoursesView');
+          // Navigate to courses view to show the accept ride bottom sheet
+          navigationService.navigateTo(Routes.coursesView);
+          break;
+        case _typeCourseAccepted:
+        case _typeCourseStatusUpdate:
+          _logger.i('📱 [LOCAL NOTIF TAP] Course status notification tapped, navigating to CoursesView');
+          // Navigate to courses view to show course status
+          navigationService.navigateTo(Routes.coursesView);
+          break;
+        case _typeCourseCancelled:
+          _logger.i('📱 [LOCAL NOTIF TAP] Course cancelled notification tapped');
+          // Just navigate to courses view to show current state
+          navigationService.navigateTo(Routes.coursesView);
+          break;
+        case _typePaymentReceived:
+        case _typeCourseCompleted:
+          _logger.i('📱 [LOCAL NOTIF TAP] Payment/completion notification tapped');
+          // Could navigate to activity/history view in the future
+          break;
+        default:
+          _logger.w('Type de notification inconnu: $type');
+          break;
+      }
+    } catch (e) {
+      _logger.e('❌ Error handling notification tap: $e');
     }
   }
 

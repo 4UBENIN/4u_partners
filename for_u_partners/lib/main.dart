@@ -20,13 +20,12 @@ import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:for_u_partners/services/active_course_checker_service.dart';
 import 'package:for_u_partners/services/course_restoration_service.dart';
 import 'package:for_u_partners/services/sharedpreferences_service.dart';
+import 'package:for_u_partners/ui/common/get_fcm_token.dart' show firebaseMessagingBackgroundHandler;
 
 // Gestionnaire de messages en arrière-plan
-@pragma('vm:entry-point')
-Future<void> firebaseMessagingBackgroundHandler(RemoteMessage message) async {
-  await Firebase.initializeApp();
-  print("Message en arrière-plan: ${message.messageId}");
-}
+// NOTE: This is imported from get_fcm_token.dart and will be registered below
+// The actual implementation is in lib/ui/common/get_fcm_token.dart
+// DO NOT duplicate the implementation here
 
 // Point d'entrée principal de l'application
 Future<void> main() async {

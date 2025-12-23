@@ -106,18 +106,26 @@ class AuthService {
         String userId = responseJson['data']['id'].toString();
         String token = responseJson['token'];
         String message = responseJson['message'] ?? "Connexion réussie";
+        String? vehiculeType = responseJson['vehicule_type'];
 
         print("🟡 [AuthService] Données extraites:");
         print("   - Nom: $name");
         print("   - UserId: $userId");
         print("   - Role: $role");
         print("   - Token: ${token.substring(0, 20)}...");
+        print("   - Vehicule Type: $vehiculeType");
 
         print("🟡 [AuthService] Sauvegarde dans SharedPreferences...");
         await _sharedPreferencesServices.saveToken(token);
         await _sharedPreferencesServices.saveUserName(name);
         await _sharedPreferencesServices.saveUserType(role);
         await _sharedPreferencesServices.saveUserId(userId);
+
+        // Save vehicle type if available
+        if (vehiculeType != null && vehiculeType.isNotEmpty) {
+          await _sharedPreferencesServices.saveActiveVehicleType(vehiculeType);
+          print("🚗 [AuthService] Vehicle type saved: $vehiculeType");
+        }
 
         String firestoreUserId;
         if (responseJson['data']['conducteur'] != null) {
@@ -911,6 +919,7 @@ class AuthService {
     await _sharedPreferencesServices.removeUserId();
     await _sharedPreferencesServices.removeUserType();
     await _sharedPreferencesServices.removeUserTypeId();
+    await _sharedPreferencesServices.removeActiveVehicleType();
 
     _navigationService.clearStackAndShow(Routes.loginView);
   }

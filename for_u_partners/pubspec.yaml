@@ -1,7 +1,7 @@
 name: for_u_partners
 description: A new Flutter project.
 publish_to: 'none'
-version: 1.0.0+30
+version: 1.0.0+32
 
 environment:
   sdk: '>=3.0.3 <4.0.0'
@@ -64,6 +64,7 @@ dependencies:
   path: ^1.8.3
   dio: ^5.3.2
   url_launcher: ^6.3.1
+  package_info_plus: ^8.1.2
 
   flutter_dotenv: ^5.1.0
   font_awesome_flutter: ^10.10.0

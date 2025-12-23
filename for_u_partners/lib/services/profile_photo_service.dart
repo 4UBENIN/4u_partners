@@ -34,7 +34,7 @@ class ProfilePhotoService {
       }
 
       // 2. Construire l'URI de l'endpoint
-      final uri = Uri.parse('$_baseUrl/user/photo-profil');
+      final uri = Uri.parse('$_baseUrl/api/user/photo-profil');
       debugPrint('📤 [UPLOAD] Upload URL: $uri');
 
       // 3. Créer une requête multipart
@@ -80,6 +80,12 @@ class ProfilePhotoService {
       // 8. Traiter la réponse
       if (response.statusCode == 200 || response.statusCode == 201) {
         final data = json.decode(utf8.decode(response.bodyBytes));
+
+        // Remove /storage from the photo URL if present
+        if (data['photo_url'] != null) {
+          data['photo_url'] = (data['photo_url'] as String).replaceAll('/storage', '');
+        }
+
         debugPrint('✅ [UPLOAD] Upload successful!');
         debugPrint('📸 [UPLOAD] New photo URL: ${data['photo_url']}');
         return data;
@@ -128,7 +134,7 @@ class ProfilePhotoService {
       }
 
       // 2. Construire l'URI et nettoyer le token
-      final uri = Uri.parse('$_baseUrl/user/photo-profil');
+      final uri = Uri.parse('$_baseUrl/api/user/photo-profil');
       final cleanToken = token.replaceAll('"', '').trim();
       debugPrint('🗑️ [DELETE] Delete URL: $uri');
 

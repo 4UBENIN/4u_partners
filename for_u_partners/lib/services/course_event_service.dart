@@ -22,6 +22,7 @@ class CourseNotificationData {
   final double depLat;
   final DateTime timestamp;
   final int? serviceId; // ⚡ Added to identify pickup courses (service_id = 3)
+  final String? clientTelephone; // Phone number of the client
 
   CourseNotificationData(
     this.clientId, {
@@ -41,6 +42,7 @@ class CourseNotificationData {
     required this.depLong,
     required this.depLat,
     this.serviceId, // ⚡ Added
+    this.clientTelephone,
     DateTime? timestamp,
   }) : timestamp = timestamp ?? DateTime.now();
 
@@ -69,6 +71,7 @@ class CourseNotificationData {
       depLong: double.tryParse(data['depart_lng']?.toString() ?? '0') ?? 0.0,
       depLat: double.tryParse(data['depart_lat']?.toString() ?? '0') ?? 0.0,
       serviceId: int.tryParse(data['service_id']?.toString() ?? ''), // ⚡ Added
+      clientTelephone: data['client_telephone']?.toString(),
       timestamp: receivedAt, // ✨ Utilise le timestamp fourni ou DateTime.now()
     );
   }
@@ -92,6 +95,7 @@ class CourseNotificationData {
       'depLong': depLong,
       'depLat': depLat,
       'serviceId': serviceId, // ⚡ Added
+      'clientTelephone': clientTelephone,
       'timestamp': timestamp.millisecondsSinceEpoch,
     };
   }
@@ -116,6 +120,7 @@ class CourseNotificationData {
       depLong: (json['depLong'] ?? 0.0).toDouble(),
       depLat: (json['depLat'] ?? 0.0).toDouble(),
       serviceId: json['serviceId'] as int?, // ⚡ Added
+      clientTelephone: json['clientTelephone'] as String?,
       timestamp: DateTime.fromMillisecondsSinceEpoch(json['timestamp'] ?? 0),
     );
   }
@@ -152,6 +157,7 @@ class CourseNotificationData {
       depLong: depLong,
       depLat: depLat,
       serviceId: serviceId, // ⚡ Added to properly identify pickup courses
+      phoneNumber: clientTelephone, // Add phone number from client
     );
   }
 
