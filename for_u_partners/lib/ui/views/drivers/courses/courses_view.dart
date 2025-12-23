@@ -1,6 +1,7 @@
 import 'package:for_u_partners/app/app.router.dart';
 import 'package:for_u_partners/services/sharedpreferences_service.dart';
 import 'package:for_u_partners/services/driver_service.dart';
+import 'package:for_u_partners/services/course_restoration_service.dart';
 import 'package:for_u_partners/ui/common/app_colors.dart';
 import 'package:for_u_partners/ui/views/drivers/courses/chat_page.dart';
 import 'package:for_u_partners/ui/views/drivers/courses/recap_view.dart';
@@ -554,7 +555,16 @@ class CoursesView extends StackedView<CoursesViewModel> {
                           if (courseIdString.isNotEmpty) {
                             viewModel.removeCourse(courseIdString);
                           }
+
+                          // Clear any pending restoration data to prevent re-restoration
+                          final restorationService = locator<CourseRestorationService>();
+                          restorationService.clearPendingRestoration();
+
+                          // Navigate back to home, clearing the navigation stack
                           final navigationService = locator<NavigationService>();
+                          // First pop the recap view to return to courses view briefly
+                          Navigator.of(context).pop();
+                          // Then navigate to home
                           navigationService.navigateToHomemainView();
                         },
                       )
@@ -566,7 +576,16 @@ class CoursesView extends StackedView<CoursesViewModel> {
                           if (courseIdString.isNotEmpty) {
                             viewModel.removeCourse(courseIdString);
                           }
+
+                          // Clear any pending restoration data to prevent re-restoration
+                          final restorationService = locator<CourseRestorationService>();
+                          restorationService.clearPendingRestoration();
+
+                          // Navigate back to home, clearing the navigation stack
                           final navigationService = locator<NavigationService>();
+                          // First pop the recap view to return to courses view briefly
+                          Navigator.of(context).pop();
+                          // Then navigate to home
                           navigationService.navigateToHomemainView();
                         },
                       ),
@@ -736,13 +755,31 @@ class CoursesView extends StackedView<CoursesViewModel> {
 
   @override
   CoursesViewModel viewModelBuilder(BuildContext context) {
-    // Utiliser locator pour obtenir l'instance de HomemainViewModel
+    // Use locator to get the singleton instance instead of creating a new one
+    final viewModel = locator<CoursesViewModel>();
+
+    // Set up HomemainViewModel reference
     final homeMainViewModel = locator<HomemainViewModel>();
-    final viewModel = CoursesViewModel();
     viewModel.setHomeMainViewModel(homeMainViewModel);
-    // Initialiser le ViewModel
+
+    // Initialize the ViewModel (has guard to prevent double initialization)
     viewModel.initializeViewModel();
     return viewModel;
+  }
+
+  @override
+  bool get disposeViewModel => false; // CRITICAL: Don't dispose Singleton ViewModel
+
+  @override
+  void onViewModelReady(CoursesViewModel viewModel) {
+    super.onViewModelReady(viewModel);
+
+    // ⚡ CRITICAL: Check for pending restoration every time the view is shown
+    // This ensures pickup courses started from PickUpPage are properly restored
+    // Schedule for next frame to avoid build conflicts
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      viewModel.checkPendingRestoration();
+    });
   }
 }
 

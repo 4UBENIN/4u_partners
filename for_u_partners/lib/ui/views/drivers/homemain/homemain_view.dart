@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:for_u_partners/ui/common/app_colors.dart';
 import 'package:stacked/stacked.dart';
 import 'package:cached_network_image/cached_network_image.dart';
+import 'package:package_info_plus/package_info_plus.dart';
 
 import 'homemain_viewmodel.dart';
 
@@ -101,8 +102,48 @@ class HomemainView extends StackedView<HomemainViewModel> {
               left: 16,
               child: SafeArea(
                 top: false,
-                child: _SidebarToggleButton(
-                  onTap: viewModel.toggleNavigation,
+                child: Row(
+                  children: [
+                    _SidebarToggleButton(
+                      onTap: viewModel.toggleNavigation,
+                    ),
+                    const SizedBox(width: 12),
+                    FutureBuilder<PackageInfo>(
+                      future: PackageInfo.fromPlatform(),
+                      builder: (context, snapshot) {
+                        if (snapshot.hasData) {
+                          return Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                            decoration: BoxDecoration(
+                              color: Colors.white,
+                              borderRadius: BorderRadius.circular(20),
+                              border: Border.all(
+                                color: Colors.grey.withValues(alpha: 0.12),
+                                width: 1,
+                              ),
+                              boxShadow: [
+                                BoxShadow(
+                                  color: Colors.black.withValues(alpha: 0.08),
+                                  blurRadius: 4,
+                                  offset: const Offset(0, 2),
+                                ),
+                              ],
+                            ),
+                            child: Text(
+                              'v${snapshot.data!.version}+${snapshot.data!.buildNumber}',
+                              style: const TextStyle(
+                                fontSize: 13,
+                                fontWeight: FontWeight.w600,
+                                color: kcPrimaryColor,
+                                letterSpacing: -0.2,
+                              ),
+                            ),
+                          );
+                        }
+                        return const SizedBox.shrink();
+                      },
+                    ),
+                  ],
                 ),
               ),
             ),

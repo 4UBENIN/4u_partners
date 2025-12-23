@@ -23,6 +23,12 @@ class UserModel {
   });
 
   factory UserModel.fromJson(Map<String, dynamic> json) {
+    // Clean photo URL by removing /storage if present
+    String? cleanPhotoUrl = json['photo_url'];
+    if (cleanPhotoUrl != null) {
+      cleanPhotoUrl = cleanPhotoUrl.replaceAll('/storage', '');
+    }
+
     return UserModel(
       id: json['id'].toString(),
       nom: json['nom'] ?? '',
@@ -32,7 +38,7 @@ class UserModel {
       adresse: json['adresse'],
       dateNaissance: json['date_naissance'],
       genre: json['genre'],
-      photoUrl: json['photo_url'], 
+      photoUrl: cleanPhotoUrl,
     );
   }
 

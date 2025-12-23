@@ -141,12 +141,18 @@ class DriverInfo {
   });
 
   factory DriverInfo.fromJson(Map<String, dynamic> json) {
+    // Clean photo URL by removing /storage if present
+    String? cleanPhotoUrl = json['photo_url'] ?? json['photo'];
+    if (cleanPhotoUrl != null) {
+      cleanPhotoUrl = cleanPhotoUrl.replaceAll('/storage', '');
+    }
+
     return DriverInfo(
       id: json['id'] ?? 0,
       nom: json['nom'] ?? '',
       prenom: json['prenom'] ?? '',
       telephone: json['telephone'] ?? json['phone'] ?? '',
-      photoUrl: json['photo_url'] ?? json['photo'],
+      photoUrl: cleanPhotoUrl,
       noteMoyenne: json['note_moyenne']?.toString(),
     );
   }

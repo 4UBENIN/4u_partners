@@ -28,7 +28,7 @@ class MarkerIconService {
       if (_driverMarkerMoto != null) return _driverMarkerMoto!;
       _driverMarkerMoto = await _loadSvgMarker(
         'assets/markers/driver_marker_moto.svg',
-        width: 50,
+        width: 30,
       );
       return _driverMarkerMoto!;
     }
@@ -38,7 +38,7 @@ class MarkerIconService {
       if (_driverMarkerTricycle != null) return _driverMarkerTricycle!;
       _driverMarkerTricycle = await _loadSvgMarker(
         'assets/markers/driver_marker_tricycle.svg',
-        width: 50,
+        width: 30,
       );
       return _driverMarkerTricycle!;
     }
@@ -47,7 +47,7 @@ class MarkerIconService {
     if (_driverMarker != null) return _driverMarker!;
     _driverMarker = await _loadSvgMarker(
       'assets/markers/driver_marker.svg',
-      width: 50,
+      width: 30,
     );
     return _driverMarker!;
   }
@@ -57,7 +57,7 @@ class MarkerIconService {
     if (_pickupMarker != null) return _pickupMarker!;
     _pickupMarker = await _loadSvgMarker(
       'assets/markers/pickup_marker.svg',
-      width: 50,
+      width: 30,
     );
     return _pickupMarker!;
   }
@@ -67,7 +67,7 @@ class MarkerIconService {
     if (_destinationMarker != null) return _destinationMarker!;
     _destinationMarker = await _loadSvgMarker(
       'assets/markers/destination_marker.svg',
-      width: 50,
+      width: 30,
     );
     return _destinationMarker!;
   }
@@ -75,7 +75,7 @@ class MarkerIconService {
   /// Load SVG marker from asset with specified size
   static Future<BitmapDescriptor> _loadSvgMarker(
     String assetPath, {
-    int width = 50,
+    int width = 30,
   }) async {
     try {
       debugPrint('📍 [Marker] Loading SVG marker from: $assetPath');

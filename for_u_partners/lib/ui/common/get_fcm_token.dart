@@ -198,17 +198,57 @@ class FirebaseMessagingService {
     // Messages en premier plan - DÉSACTIVÉ car géré par setupFlutterNotifications()
     // La gestion est centralisée dans setupFlutterNotifications() pour éviter les doublons
 
+    // Notification tap when app is in background
     FirebaseMessaging.onMessageOpenedApp.listen((message) {
-      print('Notification ouverte: ${message.notification?.body}');
-      _handleIncomingMessage(message);
+      print('📱 [FCM TAP] Notification tapped (app in background): ${message.notification?.title}');
+      _handleNotificationTap(message);
     });
 
-    // Tap sur notification (app fermée)
+    // Notification tap when app was terminated
     RemoteMessage? initialMessage = await _messaging.getInitialMessage();
     if (initialMessage != null) {
-      print(
-          'App ouvert depuis notification: ${initialMessage.notification?.title}');
-      _handleIncomingMessage(initialMessage);
+      print('📱 [FCM TAP] App opened from notification (terminated): ${initialMessage.notification?.title}');
+      // Delay to allow app initialization to complete
+      Future.delayed(const Duration(milliseconds: 1500), () {
+        _handleNotificationTap(initialMessage);
+      });
+    }
+  }
+
+  // Handle notification tap specifically (separate from foreground message handling)
+  void _handleNotificationTap(RemoteMessage message) {
+    try {
+      final data = message.data;
+      print('📱 [FCM TAP] Processing notification tap with data: $data');
+
+      // Only handle course notifications
+      if (data.containsKey('course_id') &&
+          data.containsKey('client_nom') &&
+          data.containsKey('eta_minutes')) {
+        print('📱 [FCM TAP] Course notification detected, processing...');
+
+        // Create CourseNotificationData
+        final courseData = CourseNotificationData.fromFirebaseData(
+          data,
+          receivedAt: DateTime.now(),
+        );
+
+        // Save notification
+        CourseNotificationStorage.saveNotification(courseData);
+        print('📱 [FCM TAP] Course notification saved: ${courseData.courseId}');
+
+        // Trigger course event to update ViewModel
+        _courseEventService.onNewCourseReceived(data);
+        print('📱 [FCM TAP] Course event triggered for ViewModel');
+
+        // Navigate to courses view
+        navigationServices.navigateToCoursesView();
+        print('📱 [FCM TAP] Navigation to CoursesView initiated');
+      } else {
+        print('📱 [FCM TAP] Not a new course notification, ignoring');
+      }
+    } catch (e) {
+      print('❌ [FCM TAP] Error handling notification tap: $e');
     }
   }
 
