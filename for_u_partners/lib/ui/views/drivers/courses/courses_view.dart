@@ -365,11 +365,17 @@ class CoursesView extends StackedView<CoursesViewModel> {
   }
 
   Widget _buildClientCard(CoursesViewModel viewModel, BuildContext context) {
+    print('🎴 [ClientCard] _buildClientCard called');
+    print('🎴 [ClientCard] availableCourses.length: ${viewModel.availableCourses.length}');
+    print('🎴 [ClientCard] currentBottomSheetType: ${viewModel.currentBottomSheetType}');
+
     if (viewModel.availableCourses.isEmpty) {
+      print('❌ [ClientCard] availableCourses is EMPTY, returning SizedBox.shrink()');
       return const SizedBox.shrink();
     }
 
     final client = viewModel.availableCourses.first;
+    print('✅ [ClientCard] Rendering card for client: ${client.name} (courseId: ${client.courseId})');
 
     return ClientCard(
       client: client,
@@ -776,9 +782,14 @@ class CoursesView extends StackedView<CoursesViewModel> {
 
     // ⚡ CRITICAL: Check for pending restoration every time the view is shown
     // This ensures pickup courses started from PickUpPage are properly restored
+    // Also refresh stored notifications to handle notification taps
     // Schedule for next frame to avoid build conflicts
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      viewModel.checkPendingRestoration();
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
+      await viewModel.checkPendingRestoration();
+
+      // Refresh notifications and show bottom sheet if courses are available
+      // This handles notification tap scenarios where the view is shown from a notification
+      await viewModel.refreshNotificationsAndShowBottomSheet();
     });
   }
 }

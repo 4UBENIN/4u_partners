@@ -183,7 +183,7 @@ class CoursesViewModel extends BaseViewModel {
     }
 
     // Load stored notifications
-    await _loadStoredNotifications();
+    await loadStoredNotifications();
 
     _setupCourseListeners();
 
@@ -198,7 +198,7 @@ class CoursesViewModel extends BaseViewModel {
 
     // Afficher le bottom sheet s'il y a des courses
     print(
-        '🔍 État après _loadStoredNotifications - availableCourses: ${_availableCourses.length}');
+        '🔍 État après loadStoredNotifications - availableCourses: ${_availableCourses.length}');
     print(
         '🔍 Contenu de availableCourses: ${_availableCourses.map((c) => '${c.courseId}: ${c.name}').toList()}');
 
@@ -210,6 +210,30 @@ class CoursesViewModel extends BaseViewModel {
       }
     }
     print("currentBottomSheetType: $_currentBottomSheetType");
+  }
+
+  /// Refresh stored notifications and show bottom sheet if courses are available
+  /// Call this when the view appears (e.g., from notification tap)
+  Future<void> refreshNotificationsAndShowBottomSheet() async {
+    try {
+      debugPrint('🔄 [Notifications] Refreshing stored notifications...');
+
+      // Reload notifications from storage
+      await loadStoredNotifications();
+
+      // Show bottom sheet if there are available courses
+      if (_availableCourses.isNotEmpty) {
+        debugPrint('📱 [Notifications] Found ${_availableCourses.length} courses, showing bottom sheet');
+        setBottomSheetType(BottomSheetAppType.clients);
+
+        // Draw route for the first available course
+        await _drawRouteForNewCourse(_availableCourses.first);
+      } else {
+        debugPrint('ℹ️ [Notifications] No stored courses found');
+      }
+    } catch (e) {
+      debugPrint('❌ [Notifications] Error refreshing notifications: $e');
+    }
   }
 
   /// Check for pending course restoration from app resume
@@ -233,7 +257,8 @@ class CoursesViewModel extends BaseViewModel {
   }
 
   // ✨ Charger les notifications stockées au démarrage
-  Future<void> _loadStoredNotifications() async {
+  // Made public so it can be called when view appears (e.g., from notification tap)
+  Future<void> loadStoredNotifications() async {
     try {
       _isLoadingCourses = true;
       notifyListeners();
@@ -305,7 +330,10 @@ class CoursesViewModel extends BaseViewModel {
       }
 
       _isLoadingCourses = false;
+      print('📊 [LoadedNotifications] Final availableCourses.length: ${_availableCourses.length}');
+      print('📊 [LoadedNotifications] Final availableCourses: ${_availableCourses.map((c) => '${c.courseId}: ${c.name}').toList()}');
       notifyListeners();
+      print('📢 [LoadedNotifications] notifyListeners() called');
 
       print('✅ ${_availableCourses.length} courses chargées au total');
 
@@ -323,7 +351,7 @@ class CoursesViewModel extends BaseViewModel {
   // ✨ Méthode pour rafraîchir manuellement les notifications
   Future<void> refreshStoredNotifications() async {
     _availableCourses.clear(); // Vider la liste actuelle
-    await _loadStoredNotifications();
+    await loadStoredNotifications();
 
     // Réafficher le bottom sheet si nécessaire
     if (_availableCourses.isNotEmpty &&

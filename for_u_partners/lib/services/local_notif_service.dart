@@ -22,7 +22,7 @@ class LocalNotificationService {
   );
 
   // Canaux de notification pour les chauffeurs
-  static const String _channelId = '4u_driver_notifications_v2'; // Updated to force channel recreation with new sound
+  static const String _channelId = '4u_driver_notifications_v4'; // Updated to v4 with proper AudioAttributes
   static const String _channelName = 'Notifications Chauffeur';
   static const String _channelDescription =
       'Notifications pour les chauffeurs (nouvelles courses, mises à jour, etc.)';
@@ -84,28 +84,40 @@ class LocalNotificationService {
 
   // Créer le canal de notification pour Android
   static Future<void> _createNotificationChannel() async {
-    // Delete existing channel first to ensure sound updates
-    await _flutterLocalNotificationsPlugin
-        .resolvePlatformSpecificImplementation<
-            AndroidFlutterLocalNotificationsPlugin>()
-        ?.deleteNotificationChannel(_channelId);
+    try {
+      _logger.i('🔔 Creating notification channel: $_channelId');
 
-    const AndroidNotificationChannel channel = AndroidNotificationChannel(
-      _channelId,
-      _channelName,
-      description: _channelDescription,
-      importance: Importance.max, // Maximum importance for loudest volume
-      playSound: true,
-      sound: RawResourceAndroidNotificationSound('car_horn_beep'),
-      enableVibration: true,
-      enableLights: true,
-      ledColor: Color(0xFF184E9C), // Couleur de votre app
-    );
+      // Delete old channel versions to ensure clean state
+      final androidPlugin = _flutterLocalNotificationsPlugin
+          .resolvePlatformSpecificImplementation<
+              AndroidFlutterLocalNotificationsPlugin>();
 
-    await _flutterLocalNotificationsPlugin
-        .resolvePlatformSpecificImplementation<
-            AndroidFlutterLocalNotificationsPlugin>()
-        ?.createNotificationChannel(channel);
+      if (androidPlugin != null) {
+        // Delete old versions
+        await androidPlugin.deleteNotificationChannel('4u_driver_notifications_v2');
+        await androidPlugin.deleteNotificationChannel('4u_driver_notifications_v3');
+        await androidPlugin.deleteNotificationChannel(_channelId);
+        _logger.i('🗑️ Deleted old notification channels');
+      }
+
+      final AndroidNotificationChannel channel = AndroidNotificationChannel(
+        _channelId,
+        _channelName,
+        description: _channelDescription,
+        importance: Importance.max, // Maximum importance for loudest volume
+        playSound: true,
+        sound: const RawResourceAndroidNotificationSound('car_horn_beep'),
+        enableVibration: true,
+        enableLights: true,
+        ledColor: const Color(0xFF184E9C), // Couleur de votre app
+        audioAttributesUsage: AudioAttributesUsage.notification, // Ensure proper audio routing
+      );
+
+      await androidPlugin?.createNotificationChannel(channel);
+      _logger.i('✅ Notification channel created successfully with sound: car_horn_beep.mp3');
+    } catch (e) {
+      _logger.e('❌ Error creating notification channel: $e');
+    }
   }
 
   // Demander les permissions pour iOS
@@ -169,6 +181,11 @@ class LocalNotificationService {
     required int distance,
   }) async {
     try {
+      _logger.i('🔊 Showing new course notification for course: $courseId');
+      _logger.i('🔊 Channel ID: $_channelId');
+      _logger.i('🔊 Sound: car_horn_beep.mp3');
+      _logger.i('🔊 Importance: MAX, Priority: MAX');
+
       final androidNotificationDetails = AndroidNotificationDetails(
         _channelId,
         _channelName,
@@ -214,10 +231,10 @@ class LocalNotificationService {
         payload: '$_typeNewCourse|$courseId',
       );
 
-      _logger.i('Notification de nouvelle course envoyée: $courseId');
+      _logger.i('✅ Notification de nouvelle course envoyée: $courseId');
     } catch (e) {
       _logger.e(
-          'Erreur lors de l\'envoi de la notification de nouvelle course: $e');
+          '❌ Erreur lors de l\'envoi de la notification de nouvelle course: $e');
     }
   }
 

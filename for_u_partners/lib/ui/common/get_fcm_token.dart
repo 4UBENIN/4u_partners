@@ -557,7 +557,7 @@ class FirebaseMessagingService {
           notification.body,
           const NotificationDetails(
             android: AndroidNotificationDetails(
-              '4u_driver_notifications_v2', // Updated to match new channel ID
+              '4u_driver_notifications_v4', // Updated to match new channel ID
               'Notifications Chauffeur',
               channelDescription: 'Notifications pour les chauffeurs (nouvelles courses, mises à jour, etc.)',
               importance: Importance.max, // Maximum importance for loudest volume
@@ -585,25 +585,35 @@ class FirebaseMessagingService {
 /// Handler pour les messages en arrière-plan
 @pragma('vm:entry-point')
 Future<void> firebaseMessagingBackgroundHandler(RemoteMessage message) async {
+  print('════════════════════════════════════════════════════════');
+  print('🔔 BACKGROUND MESSAGE HANDLER TRIGGERED');
+  print('════════════════════════════════════════════════════════');
+  print('📱 Message ID: ${message.messageId}');
+  print('📱 Timestamp: ${DateTime.now()}');
+
   // Initialize Firebase
   await Firebase.initializeApp();
+  print('✅ Firebase initialized');
 
   try {
     // Set up dependency injection
     await setupLocator();
+    print('✅ Locator initialized');
 
     // Initialize local notifications service for background
+    // This will create the notification channel with the sound
     await LocalNotificationService.initialize();
-
-    print("Message en arrière-plan: ${message.messageId}");
+    print('✅ LocalNotificationService initialized (channel created with sound)');
 
     // Process message data if available
     final data = message.data;
     if (data.isNotEmpty) {
-      print('Données du message: $data');
+      print('📦 Message data: $data');
 
       // Handle course notifications if the required data is present
       if (data.containsKey('course_id') && data.containsKey('client_nom')) {
+        print('🚗 Course notification detected in background');
+
         try {
           // Try to save the notification
           final courseData = CourseNotificationData.fromFirebaseData(
@@ -611,22 +621,34 @@ Future<void> firebaseMessagingBackgroundHandler(RemoteMessage message) async {
             receivedAt: DateTime.now(),
           );
           await CourseNotificationStorage.saveNotification(courseData);
-          print('Notification background sauvée: ${data['course_id']}');
+          print('💾 Notification saved to storage: ${data['course_id']}');
 
           // Show notification with sound (IMPORTANT: So user hears it in background!)
+          print('🔊 About to show notification with sound...');
           await LocalNotificationService.showNewCourseNotification(
             courseId: data['course_id'].toString(),
             pickupAddress: data['depart_adresse'] ?? 'Adresse de départ',
             price: double.tryParse(data['prix']?.toString() ?? '0') ?? 0.0,
             distance: int.tryParse(data['distance']?.toString() ?? '0') ?? 0,
           );
-          print('✅ Notification background affichée avec son pour course: ${data['course_id']}');
-        } catch (e) {
-          print('Erreur lors du traitement de la notification de course: $e');
+          print('✅ Notification displayed with sound for course: ${data['course_id']}');
+          print('════════════════════════════════════════════════════════');
+        } catch (e, stackTrace) {
+          print('❌ Error processing course notification: $e');
+          print('Stack trace: $stackTrace');
+          print('════════════════════════════════════════════════════════');
         }
+      } else {
+        print('ℹ️ Message does not contain course data');
+        print('════════════════════════════════════════════════════════');
       }
+    } else {
+      print('ℹ️ Message has no data payload');
+      print('════════════════════════════════════════════════════════');
     }
-  } catch (e) {
-    print('Erreur traitement background: $e');
+  } catch (e, stackTrace) {
+    print('❌ Error in background handler: $e');
+    print('Stack trace: $stackTrace');
+    print('════════════════════════════════════════════════════════');
   }
 }
