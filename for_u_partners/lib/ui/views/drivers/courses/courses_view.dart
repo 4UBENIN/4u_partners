@@ -459,6 +459,7 @@ class CoursesView extends StackedView<CoursesViewModel> {
             client: pickupCourse,
             clientId: pickupCourse.clientId,
             courseId: parsedCourseId,
+            vehicleType: pickupCourse.vehicleType,
             currentLatitude: viewModel.currentPosiction?.latitude,
             currentLongitude: viewModel.currentPosiction?.longitude,
             onCancelRide: () {

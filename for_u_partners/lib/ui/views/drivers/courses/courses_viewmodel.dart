@@ -2804,6 +2804,22 @@ class CoursesViewModel extends BaseViewModel {
       final serviceId = apiServiceId ?? (isPickupFlag == true ? 3 : null);
       final isPickup = (serviceId == 3) || (isPickupFlag == true);
 
+      // Extract vehicle type for waiting price calculation
+      final vehiculeData = courseDetails['vehicule'] as Map<String, dynamic>?;
+
+      // Debug: Check all fields in vehicule object
+      debugPrint('🚗🚗🚗 [Restoration] VEHICLE DATA DEBUG:');
+      debugPrint('🚗 [Restoration] Full vehicule object: $vehiculeData');
+      debugPrint('🚗 [Restoration] vehicule.type: ${vehiculeData?['type']}');
+      debugPrint('🚗 [Restoration] vehicule.categorie: ${vehiculeData?['categorie']}');
+      debugPrint('🚗 [Restoration] All vehicule keys: ${vehiculeData?.keys.toList()}');
+
+      // Extract type field - prefer 'type' over 'categorie'
+      final vehicleType = vehiculeData?['type'] as String?;
+
+      debugPrint('🚗 [Restoration] Extracted vehicle type: "$vehicleType"');
+      debugPrint('🚗🚗🚗 [Restoration] ================================================');
+
       debugPrint('🔍🔍🔍 [Restoration] PICKUP DETECTION:');
       debugPrint('🔍 [Restoration] API service_id: $apiServiceId');
       debugPrint('🔍 [Restoration] API is_pickup_course: $isPickupFlag');
@@ -2827,6 +2843,7 @@ class CoursesViewModel extends BaseViewModel {
         prix: _parseNumericValue(courseDetails['montant']),
         serviceId: serviceId,  // ⚡ Now properly set to 3 for pickup courses
         phoneNumber: clientTelephone,  // Add phone number from API
+        vehicleType: vehicleType,  // Add vehicle type for waiting price calculation
       );
 
       _currentCourse = restoredCourse;

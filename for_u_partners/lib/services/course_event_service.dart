@@ -158,6 +158,7 @@ class CourseNotificationData {
       depLat: depLat,
       serviceId: serviceId, // ⚡ Added to properly identify pickup courses
       phoneNumber: clientTelephone, // Add phone number from client
+      vehicleType: null, // Not available in Firebase notifications, will be fetched from API when course becomes active
     );
   }
 

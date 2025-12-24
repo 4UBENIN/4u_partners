@@ -25,6 +25,9 @@ class ClientData {
   // Phone number of the client
   final String? phoneNumber;
 
+  // Vehicle type for calculating waiting fees
+  final String? vehicleType;
+
   ClientData({
     required this.name,
     required this.timeInfo,
@@ -44,6 +47,7 @@ class ClientData {
     this.depLat,
     this.serviceId,
     this.phoneNumber,
+    this.vehicleType,
   });
 
   // Helper to check if this is a pickup course
@@ -82,6 +86,7 @@ class ClientData {
       'depLat': depLat,
       'serviceId': serviceId,
       'phoneNumber': phoneNumber,
+      'vehicleType': vehicleType,
     };
   }
 
@@ -104,6 +109,7 @@ class ClientData {
       depLat: json['depLat']?.toDouble(),
       serviceId: json['serviceId'] as int?,
       phoneNumber: json['phoneNumber'] as String?,
+      vehicleType: json['vehicleType'] as String?,
     );
   }
 

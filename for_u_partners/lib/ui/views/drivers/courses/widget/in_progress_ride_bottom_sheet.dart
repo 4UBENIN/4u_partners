@@ -904,16 +904,6 @@ class _InProgressRideBottomSheetState extends State<InProgressRideBottomSheet>
     );
   }
 
-// Méthode pour calculer le prix d'attente
-  double _calculateWaitingPrice() {
-    // Return 0 if waiting time is not set
-    if (_waitingTime == null) return 0.0;
-
-    // Facturation dès la première minute à 50 FCFA par minute
-    final int billableMinutes = (_waitingTime! / 60).ceil();
-    return billableMinutes * 50.0;
-  }
-
   Widget _buildCancelButton() {
     return ElevatedButton(
       onPressed: () => _showCancelDialog(context),

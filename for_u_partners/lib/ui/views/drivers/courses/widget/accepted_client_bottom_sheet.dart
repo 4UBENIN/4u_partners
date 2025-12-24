@@ -88,35 +88,57 @@ class _AcceptedClientBottomSheetState extends State<AcceptedClientBottomSheet> {
   }
 
   double _calculateWaitingPrice() {
-    // First 5 minutes are free
+    // First 5 minutes (300 seconds) are free
     if (_waitingTime <= 300) return 0.0;
 
-    // Calculate billable minutes (after first 5 minutes)
-    final int totalMinutes = (_waitingTime / 60).ceil();
-    final int billableMinutes = totalMinutes - 5;
+    // Calculate billable time: subtract free period first, then convert to minutes
+    final int billableSeconds = _waitingTime - 300;
+    final int billableMinutes = (billableSeconds / 60).ceil();
 
     // Get rate based on vehicle type
     final int ratePerMinute = _getRatePerMinute(widget.vehicleType);
+    final double totalPrice = billableMinutes * ratePerMinute.toDouble();
 
-    return billableMinutes * ratePerMinute.toDouble();
+    debugPrint('💰 [WaitingPrice] Total waiting: ${_waitingTime}s (${(_waitingTime / 60).toStringAsFixed(1)} min)');
+    debugPrint('💰 [WaitingPrice] Billable seconds: $billableSeconds');
+    debugPrint('💰 [WaitingPrice] Billable minutes: $billableMinutes');
+    debugPrint('💰 [WaitingPrice] Vehicle type: "${widget.vehicleType}"');
+    debugPrint('💰 [WaitingPrice] Rate per minute: $ratePerMinute FCFA');
+    debugPrint('💰 [WaitingPrice] Total price: $totalPrice FCFA');
+
+    return totalPrice;
   }
 
   int _getRatePerMinute(String? vehicleType) {
-    if (vehicleType == null) return 25; // Default to Voiture Std
+    debugPrint('🚗 [RatePerMinute] Input vehicle type: "$vehicleType" (null: ${vehicleType == null})');
 
-    switch (vehicleType.toLowerCase()) {
+    if (vehicleType == null) {
+      debugPrint('🚗 [RatePerMinute] Vehicle type is null, returning default: 25 FCFA');
+      return 25; // Default to Voiture Std
+    }
+
+    final String lowerCaseType = vehicleType.toLowerCase();
+    debugPrint('🚗 [RatePerMinute] Lowercase vehicle type: "$lowerCaseType"');
+
+    switch (lowerCaseType) {
       case 'moto':
+        debugPrint('🚗 [RatePerMinute] Matched "moto", returning 10 FCFA');
         return 10;
       case 'tricycle':
+        debugPrint('🚗 [RatePerMinute] Matched "tricycle", returning 20 FCFA');
         return 20;
       case 'voiture std':
       case 'voiture standard':
+        debugPrint('🚗 [RatePerMinute] Matched "voiture std/standard", returning 25 FCFA');
         return 25;
       case 'voiture premium':
+        debugPrint('🚗 [RatePerMinute] Matched "voiture premium", returning 50 FCFA');
         return 50;
       case 'voiture vip':
+        debugPrint('🚗 [RatePerMinute] Matched "voiture vip", returning 80 FCFA');
         return 80;
       default:
+        debugPrint('🚗 [RatePerMinute] No match found for "$lowerCaseType", returning default: 25 FCFA');
         return 25; // Default to Voiture Std
     }
   }
@@ -688,21 +710,23 @@ class _AcceptedClientBottomSheetState extends State<AcceptedClientBottomSheet> {
                 ),
               ),
               const Spacer(),
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                decoration: BoxDecoration(
-                  color: accentColor,
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: Text(
-                  isFree ? 'Gratuit' : '+${waitingPrice.toStringAsFixed(0)} FCFA',
-                  style: const TextStyle(
-                    fontSize: 13,
-                    fontWeight: FontWeight.w700,
-                    color: Colors.white,
+              // Only show price if vehicle type is available
+              if (widget.vehicleType != null)
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                  decoration: BoxDecoration(
+                    color: accentColor,
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: Text(
+                    isFree ? 'Gratuit' : '+${waitingPrice.toStringAsFixed(0)} FCFA',
+                    style: const TextStyle(
+                      fontSize: 13,
+                      fontWeight: FontWeight.w700,
+                      color: Colors.white,
+                    ),
                   ),
                 ),
-              ),
             ],
           ),
           const SizedBox(height: 12),
