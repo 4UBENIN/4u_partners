@@ -69,31 +69,45 @@ class CoursesView extends StackedView<CoursesViewModel> {
 
                                 // Different URLs based on ride state
                                 if (viewModel.currentBottomSheetType == BottomSheetAppType.pickup) {
-                                  // Going to pickup: current position -> pickup address
+                                  // Going to pickup: current position -> pickup coordinates
                                   if (viewModel.currentPosiction?.latitude == null ||
                                       viewModel.currentPosiction?.longitude == null) {
                                     throw "Position actuelle non disponible";
                                   }
-                                  if (currentCourse.adresseDepart == null ||
-                                      currentCourse.adresseDepart!.isEmpty) {
+
+                                  final origin = "${viewModel.currentPosiction!.latitude},${viewModel.currentPosiction!.longitude}";
+
+                                  // Prefer coordinates over address for accuracy
+                                  String destination;
+                                  if (currentCourse.depLat != null && currentCourse.depLong != null) {
+                                    destination = "${currentCourse.depLat},${currentCourse.depLong}";
+                                  } else if (currentCourse.adresseDepart != null && currentCourse.adresseDepart!.isNotEmpty) {
+                                    destination = Uri.encodeComponent(currentCourse.adresseDepart!);
+                                  } else {
                                     throw "Adresse de départ non disponible";
                                   }
 
-                                  final origin = "${viewModel.currentPosiction!.latitude},${viewModel.currentPosiction!.longitude}";
-                                  final destination = Uri.encodeComponent(currentCourse.adresseDepart!);
                                   url = "https://www.google.com/maps/dir/?api=1&origin=$origin&destination=$destination&travelmode=driving";
                                 } else {
-                                  // In progress: pickup address -> destination
-                                  if (currentCourse.adresseDepart == null ||
-                                      currentCourse.adresseDepart!.isEmpty) {
+                                  // In progress: pickup coordinates -> destination coordinates
+                                  String origin;
+                                  if (currentCourse.depLat != null && currentCourse.depLong != null) {
+                                    origin = "${currentCourse.depLat},${currentCourse.depLong}";
+                                  } else if (currentCourse.adresseDepart != null && currentCourse.adresseDepart!.isNotEmpty) {
+                                    origin = Uri.encodeComponent(currentCourse.adresseDepart!);
+                                  } else {
                                     throw "Adresse de départ non disponible";
                                   }
-                                  if (currentCourse.destination.isEmpty) {
+
+                                  String destination;
+                                  if (currentCourse.destLat != null && currentCourse.destLong != null) {
+                                    destination = "${currentCourse.destLat},${currentCourse.destLong}";
+                                  } else if (currentCourse.destination.isNotEmpty) {
+                                    destination = Uri.encodeComponent(currentCourse.destination);
+                                  } else {
                                     throw "Destination non disponible";
                                   }
 
-                                  final origin = Uri.encodeComponent(currentCourse.adresseDepart!);
-                                  final destination = Uri.encodeComponent(currentCourse.destination);
                                   url = "https://www.google.com/maps/dir/?api=1&origin=$origin&destination=$destination&travelmode=driving";
                                 }
 

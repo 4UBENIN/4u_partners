@@ -2746,7 +2746,7 @@ class CoursesViewModel extends BaseViewModel {
 
       // ⚠️ CRITICAL: Check if status is still active before restoring
       // This prevents restoring courses that were finished/cancelled after the initial check
-      final activeStatuses = ActiveCourseCheckerService.activeStatuses;
+      const activeStatuses = ActiveCourseCheckerService.activeStatuses;
       if (!activeStatuses.contains(status)) {
         debugPrint('⚠️ [Restoration] Course status "$status" is not active - aborting restoration');
         debugPrint('⚠️ [Restoration] Active statuses: $activeStatuses');
