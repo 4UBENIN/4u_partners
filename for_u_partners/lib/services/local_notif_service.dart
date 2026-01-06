@@ -87,19 +87,26 @@ class LocalNotificationService {
     try {
       _logger.i('🔔 Creating notification channel: $_channelId');
 
-      // Delete old channel versions to ensure clean state
       final androidPlugin = _flutterLocalNotificationsPlugin
           .resolvePlatformSpecificImplementation<
               AndroidFlutterLocalNotificationsPlugin>();
 
       if (androidPlugin != null) {
-        // Delete old versions
-        await androidPlugin.deleteNotificationChannel('4u_driver_notifications_v2');
-        await androidPlugin.deleteNotificationChannel('4u_driver_notifications_v3');
-        await androidPlugin.deleteNotificationChannel(_channelId);
-        _logger.i('🗑️ Deleted old notification channels');
+        // Only delete OLD channel versions (not the current one)
+        // Once a channel is created with a specific ID, it cannot be modified
+        // We should only delete truly obsolete versions
+        try {
+          await androidPlugin.deleteNotificationChannel('4u_driver_notifications_v2');
+          await androidPlugin.deleteNotificationChannel('4u_driver_notifications_v3');
+          _logger.i('🗑️ Deleted obsolete notification channels (v2, v3)');
+        } catch (e) {
+          _logger.w('⚠️ Could not delete old channels (might not exist): $e');
+        }
       }
 
+      // Create the notification channel with sound
+      // Note: On Android 8.0+, once a channel is created, it CANNOT be modified
+      // Users can only change settings manually in system settings
       final AndroidNotificationChannel channel = AndroidNotificationChannel(
         _channelId,
         _channelName,
@@ -114,9 +121,18 @@ class LocalNotificationService {
       );
 
       await androidPlugin?.createNotificationChannel(channel);
-      _logger.i('✅ Notification channel created successfully with sound: car_horn_beep.mp3');
-    } catch (e) {
+      _logger.i('✅ Notification channel $_channelId created/verified successfully');
+      _logger.i('🔊 Sound configured: car_horn_beep (RawResourceAndroidNotificationSound)');
+      _logger.i('🔊 Importance: MAX, AudioAttributesUsage: notification');
+
+      // Log the actual sound resource path for debugging production builds
+      debugPrint('🔊 [PRODUCTION DEBUG] Sound resource: android/app/src/main/res/raw/car_horn_beep.mp3');
+      debugPrint('🔊 [PRODUCTION DEBUG] Channel ID: $_channelId');
+      debugPrint('🔊 [PRODUCTION DEBUG] Play sound enabled: true');
+    } catch (e, stackTrace) {
       _logger.e('❌ Error creating notification channel: $e');
+      _logger.e('❌ Stack trace: $stackTrace');
+      debugPrint('❌ [PRODUCTION DEBUG] Notification channel creation failed: $e');
     }
   }
 
@@ -186,6 +202,16 @@ class LocalNotificationService {
       _logger.i('🔊 Sound: car_horn_beep.mp3');
       _logger.i('🔊 Importance: MAX, Priority: MAX');
 
+      // Production debug logging
+      debugPrint('🔊 [PRODUCTION DEBUG] ==========================================');
+      debugPrint('🔊 [PRODUCTION DEBUG] NEW COURSE NOTIFICATION');
+      debugPrint('🔊 [PRODUCTION DEBUG] Course ID: $courseId');
+      debugPrint('🔊 [PRODUCTION DEBUG] Platform: ${Platform.isAndroid ? "Android" : "iOS"}');
+      debugPrint('🔊 [PRODUCTION DEBUG] Channel ID: $_channelId');
+      debugPrint('🔊 [PRODUCTION DEBUG] Play sound: true');
+      debugPrint('🔊 [PRODUCTION DEBUG] Sound resource: car_horn_beep');
+      debugPrint('🔊 [PRODUCTION DEBUG] ==========================================');
+
       final androidNotificationDetails = AndroidNotificationDetails(
         _channelId,
         _channelName,
@@ -232,9 +258,13 @@ class LocalNotificationService {
       );
 
       _logger.i('✅ Notification de nouvelle course envoyée: $courseId');
-    } catch (e) {
+      debugPrint('✅ [PRODUCTION DEBUG] Notification shown successfully');
+    } catch (e, stackTrace) {
       _logger.e(
           '❌ Erreur lors de l\'envoi de la notification de nouvelle course: $e');
+      _logger.e('❌ Stack trace: $stackTrace');
+      debugPrint('❌ [PRODUCTION DEBUG] Failed to show notification: $e');
+      debugPrint('❌ [PRODUCTION DEBUG] Stack: $stackTrace');
     }
   }
 

@@ -6,7 +6,7 @@ class AssistanceTechniqueView extends StatelessWidget {
   const AssistanceTechniqueView({super.key});
 
   Future<void> _openWhatsApp() async {
-    const phoneNumber = '2290145254545'; // WhatsApp format without + or spaces
+    const phoneNumber = '2290145244646'; // WhatsApp format without + or spaces
     final url = Uri.parse('https://wa.me/$phoneNumber');
 
     if (await canLaunchUrl(url)) {
@@ -98,7 +98,7 @@ class AssistanceTechniqueView extends StatelessWidget {
                 iconColor: Colors.white,
                 iconBackgroundColor: const Color(0xFF25D366), // WhatsApp green
                 title: "WhatsApp",
-                subtitle: "+229 01 45 25 45 45",
+                subtitle: "+229 01 45 24 46 46",
                 onTap: _openWhatsApp,
               ),
 

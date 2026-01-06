@@ -268,8 +268,6 @@ class AuthService {
       final cleanToken = token.replaceAll('"', '').trim();
       authenticatedHeaders['Authorization'] = 'Bearer $cleanToken';
     }
-    print("AUTH HEADERS : ");
-    print(authenticatedHeaders);
     return authenticatedHeaders;
   }
 

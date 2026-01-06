@@ -32,6 +32,8 @@ class PayoutService {
     required String recipientType,
   }) async {
     try {
+      debugPrint('💰 [PayoutService] Creating payout - User ID: $utilisateurId, Amount: $amount FCFA, Provider: $provider');
+
       final url = Uri.parse(createPayoutUrl);
       final request = PayoutCreateRequest(
         utilisateurId: utilisateurId,
@@ -41,40 +43,57 @@ class PayoutService {
         recipientType: recipientType,
       );
 
+      final payload = request.toJson();
+      // Log payload without password for security
+      final safePayload = Map<String, dynamic>.from(payload);
+      safePayload['password'] = '***';
+      debugPrint('💰 [PayoutService] Request payload: ${jsonEncode(safePayload)}');
+
       final response = await http.post(
         url,
         headers: await _authService.getAuthenticatedHeaders(),
-        body: jsonEncode(request.toJson()),
+        body: jsonEncode(payload),
       );
 
-      debugPrint('📤 Create Payout Status: ${response.statusCode}');
-      debugPrint('📤 Create Payout Body: ${response.body}');
+      debugPrint('💰 [PayoutService] Response status: ${response.statusCode}');
 
       // Check for authentication errors
       _checkAuthenticationError(response);
 
       if (response.statusCode == 200) {
         final jsonData = jsonDecode(response.body);
+        debugPrint('✅ [PayoutService] Payout created successfully');
         return PayoutCreateResponse.fromJson(jsonData);
       } else if (response.statusCode == 400) {
         final jsonData = jsonDecode(response.body);
-        throw Exception(jsonData['message'] ?? 'Requête invalide');
+        final errorMsg = jsonData['message'] ?? 'Requête invalide';
+        debugPrint('❌ [PayoutService] Bad request (400): $errorMsg');
+        throw Exception(errorMsg);
       } else if (response.statusCode == 401) {
+        debugPrint('⚠️ [PayoutService] Unauthorized (401) - Session expired, logging out');
         await _authService.logOut();
         throw Exception('Session expirée');
       } else if (response.statusCode == 404) {
-        throw Exception('Utilisateur introuvable');
+        final jsonData = jsonDecode(response.body);
+        final errorMsg = jsonData['message'] ?? 'Utilisateur introuvable';
+        debugPrint('❌ [PayoutService] Not found (404): $errorMsg - User ID: $utilisateurId');
+        throw Exception(errorMsg);
       } else if (response.statusCode == 422) {
         final jsonData = jsonDecode(response.body);
-        throw Exception(jsonData['message'] ?? 'Erreur de validation');
+        final errorMsg = jsonData['message'] ?? 'Erreur de validation';
+        debugPrint('❌ [PayoutService] Validation error (422): $errorMsg');
+        throw Exception(errorMsg);
       } else if (response.statusCode == 500) {
         final jsonData = jsonDecode(response.body);
-        throw Exception(jsonData['message'] ?? 'Erreur serveur / impossible de créer le payout');
+        final errorMsg = jsonData['message'] ?? 'Erreur serveur / impossible de créer le payout';
+        debugPrint('❌ [PayoutService] Server error (500): $errorMsg');
+        throw Exception(errorMsg);
       } else {
+        debugPrint('❌ [PayoutService] Unexpected error (${response.statusCode}): ${response.body}');
         throw Exception('Erreur lors de la création du payout');
       }
     } catch (e) {
-      debugPrint("❌ Erreur create payout: $e");
+      debugPrint('❌ [PayoutService] Failed to create payout: $e');
       rethrow;
     }
   }
@@ -88,6 +107,8 @@ class PayoutService {
     bool live = false,
   }) async {
     try {
+      debugPrint('📋 [PayoutService] Fetching payouts list - Page: $page, PerPage: $perPage${status != null ? ', Status: $status' : ''}');
+
       final queryParams = {
         'page': page.toString(),
         'per_page': perPage.toString(),
@@ -101,23 +122,26 @@ class PayoutService {
         headers: await _authService.getAuthenticatedHeaders(),
       );
 
-      debugPrint('📋 List Payouts Status: ${response.statusCode}');
-      debugPrint('📋 List Payouts Body: ${response.body}');
+      debugPrint('📋 [PayoutService] Response status: ${response.statusCode}');
 
       // Check for authentication errors
       _checkAuthenticationError(response);
 
       if (response.statusCode == 200) {
         final jsonData = jsonDecode(response.body);
-        return PayoutListResponse.fromJson(jsonData);
+        final result = PayoutListResponse.fromJson(jsonData);
+        debugPrint('✅ [PayoutService] Successfully fetched ${result.data.length} payouts');
+        return result;
       } else if (response.statusCode == 401) {
+        debugPrint('⚠️ [PayoutService] Unauthorized (401) - Session expired, logging out');
         await _authService.logOut();
         throw Exception('Session expirée');
       } else {
+        debugPrint('❌ [PayoutService] Unexpected error (${response.statusCode}): ${response.body}');
         throw Exception('Erreur lors du chargement des payouts');
       }
     } catch (e) {
-      debugPrint("❌ Erreur list payouts: $e");
+      debugPrint('❌ [PayoutService] Failed to fetch payouts list: $e');
       rethrow;
     }
   }
@@ -129,6 +153,8 @@ class PayoutService {
     bool live = false,
   }) async {
     try {
+      debugPrint('📄 [PayoutService] Fetching payout details - Payout ID: $payoutId');
+
       final queryParams = {
         'live': live.toString(),
       };
@@ -139,25 +165,28 @@ class PayoutService {
         headers: await _authService.getAuthenticatedHeaders(),
       );
 
-      debugPrint('📄 Payout Details Status: ${response.statusCode}');
-      debugPrint('📄 Payout Details Body: ${response.body}');
+      debugPrint('📄 [PayoutService] Response status: ${response.statusCode}');
 
       // Check for authentication errors
       _checkAuthenticationError(response);
 
       if (response.statusCode == 200) {
         final jsonData = jsonDecode(response.body);
+        debugPrint('✅ [PayoutService] Successfully fetched payout details');
         return PayoutModel.fromJson(jsonData);
       } else if (response.statusCode == 401) {
+        debugPrint('⚠️ [PayoutService] Unauthorized (401) - Session expired, logging out');
         await _authService.logOut();
         throw Exception('Session expirée');
       } else if (response.statusCode == 404) {
+        debugPrint('❌ [PayoutService] Not found (404) - Payout ID: $payoutId');
         throw Exception('Payout introuvable');
       } else {
+        debugPrint('❌ [PayoutService] Unexpected error (${response.statusCode}): ${response.body}');
         throw Exception('Erreur lors du chargement du payout');
       }
     } catch (e) {
-      debugPrint("❌ Erreur get payout details: $e");
+      debugPrint('❌ [PayoutService] Failed to fetch payout details: $e');
       rethrow;
     }
   }

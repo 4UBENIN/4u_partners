@@ -94,6 +94,8 @@ class CreatePayoutViewModel extends BaseViewModel {
       final amount = double.parse(amountController.text);
       final password = passwordController.text;
 
+      debugPrint('💰 [CreatePayoutViewModel] Initiating payout creation - Amount: $amount FCFA, Provider: $_selectedProvider');
+
       final response = await _payoutService.createPayout(
         utilisateurId: userId,
         password: password,
@@ -101,6 +103,8 @@ class CreatePayoutViewModel extends BaseViewModel {
         provider: _selectedProvider,
         recipientType: 'mobile_money',
       );
+
+      debugPrint('✅ [CreatePayoutViewModel] Payout request submitted successfully');
 
       if (context.mounted) {
         CustomToast.showSuccess(context, message: response.message);
@@ -114,7 +118,7 @@ class CreatePayoutViewModel extends BaseViewModel {
       _navigationService.back();
 
     } catch (e) {
-      debugPrint('❌ Error creating payout: $e');
+      debugPrint('❌ [CreatePayoutViewModel] Payout creation failed - Error: $e');
       if (context.mounted) {
         CustomToast.showError(context, message: e.toString().replaceAll('Exception: ', ''));
       }
