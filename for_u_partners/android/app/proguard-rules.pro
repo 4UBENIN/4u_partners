@@ -53,3 +53,13 @@
 -keepclassmembers class * {
     @com.google.gson.annotations.SerializedName <fields>;
 }
+
+# Google Play Core (for Flutter deferred components - optional feature)
+# Suppress warnings if not using dynamic feature modules
+-dontwarn com.google.android.play.core.splitcompat.SplitCompatApplication
+-dontwarn com.google.android.play.core.splitinstall.**
+-dontwarn com.google.android.play.core.tasks.**
+
+# If using Google Play Core, keep these classes
+-keep class com.google.android.play.core.** { *; }
+-keep interface com.google.android.play.core.** { *; }
