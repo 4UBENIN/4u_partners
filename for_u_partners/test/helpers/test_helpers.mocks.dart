@@ -1894,6 +1894,16 @@ class MockDriverService extends _i1.Mock implements _i27.DriverService {
       ) as _i20.Future<void>);
 
   @override
+  _i20.Future<bool> getCurrentStatus() => (super.noSuchMethod(
+        Invocation.method(
+          #getCurrentStatus,
+          [],
+        ),
+        returnValue: _i20.Future<bool>.value(false),
+        returnValueForMissingStub: _i20.Future<bool>.value(false),
+      ) as _i20.Future<bool>);
+
+  @override
   _i20.Future<bool> sendLocationUpdate({
     required int? courseId,
     required double? latitude,

@@ -57,6 +57,9 @@ android {
                 signingConfig = signingConfigs.getByName("release")
             }
             isMinifyEnabled = true
+            // Disable resource shrinking to ensure notification sound is included
+            // If you need resource shrinking, use keep.xml in res/xml/ instead
+            isShrinkResources = false
             proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro")
         }
     }
@@ -73,4 +76,17 @@ dependencies {
 
 flutter {
     source = "../.."
+}
+
+// Task to ensure notification sound is in raw resources
+tasks.register("copyNotificationSound", Copy::class) {
+    description = "Copy notification sound to raw resources for notifications"
+    from("$projectDir/../../assets/mp3")
+    into("$projectDir/src/main/res/raw")
+    include("alert.mp3")
+}
+
+// Run before processing resources
+tasks.named("preBuild") {
+    dependsOn("copyNotificationSound")
 }

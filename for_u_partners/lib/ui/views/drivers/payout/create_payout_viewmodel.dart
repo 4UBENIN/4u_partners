@@ -73,7 +73,13 @@ class CreatePayoutViewModel extends BaseViewModel {
       return;
     }
 
-    final userIdStr = await _sharedPreferencesService.getUserTypeId();
+    final userIdStr = await _sharedPreferencesService.getUserId();
+    final userTypeIdStr = await _sharedPreferencesService.getUserTypeId();
+
+    debugPrint('💰 [CreatePayoutViewModel] Retrieved IDs from SharedPreferences:');
+    debugPrint('   getUserId(): $userIdStr');
+    debugPrint('   getUserTypeId(): $userTypeIdStr');
+
     if (userIdStr == null) {
       if (context.mounted) {
         CustomToast.showError(context, message: 'Utilisateur non connecté');
@@ -94,7 +100,7 @@ class CreatePayoutViewModel extends BaseViewModel {
       final amount = double.parse(amountController.text);
       final password = passwordController.text;
 
-      debugPrint('💰 [CreatePayoutViewModel] Initiating payout creation - Amount: $amount FCFA, Provider: $_selectedProvider');
+      debugPrint('💰 [CreatePayoutViewModel] Initiating payout creation - User ID: $userId, Amount: $amount FCFA, Provider: $_selectedProvider');
 
       final response = await _payoutService.createPayout(
         utilisateurId: userId,

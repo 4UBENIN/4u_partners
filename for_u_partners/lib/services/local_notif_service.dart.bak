@@ -268,7 +268,7 @@ class LocalNotificationService {
         presentAlert: true,
         presentBadge: true,
         presentSound: true,
-        sound: 'alert.mp3',
+        sound: 'car_horn_beep.mp3',
         subtitle: 'Nouvelle course disponible',
         categoryIdentifier: 'NEW_COURSE',
         interruptionLevel: InterruptionLevel.timeSensitive, // iOS: time-sensitive for maximum prominence

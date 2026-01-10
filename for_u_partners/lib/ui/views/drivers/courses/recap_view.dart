@@ -3,6 +3,7 @@ import 'package:for_u_partners/app/models/course_model.dart';
 import 'package:for_u_partners/ui/common/app_colors.dart';
 import 'package:for_u_partners/services/driver_service.dart';
 import 'package:for_u_partners/ui/views/drivers/courses/courses_viewmodel.dart';
+import 'package:for_u_partners/ui/views/drivers/rate_client/rate_client_view.dart';
 import 'package:intl/intl.dart';
 import 'package:loading_animation_widget/loading_animation_widget.dart';
 
@@ -488,7 +489,26 @@ class _RecapitulatifCoursePageState extends State<RecapitulatifCoursePage> {
                 child: SizedBox(
                   width: double.infinity,
                   child: ElevatedButton(
-                    onPressed: widget.onSoumettre,
+                    onPressed: () {
+                      // Navigate to rating screen
+                      final clientId = client['id'] ?? 0;
+                      final nomClient = '${client['prenom'] ?? ''} ${client['nom'] ?? ''}'.trim();
+
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => RateClientView(
+                            courseId: widget.courseId,
+                            clientId: clientId,
+                            clientName: nomClient.isNotEmpty ? nomClient : 'Client',
+                          ),
+                        ),
+                      ).then((_) {
+                        // After rating screen is closed (either by submitting or skipping),
+                        // call the original callback to clean up and go home
+                        widget.onSoumettre();
+                      });
+                    },
                     style: ElevatedButton.styleFrom(
                       backgroundColor: kcPrimaryColor,
                       padding: const EdgeInsets.symmetric(vertical: 16),
@@ -497,7 +517,7 @@ class _RecapitulatifCoursePageState extends State<RecapitulatifCoursePage> {
                       ),
                     ),
                     child: const Text(
-                      'Retour à l\'accueil',
+                      'Noter le client',
                       style: TextStyle(
                         fontSize: 16,
                         color: Colors.white,

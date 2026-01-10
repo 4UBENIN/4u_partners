@@ -50,6 +50,7 @@ import 'package:for_u_partners/services/arrival_state_service.dart';
 import 'package:for_u_partners/services/pause_state_service.dart';
 import 'package:for_u_partners/services/location_tracking_service.dart';
 import 'package:for_u_partners/services/payout_service.dart';
+import 'package:for_u_partners/services/rating_service.dart';
 import 'package:for_u_partners/ui/views/drivers/payout/create_payout_view.dart';
 import 'package:for_u_partners/ui/views/drivers/payout/payout_history_view.dart';
 import 'package:for_u_partners/ui/views/drivers/assistance/assistance_view.dart';
@@ -111,6 +112,7 @@ import 'package:for_u_partners/ui/views/drivers/statistiques/statistiques_view.d
     LazySingleton(classType: PauseStateService),
     LazySingleton(classType: LocationTrackingService),
     LazySingleton(classType: PayoutService),
+    LazySingleton(classType: RatingService),
     Singleton(classType: HomemainViewModel),
     Singleton(classType: vehicle_vm.MesVehiculesViewModel),
     Singleton(classType: DocumentsViewModel),

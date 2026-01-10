@@ -616,8 +616,8 @@ class CoursesViewModel extends BaseViewModel {
         ),
       );
 
-      // Move camera to follow driver with street-level zoom
-      if (_mapController != null && !_isDisposed) {
+      // Only move camera if NOT on an active trip - let driver see full route
+      if (_mapController != null && !_isDisposed && !_isOnTrip && !_isGoingToPickup) {
         try {
           await _mapController!.animateCamera(
             CameraUpdate.newLatLngZoom(newPosition, 16.5),
@@ -625,6 +625,8 @@ class CoursesViewModel extends BaseViewModel {
         } catch (e) {
           debugPrint('⚠️ Error animating camera: $e');
         }
+      } else if (_isOnTrip || _isGoingToPickup) {
+        debugPrint('🗺️ Skipping camera follow - driver is on active ride (can see full route)');
       }
 
       debugPrint('🚗 Driver marker updated: ${location.latitude}, ${location.longitude}');
@@ -646,8 +648,8 @@ class CoursesViewModel extends BaseViewModel {
         ),
       );
 
-      // Move camera to new marker with street-level zoom
-      if (_mapController != null && !_isDisposed) {
+      // Only move camera if NOT on an active trip - let driver see full route
+      if (_mapController != null && !_isDisposed && !_isOnTrip && !_isGoingToPickup) {
         try {
           await _mapController!.animateCamera(
             CameraUpdate.newLatLngZoom(newPosition, 16.5),
@@ -1148,6 +1150,47 @@ class CoursesViewModel extends BaseViewModel {
 
     // Appeler le service
     await acceptCourseService(courseNumericId, context);
+
+    // 🚗 Fetch vehicle type for waiting price calculation
+    try {
+      debugPrint('🚗 [acceptCourse] Fetching course details to get vehicle type...');
+      final courseDetails = await _driverService.getCourseDetails(courseNumericId);
+      final vehiculeData = courseDetails['vehicule'] as Map<String, dynamic>?;
+      final vehicleType = vehiculeData?['type'] as String?;
+
+      debugPrint('🚗 [acceptCourse] Vehicle type extracted: "$vehicleType"');
+
+      // Update _currentCourse with vehicle type if available
+      if (vehicleType != null && _currentCourse != null && _currentCourse!.courseId == courseId) {
+        _currentCourse = ClientData(
+          name: _currentCourse!.name,
+          timeInfo: _currentCourse!.timeInfo,
+          destination: _currentCourse!.destination,
+          initials: _currentCourse!.initials,
+          clientId: _currentCourse!.clientId,
+          courseId: _currentCourse!.courseId,
+          prix: _currentCourse!.prix,
+          distance: _currentCourse!.distance,
+          duree: _currentCourse!.duree,
+          adresseDepart: _currentCourse!.adresseDepart,
+          isNight: _currentCourse!.isNight,
+          etaMinutes: _currentCourse!.etaMinutes,
+          destLong: _currentCourse!.destLong,
+          destLat: _currentCourse!.destLat,
+          depLong: _currentCourse!.depLong,
+          depLat: _currentCourse!.depLat,
+          serviceId: _currentCourse!.serviceId,
+          phoneNumber: _currentCourse!.phoneNumber,
+          vehicleType: vehicleType, // ✨ Update with fetched vehicle type
+        );
+
+        debugPrint('✅ [acceptCourse] Updated _currentCourse with vehicle type: "$vehicleType"');
+        notifyListeners(); // 🔔 Notify UI to rebuild with updated vehicle type
+      }
+    } catch (e) {
+      debugPrint('⚠️ [acceptCourse] Failed to fetch vehicle type: $e');
+      // Continue without vehicle type - will use default rate
+    }
 
     // 🌐 Enable backend location updates AFTER successful acceptance
     // Only if _currentCourse is still set (not rejected/cancelled in the meantime)
@@ -2870,10 +2913,12 @@ class CoursesViewModel extends BaseViewModel {
             _isOnTrip = true;
             setBottomSheetType(BottomSheetAppType.inprogress);
 
-            // Draw route to destination
-            if (_currentPosition != null && arrLat != null && arrLong != null) {
+            // Draw route to destination (doesn't need _currentPosition)
+            if (arrLat != null && arrLong != null) {
               debugPrint('🗺️ [Restoration] PICKUP: Drawing route to destination');
               await _drawRouteToDestination();
+            } else {
+              debugPrint('⚠️ [Restoration] Cannot draw route - missing destination coordinates');
             }
           } else {
             debugPrint('🚗 [Restoration] Driver en route to pickup');
@@ -2900,10 +2945,12 @@ class CoursesViewModel extends BaseViewModel {
             _isOnTrip = true;
             setBottomSheetType(BottomSheetAppType.inprogress);
 
-            // Draw route to destination
-            if (_currentPosition != null && arrLat != null && arrLong != null) {
+            // Draw route to destination (doesn't need _currentPosition)
+            if (arrLat != null && arrLong != null) {
               debugPrint('🗺️ [Restoration] PICKUP: Drawing route to destination');
               await _drawRouteToDestination();
+            } else {
+              debugPrint('⚠️ [Restoration] Cannot draw route - missing destination coordinates');
             }
           } else {
             debugPrint('📍 [Restoration] Driver arrived at pickup');
@@ -2919,12 +2966,12 @@ class CoursesViewModel extends BaseViewModel {
           _isOnTrip = true;
           setBottomSheetType(BottomSheetAppType.inprogress);
 
-          // Draw route to destination
-          if (_currentPosition != null && arrLat != null && arrLong != null) {
+          // Draw route to destination (doesn't need _currentPosition)
+          if (arrLat != null && arrLong != null) {
             debugPrint('🗺️ [Restoration] Drawing route to destination');
             await _drawRouteToDestination();
           } else {
-            debugPrint('⚠️ [Restoration] Cannot draw route - missing position or coordinates');
+            debugPrint('⚠️ [Restoration] Cannot draw route - missing destination coordinates');
           }
           break;
 

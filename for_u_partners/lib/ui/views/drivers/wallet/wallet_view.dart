@@ -23,15 +23,15 @@ class WalletView extends StackedView<WalletViewModel> {
               child: CustomScrollView(
                 physics: const AlwaysScrollableScrollPhysics(),
                 slivers: [
-                  SliverAppBar(
+                  const SliverAppBar(
                     expandedHeight: 100,
                     floating: false,
                     pinned: true,
-                    backgroundColor: const Color(0xFFF5F5F7),
+                    backgroundColor: Color(0xFFF5F5F7),
                     elevation: 0,
                     flexibleSpace: FlexibleSpaceBar(
-                      titlePadding: const EdgeInsets.only(left: 20, bottom: 16),
-                      title: const Text(
+                      titlePadding: EdgeInsets.only(left: 20, bottom: 16),
+                      title: Text(
                         'Portefeuille',
                         style: TextStyle(
                           fontSize: 32,

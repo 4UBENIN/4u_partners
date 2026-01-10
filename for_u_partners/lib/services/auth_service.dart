@@ -120,6 +120,7 @@ class AuthService {
         await _sharedPreferencesServices.saveUserName(name);
         await _sharedPreferencesServices.saveUserType(role);
         await _sharedPreferencesServices.saveUserId(userId);
+        print("✅ [AuthService] Saved User ID (main): $userId");
 
         // Save vehicle type if available
         if (vehiculeType != null && vehiculeType.isNotEmpty) {
@@ -133,9 +134,10 @@ class AuthService {
               responseJson['data']['conducteur']['id'].toString();
           await _sharedPreferencesServices.saveUserTypeId(conducteurId);
           firestoreUserId = conducteurId;
-          print("🟡 [AuthService] ConducteurId: $conducteurId");
+          print("✅ [AuthService] Saved Conducteur ID (type-specific): $conducteurId");
         } else {
           firestoreUserId = userId;
+          print("ℹ️ [AuthService] No conducteur ID found, using main user ID");
         }
 
         print("🟡 [AuthService] Synchronisation avec Firestore...");

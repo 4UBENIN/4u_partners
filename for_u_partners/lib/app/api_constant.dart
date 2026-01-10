@@ -55,6 +55,12 @@ String get createPayoutUrl => "$baseUrl/conducteur/payouts/create";
 String get listPayoutsUrl => "$baseUrl/conducteur/payouts";
 String payoutDetailsUrl(int payoutId) => "$baseUrl/conducteur/payouts/$payoutId";
 
+// Rating/Avis URLs
+String get createRatingUrl => "$baseUrl/conducteur/avis";
+String get myRatingsUrl => "$baseUrl/conducteur/avis/mine";
+String get receivedRatingsUrl => "$baseUrl/conducteur/avis/recu";
+String ratingDetailUrl(int ratingId) => "$baseUrl/conducteur/avis/mine_detail/$ratingId";
+
 Map<String, String> headers = {
   'Content-Type': 'application/json',
   'Accept': 'application/json'

@@ -1223,6 +1223,79 @@ class DriverService {
     }
   }
 
+  /// Fetch the current online/offline status from the backend
+  /// Returns true if online, false if offline
+  /// Defaults to false (offline) if status cannot be determined
+  Future<bool> getCurrentStatus() async {
+    final token = await sharedPreferencesService.getToken();
+    final url = '$baseUrl/conducteur/status';
+
+    try {
+      debugPrint('📡 [getCurrentStatus] Fetching current online/offline status...');
+      final response = await http.get(
+        Uri.parse(url),
+        headers: {
+          'Accept': 'application/json',
+          'Authorization': 'Bearer $token',
+        },
+      );
+
+      debugPrint('📡 [getCurrentStatus] Response status: ${response.statusCode}');
+      debugPrint('📡 [getCurrentStatus] Response body: ${response.body}');
+
+      // Check for authentication errors
+      _checkAuthenticationError(response);
+
+      if (response.statusCode == 200) {
+        final responseData = jsonDecode(response.body);
+
+        // Try different possible response formats
+        bool status = false;
+
+        if (responseData['status'] != null) {
+          // If status is directly in the response
+          if (responseData['status'] is bool) {
+            status = responseData['status'];
+          } else if (responseData['status'] is int) {
+            status = responseData['status'] == 1;
+          } else if (responseData['status'] is String) {
+            status = responseData['status'].toString().toLowerCase() == 'true' ||
+                     responseData['status'] == '1' ||
+                     responseData['status'].toString().toLowerCase() == 'online';
+          }
+        } else if (responseData['data'] != null && responseData['data']['status'] != null) {
+          // If status is nested in data
+          if (responseData['data']['status'] is bool) {
+            status = responseData['data']['status'];
+          } else if (responseData['data']['status'] is int) {
+            status = responseData['data']['status'] == 1;
+          } else if (responseData['data']['status'] is String) {
+            status = responseData['data']['status'].toString().toLowerCase() == 'true' ||
+                     responseData['data']['status'] == '1' ||
+                     responseData['data']['status'].toString().toLowerCase() == 'online';
+          }
+        } else if (responseData['is_online'] != null) {
+          // Alternative field name
+          if (responseData['is_online'] is bool) {
+            status = responseData['is_online'];
+          } else if (responseData['is_online'] is int) {
+            status = responseData['is_online'] == 1;
+          }
+        }
+
+        debugPrint('✅ [getCurrentStatus] Current status: ${status ? "ONLINE" : "OFFLINE"}');
+        return status;
+      } else {
+        debugPrint('⚠️ [getCurrentStatus] Non-200 status code, defaulting to offline');
+        return false; // Default to offline if we can't determine status
+      }
+    } catch (e) {
+      debugPrint('❌ [getCurrentStatus] Error fetching status: $e');
+      debugPrint('⚠️ [getCurrentStatus] Defaulting to offline due to error');
+      return false; // Default to offline on error - safer than assuming online
+    }
+  }
+
   /// Send driver's current location to backend during active ride
   /// Used for real-time tracking on client app
   Future<bool> sendLocationUpdate({

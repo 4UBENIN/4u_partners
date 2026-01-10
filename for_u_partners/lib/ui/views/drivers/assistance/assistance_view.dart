@@ -1,24 +1,77 @@
 import 'package:flutter/material.dart';
 import 'package:for_u_partners/ui/common/app_colors.dart';
+import 'package:for_u_partners/ui/common/toast.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 class AssistanceTechniqueView extends StatelessWidget {
   const AssistanceTechniqueView({super.key});
 
-  Future<void> _openWhatsApp() async {
-    const phoneNumber = '2290145244646'; // WhatsApp format without + or spaces
+  Future<void> _openWhatsApp(BuildContext context) async {
+    const phoneNumber = '2290145244646';
     final url = Uri.parse('https://wa.me/$phoneNumber');
 
-    if (await canLaunchUrl(url)) {
-      await launchUrl(url, mode: LaunchMode.externalApplication);
+    try {
+      debugPrint('📱 Attempting to open WhatsApp: $url');
+
+      final canLaunch = await canLaunchUrl(url);
+      debugPrint('📱 canLaunchUrl result: $canLaunch');
+
+      // Try to launch even if canLaunch is false (sometimes it works anyway)
+      final launched = await launchUrl(
+        url,
+        mode: LaunchMode.externalApplication,
+      );
+
+      debugPrint('📱 launchUrl result: $launched');
+
+      if (!launched && context.mounted) {
+        CustomToast.showError(
+          context,
+          message: "Impossible d'ouvrir WhatsApp. Vérifiez que WhatsApp est installé.",
+        );
+      }
+    } catch (e) {
+      debugPrint('❌ Error launching WhatsApp: $e');
+      if (context.mounted) {
+        CustomToast.showError(
+          context,
+          message: "Erreur lors de l'ouverture de WhatsApp: $e",
+        );
+      }
     }
   }
 
-  Future<void> _openEmail() async {
+  Future<void> _openEmail(BuildContext context) async {
     final url = Uri.parse('mailto:Support@4ubenin.com');
 
-    if (await canLaunchUrl(url)) {
-      await launchUrl(url);
+    try {
+      debugPrint('📧 Attempting to open email: $url');
+
+      final canLaunch = await canLaunchUrl(url);
+      debugPrint('📧 canLaunchUrl result: $canLaunch');
+
+      // Try to launch even if canLaunch is false
+      final launched = await launchUrl(
+        url,
+        mode: LaunchMode.externalApplication,
+      );
+
+      debugPrint('📧 launchUrl result: $launched');
+
+      if (!launched && context.mounted) {
+        CustomToast.showError(
+          context,
+          message: "Impossible d'ouvrir l'application email. Vérifiez vos paramètres.",
+        );
+      }
+    } catch (e) {
+      debugPrint('❌ Error launching email: $e');
+      if (context.mounted) {
+        CustomToast.showError(
+          context,
+          message: "Erreur lors de l'ouverture de l'email: $e",
+        );
+      }
     }
   }
 
@@ -99,7 +152,7 @@ class AssistanceTechniqueView extends StatelessWidget {
                 iconBackgroundColor: const Color(0xFF25D366), // WhatsApp green
                 title: "WhatsApp",
                 subtitle: "+229 01 45 24 46 46",
-                onTap: _openWhatsApp,
+                onTap: () => _openWhatsApp(context),
               ),
 
               const SizedBox(height: 16),
@@ -111,7 +164,7 @@ class AssistanceTechniqueView extends StatelessWidget {
                 iconBackgroundColor: kcPrimaryColor,
                 title: "Email",
                 subtitle: "Support@4ubenin.com",
-                onTap: _openEmail,
+                onTap: () => _openEmail(context),
               ),
 
               const Spacer(),

@@ -56,6 +56,7 @@ class PayoutService {
       );
 
       debugPrint('💰 [PayoutService] Response status: ${response.statusCode}');
+      debugPrint('💰 [PayoutService] Response body: ${response.body}');
 
       // Check for authentication errors
       _checkAuthenticationError(response);
@@ -67,12 +68,37 @@ class PayoutService {
       } else if (response.statusCode == 400) {
         final jsonData = jsonDecode(response.body);
         final errorMsg = jsonData['message'] ?? 'Requête invalide';
-        debugPrint('❌ [PayoutService] Bad request (400): $errorMsg');
-        throw Exception(errorMsg);
+
+        // Check if it's an insufficient funds error with detailed balance info
+        if (jsonData.containsKey('balance') && jsonData.containsKey('required')) {
+          final balance = jsonData['balance'] ?? 0;
+          final required = jsonData['required'] ?? 0;
+          final reserved = jsonData['reserved'] ?? 0;
+          final available = jsonData['available'] ?? 0;
+          final safetyFee = jsonData['safety_fee'] ?? 0;
+
+          debugPrint('❌ [PayoutService] Insufficient funds (400):');
+          debugPrint('   Message: $errorMsg');
+          debugPrint('   Balance: $balance FCFA');
+          debugPrint('   Available: $available FCFA');
+          debugPrint('   Reserved: $reserved FCFA');
+          debugPrint('   Required: $required FCFA');
+          debugPrint('   Safety Fee: $safetyFee FCFA');
+
+          throw Exception('$errorMsg\nSolde disponible: $available FCFA\nMontant requis: $required FCFA');
+        } else {
+          debugPrint('❌ [PayoutService] Bad request (400): $errorMsg');
+          throw Exception(errorMsg);
+        }
       } else if (response.statusCode == 401) {
         debugPrint('⚠️ [PayoutService] Unauthorized (401) - Session expired, logging out');
         await _authService.logOut();
         throw Exception('Session expirée');
+      } else if (response.statusCode == 403) {
+        final jsonData = jsonDecode(response.body);
+        final errorMsg = jsonData['message'] ?? 'Accès refusé';
+        debugPrint('❌ [PayoutService] Forbidden (403): $errorMsg');
+        throw Exception(errorMsg);
       } else if (response.statusCode == 404) {
         final jsonData = jsonDecode(response.body);
         final errorMsg = jsonData['message'] ?? 'Utilisateur introuvable';

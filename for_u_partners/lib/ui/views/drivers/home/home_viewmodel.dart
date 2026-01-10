@@ -33,7 +33,7 @@ class HomeViewModel extends BaseViewModel {
   DailyStats? dailyStats;
   String? errorMessage;
 
-  bool _isOnline = true;
+  bool _isOnline = false; // Default to offline until we verify with backend
 
   bool get isOnline => _isOnline;
   LatLng? _currentPosition;
@@ -48,10 +48,30 @@ class HomeViewModel extends BaseViewModel {
     _loadOnlineStatus();
   }
 
-  // Charger l'état enregistré
+  // Charger l'état depuis le backend pour garantir la synchronisation
   Future<void> _loadOnlineStatus() async {
-    _isOnline = await _sharedpreferencesService.getOnlineStatus() ?? true;
-    notifyListeners();
+    try {
+      print('🔄 [HomeViewModel] Loading online status from backend...');
+
+      // Fetch the actual status from the backend
+      final actualStatus = await driverService.getCurrentStatus();
+
+      _isOnline = actualStatus;
+
+      // Also update local storage to match backend
+      await _sharedpreferencesService.setOnlineStatus(actualStatus);
+
+      print('✅ [HomeViewModel] Status loaded: ${actualStatus ? "ONLINE" : "OFFLINE"}');
+      notifyListeners();
+    } catch (e) {
+      print('❌ [HomeViewModel] Error loading status: $e');
+
+      // Fallback to local storage, but default to offline if not found
+      _isOnline = await _sharedpreferencesService.getOnlineStatus() ?? false;
+
+      print('⚠️ [HomeViewModel] Using fallback status: ${_isOnline ? "ONLINE" : "OFFLINE"}');
+      notifyListeners();
+    }
   }
 
   Future<void> toggleOnlineStatus() async {

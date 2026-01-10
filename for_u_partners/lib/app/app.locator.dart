@@ -25,6 +25,7 @@ import '../services/pause_state_service.dart';
 import '../services/payout_service.dart';
 import '../services/pickers_service.dart';
 import '../services/profile_photo_service.dart';
+import '../services/rating_service.dart';
 import '../services/sharedpreferences_service.dart';
 import '../services/vehicle_service.dart';
 import '../services/wallet_service.dart';
@@ -62,6 +63,7 @@ Future<void> setupLocator({
   locator.registerLazySingleton(() => PauseStateService());
   locator.registerLazySingleton(() => LocationTrackingService());
   locator.registerLazySingleton(() => PayoutService());
+  locator.registerLazySingleton(() => RatingService());
   locator.registerSingleton(HomemainViewModel());
   locator.registerSingleton(MesVehiculesViewModel());
   locator.registerSingleton(DocumentsViewModel());
