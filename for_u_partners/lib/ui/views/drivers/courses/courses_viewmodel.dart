@@ -48,7 +48,10 @@ class CoursesViewModel extends BaseViewModel {
   double get mapZoom => _mapZoom;
 
   final Set<Marker> _markers = <Marker>{};
-  Set<Marker> get markers => _markers;
+  Set<Marker> get markers {
+    debugPrint('🔍 [Markers] get markers called - count: ${_markers.length}, IDs: ${_markers.map((m) => m.markerId.value).toList()}');
+    return Set<Marker>.from(_markers); // Return new Set to trigger GoogleMap rebuild
+  }
 
   // Liste des conducteurs en ligne
   List<DriverLocation> _onlineDrivers = [];
@@ -59,7 +62,10 @@ class CoursesViewModel extends BaseViewModel {
 
   // Polylines pour les trajets
   final Set<Polyline> _polylines = <Polyline>{};
-  Set<Polyline> get polylines => _polylines;
+  Set<Polyline> get polylines {
+    debugPrint('🔍 [Polylines] get polylines called - count: ${_polylines.length}');
+    return Set<Polyline>.from(_polylines); // Return new Set to trigger GoogleMap rebuild
+  }
 
   // Course actuellement sélectionnée
   ClientData? _currentCourse;
@@ -287,13 +293,18 @@ class CoursesViewModel extends BaseViewModel {
           _updatePendingCoursesCount();
           print('🧹 Aucune notification valide, liste des courses vidée');
         }
-        // Clear route-specific markers and polylines when no courses
-        _polylines.clear();
-        _markers.removeWhere((marker) =>
-          marker.markerId.value == 'pickup_point' ||
-          marker.markerId.value == 'destination_point'
-        );
-        print('🧹 Cleared route markers and polylines (no stored notifications)');
+        // Clear route-specific markers and polylines ONLY if no active course
+        // ⚡ CRITICAL: Don't clear markers if we have an active/restored course!
+        if (_currentCourse == null) {
+          _polylines.clear();
+          _markers.removeWhere((marker) =>
+            marker.markerId.value == 'pickup_point' ||
+            marker.markerId.value == 'destination_point'
+          );
+          print('🧹 Cleared route markers and polylines (no stored notifications, no active course)');
+        } else {
+          print('✅ Keeping route markers - active course exists: ${_currentCourse!.courseId}');
+        }
       } else {
         // Convertir les notifications en ClientData
         final validCourseIds = <String>[];
@@ -700,8 +711,13 @@ class CoursesViewModel extends BaseViewModel {
   }
 
   Future<void> _addUserLocationMarker() async {
+    debugPrint('🚗🚗🚗 [Marker] _addUserLocationMarker() called');
+    debugPrint('🚗 [Marker] Current markers before: ${_markers.length}');
+    debugPrint('🚗 [Marker] Marker IDs before: ${_markers.map((m) => m.markerId.value).toList()}');
+
     // Only remove the user_location marker, not all markers
     _markers.removeWhere((marker) => marker.markerId.value == 'user_location');
+    debugPrint('🚗 [Marker] After removing user_location: ${_markers.length} markers');
 
     if (_currentPosition != null) {
       final driverIcon = await MarkerIconService.getDriverMarker(vehicleType: _vehicleType);
@@ -717,6 +733,10 @@ class CoursesViewModel extends BaseViewModel {
           ),
         ),
       );
+      debugPrint('✅ [Marker] Driver marker added. Total markers: ${_markers.length}');
+      debugPrint('✅ [Marker] Final marker IDs: ${_markers.map((m) => m.markerId.value).toList()}');
+    } else {
+      debugPrint('⚠️ [Marker] Cannot add driver marker - _currentPosition is null');
     }
   }
 
@@ -1970,13 +1990,35 @@ class CoursesViewModel extends BaseViewModel {
         ),
       );
 
-      // Ajuster la caméra
+      // Ajouter marqueur destination (pour que le conducteur voit où il ira après le pickup)
+      if (_currentCourse!.destLat != null && _currentCourse!.destLong != null) {
+        final destinationLatLng = LatLng(_currentCourse!.destLat!, _currentCourse!.destLong!);
+        final destinationIcon = await MarkerIconService.getDestinationMarker();
+        _markers.add(
+          Marker(
+            markerId: const MarkerId('destination_point'),
+            position: destinationLatLng,
+            icon: destinationIcon,
+            infoWindow: const InfoWindow(title: 'Destination'),
+          ),
+        );
+        print('✅ Marqueur de destination ajouté pendant le trajet vers pickup');
+      }
+
+      // Ajuster la caméra (inclure destination si disponible)
       if (_mapController != null && !_isDisposed) {
         try {
-          final bounds = _calculateBounds([
+          final boundsPoints = [
             LatLng(_currentPosition!.latitude!, _currentPosition!.longitude!),
             pickupLatLng,
-          ]);
+          ];
+
+          // Inclure la destination dans les limites si disponible
+          if (_currentCourse!.destLat != null && _currentCourse!.destLong != null) {
+            boundsPoints.add(LatLng(_currentCourse!.destLat!, _currentCourse!.destLong!));
+          }
+
+          final bounds = _calculateBounds(boundsPoints);
           await _mapController!.animateCamera(
             CameraUpdate.newLatLngBounds(bounds, 100),
           );
@@ -2006,19 +2048,29 @@ class CoursesViewModel extends BaseViewModel {
 
   // 4. Méthode corrigée pour tracer la route jusqu'à la destination
   Future<void> _drawRouteToDestination() async {
+    debugPrint('🗺️🗺️🗺️ [Route] _drawRouteToDestination() called');
+    debugPrint('🗺️ [Route] _currentCourse: $_currentCourse');
+
     if (_currentCourse == null ||
         _currentCourse!.depLat == null ||
         _currentCourse!.depLong == null ||
         _currentCourse!.destLat == null ||
         _currentCourse!.destLong == null) {
+      debugPrint('❌ [Route] Cannot draw route - missing course or coordinates');
+      debugPrint('❌ [Route] Course null: ${_currentCourse == null}');
+      debugPrint('❌ [Route] depLat: ${_currentCourse?.depLat}, depLong: ${_currentCourse?.depLong}');
+      debugPrint('❌ [Route] destLat: ${_currentCourse?.destLat}, destLong: ${_currentCourse?.destLong}');
       return;
     }
 
     try {
+      debugPrint('🗺️ [Route] Clearing polylines and old markers...');
+      debugPrint('🗺️ [Route] Markers before clear: ${_markers.length}');
       _polylines.clear();
       _markers.removeWhere((marker) =>
           marker.markerId.value == 'pickup_point' ||
           marker.markerId.value == 'destination_point');
+      debugPrint('🗺️ [Route] Markers after remove: ${_markers.length}');
 
       final pickupLatLng =
           LatLng(_currentCourse!.depLat!, _currentCourse!.depLong!);
@@ -2068,8 +2120,10 @@ class CoursesViewModel extends BaseViewModel {
       }
 
       // Ajouter les marqueurs
+      debugPrint('🗺️ [Route] Loading marker icons...');
       final pickupIcon = await MarkerIconService.getPickupMarker();
       final destinationIcon = await MarkerIconService.getDestinationMarker();
+      debugPrint('🗺️ [Route] Adding pickup and destination markers...');
       _markers.addAll([
         Marker(
           markerId: const MarkerId('pickup_point'),
@@ -2084,6 +2138,8 @@ class CoursesViewModel extends BaseViewModel {
           infoWindow: const InfoWindow(title: 'Destination'),
         ),
       ]);
+      debugPrint('✅ [Route] Markers added! Total markers now: ${_markers.length}');
+      debugPrint('✅ [Route] Marker IDs: ${_markers.map((m) => m.markerId.value).toList()}');
 
       // Ajuster la caméra
       if (_mapController != null && !_isDisposed) {
@@ -2114,7 +2170,12 @@ class CoursesViewModel extends BaseViewModel {
       );
     }
 
+    debugPrint('✅✅✅ [Route] _drawRouteToDestination() completed successfully');
+    debugPrint('✅ [Route] Final marker count: ${_markers.length}');
+    debugPrint('✅ [Route] Final polyline count: ${_polylines.length}');
+    debugPrint('✅ [Route] Calling notifyListeners()...');
     notifyListeners();
+    debugPrint('✅ [Route] notifyListeners() called');
   }
 
   // Calculer les limites pour afficher plusieurs points sur la carte
@@ -2899,6 +2960,10 @@ class CoursesViewModel extends BaseViewModel {
       debugPrint('🔍 [Restoration] isPickupFlag variable: $isPickupFlag');
       debugPrint('🔍 [Restoration] isPickup variable: $isPickup');
       debugPrint('🔍🔍🔍 [Restoration] ================================================');
+      debugPrint('📍📍📍 [Restoration] COORDINATES CHECK:');
+      debugPrint('📍 [Restoration] depLat: $depLat, depLong: $depLong');
+      debugPrint('📍 [Restoration] arrLat: $arrLat, arrLong: $arrLong');
+      debugPrint('📍📍📍 [Restoration] ================================================');
 
       // Set state based on course status
       // 🚀 For pickup courses, skip chauffeur_en_route and chauffeur_arrive
@@ -3030,8 +3095,15 @@ class CoursesViewModel extends BaseViewModel {
       debugPrint('✅ [Restoration] Active course restored: $courseId ($status)');
       debugPrint('✅ [Restoration] Bottom sheet type: $_currentBottomSheetType');
       debugPrint('✅ [Restoration] isGoingToPickup: $_isGoingToPickup, isOnTrip: $_isOnTrip');
+      debugPrint('✅✅✅ [Restoration] FINAL STATE CHECK:');
+      debugPrint('✅ [Restoration] Total markers: ${_markers.length}');
+      debugPrint('✅ [Restoration] Marker IDs: ${_markers.map((m) => m.markerId.value).toList()}');
+      debugPrint('✅ [Restoration] Total polylines: ${_polylines.length}');
+      debugPrint('✅ [Restoration] Calling final notifyListeners()...');
       _isRestoringState = false;
       notifyListeners();
+      debugPrint('✅✅✅ [Restoration] Restoration complete! Markers should be visible now.');
+      debugPrint('✅ [Restoration] ================================================================');
     } catch (e) {
       debugPrint('❌ [Restoration] Error restoring active course: $e');
       debugPrint('❌ [Restoration] Stack trace: ${StackTrace.current}');
