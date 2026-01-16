@@ -155,4 +155,38 @@ class WalletService {
       rethrow;
     }
   }
+
+  //* GET WALLET TRANSACTIONS
+  // Récupérer l'historique des transactions du portefeuille
+  Future<List<Map<String, dynamic>>> getWalletTransactions() async {
+    try {
+      final url = Uri.parse(walletTransactionsUrl);
+      final response = await http.get(
+        url,
+        headers: await _authService.getAuthenticatedHeaders(),
+      );
+
+      print('Wallet Transactions Status: ${response.statusCode}');
+      print('Wallet Transactions Body: ${response.body}');
+
+      // Check for authentication errors
+      _checkAuthenticationError(response);
+
+      if (response.statusCode == 200) {
+        final jsonData = jsonDecode(response.body);
+        if (jsonData['transactions'] != null && jsonData['transactions'] is List) {
+          return List<Map<String, dynamic>>.from(jsonData['transactions']);
+        }
+        return [];
+      } else if (response.statusCode == 401) {
+        await _authService.logOut();
+        throw Exception('Session expirée');
+      } else {
+        throw Exception('Erreur lors du chargement des transactions');
+      }
+    } catch (e) {
+      print("Erreur wallet transactions: $e");
+      rethrow;
+    }
+  }
 }

@@ -70,40 +70,45 @@ class AuthService {
   //* LOGIN FUNCTION
   Future<void> login(LoginModel loginModel, BuildContext context) async {
     print("🟡 [AuthService] Début de la méthode login()");
-    final url = Uri.parse("$loginUrl");
+    final url = loginUrl;
 
     print("🟡 [AuthService] URL: $url");
     print("🟡 [AuthService] Payload: ${jsonEncode(loginModel.toJson())}");
 
     try {
       print("🟡 [AuthService] Envoi de la requête HTTP POST...");
-      final response = await http.post(
+      final response = await _dio.post(
         url,
-        headers: headers,
-        body: jsonEncode(loginModel.toJson()),
+        data: loginModel.toJson(),
+        options: Options(
+          headers: headers,
+          validateStatus: (status) => status != null && status < 500,
+        ),
       );
 
       print("🟡 [AuthService] Réponse reçue");
       print("=== RESPONSE STATUS: ${response.statusCode} ===");
-      print("=== RESPONSE BODY: ${response.body} ===");
+      print("=== RESPONSE BODY: ${response.data} ===");
 
       print("🟡 [AuthService] Parsing du JSON...");
-      final responseJson = jsonDecode(response.body);
+      final responseJson = response.data is String ? jsonDecode(response.data) : response.data;
       print("🟡 [AuthService] JSON parsé avec succès");
 
       if (response.statusCode == 200) {
         print("🟢 [AuthService] Status 200 - Connexion réussie ✅");
 
-        String role = responseJson['type'];
-        print("🟡 [AuthService] Type initial: $role");
+        // Handle new API response format
+        final userData = responseJson['user'] ?? responseJson['data'];
+        String role = userData['role'] ?? responseJson['type'];
+        print("🟡 [AuthService] Role initial: $role");
 
         if (role == "conducteur") {
-          role = responseJson['conducteur_type'];
+          role = responseJson['conducteur_type'] ?? 'chauffeur';
           print("🟡 [AuthService] Type conducteur_type: $role");
         }
 
-        String name = responseJson['data']['nom'];
-        String userId = responseJson['data']['id'].toString();
+        String name = userData['nom'];
+        String userId = userData['id'].toString();
         String token = responseJson['token'];
         String message = responseJson['message'] ?? "Connexion réussie";
         String? vehiculeType = responseJson['vehicule_type'];
@@ -129,9 +134,8 @@ class AuthService {
         }
 
         String firestoreUserId;
-        if (responseJson['data']['conducteur'] != null) {
-          final conducteurId =
-              responseJson['data']['conducteur']['id'].toString();
+        if (userData['conducteur'] != null) {
+          final conducteurId = userData['conducteur']['id'].toString();
           await _sharedPreferencesServices.saveUserTypeId(conducteurId);
           firestoreUserId = conducteurId;
           print("✅ [AuthService] Saved Conducteur ID (type-specific): $conducteurId");
@@ -141,7 +145,7 @@ class AuthService {
         }
 
         print("🟡 [AuthService] Synchronisation avec Firestore...");
-        await _syncUserToFirestore(responseJson['data'], role, firestoreUserId);
+        await _syncUserToFirestore(userData, role, firestoreUserId);
         print("🟢 [AuthService] Firestore synchronisé");
 
         print("🟡 [AuthService] Envoi du token FCM au backend...");
@@ -195,18 +199,30 @@ class AuthService {
         print("🔴 [AuthService] Message d'erreur: $errorMessage");
         throw errorMessage;
       }
-    } catch (e) {
-      print("❌ [AuthService] Exception capturée dans login(): $e");
-      print("❌ [AuthService] Type d'exception: ${e.runtimeType}");
-      print("❌ [AuthService] Stack trace: ${StackTrace.current}");
+    } on DioException catch (e) {
+      print("❌ [AuthService] DioException capturée dans login(): $e");
+      print("❌ [AuthService] Type: ${e.type}");
+      print("❌ [AuthService] Message: ${e.message}");
+      print("❌ [AuthService] Response: ${e.response?.data}");
 
-      if (e.toString().contains('SocketException')) {
+      if (e.type == DioExceptionType.connectionTimeout ||
+          e.type == DioExceptionType.receiveTimeout ||
+          e.type == DioExceptionType.sendTimeout) {
+        print("🔴 [AuthService] Timeout détecté");
+        throw "Délai d'attente dépassé. Vérifiez votre connexion.";
+      } else if (e.type == DioExceptionType.connectionError) {
         print("🔴 [AuthService] Erreur de connexion réseau détectée");
         throw "Problème de connexion Internet. Vérifiez votre réseau.";
       } else {
-        print("🔴 [AuthService] Propagation de l'erreur: ${e.toString()}");
-        throw e.toString();
+        print("🔴 [AuthService] Propagation de l'erreur: ${e.message}");
+        throw e.message ?? "Erreur de connexion";
       }
+    } catch (e) {
+      print("❌ [AuthService] Exception générique capturée dans login(): $e");
+      print("❌ [AuthService] Type d'exception: ${e.runtimeType}");
+      print("❌ [AuthService] Stack trace: ${StackTrace.current}");
+      print("🔴 [AuthService] Propagation de l'erreur: ${e.toString()}");
+      throw e.toString();
     }
   }
 

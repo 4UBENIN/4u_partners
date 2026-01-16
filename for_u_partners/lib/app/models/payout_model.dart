@@ -1,3 +1,6 @@
+import 'dart:convert';
+import 'package:flutter/material.dart';
+
 class PayoutModel {
   final int id;
   final String payoutId;
@@ -26,6 +29,22 @@ class PayoutModel {
   });
 
   factory PayoutModel.fromJson(Map<String, dynamic> json) {
+    // Helper function to parse payload/live fields that might be strings or maps
+    Map<String, dynamic>? parseJsonField(dynamic field) {
+      if (field == null) return null;
+      if (field is Map<String, dynamic>) return field;
+      if (field is String) {
+        try {
+          final decoded = jsonDecode(field);
+          return decoded is Map<String, dynamic> ? decoded : null;
+        } catch (e) {
+          debugPrint('⚠️ Failed to parse JSON string: $e');
+          return null;
+        }
+      }
+      return null;
+    }
+
     return PayoutModel(
       id: json['id'] ?? 0,
       payoutId: json['payout_id']?.toString() ?? '',
@@ -40,8 +59,8 @@ class PayoutModel {
           ? DateTime.parse(json['updated_at'])
           : DateTime.now(),
       liveStatus: json['live_status'],
-      payload: json['payload'],
-      live: json['live'],
+      payload: parseJsonField(json['payload']),
+      live: parseJsonField(json['live']),
     );
   }
 
@@ -117,6 +136,7 @@ class PayoutCreateRequest {
   final double amount;
   final String provider;
   final String recipientType;
+  final String phone;
 
   PayoutCreateRequest({
     required this.utilisateurId,
@@ -124,6 +144,7 @@ class PayoutCreateRequest {
     required this.amount,
     required this.provider,
     required this.recipientType,
+    required this.phone,
   });
 
   Map<String, dynamic> toJson() {
@@ -131,8 +152,7 @@ class PayoutCreateRequest {
       'utilisateur_id': utilisateurId,
       'password': password,
       'amount': amount,
-      'provider': provider,
-      'recipient_type': recipientType,
+      'phone': phone,
     };
   }
 }
@@ -156,26 +176,35 @@ class PayoutCreateResponse {
 
 class PayoutData {
   final String id;
+  final String payoutId;
   final String reference;
   final double amount;
   final String currency;
   final String status;
+  final String? provider;
+  final String? phone;
 
   PayoutData({
     required this.id,
+    required this.payoutId,
     required this.reference,
     required this.amount,
     required this.currency,
     required this.status,
+    this.provider,
+    this.phone,
   });
 
   factory PayoutData.fromJson(Map<String, dynamic> json) {
     return PayoutData(
-      id: json['id'] ?? '',
-      reference: json['reference'] ?? '',
+      id: json['id']?.toString() ?? '',
+      payoutId: json['payout_id']?.toString() ?? '',
+      reference: json['reference']?.toString() ?? '',
       amount: (json['amount'] ?? 0).toDouble(),
-      currency: json['currency'] ?? 'XOF',
-      status: json['status'] ?? '',
+      currency: json['currency']?.toString() ?? 'XOF',
+      status: json['status']?.toString() ?? '',
+      provider: json['provider']?.toString(),
+      phone: json['phone']?.toString(),
     );
   }
 }

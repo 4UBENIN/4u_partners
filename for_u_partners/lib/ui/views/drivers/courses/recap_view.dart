@@ -213,7 +213,9 @@ class _RecapitulatifCoursePageState extends State<RecapitulatifCoursePage> {
                 width: double.infinity,
                 padding: const EdgeInsets.all(20),
                 decoration: BoxDecoration(
-                  color: primaryColor.withOpacity(0.1),
+                  color: facture.modePaiement.toLowerCase() == 'portefeuille'
+                      ? Colors.green.withOpacity(0.1)
+                      : primaryColor.withOpacity(0.1),
                   borderRadius: const BorderRadius.only(
                     bottomLeft: Radius.circular(20),
                     bottomRight: Radius.circular(20),
@@ -226,7 +228,9 @@ class _RecapitulatifCoursePageState extends State<RecapitulatifCoursePage> {
                       padding: const EdgeInsets.symmetric(
                           horizontal: 12, vertical: 6),
                       decoration: BoxDecoration(
-                        color: kcPrimaryColor,
+                        color: facture.modePaiement.toLowerCase() == 'portefeuille'
+                            ? Colors.green
+                            : kcPrimaryColor,
                         borderRadius: BorderRadius.circular(20),
                       ),
                       child: const Text(
@@ -277,8 +281,6 @@ class _RecapitulatifCoursePageState extends State<RecapitulatifCoursePage> {
                           const SizedBox(height: 12),
                           _buildLocationRow(
                               Icons.location_on, facture.adresseArrivee, false),
-                          const SizedBox(height: 8),
-                          _buildDistanceInfo(facture.distanceKm),
                         ],
                       ),
 
@@ -370,31 +372,146 @@ class _RecapitulatifCoursePageState extends State<RecapitulatifCoursePage> {
                         const SizedBox(height: 24),
                       ],
 
-                      // Section Détails de la facture
+                      // Section Détails de la course
                       _buildSection(
                         context,
-                        title: 'Détails de la facture',
+                        title: 'Détails de la course',
                         icon: Icons.receipt_long,
                         children: [
                           _buildInvoiceRow(
                               'N° Facture', 'FAC-${facture.courseId}'),
                           _buildInvoiceRow(
                               'Date', _dateFormat.format(DateTime.now())),
-                          const Divider(height: 32),
+                          const SizedBox(height: 8),
 
-                          // Tarif de base (si disponible)
+                          // Info card for distance and time
+                          Container(
+                            padding: const EdgeInsets.all(12),
+                            decoration: BoxDecoration(
+                              color: Colors.blue[50],
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                            child: Column(
+                              children: [
+                                Row(
+                                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                  children: [
+                                    Row(
+                                      children: [
+                                        Icon(Icons.straighten, size: 16, color: Colors.blue[700]),
+                                        const SizedBox(width: 8),
+                                        const Text(
+                                          'Distance parcourue',
+                                          style: TextStyle(
+                                            fontSize: 14,
+                                            fontWeight: FontWeight.w500,
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                    Text(
+                                      '${facture.distanceKm.toStringAsFixed(2)} km',
+                                      style: const TextStyle(
+                                        fontSize: 14,
+                                        fontWeight: FontWeight.bold,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                                const SizedBox(height: 8),
+                                Row(
+                                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                  children: [
+                                    Row(
+                                      children: [
+                                        Icon(Icons.access_time, size: 16, color: Colors.blue[700]),
+                                        const SizedBox(width: 8),
+                                        const Text(
+                                          'Durée totale',
+                                          style: TextStyle(
+                                            fontSize: 14,
+                                            fontWeight: FontWeight.w500,
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                    Text(
+                                      '${facture.dureeMin} min',
+                                      style: const TextStyle(
+                                        fontSize: 14,
+                                        fontWeight: FontWeight.bold,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ],
+                            ),
+                          ),
+                        ],
+                      ),
+
+                      const SizedBox(height: 24),
+
+                      // Section Détails de la facture
+                      _buildSection(
+                        context,
+                        title: 'Détails de la facture',
+                        icon: Icons.calculate_outlined,
+                        children: [
+                          // Tarif de base (si disponible) - with special styling
                           if (facture.tarifBase != null && facture.tarifBase! > 0) ...[
-                            _buildCalculationRow(
-                              label: 'Tarif de base',
-                              calculation: 'Prise en charge',
-                              result: '${facture.tarifBase} FCFA',
+                            Container(
+                              padding: const EdgeInsets.all(12),
+                              decoration: BoxDecoration(
+                                color: Colors.green[50],
+                                borderRadius: BorderRadius.circular(8),
+                                border: Border.all(color: Colors.green[200]!),
+                              ),
+                              child: Row(
+                                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                children: [
+                                  Row(
+                                    children: [
+                                      Icon(Icons.flag, size: 16, color: Colors.green[700]),
+                                      const SizedBox(width: 8),
+                                      Column(
+                                        crossAxisAlignment: CrossAxisAlignment.start,
+                                        children: [
+                                          const Text(
+                                            'Tarif de prise en charge',
+                                            style: TextStyle(
+                                              fontSize: 13,
+                                              fontWeight: FontWeight.w500,
+                                            ),
+                                          ),
+                                          Text(
+                                            'Premier kilomètre',
+                                            style: TextStyle(
+                                              color: Colors.grey[600],
+                                              fontSize: 11,
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                    ],
+                                  ),
+                                  Text(
+                                    '${facture.tarifBase} FCFA',
+                                    style: TextStyle(
+                                      fontSize: 15,
+                                      fontWeight: FontWeight.bold,
+                                      color: Colors.green[800],
+                                    ),
+                                  ),
+                                ],
+                              ),
                             ),
                             const SizedBox(height: 12),
                           ],
 
                           // Distance avec calcul
                           _buildCalculationRow(
-                            label: 'Distance parcourue',
+                            label: 'Coût distance',
                             calculation: facture.montantDistance != null
                                 ? '${facture.distanceKm.toStringAsFixed(1)} km'
                                 : '${facture.distanceKm.toStringAsFixed(1)} km × ${facture.tarifParKm} FCFA',
@@ -406,7 +523,7 @@ class _RecapitulatifCoursePageState extends State<RecapitulatifCoursePage> {
 
                           // Durée avec calcul
                           _buildCalculationRow(
-                            label: 'Temps de course',
+                            label: 'Coût temps',
                             calculation: facture.montantMinute != null
                                 ? '${facture.dureeMin} min'
                                 : '${facture.dureeMin} min × ${facture.tarifParMinute} FCFA',
@@ -419,7 +536,7 @@ class _RecapitulatifCoursePageState extends State<RecapitulatifCoursePage> {
                           if (facture.tempsAttente > 0) ...[
                             const SizedBox(height: 12),
                             _buildCalculationRow(
-                              label: 'Temps d\'attente',
+                              label: 'Coût attente',
                               calculation: '${facture.tempsAttente} min',
                               result: '${facture.montantAttente} FCFA',
                             ),
@@ -429,7 +546,7 @@ class _RecapitulatifCoursePageState extends State<RecapitulatifCoursePage> {
                           if (facture.tempsPause > 0) ...[
                             const SizedBox(height: 12),
                             _buildCalculationRow(
-                              label: 'Temps de pause',
+                              label: 'Coût pause',
                               calculation: '${facture.tempsPause} min',
                               result: '${facture.montantPause} FCFA',
                             ),
@@ -439,26 +556,40 @@ class _RecapitulatifCoursePageState extends State<RecapitulatifCoursePage> {
 
                           // Total final
                           Container(
-                            padding: const EdgeInsets.all(12),
+                            padding: const EdgeInsets.all(16),
                             decoration: BoxDecoration(
-                              color: kcPrimaryColor.withOpacity(0.1),
-                              borderRadius: BorderRadius.circular(8),
+                              color: kcPrimaryColor.withOpacity(0.15),
+                              borderRadius: BorderRadius.circular(12),
+                              border: Border.all(color: kcPrimaryColor.withOpacity(0.3), width: 2),
                             ),
                             child: Row(
                               mainAxisAlignment: MainAxisAlignment.spaceBetween,
                               children: [
-                                const Text(
-                                  'Total à payer',
-                                  style: TextStyle(
-                                    fontSize: 17,
-                                    fontWeight: FontWeight.bold,
-                                    color: primaryColor,
-                                  ),
+                                const Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      'Montant total',
+                                      style: TextStyle(
+                                        fontSize: 14,
+                                        color: primaryColor,
+                                        fontWeight: FontWeight.w500,
+                                      ),
+                                    ),
+                                    SizedBox(height: 2),
+                                    Text(
+                                      'Course terminée',
+                                      style: TextStyle(
+                                        fontSize: 11,
+                                        color: Colors.grey,
+                                      ),
+                                    ),
+                                  ],
                                 ),
                                 Text(
                                   '${facture.montant} FCFA',
                                   style: const TextStyle(
-                                    fontSize: 20,
+                                    fontSize: 24,
                                     fontWeight: FontWeight.bold,
                                     color: primaryColor,
                                   ),

@@ -28,19 +28,19 @@ class PayoutService {
     required int utilisateurId,
     required String password,
     required double amount,
-    required String provider,
-    required String recipientType,
+    required String phone,
   }) async {
     try {
-      debugPrint('💰 [PayoutService] Creating payout - User ID: $utilisateurId, Amount: $amount FCFA, Provider: $provider');
+      debugPrint('💰 [PayoutService] Creating payout - User ID: $utilisateurId, Amount: $amount FCFA, Phone: $phone');
 
       final url = Uri.parse(createPayoutUrl);
       final request = PayoutCreateRequest(
         utilisateurId: utilisateurId,
         password: password,
         amount: amount,
-        provider: provider,
-        recipientType: recipientType,
+        provider: '',
+        recipientType: '',
+        phone: phone,
       );
 
       final payload = request.toJson();
@@ -61,7 +61,7 @@ class PayoutService {
       // Check for authentication errors
       _checkAuthenticationError(response);
 
-      if (response.statusCode == 200) {
+      if (response.statusCode == 200 || response.statusCode == 201) {
         final jsonData = jsonDecode(response.body);
         debugPrint('✅ [PayoutService] Payout created successfully');
         return PayoutCreateResponse.fromJson(jsonData);
@@ -149,12 +149,14 @@ class PayoutService {
       );
 
       debugPrint('📋 [PayoutService] Response status: ${response.statusCode}');
+      debugPrint('📋 [PayoutService] Response body: ${response.body}');
 
       // Check for authentication errors
       _checkAuthenticationError(response);
 
       if (response.statusCode == 200) {
         final jsonData = jsonDecode(response.body);
+        debugPrint('📋 [PayoutService] Parsed JSON data: $jsonData');
         final result = PayoutListResponse.fromJson(jsonData);
         debugPrint('✅ [PayoutService] Successfully fetched ${result.data.length} payouts');
         return result;

@@ -40,8 +40,6 @@ class CreatePayoutView extends StackedView<CreatePayoutViewModel> {
               const SizedBox(height: 24),
               _buildAmountField(viewModel),
               const SizedBox(height: 20),
-              _buildProviderSelection(viewModel),
-              const SizedBox(height: 20),
               _buildPasswordField(viewModel),
               const SizedBox(height: 32),
               _buildSubmitButton(context, viewModel),
@@ -146,79 +144,6 @@ class CreatePayoutView extends StackedView<CreatePayoutViewModel> {
             ),
           ),
         ),
-      ],
-    );
-  }
-
-  Widget _buildProviderSelection(CreatePayoutViewModel viewModel) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        const Text(
-          'Moyen de paiement',
-          style: TextStyle(
-            fontSize: 15,
-            fontWeight: FontWeight.w600,
-            color: Color(0xFF1C1C1E),
-          ),
-        ),
-        const SizedBox(height: 12),
-        ...viewModel.providers.map((provider) {
-          final isSelected = viewModel.selectedProvider == provider['value'];
-          return Container(
-            margin: const EdgeInsets.only(bottom: 8),
-            child: InkWell(
-              onTap: () => viewModel.selectProvider(provider['value']),
-              borderRadius: BorderRadius.circular(12),
-              child: Container(
-                padding: const EdgeInsets.all(16),
-                decoration: BoxDecoration(
-                  color: Colors.white,
-                  borderRadius: BorderRadius.circular(12),
-                  border: Border.all(
-                    color: isSelected
-                        ? const Color(0xFF007AFF)
-                        : Colors.transparent,
-                    width: 2,
-                  ),
-                ),
-                child: Row(
-                  children: [
-                    Container(
-                      padding: const EdgeInsets.all(8),
-                      decoration: BoxDecoration(
-                        color: (provider['color'] as Color).withOpacity(0.1),
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                      child: Icon(
-                        provider['icon'],
-                        color: provider['color'],
-                        size: 24,
-                      ),
-                    ),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: Text(
-                        provider['label'],
-                        style: const TextStyle(
-                          fontSize: 15,
-                          fontWeight: FontWeight.w600,
-                          color: Color(0xFF1C1C1E),
-                        ),
-                      ),
-                    ),
-                    if (isSelected)
-                      const Icon(
-                        Icons.check_circle,
-                        color: Color(0xFF007AFF),
-                        size: 24,
-                      ),
-                  ],
-                ),
-              ),
-            ),
-          );
-        }).toList(),
       ],
     );
   }

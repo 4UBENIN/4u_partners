@@ -2,7 +2,7 @@ import 'package:flutter_dotenv/flutter_dotenv.dart';
 
 String get baseUrl => dotenv.env['API_ENDPOINT']!;
 String get registerUrl => "$baseUrl/partenaire/register";
-String get loginUrl => "$baseUrl/partenaire/login";
+String get loginUrl => "$baseUrl/login";
 String get sendOtpUrl => "$baseUrl/partenaire/send-code";
 String get verifyOtpUrl => "$baseUrl/partenaire/verify-code";
 String get coursesPendingUrl => "$baseUrl/conducteur/courses";
@@ -26,6 +26,7 @@ String coursesDetailsUrl(int courseId) =>
     "$baseUrl/conducteur/courses/$courseId/details";
 String get assignedCourseUrl => "$baseUrl/conducteur/courses_list";
 String get walletSoldUrl => "$baseUrl/wallet_solde";
+String get walletTransactionsUrl => "$baseUrl/wallet/transactions";
 String get getDailyStats => "$baseUrl/conducteur/stats/daily";
 String get getGlobalStats => "$baseUrl/conducteur/stats/global";
 
@@ -63,5 +64,7 @@ String ratingDetailUrl(int ratingId) => "$baseUrl/conducteur/avis/mine_detail/$r
 
 Map<String, String> headers = {
   'Content-Type': 'application/json',
-  'Accept': 'application/json'
+  'Accept': 'application/json',
+  'X-CSRF-TOKEN': '',
+  'User-Agent': 'ForUPartners-Mobile-App'
 };

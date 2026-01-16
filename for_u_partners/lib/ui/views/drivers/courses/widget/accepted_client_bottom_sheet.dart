@@ -45,6 +45,7 @@ class AcceptedClientBottomSheet extends StatefulWidget {
 class _AcceptedClientBottomSheetState extends State<AcceptedClientBottomSheet> {
   final _arrivalStateService = locator<ArrivalStateService>();
   final GlobalKey<SlideActionState> _slideKey = GlobalKey();
+  final GlobalKey<SlideActionState> _startRideSlideKey = GlobalKey();
   Timer? _waitingTimer;
   bool _arrivalConfirmed = false;
   int _waitingTime = 0;
@@ -465,50 +466,58 @@ class _AcceptedClientBottomSheetState extends State<AcceptedClientBottomSheet> {
 
                   const SizedBox(height: 20),
 
-                  // Bouton Démarrer la course (conditionnel)
-                  SizedBox(
-                    width: double.infinity,
-                    height: 50,
-                    child: ElevatedButton(
-                      onPressed: _arrivalConfirmed ? widget.onStartRide : null,
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor:
-                        _arrivalConfirmed ? kcPrimaryColor : Colors.grey[400],
-                        foregroundColor: Colors.white,
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(25),
-                        ),
-                        elevation: _arrivalConfirmed ? 2 : 0,
-                        disabledBackgroundColor: Colors.grey[400],
-                        disabledForegroundColor: Colors.grey[600],
+                  // Slider Démarrer la course (conditionnel)
+                  if (_arrivalConfirmed)
+                    SlideAction(
+                      key: _startRideSlideKey,
+                      onSubmit: () async {
+                        widget.onStartRide();
+                        return null;
+                      },
+                      height: 60,
+                      borderRadius: 30,
+                      elevation: 2,
+                      innerColor: kcPrimaryColor,
+                      outerColor: kcPrimaryColor.withOpacity(0.15),
+                      sliderButtonIcon: const Icon(
+                        Icons.play_arrow,
+                        color: Colors.white,
+                      ),
+                      text: 'Glisser pour démarrer la course',
+                      textStyle: const TextStyle(
+                        color: kcPrimaryColor,
+                        fontWeight: FontWeight.w700,
+                        fontSize: 16,
+                      ),
+                    )
+                  else
+                    Container(
+                      width: double.infinity,
+                      height: 60,
+                      decoration: BoxDecoration(
+                        color: Colors.grey[200],
+                        borderRadius: BorderRadius.circular(30),
                       ),
                       child: Row(
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
-                          if (!_arrivalConfirmed) ...[
-                            Icon(
-                              Icons.lock_outline,
-                              size: 20,
-                              color: Colors.grey[600],
-                            ),
-                            const SizedBox(width: 8),
-                          ],
+                          Icon(
+                            Icons.lock_outline,
+                            size: 20,
+                            color: Colors.grey[600],
+                          ),
+                          const SizedBox(width: 8),
                           Text(
-                            _arrivalConfirmed
-                                ? 'Démarrer la course'
-                                : 'Récupérez d\'abord le client',
+                            'Récupérez d\'abord le client',
                             style: TextStyle(
                               fontSize: 16,
                               fontWeight: FontWeight.w600,
-                              color: _arrivalConfirmed
-                                  ? Colors.white
-                                  : Colors.grey[600],
+                              color: Colors.grey[600],
                             ),
                           ),
                         ],
                       ),
                     ),
-                  ),
 
                   const SizedBox(height: 15),
 

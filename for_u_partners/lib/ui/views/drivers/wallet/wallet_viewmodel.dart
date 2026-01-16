@@ -8,6 +8,7 @@ import 'package:for_u_partners/app/app.locator.dart';
 import 'package:for_u_partners/app/app.router.dart';
 import 'package:for_u_partners/services/wallet_service.dart';
 import 'package:for_u_partners/services/auth_service.dart';
+import 'package:for_u_partners/services/payout_service.dart';
 import 'package:for_u_partners/ui/common/app_colors.dart';
 import 'package:for_u_partners/ui/views/drivers/wallet/payment_webview.dart';
 import 'package:for_u_partners/app/api_constant.dart';
@@ -16,17 +17,20 @@ import 'package:for_u_partners/app/models/parrainage_model.dart';
 class WalletViewModel extends BaseViewModel {
   final _walletService = locator<WalletService>();
   final _authService = locator<AuthService>();
+  final _payoutService = locator<PayoutService>();
   final _navigationService = locator<NavigationService>();
 
   double _balance = 0.0;
   List<Map<String, dynamic>> _transactions = [];
   List<ParrainageModel> _uncollectedBonuses = [];
   bool _isCollecting = false;
+  bool _isLoadingPayouts = false;
 
   double get balance => _balance;
   List<Map<String, dynamic>> get transactions => _transactions;
   List<ParrainageModel> get uncollectedBonuses => _uncollectedBonuses;
   bool get isCollecting => _isCollecting;
+  bool get isLoadingPayouts => _isLoadingPayouts;
 
   double get totalUncollectedAmount {
     return _uncollectedBonuses.fold(0.0, (sum, bonus) => sum + (bonus.montant ?? 0));
@@ -48,17 +52,66 @@ class WalletViewModel extends BaseViewModel {
       // Load uncollected bonuses
       _uncollectedBonuses = await _walletService.getUncollectedBonuses();
 
-      // TODO: Implement transaction history when API is ready
-      _transactions = [];
+      // Load wallet transactions from API (fast)
+      final walletTransactions = await _walletService.getWalletTransactions();
 
+      _transactions = walletTransactions;
+
+      // Notify UI immediately with wallet transactions
+      setBusy(false);
       notifyListeners();
+
+      // Load payouts asynchronously (slower, in background)
+      _loadPayoutsInBackground();
+
     } catch (e) {
       print('Error loading wallet data: $e');
       _balance = 0.0;
       _transactions = [];
       _uncollectedBonuses = [];
-    } finally {
       setBusy(false);
+    }
+  }
+
+  Future<void> _loadPayoutsInBackground() async {
+    _isLoadingPayouts = true;
+    notifyListeners();
+
+    try {
+      // Load payouts from API (can be slow)
+      final payoutResponse = await _payoutService.listPayouts(perPage: 10);
+
+      // Convert payouts to transaction format
+      final payoutTransactions = payoutResponse.data.map((payout) {
+        return {
+          'id': payout.id,
+          'type': 'debit', // Payouts are always withdrawals (debits)
+          'amount': payout.amount.toString(),
+          'status': payout.status,
+          'reference': 'Retrait', // Simple label without technical reference
+          'created_at': payout.createdAt.toIso8601String(),
+          'is_payout': true, // Flag to identify payout transactions
+          'payout_id': payout.payoutId,
+        };
+      }).toList();
+
+      // Merge wallet transactions and payout transactions
+      final allTransactions = [..._transactions, ...payoutTransactions];
+
+      // Sort by created_at date (most recent first)
+      allTransactions.sort((a, b) {
+        final dateA = DateTime.tryParse(a['created_at']?.toString() ?? '') ?? DateTime.now();
+        final dateB = DateTime.tryParse(b['created_at']?.toString() ?? '') ?? DateTime.now();
+        return dateB.compareTo(dateA); // Descending order
+      });
+
+      _transactions = allTransactions;
+      _isLoadingPayouts = false;
+      notifyListeners();
+    } catch (e) {
+      print('Error loading payouts: $e');
+      _isLoadingPayouts = false;
+      notifyListeners();
     }
   }
 
@@ -371,7 +424,7 @@ class WalletViewModel extends BaseViewModel {
     notifyListeners();
   }
 
-  void navigateToPayoutHistory() {
-    _navigationService.navigateTo(Routes.payoutHistoryView);
+  void navigateToRetrait() {
+    _navigationService.navigateTo(Routes.createPayoutView);
   }
 }

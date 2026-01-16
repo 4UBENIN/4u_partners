@@ -4,45 +4,18 @@ import 'package:stacked_services/stacked_services.dart';
 import 'package:for_u_partners/app/app.locator.dart';
 import 'package:for_u_partners/services/payout_service.dart';
 import 'package:for_u_partners/services/sharedpreferences_service.dart';
+import 'package:for_u_partners/services/driver_service.dart';
 import 'package:for_u_partners/ui/common/toast.dart';
 
 class CreatePayoutViewModel extends BaseViewModel {
   final _payoutService = locator<PayoutService>();
   final _sharedPreferencesService = locator<SharedpreferencesService>();
+  final _driverService = locator<DriverService>();
   final _navigationService = locator<NavigationService>();
 
   final formKey = GlobalKey<FormState>();
   final amountController = TextEditingController();
   final passwordController = TextEditingController();
-
-  String _selectedProvider = 'mtn';
-  String get selectedProvider => _selectedProvider;
-
-  final List<Map<String, dynamic>> providers = [
-    {
-      'value': 'mtn',
-      'label': 'MTN Mobile Money',
-      'icon': Icons.phone_android,
-      'color': Color(0xFFFFCC00),
-    },
-    {
-      'value': 'moov',
-      'label': 'Moov Money',
-      'icon': Icons.phone_android,
-      'color': Color(0xFF0066CC),
-    },
-    {
-      'value': 'wave',
-      'label': 'Wave',
-      'icon': Icons.phone_android,
-      'color': Color(0xFF00D9FF),
-    },
-  ];
-
-  void selectProvider(String provider) {
-    _selectedProvider = provider;
-    notifyListeners();
-  }
 
   String? validateAmount(String? value) {
     if (value == null || value.isEmpty) {
@@ -66,6 +39,35 @@ class CreatePayoutViewModel extends BaseViewModel {
       return 'Veuillez entrer votre mot de passe';
     }
     return null;
+  }
+
+  /// Formats phone number to 8 digits by removing country code and prefix
+  ///
+  /// Examples:
+  /// - "+2290196050020" -> "96050020"
+  /// - "2290196050020" -> "96050020"
+  /// - "22901234567" -> "01234567"
+  /// - "96050020" -> "96050020"
+  String _formatPhoneNumber(String phone) {
+    String cleanPhone = phone.trim();
+
+    // Remove "+" if present
+    if (cleanPhone.startsWith('+')) {
+      cleanPhone = cleanPhone.substring(1);
+    }
+
+    // Remove country code (229) if present
+    if (cleanPhone.startsWith('229')) {
+      cleanPhone = cleanPhone.substring(3);
+    }
+
+    // Remove the '01' prefix if present (old format)
+    if (cleanPhone.startsWith('01')) {
+      cleanPhone = cleanPhone.substring(2);
+    }
+
+    debugPrint('💰 [CreatePayoutViewModel] Phone formatting: $phone -> $cleanPhone');
+    return cleanPhone;
   }
 
   Future<void> createPayout(BuildContext context) async {
@@ -100,14 +102,18 @@ class CreatePayoutViewModel extends BaseViewModel {
       final amount = double.parse(amountController.text);
       final password = passwordController.text;
 
-      debugPrint('💰 [CreatePayoutViewModel] Initiating payout creation - User ID: $userId, Amount: $amount FCFA, Provider: $_selectedProvider');
+      // Get user profile to retrieve phone number
+      debugPrint('💰 [CreatePayoutViewModel] Fetching user profile to get phone number...');
+      final user = await _driverService.getUserProfile();
+      final formattedPhone = _formatPhoneNumber(user.telephone);
+
+      debugPrint('💰 [CreatePayoutViewModel] Initiating payout creation - User ID: $userId, Amount: $amount FCFA, Phone: $formattedPhone');
 
       final response = await _payoutService.createPayout(
         utilisateurId: userId,
         password: password,
         amount: amount,
-        provider: _selectedProvider,
-        recipientType: 'mobile_money',
+        phone: formattedPhone,
       );
 
       debugPrint('✅ [CreatePayoutViewModel] Payout request submitted successfully');

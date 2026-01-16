@@ -6,13 +6,15 @@ class LoginModel {
   String? type;
   String? telephone;
   String? motDePasse;
+  String? method;
 
-  LoginModel({this.type, this.telephone, this.motDePasse});
+  LoginModel({this.type, this.telephone, this.motDePasse, this.method = 'phone'});
 
   LoginModel.fromJson(Map<String, dynamic> json) {
     type = json['type'];
     telephone = json['telephone'];
     motDePasse = json['mot_de_passe'];
+    method = json['method'];
   }
 
   Map<String, dynamic> toJson() {
@@ -20,6 +22,7 @@ class LoginModel {
     data['type'] = type;
     data['telephone'] = telephone;
     data['mot_de_passe'] = motDePasse;
+    data['method'] = method ?? 'phone';
     return data;
   }
 }
