@@ -2,6 +2,13 @@ import 'package:mockito/annotations.dart';
 import 'package:mockito/mockito.dart';
 import 'package:for_u_partners/app/app.locator.dart';
 import 'package:stacked_services/stacked_services.dart';
+import 'package:for_u_partners/services/sharedpreferences_service.dart';
+import 'package:for_u_partners/services/auth_service.dart';
+import 'package:for_u_partners/services/driver_service.dart';
+import 'package:for_u_partners/services/pressing_service.dart';
+import 'package:for_u_partners/services/wallet_service.dart';
+import 'package:for_u_partners/services/chat_service.dart';
+import 'package:for_u_partners/services/pickers_service.dart';
 // @stacked-import
 
 import 'test_helpers.mocks.dart';
@@ -12,14 +19,29 @@ import 'test_helpers.mocks.dart';
     MockSpec<NavigationService>(onMissingStub: OnMissingStub.returnDefault),
     MockSpec<BottomSheetService>(onMissingStub: OnMissingStub.returnDefault),
     MockSpec<DialogService>(onMissingStub: OnMissingStub.returnDefault),
-    // @stacked-mock-spec
+    MockSpec<SharedpreferencesService>(
+        onMissingStub: OnMissingStub.returnDefault),
+    MockSpec<AuthService>(onMissingStub: OnMissingStub.returnDefault),
+    MockSpec<DriverService>(onMissingStub: OnMissingStub.returnDefault),
+    MockSpec<PressingService>(onMissingStub: OnMissingStub.returnDefault),
+    MockSpec<WalletService>(onMissingStub: OnMissingStub.returnDefault),
+    MockSpec<ChatService>(onMissingStub: OnMissingStub.returnDefault),
+    MockSpec<PickersService>(onMissingStub: OnMissingStub.returnDefault),
+// @stacked-mock-spec
   ],
 )
 void registerServices() {
   getAndRegisterNavigationService();
   getAndRegisterBottomSheetService();
   getAndRegisterDialogService();
-  // @stacked-mock-register
+  getAndRegisterSharedpreferencesService();
+  getAndRegisterAuthService();
+  getAndRegisterDriverService();
+  getAndRegisterPressingService();
+  getAndRegisterWalletService();
+  getAndRegisterChatService();
+  getAndRegisterPickersService();
+// @stacked-mock-register
 }
 
 MockNavigationService getAndRegisterNavigationService() {
@@ -76,6 +98,54 @@ MockDialogService getAndRegisterDialogService() {
   return service;
 }
 
+MockSharedpreferencesService getAndRegisterSharedpreferencesService() {
+  _removeRegistrationIfExists<SharedpreferencesService>();
+  final service = MockSharedpreferencesService();
+  locator.registerSingleton<SharedpreferencesService>(service);
+  return service;
+}
+
+MockAuthService getAndRegisterAuthService() {
+  _removeRegistrationIfExists<AuthService>();
+  final service = MockAuthService();
+  locator.registerSingleton<AuthService>(service);
+  return service;
+}
+
+MockDriverService getAndRegisterDriverService() {
+  _removeRegistrationIfExists<DriverService>();
+  final service = MockDriverService();
+  locator.registerSingleton<DriverService>(service);
+  return service;
+}
+
+MockPressingService getAndRegisterPressingService() {
+  _removeRegistrationIfExists<PressingService>();
+  final service = MockPressingService();
+  locator.registerSingleton<PressingService>(service);
+  return service;
+}
+
+MockWalletService getAndRegisterWalletService() {
+  _removeRegistrationIfExists<WalletService>();
+  final service = MockWalletService();
+  locator.registerSingleton<WalletService>(service);
+  return service;
+}
+
+MockChatService getAndRegisterChatService() {
+  _removeRegistrationIfExists<ChatService>();
+  final service = MockChatService();
+  locator.registerSingleton<ChatService>(service);
+  return service;
+}
+
+MockPickersService getAndRegisterPickersService() {
+  _removeRegistrationIfExists<PickersService>();
+  final service = MockPickersService();
+  locator.registerSingleton<PickersService>(service);
+  return service;
+}
 // @stacked-mock-create
 
 void _removeRegistrationIfExists<T extends Object>() {

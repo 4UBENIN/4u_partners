@@ -1,9 +1,26 @@
 import 'package:flutter/material.dart';
 
-const Color kcPrimaryColor = Color(0xFF9600FF);
+const Color kcPrimaryColor = Color(0xFF184E9C);
+const Color kcWhiteColors = Colors.white;
 const Color kcPrimaryColorDark = Color(0xFF300151);
 const Color kcDarkGreyColor = Color(0xFF1A1B1E);
 const Color kcMediumGrey = Color(0xFF474A54);
-const Color kcLightGrey = Color.fromARGB(255, 187, 187, 187);
+const Color kcLightGrey = Color(0xFF757575);
 const Color kcVeryLightGrey = Color(0xFFE3E3E3);
 const Color kcBackgroundColor = kcDarkGreyColor;
+const Color primaryColor = Color(0xFF184E9C);
+const Color primaryColorDark = Color(0xFF300151);
+const Color darkGreyColor = Color(0xFF1A1B1E);
+const Color mediumGrey = Color(0xFF474A54);
+const Color lightGrey = Color.fromARGB(255, 187, 187, 187);
+const Color veryLightGrey = Color(0xFFE3E3E3);
+const Color backgroundColor = Color(0xFFf3f4f6);
+const Color black = Color(0xFF000000);
+const Color white = Color(0xFFFFFFFF);
+const Color red = Color(0xFF900B09);
+const Color greybutton = Color(0xFFD9D9D9);
+const Color textinputcolor = Color(0xFF1E1E1E);
+const Color backButton = Color(0xFFd1d5db);
+const Color textinsidebutton = Color(0xFFF5F5F5);
+const Color insideBackButton = Color(0xFF4f5866);
+const Color backgroundService = Color(0xFFf8f9fa);

@@ -1,0 +1,209 @@
+import '../../../../services/driver_service.dart';
+import '../../../../models/daily_stats_model.dart';
+import 'package:for_u_partners/services/sharedpreferences_service.dart';
+import 'package:stacked/stacked.dart';
+import 'package:for_u_partners/app/app.locator.dart';
+import 'dart:async';
+import 'package:for_u_partners/services/tracking_service.dart';
+import 'package:location/location.dart';
+
+class HomeViewModel extends BaseViewModel {
+  Timer? _heartbeatTimer;
+  final Location _location = Location();
+  final _sharedpreferencesService = locator<SharedpreferencesService>();
+  final trackingService = TrackingService();
+  final driverService = locator<DriverService>();
+  int todayCourses = 0;
+  double montantGainToday = 0.0;
+  // Données utilisateur
+  String? name;
+  double solde = 0;
+
+  // Statistiques quotidiennes
+  DailyStats? dailyStats;
+  String? errorMessage;
+
+  bool _isOnline = true;
+  
+  bool get isOnline => _isOnline;
+  
+  HomeViewModel() {
+    initialise();
+  }
+  
+  // Charger l'état enregistré
+  Future<void> _loadOnlineStatus() async {
+    _isOnline = await _sharedpreferencesService.getOnlineStatus() ?? true;
+    _safeNotifyListeners();
+  }
+
+  // Basculer entre en ligne/hors ligne
+  Future<void> toggleOnlineStatus() async {
+    try {
+      setBusy(true);
+      _isOnline = !_isOnline;
+      await _sharedpreferencesService.setOnlineStatus(_isOnline);
+
+      // Appeler l'API appropriée
+      if (_isOnline) {
+        await driverService.goOnline();
+      } else {
+        await driverService.goOffline();
+      }
+
+      _safeNotifyListeners();
+    } catch (e) {
+      // En cas d'erreur, on revient à l'état précédent
+      _isOnline = !_isOnline;
+      errorMessage = "Erreur lors du changement d'état";
+      _safeNotifyListeners();
+      rethrow;
+    } finally {
+      setBusy(false);
+    }
+  }
+  Future<void> initialise() async {
+    setBusy(true);
+    try {
+      await Future.wait([
+        getUserName(),
+        getWalletSold(),
+        getDailyStats(),
+        trackingService.demarrerTrackingContinu(),
+      ]);
+      
+      // Démarrer le timer des heartbeats après l'initialisation
+      _startHeartbeatTimer();
+    } catch (e) {
+      print("Erreur lors de l'initialisation: $e");
+      errorMessage = "Erreur lors du chargement des données";
+      notifyListeners();
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  // Récupère les statistiques quotidiennes
+  Future<void> getDailyStats() async {
+    try {
+      final stats = await driverService.fetchDailyStats();
+      dailyStats = stats;
+      todayCourses = dailyStats?.totalActiviteToday ?? 0;
+      montantGainToday = (dailyStats?.montantGainToday ?? 0).toDouble();
+      print("MONTANT GAIN TODAY: $montantGainToday");
+      print("TOTAL ACTIVITE TODAY: ${dailyStats?.totalActiviteToday}");
+      _safeNotifyListeners();
+    } catch (e) {
+      errorMessage = 'Erreur lors de la récupération des statistiques';
+      print('Erreur dans getDailyStats: $e');
+      _safeNotifyListeners();
+    }
+  }
+
+  // Récupère le nom de l'utilisateur
+  Future<void> getUserName() async {
+    try {
+      name = await _sharedpreferencesService.getUserName() ?? "";
+      _safeNotifyListeners();
+    } catch (e) {
+      name = "";
+      print("Erreur lors de la récupération du nom: $e");
+    }
+  }
+
+  // Récupère le solde du portefeuille
+  Future<void> getWalletSold() async {
+    try {
+      solde = await driverService.fetchWalletSold();
+      print("WALLET SOLD: $solde");
+      _safeNotifyListeners();
+    } catch (e) {
+      print("Erreur lors du chargement du solde: $e");
+      errorMessage = "Impossible de charger le solde";
+      rethrow;
+    }
+  }
+
+  // Méthodes utilitaires pour accéder facilement aux données
+  bool get hasActiveRide => dailyStats?.activiteEnCours != null;
+  String get activeRideClientName =>
+      dailyStats?.activiteEnCours?.clientNom ?? 'Client';
+  String get activeRideDestination =>
+      dailyStats?.activiteEnCours?.destinationClient ?? 'Destination inconnue';
+  double get activeRideDistance =>
+      dailyStats?.activiteEnCours?.distanceKm ?? 0.0;
+  bool get hasRecentActivity => dailyStats?.activiteRecenteTerminee != null;
+  bool get hasRatings => (dailyStats?.dernieresEvaluations.length ?? 0) > 0;
+
+  // Démarrer le timer pour les heartbeats
+  void _startHeartbeatTimer() {
+    // Annuler le timer existant s'il y en a un
+    _heartbeatTimer?.cancel();
+
+    // Exécuter immédiatement le premier appel
+    _sendHeartbeat();
+
+    // Puis programmer un appel toutes les 3 minutes avec vérification de sécurité
+    _heartbeatTimer = Timer.periodic(const Duration(minutes: 3), (timer) {
+      // Vérifier que le ViewModel est toujours actif avant de continuer
+      if (!_isViewModelActive()) {
+        print('⚠️ Arrêt du timer heartbeat - ViewModel détruit');
+        timer.cancel();
+        return;
+      }
+
+      print("Heartbeat envoyé avec succès");
+      _sendHeartbeat();
+    });
+  }
+
+  // Vérifier si le ViewModel est toujours actif
+  bool _isViewModelActive() {
+    try {
+      // Cette vérification permet de détecter si le contexte est toujours valide
+      return true; // Pour l'instant, on laisse tourner mais avec précaution
+    } catch (e) {
+      print('⚠️ ViewModel inactif détecté: $e');
+      return false;
+    }
+  }
+
+  // Envoyer un heartbeat avec la position actuelle
+  Future<void> _sendHeartbeat() async {
+    try {
+      // Vérifier que le ViewModel est toujours actif avant d'envoyer le heartbeat
+      if (!_isViewModelActive()) {
+        print('⚠️ Abandon de l\'envoi du heartbeat - ViewModel détruit');
+        return;
+      }
+
+      final location = await _location.getLocation();
+      await driverService.postdriverheartbeat(
+        location.latitude ?? 0.0,
+        location.longitude ?? 0.0
+      );
+      print('Heartbeat envoyé avec succès');
+    } catch (e) {
+      print('Erreur lors de l\'envoi du heartbeat: $e');
+      // Ne pas propager l'erreur pour éviter de casser l'application
+    }
+  }
+  
+  @override
+  void dispose() {
+    _heartbeatTimer?.cancel();
+    _heartbeatTimer = null;
+    super.dispose();
+  }
+
+  // Notification sécurisée pour éviter les erreurs de contexte
+  void _safeNotifyListeners() {
+    try {
+      if (_isViewModelActive()) {
+        notifyListeners();
+      }
+    } catch (e) {
+      print('⚠️ Impossible de notifier les écouteurs (contexte invalide): $e');
+    }
+  }
+}

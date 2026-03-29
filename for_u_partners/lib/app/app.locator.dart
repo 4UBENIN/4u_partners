@@ -11,6 +11,17 @@ import 'package:stacked_services/src/dialog/dialog_service.dart';
 import 'package:stacked_services/src/navigation/navigation_service.dart';
 import 'package:stacked_shared/stacked_shared.dart';
 
+import '../services/auth_service.dart';
+import '../services/chat_service.dart';
+import '../services/driver_service.dart';
+import '../services/pickers_service.dart';
+import '../services/pressing_service.dart';
+import '../services/sharedpreferences_service.dart';
+import '../services/wallet_service.dart';
+import '../ui/views/drivers/documents/documents_viewmodel.dart';
+import '../ui/views/drivers/homemain/homemain_viewmodel.dart';
+import '../ui/views/drivers/vehicles/vehicles_viewmodel.dart';
+
 final locator = StackedLocator.instance;
 
 Future<void> setupLocator({
@@ -25,4 +36,14 @@ Future<void> setupLocator({
   locator.registerLazySingleton(() => BottomSheetService());
   locator.registerLazySingleton(() => DialogService());
   locator.registerLazySingleton(() => NavigationService());
+  locator.registerLazySingleton(() => SharedpreferencesService());
+  locator.registerLazySingleton(() => AuthService());
+  locator.registerLazySingleton(() => DriverService());
+  locator.registerLazySingleton(() => PressingService());
+  locator.registerLazySingleton(() => WalletService());
+  locator.registerLazySingleton(() => ChatService());
+  locator.registerLazySingleton(() => PickersService());
+  locator.registerSingleton(HomemainViewModel());
+  locator.registerSingleton(MesVehiculesViewModel());
+  locator.registerSingleton(DocumentsViewModel());
 }
